@@ -230,7 +230,11 @@ public static class ScenarioA1EntryCalculator
     public static string? ExitFromBar(int distinctLocations, bool anyOffMap) =>
         distinctLocations != 1 || anyOffMap ? "play.exit-stack: the stack leaves from one Location on the map (A2.6)" : null;
 
-    /// <summary>C10.3 (referee, pass 26): a crew still pushing its Gun may push it on, off the map, though its last push made it TI.</summary>
+    /// <summary>
+    /// C10.3 (referee, pass 26): a crew still pushing its Gun may push it on, off the map, though its last push made it TI. It keeps its answer (the C10.3
+    /// claim, ruling RC10.12): it admits a push on after a result at or above the M# this MPh, which
+    /// <see cref="ScenarioA1GunPushCalculator.PushOnRefusal"/> refuses (C10.3: "cannot be moved any farther during that MPh").
+    /// </summary>
     public static bool PushingOn(bool advancing, bool pushGunNamed, bool movementOpen, bool allIdsAreMembers) => !advancing && pushGunNamed && movementOpen && allIdsAreMembers;
 
     /// <summary>
@@ -251,7 +255,10 @@ public static class ScenarioA1EntryCalculator
 
     /// <summary>
     /// C10.3, C10.111, C10.2 (rulings R26.1, R26.4): a crew or HS manning a Gun leaves the map only pushing it: named in the request, alone, in the MPh, a
-    /// crew or HS, a Gun with an M#, not from Bypass, and QSU (read last, only when the rest holds).
+    /// crew or HS, a Gun with an M#, not from Bypass, and QSU (read last, only when the rest holds). It keeps its answer and its R26.4 texts (the C10.3
+    /// claim, ruling RC10.12): <see cref="ScenarioA1GunPushCalculator.PushRefusal"/> decides C10.3's bars. This member admits an NM or RFNM Gun and a push
+    /// after a result at or above the M# this MPh, which that one refuses; and it refuses a limbered Gun that is not QSU, which that one admits (limbering
+    /// is not built, ruling R26.1).
     /// </summary>
     public static string? ExitGunBar(string gunner, string manned, string? pushGunId, bool advancing, IReadOnlyList<string> others, bool crewOrHalfSquad, bool hasManhandlingNumber,
         bool inBypass, Func<bool> quickSetUp)
@@ -342,11 +349,15 @@ public static class ScenarioA1EntryCalculator
         return (null, cheapest.HalfMf, cheapest.Terrain, cheapest.RoadRate);
     }
 
-    /// <summary>C10.3 (rulings R8.6, R26.4): a Gun is pushed off only across Open Ground or grain, at double the MF.</summary>
+    /// <summary>
+    /// C10.3 (rulings R8.6, R26.4): a Gun is pushed off only across Open Ground or grain, at double the MF. The doubling forwards to
+    /// <see cref="ScenarioA1GunPushCalculator.PushHalfMf"/>, equal; ruling R8.6's terrain refusal keeps its answer and text (the C10.3 claim, ruling
+    /// RC10.8): C10.3 itself admits any terrain at its TEM and MF.
+    /// </summary>
     public static (string? Refusal, int HalfMf) PushedExit(string terrain, int halfMf, string from) =>
         terrain is not ("open-ground" or "grain")
             ? ($"play.move-push-terrain: a Gun is pushed only into Open Ground or grain in the review, and leaving {from} crosses {terrain} (C10.3; rulings R8.6, R26.4)", halfMf)
-            : (null, halfMf * 2);
+            : (null, ScenarioA1GunPushCalculator.PushHalfMf(halfMf));
 
     /// <summary>The MF of an exit in words.</summary>
     public static string ExitHow(int halfMf, bool road, bool fromBypass) =>
@@ -445,8 +456,14 @@ public static class ScenarioA1EntryCalculator
         return null;
     }
 
-    /// <summary>C10.3 (ruling R26.4): the Manhandling DR's modifier for a push off the map: the MF spent, -2 across a road hexside.</summary>
-    public static int PushOffDrm(int halfMf, bool road) => (halfMf / 2) - (road ? 2 : 0);
+    /// <summary>
+    /// C10.3 (ruling R26.4): the Manhandling DR's modifier for a push off the map: the MF spent, -2 across a road hexside. It forwards to
+    /// <see cref="ScenarioA1GunPushCalculator.ManhandlingDrm"/>, equal, with no weather, no TEM, and the road paved and plowed, so the road term is
+    /// <paramref name="road"/> (the C10.3 claim, ruling RC10.12). The difference is at its callers: they pass the road rate, not the road hexside crossed
+    /// (RC10.3), and give no weather (+3 in Mud or Deep Snow, the -2 lost there off a paved or plowed road) and no hexside TEM (a wall +2, a hedge +1).
+    /// </summary>
+    public static int PushOffDrm(int halfMf, bool road) =>
+        ScenarioA1GunPushCalculator.ManhandlingDrm(new ManhandlingDrmFacts(halfMf / 2, 0, 0, false, false, road, true, true, 0, 0, false, false, 0));
 
     /// <summary>A2.6 (ruling R25.5): the advance off the map, in words.</summary>
     public static string AdvanceExitText(IReadOnlyList<string> ids, string from, string edge, string terrain, string with, IReadOnlyList<string> tiring, string scoring)

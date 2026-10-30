@@ -112,11 +112,14 @@ public static class ScenarioA1MachineGunKill
         : vehicleButtonedUp ? "its vehicle is BU: an AAMG fires only CE (D1.83)"
         : null;
 
-    /// <summary>The C7.7 result of a MG's To Kill DR (A9.61, D5.34): a Dud on an Original 12, a burn at most half the Final TK#, an elimination below it, a Stun on it.</summary>
+    /// <summary>
+    /// The C7.7 result of a MG's To Kill DR (A9.61, D5.34): a Dud on an Original 12, a burn at most half the Final TK#, an elimination below it, a Stun on it
+    /// (<see cref="ScenarioA1StunCalculator.MachineGunStuns"/>, the D5.34 claim).
+    /// </summary>
     public static string Result(int dr, int finalTk) =>
         dr == 12 ? OrdnanceKill.Dud
             : dr * 2 <= finalTk ? OrdnanceKill.Burn
             : dr < finalTk ? OrdnanceKill.Eliminated
-            : dr == finalTk ? OrdnanceKill.Stun
+            : ScenarioA1StunCalculator.MachineGunStuns(dr, finalTk) ? OrdnanceKill.Stun
             : OrdnanceKill.None;
 }

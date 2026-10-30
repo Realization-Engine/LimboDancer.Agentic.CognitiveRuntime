@@ -12,11 +12,71 @@ public static class ScenarioA1Starshells
     /// <summary>The firer named is not an active unit on the map.</summary>
     public static string FirerOffMapText(string unitId) => $"play.starshell-firer: '{unitId}' is not a unit on the map";
 
-    /// <summary>E1.92, E1.921: who may fire a Starshell: a Good Order, unpinned, not TI leader or MMC, or a vehicle not BU, Stunned, or Shocked.</summary>
+    /// <summary>
+    /// E1.92, E1.921: who may fire a Starshell: a Good Order, unpinned, not TI leader or MMC, or a vehicle not BU, Stunned, or Shocked. Forwards to
+    /// <see cref="FirerRefusal"/> with the firer from <see cref="FirerOf"/> (no Armor Leader), and neither Aerial, in a pillbox, nor in an Interior Building
+    /// Hex or subterranean Location: the same verdict and text on every input (the E1.8 claim, RE1.13).
+    /// </summary>
     public static string? FirerBar(string unitId, bool leader, bool afv, bool mmc, bool buttonedUp, bool stunned, bool shocked, bool goodOrder, bool pinned, bool ti, bool captured) =>
-        (!leader && !afv && !mmc) || (afv && (buttonedUp || stunned || shocked)) || (!afv && !goodOrder) || pinned || ti || captured
-            ? $"play.starshell-firer: {unitId} is not a Good Order, unpinned, not TI leader, CE AFV, or MMC (E1.92, E1.921)"
+        FirerRefusal(unitId, FirerOf(leader, afv, mmc, buttonedUp, false), stunned, shocked, goodOrder, pinned, ti, captured, false, false, false);
+
+    /// <summary>
+    /// E1.92, E1.921 (p. 226; RE1.6): who tries a Starshell. An AFV is read first, as <see cref="FirerBar"/> refuses a BU AFV whatever else it is: CE with an
+    /// Armor Leader, CE with none, or BU (Other); then a leader, a MMC, or any other unit.
+    /// </summary>
+    public static StarshellFirer FirerOf(bool leader, bool afv, bool mmc, bool buttonedUp, bool armorLeader) =>
+        afv ? (buttonedUp ? StarshellFirer.Other : armorLeader ? StarshellFirer.CeAfvWithArmorLeader : StarshellFirer.CeAfv)
+        : leader ? StarshellFirer.Leader
+        : mmc ? StarshellFirer.Mmc
+        : StarshellFirer.Other;
+
+    /// <summary>
+    /// E1.921 (RE1.6): whether the firer fires as a leader, for the Usage dr of 4 and the exception to the timing restriction: a leader, and a CE AFV with an
+    /// Armor Leader ("a leader (including a CE Armor Leader)").
+    /// </summary>
+    public static bool FiresAsLeader(StarshellFirer firer) => firer is StarshellFirer.Leader or StarshellFirer.CeAfvWithArmorLeader;
+
+    /// <summary>
+    /// E1.92, E1.921 (p. 226; RE1.8): why this unit may not fire a Starshell, or null. <see cref="FirerBar"/>'s check first, with its text: a leader, a CE AFV,
+    /// or a MMC; an AFV not Stunned or Shocked; any other Good Order; none pinned, TI, or captured. Then not Aerial nor in a pillbox; then not in an Interior
+    /// Building Hex or a subterranean Location (E1.921), where an unknown Location refuses.
+    /// </summary>
+    public static string? FirerRefusal(string unitId, StarshellFirer firer, bool stunned, bool shocked, bool goodOrder, bool pinned, bool ti, bool captured, bool aerial,
+        bool inPillbox, bool? interiorOrSubterranean)
+    {
+        var afv = firer is StarshellFirer.CeAfv or StarshellFirer.CeAfvWithArmorLeader;
+        if (firer == StarshellFirer.Other || (afv && (stunned || shocked)) || (!afv && !goodOrder) || pinned || ti || captured)
+        {
+            return $"play.starshell-firer: {unitId} is not a Good Order, unpinned, not TI leader, CE AFV, or MMC (E1.92, E1.921)";
+        }
+
+        if (aerial || inPillbox)
+        {
+            return $"play.starshell-firer: {unitId} is Aerial or in a pillbox, and fires no Starshell (E1.921)";
+        }
+
+        return interiorOrSubterranean != false
+            ? $"play.starshell-firer: {unitId} is not known to be outside an Interior Building Hex or a subterranean Location, from which no Starshell is fired (E1.921)"
             : null;
+    }
+
+    /// <summary>
+    /// E1.91 (p. 226; RE1.5, RE1.9): no Starshell is fired in a scenario until one of three events has occurred, or null once one has (or a Starshell has
+    /// been fired): (1) while the friendly force has no motorized vehicle on board, an enemy motorized vehicle changes its hex or VCA within 16 hexes of the
+    /// firer (an unknown motion does not open it); (2) the firer has a LOS to an enemy unit (gathered as today: seen within NVR or Illuminated, E1.33); (3) a
+    /// Gunflash was placed by an attack vs an enemy unit (<see cref="ScenarioA1GunflashCalculator.OpensFirstStarshell(GunflashMark)"/>), at any time before.
+    /// </summary>
+    public static string? FirstStarshellRefusal(bool starshellFiredBefore, bool firerHasEnemyInLos, bool friendlyMotorizedOnboard, bool? enemyMotorizedMovedWithin16,
+        bool qualifyingGunflashOccurred) =>
+        starshellFiredBefore || firerHasEnemyInLos || (!friendlyMotorizedOnboard && enemyMotorizedMovedWithin16 == true) || qualifyingGunflashOccurred
+            ? null
+            : "play.starshell-first: no Starshell is fired until the firer sees an enemy unit, an enemy motorized vehicle moves within 16 hexes of it while no friendly one is on board, or a Gunflash is placed by an attack vs an enemy unit (E1.91)";
+
+    /// <summary>
+    /// E1.921, E1.923 (pp. 226 and 227; RE1.8): whether a Starshell Illuminates a Location: within three hexes, and not an Interior Building Hex or a
+    /// subterranean Location; an unknown distance or Location is not lit.
+    /// </summary>
+    public static bool StarshellIlluminates(int? distance, bool? interiorOrSubterranean) => distance <= 3 && interiorOrSubterranean == false;
 
     /// <summary>E1.92: the phases a Starshell is fired in: the PFPh by the phasing side, the DFPh or the MPh (as Defensive First Fire) by the other.</summary>
     public static string? PhaseBar(string? phase, bool phasing) =>
@@ -30,7 +90,10 @@ public static class ScenarioA1Starshells
 
     /// <summary>
     /// E1.91: the first Starshell of the game needs an enemy unit in the firer's LOS, or a Gunflash on the map; E1.33 (referee, pass 16): at night an enemy
-    /// unit is seen within the firer's NVR or Illuminated. The two scans are read in that order, only until the first Starshell has been fired.
+    /// unit is seen within the firer's NVR or Illuminated. The two scans are read in that order, only until the first Starshell has been fired. Replaced by
+    /// <see cref="FirstStarshellRefusal"/> (the E1.8 claim, RE1.9, RE1.13), which keeps this answer: that one also opens on an enemy motorized vehicle's
+    /// motion within 16 hexes (E1.91 event 1), and takes a Gunflash only from an attack vs an enemy unit, kept once it has occurred, where this one takes any
+    /// Gunflash on the map now; its text names the three events. Equal in verdict when the Gunflash is a qualifying one and no vehicle moved, not in text.
     /// </summary>
     public static string? FirstBar(bool starshellUsed, Func<bool> anyEnemySeen, Func<bool> anyGunflash)
     {
@@ -43,7 +106,8 @@ public static class ScenarioA1Starshells
 
     /// <summary>
     /// E1.921: after the Player Turn of the first Starshell, a firer other than a leader fires it at the start of the PFPh or the enemy MPh, before any fire or
-    /// movement. <paramref name="starshellTurn"/> and <paramref name="thisTurn"/> are the state's Player Turn keys.
+    /// movement. <paramref name="starshellTurn"/> and <paramref name="thisTurn"/> are the state's Player Turn keys. <paramref name="leader"/> is a leader, a CE
+    /// Armor Leader included (E1.921 "[EXC: a leader]"; the E1.8 claim, RE1.6): <see cref="FiresAsLeader"/>.
     /// </summary>
     public static string? TimingBar(bool starshellUsed, string? starshellTurn, string thisTurn, bool leader, string? phase, bool acted) =>
         starshellUsed && starshellTurn != thisTurn && !leader && (phase == "dfph" || acted)
@@ -67,8 +131,16 @@ public static class ScenarioA1Starshells
             : null;
     }
 
-    /// <summary>E1.92: the Usage dr needed: 4 or less for a leader, 2 or less otherwise.</summary>
-    public static int UsageNeed(bool leader) => leader ? 4 : 2;
+    /// <summary>
+    /// E1.92: the Usage dr needed: 4 or less for a leader, 2 or less otherwise. Forwards to <see cref="UsageNeed(StarshellFirer)"/> of a leader or a MMC: the
+    /// same answer on both inputs, which cannot name a CE Armor Leader (the E1.8 claim, RE1.13).
+    /// </summary>
+    public static int UsageNeed(bool leader) => UsageNeed(leader ? StarshellFirer.Leader : StarshellFirer.Mmc);
+
+    /// <summary>
+    /// E1.921 (p. 226; RE1.6): the Usage dr needed: 4 or less for a leader, a CE Armor Leader included; 2 or less for a CE AFV with no Armor Leader or a MMC.
+    /// </summary>
+    public static int UsageNeed(StarshellFirer firer) => FiresAsLeader(firer) ? 4 : 2;
 
     /// <summary>Whether the Usage dr fires the Starshell.</summary>
     public static bool UsagePassed(int dr, int need) => dr <= need;

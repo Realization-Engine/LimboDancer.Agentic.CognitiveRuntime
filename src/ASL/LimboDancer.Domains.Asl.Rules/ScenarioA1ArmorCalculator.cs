@@ -308,6 +308,12 @@ internal static class ScenarioA1ArmorCalculator
 
     public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) => Run(shot, gun, reference, null);
 
+    /// <summary>
+    /// The Vehicle Target Type shot. With <see cref="OrdnanceShot.StunEncircledReading"/> null it keeps the answer it had before the D5.34 claim: no
+    /// Encircled +1 on the To Hit DR of an Encircled crew (A7.7, p. 57: "+1 DRM on the IFT (or To Hit DR if ordnance)"), a LATW's or a Gun's; set, it
+    /// adds <see cref="ScenarioA1EncirclementCalculator.FirerDrm"/> for <see cref="OrdnanceCrew.Encircled"/> ("encircled"; the claim's ruling RD5.16,
+    /// W-D5.34).
+    /// </summary>
     public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         var rolls = shot.Rolls!;
@@ -393,10 +399,16 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-i", 1, "C5.9"));
         }
 
-        // D5.34: an AFV under a "+1" counter after a Stun adds one to its To Hit DR.
-        if (shot.Vehicle?.StunRecovery == true)
+        // D5.34 (the D5.34 claim): an AFV under a "+1" counter after a Stun adds one to its To Hit DR.
+        if (ScenarioA1StunCalculator.Drm(StunDr.ToHit, shot.Vehicle?.StunRecovery == true) is > 0 and var stun)
         {
-            drm.Add(new FireModifier("stun", 1, "D5.34"));
+            drm.Add(new FireModifier("stun", stun, "D5.34"));
+        }
+
+        // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): an Encircled crew adds one to its To Hit DR, under the shot's StunEncircledReading.
+        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(shot.Crew.Encircled == true) is > 0 and var encircled)
+        {
+            drm.Add(new FireModifier("encircled", encircled, "A7.7"));
         }
 
         drm.AddRange(ScenarioA1OrdnanceCalculator.PassEightFirerDrm(shot));
@@ -471,10 +483,11 @@ internal static class ScenarioA1ArmorCalculator
 
         // D2.38 (p. 198; pass 35, task 35.13 b): a vehicle in Bypass is in the Open Ground of its hex and takes no beneficial TEM of the woods or
         // building it Bypasses. A building Bypassed inside a woods hex (2I9, 3I1) is not told apart.
-        var tem = ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
+        // B23.741 (the B23.74 claim, ruling RB23F.5): the Factory TEM in place of the key's when the hit carries one.
+        var tem = hit.FactoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
         if (tem != 0 && !(target.Bypass == true && tem > 0))
         {
-            drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
+            drm.Add(new FireModifier("case-q:" + (hit.FactoryTem is null ? hit.TargetTerrain : "factory"), tem, "C6.8"));
         }
 
         // D4.22, B10.31 (pp. 202, 125; pass 55): "The +1 Height Advantage TEM vs Direct Fire also applies to vehicles, but only if they are not HD
@@ -712,9 +725,15 @@ internal static class ScenarioA1ArmorCalculator
                 return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:collateralCheck"]));
             }
 
-            // D5.342 (p. 204): a Carrier's crew stunned by this very hit is Recalled by a second Stun (D6.84).
-            var (check, crew) = ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true || (carrier && kill.Result == OrdnanceKill.Stun),
-                morale, target.CrewMorale);
+            // D5.342 (p. 204): a Carrier's crew stunned by this very hit is Recalled by a second Stun (D6.84). Under the shot's StunEncircledReading (the
+            // D5.34 claim, ruling RD5.4) a Carrier Stunned before the hit is Recalled too, and a merely Stunned crew's MC takes no +1; before it, the crew
+            // Stunned by this hit took the +1.
+            var (check, crew) = shot.StunEncircledReading == true
+                ? ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, ScenarioA1StunCalculator.Drm(StunDr.MoraleCheck, target.StunRecovery == true),
+                    ScenarioA1StunCalculator.SecondStun(target.Stunned == true || (carrier && kill.Result == OrdnanceKill.Stun), target.StunRecovery == true),
+                    morale, target.CrewMorale)
+                : ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true || (carrier && kill.Result == OrdnanceKill.Stun),
+                    morale, target.CrewMorale);
             effect = new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, drm, final, null, check, crew);
         }
 
@@ -805,7 +824,8 @@ internal static class ScenarioA1ArmorCalculator
 
         var dr = kill[0] + kill[1];
         OrdnanceKill Made(string result) => new(ammunition, location, facing, basicTk, modifiers, modifiedTk, af, finalTk, [.. kill], dr, result);
-        var plusOne = target.StunRecovery == true ? 1 : 0;
+        // D5.34 (the D5.34 claim): the Stun +1 on the crew's NTC and TC.
+        var plusOne = ScenarioA1StunCalculator.Drm(StunDr.TaskCheck, target.StunRecovery == true);
         IReadOnlyList<FireModifier> checkDrm = plusOne == 0 ? [] : [new FireModifier("stun", 1, "D5.34")];
 
         // C7.35: an Original 12 is a dud.

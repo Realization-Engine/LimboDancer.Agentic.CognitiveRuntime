@@ -1,0 +1,284 @@
+{
+  "id": "e1-gunflash",
+  "title": "E1.8 Gunflashes and E1.921 Starshells",
+  "card": "e1-gunflash",
+  "rules": [
+    "E1.8",
+    "E1.89",
+    "E1.91",
+    "E1.921"
+  ],
+  "contracts": [
+    "e1.8-gunflash",
+    "e1.921-starshell-usage"
+  ],
+  "example": {
+    "source": "E1.8, a MG that Prep Fires and keeps its ROF is marked with a Gunflash counter",
+    "page": 226
+  },
+  "checks": [
+    {
+      "name": "At night the German squad Prep Fires at the Russian squad: its Location is a Gunflash, and the first Starshell is opened",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "e1.8-gunflash",
+      "facts": {
+        "cause": "attack",
+        "night": true,
+        "vsEnemyUnit": true,
+        "firerStillInLocation": true
+      },
+      "expect": {
+        "outcome": "gunflash-opens"
+      }
+    },
+    {
+      "name": "The German squad is eliminated in the DFPh: its Location stays a Gunflash until the end of the AFPh",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "e1.8-gunflash",
+      "facts": {
+        "cause": "attack",
+        "night": true,
+        "vsEnemyUnit": true,
+        "firerStillInLocation": false
+      },
+      "expect": {
+        "outcome": "gunflash-opens",
+        "reasons": [
+          "whoever is there then"
+        ]
+      }
+    },
+    {
+      "name": "The German squad dismantles its MMG at night: no Gunflash and no Prep Fire counter, though the use counts (E1.89)",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "e1.8-gunflash",
+      "facts": {
+        "cause": "dismantle-or-assemble",
+        "night": true,
+        "vsEnemyUnit": false,
+        "firerStillInLocation": true
+      },
+      "expect": {
+        "outcome": "no-gunflash-no-counter"
+      }
+    },
+    {
+      "name": "The Russian squad declares Opportunity Fire: its Location is a Gunflash, which does not open the first Starshell",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "e1.8-gunflash",
+      "facts": {
+        "cause": "opportunity-fire-declared",
+        "night": true,
+        "vsEnemyUnit": false,
+        "firerStillInLocation": true
+      },
+      "expect": {
+        "outcome": "gunflash",
+        "reasons": [
+          "does not open"
+        ]
+      }
+    },
+    {
+      "name": "The German squad fires at a Location that holds no enemy unit: a Gunflash that does not open the first Starshell",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "e1.8-gunflash",
+      "facts": {
+        "cause": "attack",
+        "night": true,
+        "vsEnemyUnit": false,
+        "firerStillInLocation": true
+      },
+      "expect": {
+        "outcome": "gunflash"
+      }
+    },
+    {
+      "name": "By day there is no Gunflash to mark",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "e1.8-gunflash",
+      "facts": {
+        "cause": "attack",
+        "night": false,
+        "vsEnemyUnit": true,
+        "firerStillInLocation": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "After a qualifying Gunflash the German leader tries the first Starshell on a Usage dr of 4",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e1.921-starshell-usage",
+      "facts": {
+        "night": true,
+        "phase": "PFPh",
+        "firerSidePhasing": true,
+        "attemptedFromHex": false,
+        "firerId": "g-leader",
+        "firer": "leader",
+        "goodOrder": true,
+        "pinned": false,
+        "ti": false,
+        "captured": false,
+        "stunned": false,
+        "shocked": false,
+        "inPillbox": false,
+        "aerial": false,
+        "interiorOrSubterranean": false,
+        "firerHasEnemyInLos": false,
+        "friendlyMotorizedOnboard": true,
+        "enemyMotorizedMovedWithin16": false,
+        "starshellFiredBefore": false,
+        "firstStarshellTurnPast": false,
+        "startOfPhaseBeforeActs": true,
+        "qualifyingGunflashOccurred": true
+      },
+      "expect": {
+        "outcome": "usage-4"
+      }
+    },
+    {
+      "name": "The German tank, CE with its Armor Leader, fires as a leader on a Usage dr of 4",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e1.921-starshell-usage",
+      "facts": {
+        "night": true,
+        "phase": "PFPh",
+        "firerSidePhasing": true,
+        "attemptedFromHex": false,
+        "firerId": "g-tank",
+        "firer": "ce-afv-armor-leader",
+        "goodOrder": true,
+        "pinned": false,
+        "ti": false,
+        "captured": false,
+        "stunned": false,
+        "shocked": false,
+        "inPillbox": false,
+        "aerial": false,
+        "interiorOrSubterranean": false,
+        "firerHasEnemyInLos": false,
+        "friendlyMotorizedOnboard": true,
+        "enemyMotorizedMovedWithin16": false,
+        "starshellFiredBefore": false,
+        "firstStarshellTurnPast": false,
+        "startOfPhaseBeforeActs": true,
+        "qualifyingGunflashOccurred": true
+      },
+      "expect": {
+        "outcome": "usage-4"
+      }
+    },
+    {
+      "name": "The German tank BU fires no Starshell",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e1.921-starshell-usage",
+      "facts": {
+        "night": true,
+        "phase": "PFPh",
+        "firerSidePhasing": true,
+        "attemptedFromHex": false,
+        "firerId": "g-tank",
+        "firer": "other",
+        "goodOrder": true,
+        "pinned": false,
+        "ti": false,
+        "captured": false,
+        "stunned": false,
+        "shocked": false,
+        "inPillbox": false,
+        "aerial": false,
+        "interiorOrSubterranean": false,
+        "firerHasEnemyInLos": false,
+        "friendlyMotorizedOnboard": true,
+        "enemyMotorizedMovedWithin16": false,
+        "starshellFiredBefore": false,
+        "firstStarshellTurnPast": false,
+        "startOfPhaseBeforeActs": true,
+        "qualifyingGunflashOccurred": true
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "CE AFV"
+        ]
+      }
+    },
+    {
+      "name": "Before any of E1.91's three events the German squad fires no Starshell",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "e1.921-starshell-usage",
+      "facts": {
+        "night": true,
+        "phase": "PFPh",
+        "firerSidePhasing": true,
+        "attemptedFromHex": false,
+        "firerId": "g-squad",
+        "firer": "mmc",
+        "goodOrder": true,
+        "pinned": false,
+        "ti": false,
+        "captured": false,
+        "stunned": false,
+        "shocked": false,
+        "inPillbox": false,
+        "aerial": false,
+        "interiorOrSubterranean": false,
+        "firerHasEnemyInLos": false,
+        "friendlyMotorizedOnboard": true,
+        "enemyMotorizedMovedWithin16": false,
+        "starshellFiredBefore": false,
+        "firstStarshellTurnPast": false,
+        "startOfPhaseBeforeActs": true,
+        "qualifyingGunflashOccurred": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "play.starshell-first"
+        ]
+      }
+    },
+    {
+      "name": "The Russian viewer does not know what the German \"?\" stack is or what it sees, so the verdict is not evaluated for it",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "e1.921-starshell-usage",
+      "facts": {
+        "night": true,
+        "phase": "PFPh",
+        "firerSidePhasing": true,
+        "attemptedFromHex": false,
+        "firerId": null,
+        "starshellFiredBefore": false,
+        "firstStarshellTurnPast": false,
+        "startOfPhaseBeforeActs": true,
+        "qualifyingGunflashOccurred": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "firerId": "german"
+      }
+    }
+  ],
+  "units": {
+    "g-squad": "german",
+    "g-leader": "german",
+    "g-tank": "german",
+    "r-squad": "russian"
+  }
+}
