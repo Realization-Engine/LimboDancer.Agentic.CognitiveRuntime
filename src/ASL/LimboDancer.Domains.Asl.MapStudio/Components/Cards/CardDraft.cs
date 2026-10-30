@@ -363,6 +363,11 @@ public sealed class GroupDraft
 {
     public string Name { get; set; } = "New group";
 
+    public string? StealthDesignation
+    {
+        get; set;
+    }
+
     public string Elr { get; set; } = "3";
 
     public string SetupOrder { get; set; } = string.Empty;
@@ -376,6 +381,7 @@ public sealed class GroupDraft
     public static GroupDraft Of(ScenarioCardGroup group) => new()
     {
         Name = group.Name,
+        StealthDesignation = group.StealthDesignation,
         Elr = CardDraft.Text(group.Elr),
         SetupOrder = CardDraft.Text(group.SetupOrder),
         Dummies = CardDraft.Text(group.Dummies),
@@ -386,7 +392,10 @@ public sealed class GroupDraft
     internal ScenarioCardGroup Build(CardDraft.Numbers read, string side) =>
         new(Name, read.Int(Elr, $"card.elr: {side}'s group '{Name}' ELR"), [.. Areas.Select(area => area.Build(read, Name))],
             [.. Units.Select(unit => unit.Build(read, $"{side}'s group '{Name}'"))],
-            read.OptionalInt(SetupOrder, $"card.setup: '{Name}' place in the setup order"), read.OptionalInt(Dummies, $"card.ob: '{Name}' \"?\" count"));
+            read.OptionalInt(SetupOrder, $"card.setup: '{Name}' place in the setup order"), read.OptionalInt(Dummies, $"card.ob: '{Name}' \"?\" count"))
+        {
+            StealthDesignation = StealthDesignation,
+        };
 }
 
 /// <summary>A setup or entry area (rulings R17.8, R19.4, R25.2).</summary>
