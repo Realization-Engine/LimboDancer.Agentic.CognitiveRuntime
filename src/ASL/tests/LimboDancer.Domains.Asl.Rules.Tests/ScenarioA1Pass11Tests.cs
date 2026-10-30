@@ -216,6 +216,43 @@ public sealed class ScenarioA1Pass11Tests
     }
 
     [Fact]
+    public void VehicleCcBreakdownUsesTheOriginalDrWithoutTheShortageLowering()
+    {
+        var facts = new VehicleCloseCombatFacts("CCPh", At, Vehicle("attacker-tank"),
+            [Unit("ru-s", "defender-squad", "russian")], [], ["ru-s"], true, false, new VehicleCloseCombatRolls([5, 6]));
+        Assert.Null(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).VehicleBreakdowns);
+        var current = facts with
+        {
+            VehicleBreakdown = new(new Dictionary<string, VehicleBreakdownUseFacts>
+            {
+                ["cmg"] = new(VehicleBreakdownWeapon.CoaxialMg, null, null, false, false, false, true)
+            })
+        };
+        var eleven = ScenarioA1VehicleCloseCombat.Resolve(current, CloseCombat);
+        Assert.Equal(CloseCombatResolution.Resolved, eleven.Disposition);
+        Assert.Equal(VehicleBreakdownOutcome.None, eleven.VehicleBreakdowns!["cmg"].Outcome);
+        var twelve = ScenarioA1VehicleCloseCombat.Resolve(current with
+        {
+            Rolls = new VehicleCloseCombatRolls([6, 6])
+        }, CloseCombat);
+        Assert.Equal(VehicleBreakdownOutcome.Malfunction, twelve.VehicleBreakdowns!["cmg"].Outcome);
+        Assert.Equal(5m, twelve.AttackFirepower);
+        var disabled = current with
+        {
+            Vehicle = current.Vehicle! with
+            {
+                UnavailableWeapons = ["cmg"]
+            },
+            VehicleBreakdown = new(new Dictionary<string, VehicleBreakdownUseFacts>())
+        };
+        Assert.Contains("asl.a1.cc-vehicle.no-cc-armament", ScenarioA1VehicleCloseCombat.Precheck(disabled, CloseCombat));
+        Assert.Contains("asl.a1.cc-vehicle.breakdown-facts-invalid", ScenarioA1VehicleCloseCombat.Precheck(disabled with
+        {
+            VehicleBreakdown = current.VehicleBreakdown
+        }, CloseCombat));
+    }
+
+    [Fact]
     public void ACeRstTankFiresNeitherMaNorCmgInAnOvrOrInCcAndAStunPlusOneAddsToBothDrs()
     {
         // D1.321 (p. 194; pass 35, task 35.13 c): the T-34 M41 is RST: CE, it adds neither its MA's base nor its CMG to an OVR, and no CMG to CC. The

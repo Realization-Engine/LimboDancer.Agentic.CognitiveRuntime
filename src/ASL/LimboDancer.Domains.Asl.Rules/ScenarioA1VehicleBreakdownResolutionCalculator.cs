@@ -80,6 +80,35 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
         return new(numbers, ScenarioA1VehicleBreakdownCalculator.Outcome(originalDr, numbers, kind));
     }
 
+    /// <summary>A9.71 (PDF p. 65): select among actual failed armaments; Low Ammo remains independent of Random Selection.</summary>
+    public static Dictionary<string, VehicleBreakdownResolved>? ResolveWeapons(string vehicleId,
+        IReadOnlyDictionary<string, VehicleBreakdownUseFacts> weapons, VehicleBreakdownUse use, int originalDr,
+        IReadOnlyDictionary<string, int>? selection, out IReadOnlyList<string> selectionKeys)
+    {
+        var outcomes = weapons.ToDictionary(item => item.Key, item => Resolve(item.Value, use, originalDr), StringComparer.Ordinal);
+        var failed = outcomes.Where(item => item.Value.Failed).Select(item => item.Key).ToArray();
+        selectionKeys = failed.Length > 1 ? [.. failed.Select(name => vehicleId + ":" + name)] : [];
+        if (selectionKeys.Count == 0)
+        {
+            return outcomes;
+        }
+
+        if (selectionKeys.Any(key => selection?.TryGetValue(key, out var die) != true || die is < 1 or > 6))
+        {
+            return null;
+        }
+
+        var highest = selectionKeys.Max(key => selection![key]);
+        foreach (var name in failed.Where(name => selection![vehicleId + ":" + name] != highest))
+        {
+            outcomes[name] = outcomes[name] with
+            {
+                Outcome = VehicleBreakdownOutcome.None
+            };
+        }
+        return outcomes;
+    }
+
     /// <summary>
     /// D3.71: the Gun's own shared Area IFT DR qualifies in addition to its To Hit DR. Both belong to one use and read
     /// its pre-shot numbers; Low Ammo gained during this use is not applied as a second lowering inside the same shot.
