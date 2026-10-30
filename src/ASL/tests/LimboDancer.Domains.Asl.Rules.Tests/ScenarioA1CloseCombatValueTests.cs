@@ -371,6 +371,29 @@ public sealed class ScenarioA1CloseCombatValueTests
         Unit("ru-g", "defender-conscript-squad", inexperienced: true), Unit("ru-p", "defender-squad", pinned: true),
     ];
 
+    [Fact]
+    public void CurrentVehicleDefenseRequiresKnownExperienceBeforeAnyRoll()
+    {
+        var defender = Unit("ru-g", "defender-conscript-squad") with
+        {
+            Inexperienced = null,
+        };
+        var facts = new VehicleCloseCombatFacts("CCPh", At, Vehicle("attacker-tank"), [defender], [], ["ru-g"], true, false,
+            new VehicleCloseCombatRolls([3, 4]));
+        Assert.Empty(ScenarioA1VehicleCloseCombat.Precheck(facts, CloseCombat));
+        Assert.Equal(CloseCombatResolution.Resolved, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).Disposition);
+        Assert.Equal(["asl.a1.cc-vehicle.fact-missing:inexperienced"], ScenarioA1VehicleCloseCombat.Precheck(facts, CloseCombat, new CcvContext()));
+        Assert.Equal(CloseCombatResolution.Abstained, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext()).Disposition);
+        var known = defender with
+        {
+            Inexperienced = true,
+        };
+        Assert.Empty(ScenarioA1VehicleCloseCombat.Precheck(facts with
+        {
+            Units = [known],
+        }, CloseCombat, new CcvContext()));
+    }
+
     private static string Json(VehicleCloseCombatResolution resolution) => JsonSerializer.Serialize(resolution);
 
     [Fact]
