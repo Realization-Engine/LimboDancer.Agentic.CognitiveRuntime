@@ -257,6 +257,10 @@ public static class ScenarioA1FireFollowUps
         ArgumentNullException.ThrowIfNull(weapon);
         ArgumentNullException.ThrowIfNull(firstFireMarked);
         var conditions = new List<(UnitCondition, bool)>();
+        if (weapon.VehicleBreakdown?.Outcome == VehicleBreakdownOutcome.Disabled)
+        {
+            conditions.Add((ScenarioA1RallyRules.VehicleWeaponDisabled(weapon.VehicleWeapon ?? FireOverrunEffect.MainArmament), true));
+        }
         if (weapon.Malfunctioned)
         {
             // D3.7 (pass 50): a vehicle's BMG or CMG has its own Malfunction counter.
@@ -285,6 +289,11 @@ public static class ScenarioA1FireFollowUps
     {
         ArgumentNullException.ThrowIfNull(effect);
         var conditions = new List<(UnitCondition, bool)>();
+        foreach (var weapon in effect.VehicleBreakdowns?.Where(item => item.Value.Outcome == VehicleBreakdownOutcome.Disabled)
+            ?? Enumerable.Empty<KeyValuePair<string, VehicleBreakdownResolved>>())
+        {
+            conditions.Add((ScenarioA1RallyRules.VehicleWeaponDisabled(weapon.Key), true));
+        }
         foreach (var weapon in effect.MalfunctionedWeapons)
         {
             conditions.Add((weapon switch

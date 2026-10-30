@@ -552,10 +552,19 @@ public sealed record FireOverrunPassenger(string? UnitId, string? DefinitionId)
 /// </summary>
 public sealed record FireOverrunEffect(string VehicleId, IReadOnlyList<string> MalfunctionedWeapons, bool Immobilized)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, VehicleBreakdownResolved>? VehicleBreakdowns
+    {
+        get; init;
+    }
+
     public const string MainArmament = "ma";
     public const string BowMg = "bmg";
     public const string CoaxialMg = "cmg";
 }
+
+/// <summary>Opt-in D3.7 facts for exactly the mounted weapons participating in a vehicle IFT attack, keyed by ma, bmg or cmg.</summary>
+public sealed record FireVehicleBreakdownFacts(IReadOnlyDictionary<string, VehicleBreakdownUseFacts> Weapons);
 
 /// <summary>The wall (+2) or hedge (+1) TEM a target claims (B9.3), after any reduction for a higher firer (B9.33).</summary>
 public sealed record FireHexsideTem(string? Terrain, int? Tem);
@@ -1593,6 +1602,12 @@ public sealed record FireColumn(decimal TotalFirepower, int? UnshiftedColumnFp, 
 public sealed record FireWeaponEffect(string EquipmentId, int BreakdownNumber, bool Malfunctioned, bool RateOfFireRetained, bool SustainedFire,
     string? FireCounter, int? SelectionDr)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public VehicleBreakdownResolved? VehicleBreakdown
+    {
+        get; init;
+    }
+
     /// <summary>
     /// Whether the weapon is removed for good (A.11, p. 43; A9.7, p. 65; pass 45): a fire that lowers the B# "also transforms the weapon's Original
     /// B# to an X# during that use", and a DR at least the X# removes it. Null is false.
