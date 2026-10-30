@@ -5024,7 +5024,10 @@ public static partial class GameProjector
 
                     var settled = Rules.ScenarioA1DemolitionChargeRules.PlacementSettled(
                         next.Location(charge.Unit)?.Location is { } at && at != charge.From,
-                        payload is VehicleStepped || payload is MovementStepped other && !other.Movers.Contains(charge.Unit), next.Phase != "mph");
+                        next.Phase == "mph" && (payload is VehicleStepped
+                            || payload is MovementStepped other && !other.Movers.Contains(charge.Unit)
+                            || payload is InstanceMoved { Mf: not null } entered && entered.Id != charge.Unit
+                            || payload is EntryAttempted attempted && attempted.Id != charge.Unit), next.Phase != "mph");
                     if (Rules.ScenarioA1DemolitionChargeRules.PlacementOperable(settled, failed) != true)
                     {
                         kept.Add(charge);
