@@ -1,0 +1,137 @@
+{
+  "id": "b25-blaze-smoke",
+  "title": "B25.2 Blaze SMOKE",
+  "card": "b25-blaze-smoke",
+  "rules": [
+    "B25.2"
+  ],
+  "contracts": [
+    "b25.2-blaze-smoke"
+  ],
+  "example": null,
+  "checks": [
+    {
+      "name": "A burning wreck's SMOKE is +2, four levels high",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b25.2-blaze-smoke",
+      "facts": {
+        "kind": "WreckBlaze",
+        "wind": "None",
+        "interiorNonRooftop": false,
+        "fireLaneResidualAttack": false,
+        "rain": false
+      },
+      "expect": {
+        "outcome": "smoke",
+        "reasons": [
+          "+2, 4 levels"
+        ]
+      }
+    },
+    {
+      "name": "A terrain Blaze's SMOKE is +3, the Hindrance of regular smoke",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b25.2-blaze-smoke",
+      "facts": {
+        "kind": "TerrainBlaze",
+        "wind": "None",
+        "interiorNonRooftop": false,
+        "fireLaneResidualAttack": false,
+        "rain": false
+      },
+      "expect": {
+        "outcome": "smoke",
+        "reasons": [
+          "+3"
+        ]
+      }
+    },
+    {
+      "name": "In a Mild Breeze it reaches two levels and can drift as many counters as its Hindrance",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b25.2-blaze-smoke",
+      "facts": {
+        "kind": "WreckBlaze",
+        "wind": "MildBreeze",
+        "interiorNonRooftop": false,
+        "fireLaneResidualAttack": false,
+        "rain": false
+      },
+      "expect": {
+        "outcome": "smoke",
+        "reasons": [
+          "2 levels",
+          "drift 2"
+        ]
+      }
+    },
+    {
+      "name": "A Fire Lane's Residual FP sees only the wreck's own Hindrance (A9.222)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b25.2-blaze-smoke",
+      "facts": {
+        "kind": "WreckBlaze",
+        "wind": "None",
+        "interiorNonRooftop": false,
+        "fireLaneResidualAttack": true,
+        "rain": false
+      },
+      "expect": {
+        "outcome": "wreck-only"
+      }
+    },
+    {
+      "name": "In Heavy Winds only the wreck's Hindrance applies",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b25.2-blaze-smoke",
+      "facts": {
+        "kind": "WreckBlaze",
+        "wind": "HeavyWinds",
+        "interiorNonRooftop": false,
+        "fireLaneResidualAttack": false,
+        "rain": false
+      },
+      "expect": {
+        "outcome": "wreck-only"
+      }
+    },
+    {
+      "name": "A Flame makes no smoke",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b25.2-blaze-smoke",
+      "facts": {
+        "kind": "Flame",
+        "wind": "None",
+        "interiorNonRooftop": false,
+        "fireLaneResidualAttack": false,
+        "rain": false
+      },
+      "expect": {
+        "outcome": "none"
+      }
+    },
+    {
+      "name": "Inside an Interior Building hex there is No Wind, even in Heavy Winds (B25.63)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b25.2-blaze-smoke",
+      "facts": {
+        "kind": "TerrainBlaze",
+        "wind": "HeavyWinds",
+        "interiorNonRooftop": true,
+        "fireLaneResidualAttack": false,
+        "rain": false
+      },
+      "expect": {
+        "outcome": "smoke"
+      }
+    }
+  ],
+  "units": {}
+}
