@@ -293,8 +293,13 @@ public sealed partial class GamePlanner
             }
 
             // C5.5: a wreck, SMOKE, or an AFV in the hex adds its Hindrance (Case R), "other than the target or firer".
+            var (smokeHindrances, smokeReason) = SmokeStrengthsAt(state, target);
+            if (smokeHindrances is null)
+            {
+                return (null, smokeReason);
+            }
             var ownHindrance = ScenarioA1VehicleSightRules.OwnHexHindrance(
-                SmokeSources(state).Count(place => place.Board == target.Board && place.Hex == target.Hex),
+                smokeHindrances,
                 state.Units.Any(unit => unit.Id != shot.VehicleTarget?.VehicleId && unit.Id != firer.Id
                     && (unit.Status == InstanceStatus.Active ? IsAfv(unit) : unit.Status == InstanceStatus.Wrecked && !IsBurning(state, unit))
                     && state.Location(unit.Id)?.Location == target && Standing(state, unit)));

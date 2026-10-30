@@ -735,6 +735,7 @@ public static partial class GameProjector
                     // A12.153 (ruling R24.2): a building is Mopped Up once per Player Turn.
                     MoppedUpThisPlayerTurn = newPlayerTurn ? [] : state.MoppedUpThisPlayerTurn,
                     StarshellAttempts = [],
+                    VerifiedSmokeGrenades = Rules.ScenarioA1SequenceProjection.RemovesSmokeGrenades(state.Phase) ? [] : state.VerifiedSmokeGrenades,
                     // E1.923 (ruling R16.8): Starshells are removed at the end of each CCPh.
                     // A14.31 (pass 71, ruling R71.6): a pinned Sniper counter's pin is removed with the others at the end of the CCPh.
                     Entities = UnpinSnipers(Rules.ScenarioA1SequenceProjection.RemovesSmokeGrenades(state.Phase) ? RemoveSmokeGrenades(state.Entities)
@@ -4770,7 +4771,8 @@ public static partial class GameProjector
             {
                 state = state with
                 {
-                    SmokePending = null
+                    SmokePending = null,
+                    VerifiedSmokeGrenades = [.. state.VerifiedSmokeGrenades, instance.Id],
                 };
             }
             UnitInstance? creator = null;

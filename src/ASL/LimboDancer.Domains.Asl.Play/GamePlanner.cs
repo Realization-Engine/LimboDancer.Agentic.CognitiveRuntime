@@ -2281,7 +2281,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
     private GameEvent Event(GameScope scope, string attemptId, int index, long expected, string type, EventPayload payload, string? rulePackage,
         IReadOnlyList<string>? visibility, IReadOnlyList<string>? causes = null) =>
-        new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload, rulePackage, causes ?? [], visibility);
+        new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload switch
+        {
+            FireResolved fire => fire with { SmokeWiringVersion = 1 },
+            OrdnanceFired shot => shot with { SmokeWiringVersion = 1 },
+            _ => payload,
+        }, rulePackage, causes ?? [], visibility);
 
     private static JsonObject EventNode(int index, string type, JsonObject payload, IReadOnlyList<string>? visibility)
     {

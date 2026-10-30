@@ -145,8 +145,12 @@ public sealed partial class GamePlanner
 
         // A24.2 (ruling R9.6): SMOKE in the Location hinders an attack within it, +1 more than traced into it; D7.15: a wall or hedge TEM only across the
         // hexside the vehicle entered by.
-        var sources = SmokeSources(state).Count(place => place.Board == at.Board && place.Hex == at.Hex);
-        var smoke = ScenarioA1OverrunCalculator.OverrunSmoke(sources);
+        var (smokeHindrances, smokeReason) = SmokeStrengthsAt(state, at);
+        if (smokeHindrances is null)
+        {
+            return (null, [smokeReason!], string.Empty, null, 0, string.Empty);
+        }
+        var smoke = ScenarioA1OverrunCalculator.OverrunSmoke(smokeHindrances);
         FireHexsideTem? wall = null;
         if (movement.EnteredFrom is { } from && at.Level == 0 && SideToward(state, at, from) is { } side && WallOn(HexsideAt(state, at, side)) is ("wall" or "hedge") and var kind)
         {

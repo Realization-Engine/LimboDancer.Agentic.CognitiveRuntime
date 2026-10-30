@@ -145,6 +145,61 @@ public sealed partial class GamePlanner
             .Concat(state.Entities.Where(entity => entity.Status == InstanceStatus.Active && entity.Kind == "asl:smoke" && entity.Position is MapPosition)
                 .Select(entity => ((MapPosition)entity.Position).Location));
 
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameState, SmokeSnapshot> SmokeSnapshots = new();
+
+    private sealed record SmokeSnapshot(IReadOnlyDictionary<BoardLocation, IReadOnlyList<int>> Values, IReadOnlySet<BoardLocation> Unknown);
+
+    /// <summary>Current source values at one complete Location. Wreck Blazes retain their count reading until W-B25.2.</summary>
+    internal static (IReadOnlyList<int>? Hindrances, string? Reason) SmokeStrengthsAt(GameState state, BoardLocation at)
+    {
+        var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
+        return snapshot.Unknown.Contains(at)
+            ? (null, $"play.smoke-facts: the SMOKE source at {at} has no verified source, chemical, and strength (A24.5)")
+            : (snapshot.Values.GetValueOrDefault(at) ?? [], null);
+    }
+
+    /// <summary>Viewer-independent facts, built once per immutable state. Equivalent concurrent fills have no side effects.</summary>
+    private static SmokeSnapshot GatherSmoke(GameState state)
+    {
+        var values = new Dictionary<BoardLocation, List<int>>();
+        var unknown = new HashSet<BoardLocation>();
+        var grenades = state.VerifiedSmokeGrenades.ToHashSet(StringComparer.Ordinal);
+        void Add(BoardLocation at, int value)
+        {
+            if (!values.TryGetValue(at, out var location))
+            {
+                location = [];
+                values.Add(at, location);
+            }
+            location.Add(value);
+        }
+
+        foreach (var wreck in state.Units.Where(unit => unit.Status == InstanceStatus.Wrecked && IsBurning(state, unit)))
+        {
+            if (state.Location(wreck.Id)?.Location is { } at)
+            {
+                Add(at, ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance);
+            }
+        }
+
+        foreach (var entity in state.Entities.Where(entity => entity.Status == InstanceStatus.Active && entity.Kind == "asl:smoke"
+            && entity.Position is MapPosition))
+        {
+            var at = ((MapPosition)entity.Position).Location;
+            var source = grenades.Contains(entity.Id)
+                ? TurnSmokeSource.InfantryGrenade : TurnSmokeSource.Unknown;
+            if (ScenarioA1SmokeStrengthCalculator.Hindrance(source, TurnSmokeChemical.Conventional, TurnSmokeStrength.Unknown) is not { } value)
+            {
+                unknown.Add(at);
+                continue;
+            }
+
+            Add(at, value);
+        }
+
+        return new SmokeSnapshot(values.ToDictionary(item => item.Key, item => (IReadOnlyList<int>)item.Value.ToArray()), unknown);
+    }
+
     /// <summary>Whether a Location holds SMOKE (A24.7; rulings R6.3, R9.6).</summary>
     private static bool HasSmoke(GameState state, BoardLocation at) => SmokeSources(state).Contains(at);
 

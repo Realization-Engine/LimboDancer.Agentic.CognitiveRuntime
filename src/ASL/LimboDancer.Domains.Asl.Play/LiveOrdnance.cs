@@ -855,6 +855,10 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(fired);
         ArgumentNullException.ThrowIfNull(rolls);
+        if (fired.SmokeWiringVersion is not null and not 1)
+        {
+            return "Unknown SMOKE wiring version.";
+        }
         if (fired.SpotterWiringVersion is not null and not 1)
         {
             return "Unknown Spotter wiring version.";

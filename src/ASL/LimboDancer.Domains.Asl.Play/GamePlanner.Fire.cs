@@ -1703,7 +1703,9 @@ public sealed partial class GamePlanner
         if (attack.FireKind == ScenarioA1FireCalculator.ResidualFire)
         {
             // A8.2 (rulings R6.6, R9.6): Residual FP has no LOS Hindrance, but the SMOKE of its Location applies.
-            return UpperLevelEncircled(state, (ScenarioA1FireMapRules.ResidualMapFacts(attack, terrain, SmokeSources(state).Count(place => place == target)), null));
+            var (smokeHindrances, smokeReason) = SmokeStrengthsAt(state, target);
+            return smokeHindrances is null ? (null, smokeReason)
+                : UpperLevelEncircled(state, (ScenarioA1FireMapRules.ResidualMapFacts(attack, terrain, smokeHindrances), null));
         }
 
         var firingSide = attack.VehicleFire is { } vehicleFire ? state.Unit(vehicleFire.VehicleId!)?.Side : state.Unit(attack.Firers![0].UnitId!)?.Side;

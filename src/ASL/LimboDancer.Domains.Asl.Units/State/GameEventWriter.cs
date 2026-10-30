@@ -385,6 +385,10 @@ public static class GameEventWriter
                 writer.WriteBoolean("passed", check.Passed);
                 break;
             case FireResolved fire:
+                if (fire.SmokeWiringVersion is { } fireSmokeVersion)
+                {
+                    writer.WriteNumber("smokeWiringVersion", fireSmokeVersion);
+                }
                 Strings(writer, "firers", fire.Firers);
                 if (fire.Director is { } director)
                 {
@@ -1126,6 +1130,10 @@ public static class GameEventWriter
 
                 break;
             case OrdnanceFired ordnance:
+                if (ordnance.SmokeWiringVersion is { } ordnanceSmokeVersion)
+                {
+                    writer.WriteNumber("smokeWiringVersion", ordnanceSmokeVersion);
+                }
                 if (ordnance.SpotterWiringVersion is { } spotterWiringVersion)
                 {
                     writer.WriteNumber("spotterWiringVersion", spotterWiringVersion);

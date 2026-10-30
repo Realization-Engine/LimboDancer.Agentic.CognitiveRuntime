@@ -1088,6 +1088,10 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(fire);
         ArgumentNullException.ThrowIfNull(rolls);
+        if (fire.SmokeWiringVersion is not null and not 1)
+        {
+            return "Unknown SMOKE wiring version.";
+        }
         FireAttack? recorded;
         try
         {
