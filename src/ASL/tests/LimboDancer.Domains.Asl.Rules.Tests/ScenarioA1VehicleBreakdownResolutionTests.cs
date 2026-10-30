@@ -5,6 +5,23 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 
 public sealed class ScenarioA1VehicleBreakdownResolutionTests
 {
+    [Theory]
+    [InlineData(null, false, 0)]
+    [InlineData(ScenarioA1CapturedVehicleRules.VehicleCrew, false, 0)]
+    [InlineData(ScenarioA1CapturedVehicleRules.VehicleCrew, true, 1)]
+    [InlineData(ScenarioA1CapturedVehicleRules.InfantryCrew, false, 1)]
+    [InlineData(ScenarioA1CapturedVehicleRules.InfantryCrew, true, 1)]
+    [InlineData(ScenarioA1CapturedVehicleRules.Smc, false, 1)]
+    [InlineData(ScenarioA1CapturedVehicleRules.Smc, true, 1)]
+    [InlineData(ScenarioA1CapturedVehicleRules.HalfSquad, false, 1)]
+    [InlineData(ScenarioA1CapturedVehicleRules.HalfSquad, true, 2)]
+    public void VehicleCrewFactsPreserveTheA2122Penalty(string? manning, bool captured, int multiple)
+    {
+        var facts = ScenarioA1VehicleBreakdownResolutionCalculator.WithVehicleCrew(Circled, manning, captured);
+        Assert.Equal(multiple, ScenarioA1NonQualifiedUseCalculator.Multiple(facts.Captured, facts.NonQualified));
+        Assert.Equal(11 - multiple * 2, ScenarioA1VehicleBreakdownResolutionCalculator.Numbers(facts, VehicleBreakdownUse.OrdnanceToHit).BNumber);
+    }
+
     private static readonly VehicleBreakdownUseFacts Circled = new(VehicleBreakdownWeapon.MainArmament, 11, null, true, false, false, false);
 
     [Fact]

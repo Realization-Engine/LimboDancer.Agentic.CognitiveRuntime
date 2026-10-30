@@ -6,6 +6,18 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// </summary>
 public static class ScenarioA1VehicleBreakdownResolutionCalculator
 {
+    /// <summary>A21.22 (PDF pp. 88-89): preserve the existing Temporary crew penalty while distinguishing actual capture from the other use penalty.</summary>
+    public static VehicleBreakdownUseFacts WithVehicleCrew(VehicleBreakdownUseFacts facts, string? manning, bool captured)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        var multiple = ScenarioA1CapturedVehicleRules.WeaponPenalty(manning, captured) ?? 0;
+        return facts with
+        {
+            Captured = captured && multiple > 0,
+            NonQualified = multiple > (captured ? 1 : 0),
+        };
+    }
+
     /// <summary>A nonthrowing validation entry point for proposal/precheck, before any dice are requested.</summary>
     public static string? FactsRefusal(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use)
     {
