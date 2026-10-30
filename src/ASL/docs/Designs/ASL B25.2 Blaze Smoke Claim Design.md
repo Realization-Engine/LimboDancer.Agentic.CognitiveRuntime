@@ -1,6 +1,6 @@
 # ASL B25.2 Blaze Smoke Claim Design
 
-**Status:** Approved by the user and built, 2026-10-29 (section 10), after a sub-agent's review of the design (section 9); RB25.4's reading approved as proposed. The B25.2 claim (Claude; the inventory's section 6, claimed on main as 8c7f5529, its holds corrected in 9991609d), on the branch `claim/b25.2-blaze-smoke`. It takes the SMOKE of a Blaze, which the A24.5 claim left (ruling RA24.6). Rules only: no caller changes, so no recorded game replays differently. Rulings are numbered RB25.n; RB25.4's second case is a reading the user may veto.
+**Status:** Approved by the user and built, 2026-10-29 (section 10), after a sub-agent's review of the design (section 9); RB25.4's reading approved as proposed. The B25.2 claim (Claude; the inventory's section 6, claimed on main as 8c7f5529, its holds corrected in 9991609d), on the branch `claim/b25.2-blaze-smoke`. It takes the SMOKE of a Blaze, which the A24.5 claim left (ruling RA24.6). Rules only: no caller changes, so no recorded game replays differently. Rulings are numbered RB25.n; RB25.4's second case is a reading the user approved.
 
 ## 1. The rule (B25.2, p. 143; B25.63, B25.651, p. 144; D9.4, p. 210; A9.22, A9.222; A24.2, A24.4 to A24.8, pp. 91 to 93; E3.53, E3.734)
 
@@ -21,7 +21,7 @@
 - **RB25.1 One calculator.** `ScenarioA1BlazeSmokeCalculator` and `ScenarioA1BlazeSmokeContract.cs`. Its small enums, `BlazeKind` (WreckBlaze, TerrainBlaze, Flame) and `WindForce` (None, MildBreeze, HeavyWinds, Unknown), sit in the calculator's file.
 - **RB25.2 The wind a Blaze feels.** Every member reads the wind as None in a non-rooftop Location of an Interior Building hex (B25.63), and Gusts never matter (B25.651).
 - **RB25.3 The Hindrance.** `Hindrance(kind, wind)`: a Wreck Blaze +2, a terrain Blaze +3, a Flame none; none in Heavy Winds; a Mild Breeze, Rain, Mud, or Deep Snow lowers nothing (A24.5, E3.53, E3.734); null when the wind is not known. The value joins A24.2's total by its by-value overload, so a Wreck Blaze and a grenade in one Location cap at +3, and A24.8's +1 is added there. Fog is A24.6's, its own row.
-- **RB25.4 The wreck's own Hindrance.** `WreckBlazeLos(fireLaneResidualAttack, wind)` gives two flags for a burning wreck's Location: whether its SMOKE applies, and whether D9.4 applies to it as if it were not burning. SMOKE, and no D9.4, as a rule; on a Fire Lane's Residual FP attack (A9.22, A9.222) or in Heavy Winds, D9.4 and no SMOKE. D9.4's own conditions (a same-level LOS through the hex, a wreck both ends see, Bypass, Case J) stay with the D9.4 calculator, which the caller asks next. **A reading open to veto:** a non-burning wreck or an AFV in a terrain Blaze's hex keeps its D9.4 +1 beside the Blaze's +3, since D9.4 exempts only a burning wreck and B25.2 replaces only the burning wreck's own Hindrance; the other reading drops it.
+- **RB25.4 The wreck's own Hindrance.** `WreckBlazeLos(fireLaneResidualAttack, wind)` gives two flags for a burning wreck's Location: whether its SMOKE applies, and whether D9.4 applies to it as if it were not burning. SMOKE, and no D9.4, as a rule; on a Fire Lane's Residual FP attack (A9.22, A9.222) or in Heavy Winds, D9.4 and no SMOKE. D9.4's own conditions (a same-level LOS through the hex, a wreck both ends see, Bypass, Case J) stay with the D9.4 calculator, which the caller asks next. **A reading the user approved:** a non-burning wreck or an AFV in a terrain Blaze's hex keeps its D9.4 +1 beside the Blaze's +3, since D9.4 exempts only a burning wreck and B25.2 replaces only the burning wreck's own Hindrance; the other reading drops it.
 - **RB25.5 The height.** `Height(wind)`: four levels above the Fire, two in a Mild Breeze, none in Heavy Winds; null when the wind is not known. Its use in a LOS waits for A24.4's SMOKE heights in LOS.
 - **RB25.6 Drift.** `DriftCounters(kind, wind, rain)`: in a Mild Breeze and not in Rain, a Blaze can create drifting Dispersed SMOKE of as many counters as its Hindrance (A24.61): 2 for a Wreck Blaze, 3 for a terrain Blaze; none otherwise. The drift itself is A24.61's procedure.
 - **RB25.7 Old members.** None decides B25.2 by name; each count member carries the Wreck Blaze's +2 through `CountedSourceHindrance` and keeps its answer, its summary naming `Hindrance` (held shared: `ScenarioA1VehicleSightRules.cs`; the others are named in the wiring row and left untouched, since the A24.5 claim's by-value overloads already take the value).
@@ -41,7 +41,7 @@ Nothing to the backlog. A terrain Blaze (B25.1), the wind (B25.63), SMOKE height
 
 ## 6. Tests and minigame
 
-- `ScenarioA1BlazeSmokeCalculatorTests`: each kind's Hindrance in each wind and under Rain, Mud, and Deep Snow; indoor No Wind; Unknown wind for each member; the heights; the two flags off and on a Fire Lane's attack and in Heavy Winds; drift counts, none in Rain; a Wreck Blaze with a grenade capped at +3 through A24.2's by-value total.
+- `ScenarioA1BlazeSmokeCalculatorTests`: each kind's Hindrance in each wind (weather is not an input: Rain, Mud, and Deep Snow lower nothing, RB25.3); indoor No Wind; Unknown wind for each member; the heights; the two flags off and on a Fire Lane's attack and in Heavy Winds; drift counts, none in Rain; a Wreck Blaze with a grenade capped at +3 through A24.2's by-value total.
 - The contract: its outcomes, `not-evaluated` for impossible pairs, every fact disclosed to All.
 - A new bundle `b25-blaze-smoke` on an imported board: a burning wreck's +2, a terrain Blaze's +3, a Fire Lane's +1, Heavy Winds, a Flame, indoor No Wind.
 
@@ -63,3 +63,7 @@ A sub-agent read the first draft against pp. 91 to 93, 143, 144, and 210 (B25.14
 - Old members: `ScenarioA1VehicleSightRules.SmokeDrm(int ...)`'s summary names `Hindrance` for a burning wreck; no body changed.
 - Tests: `ScenarioA1BlazeSmokeCalculatorTests`; the bundle `b25-blaze-smoke` (seven checks).
 - The wiring row W-B25.2 is in the inventory's section 7.
+
+## 11. Review of the build
+
+A sub-agent read the build read-only (2026-10-29): every member answers rightly for every kind and wind, the contract throws nothing uncaught, and the documents follow the design. Six minor findings, taken: main merged before the pull request, with the W-B25.2 line numbers checked against Codex's wire-fire-3; the calculator's summary says callers pass `WindFelt`'s answer; RB25.4's wording; the weather test line; the missing test rows (a Flame in each wind, Unknown for each kind, `WindFelt` with Unknown, Rain in the contract); the inventory row's note.

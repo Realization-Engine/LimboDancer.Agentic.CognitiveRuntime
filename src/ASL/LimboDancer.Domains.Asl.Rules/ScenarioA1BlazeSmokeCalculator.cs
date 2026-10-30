@@ -17,8 +17,8 @@ public sealed record WreckBlazeLosVerdict(bool Smoke, bool WreckHindrance);
 
 /// <summary>
 /// B25.2 Smoke (p. 143), the one calculator of the rule (the B25.2 claim's design, ruling RB25.1): a Blaze's SMOKE Hindrance, its height, what a burning
-/// wreck adds to a LOS, and its drift. Every member reads the wind as None in a non-rooftop Location of an Interior Building hex (B25.63); Gusts never
-/// matter (B25.651). A Location's total and A24.8's outgoing +1 stay with A24.2's by-value total
+/// wreck adds to a LOS, and its drift. Callers pass <see cref="WindFelt"/>'s answer to every other member, so a non-rooftop Location of an Interior
+/// Building hex reads No Wind (B25.63); Gusts never matter (B25.651); weather is not an input, since Rain, Mud, and Deep Snow lower nothing. A Location's total and A24.8's outgoing +1 stay with A24.2's by-value total
 /// (<see cref="ScenarioA1VehicleSightRules.SmokeDrm(IReadOnlyList{int}, bool, bool, Func{bool})"/>). Facts in, verdicts out.
 /// </summary>
 public static class ScenarioA1BlazeSmokeCalculator

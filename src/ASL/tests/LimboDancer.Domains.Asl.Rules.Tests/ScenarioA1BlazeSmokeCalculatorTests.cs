@@ -17,6 +17,8 @@ public sealed class ScenarioA1BlazeSmokeCalculatorTests
     [InlineData(BlazeKind.TerrainBlaze, WindForce.MildBreeze, 3, 2)]
     [InlineData(BlazeKind.TerrainBlaze, WindForce.HeavyWinds, 0, 0)]
     [InlineData(BlazeKind.Flame, WindForce.None, 0, 0)]
+    [InlineData(BlazeKind.Flame, WindForce.MildBreeze, 0, 0)]
+    [InlineData(BlazeKind.Flame, WindForce.HeavyWinds, 0, 0)]
     public void EachBlazeHasItsHindranceAndHeight(BlazeKind kind, WindForce wind, int hindrance, int height)
     {
         Assert.Equal(hindrance, ScenarioA1BlazeSmokeCalculator.Hindrance(kind, wind));
@@ -34,6 +36,13 @@ public sealed class ScenarioA1BlazeSmokeCalculatorTests
         // B25.63: No Wind in a non-rooftop Location of an Interior Building hex, whatever the scenario's wind.
         Assert.Equal(WindForce.None, ScenarioA1BlazeSmokeCalculator.WindFelt(WindForce.HeavyWinds, true));
         Assert.Equal(WindForce.HeavyWinds, ScenarioA1BlazeSmokeCalculator.WindFelt(WindForce.HeavyWinds, false));
+        Assert.Equal(WindForce.None, ScenarioA1BlazeSmokeCalculator.WindFelt(WindForce.Unknown, true));
+        Assert.Equal(WindForce.Unknown, ScenarioA1BlazeSmokeCalculator.WindFelt(WindForce.Unknown, false));
+        foreach (var kind in Enum.GetValues<BlazeKind>())
+        {
+            Assert.Null(ScenarioA1BlazeSmokeCalculator.Hindrance(kind, WindForce.Unknown));
+            Assert.Null(ScenarioA1BlazeSmokeCalculator.Height(kind, WindForce.Unknown));
+        }
         Assert.Throws<ArgumentException>(() => ScenarioA1BlazeSmokeCalculator.Hindrance((BlazeKind)9, WindForce.None));
     }
 
@@ -84,6 +93,8 @@ public sealed class ScenarioA1BlazeSmokeCalculatorTests
         Assert.Equal("smoke", Ask("WreckBlaze", "None").Outcome);
         Assert.Contains("+2, 4 levels", Ask("WreckBlaze", "None").Reasons[0].Text, StringComparison.Ordinal);
         Assert.Contains("drift 3", Ask("TerrainBlaze", "MildBreeze").Reasons[0].Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("drift", Ask("TerrainBlaze", "MildBreeze", rain: true).Reasons[0].Text, StringComparison.Ordinal);
+        Assert.Equal("smoke", Ask("TerrainBlaze", "MildBreeze", rain: true).Outcome);
         Assert.Equal("wreck-only", Ask("WreckBlaze", "None", fireLane: true).Outcome);
         Assert.Equal("wreck-only", Ask("WreckBlaze", "HeavyWinds").Outcome);
         Assert.Equal("none", Ask("TerrainBlaze", "HeavyWinds").Outcome);
