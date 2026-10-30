@@ -69,7 +69,10 @@ public static class ScenarioA1DemolitionChargeRules
             : null;
     }
 
-    /// <summary>A23.3, A11.6 (RA23.4): an enemy AFV in the target Location needs a PAATC of a placer A11.6 does not exempt (an SMC, a Fanatic, a Berserk unit).</summary>
+    /// <summary>
+    /// A23.3, A11.6 (p. 75; RA23.4): a manned, unconcealed enemy AFV in the target Location needs a PAATC of a placer A11.6 does not exempt (an SMC, a
+    /// Fanatic, a Berserk unit).
+    /// </summary>
     public static bool PlacementNeedsPaatc(bool enemyAfvInTarget, bool placerExempt) => enemyAfvInTarget && !placerExempt;
 
     /// <summary>

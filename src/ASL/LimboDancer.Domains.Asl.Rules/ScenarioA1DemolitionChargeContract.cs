@@ -35,7 +35,7 @@ internal static class ScenarioA1DemolitionChargeContract
             ScenarioA1RuleContracts.Flag("inLos", "The target Location is in its LOS", mayBeUnknown: true),
             ScenarioA1RuleContracts.Flag("firedInPrepFire", "It fired during the PFPh", mayBeUnknown: true),
             ScenarioA1RuleContracts.Flag("pinnedThisMph", "It was pinned before the Placement this MPh", mayBeUnknown: true),
-            ScenarioA1RuleContracts.Flag("enemyAfvInTarget", "An enemy AFV occupies the target Location"),
+            ScenarioA1RuleContracts.Flag("enemyAfvInTarget", "A manned, unconcealed enemy AFV occupies the target Location (A11.6)"),
         ],
         ["may-place", "may-place-after-paatc", "refused", ContractVerdict.NotEvaluated],
         [new("movement-stepped", "the Placement, its MF, and the placer's CX")],
@@ -74,14 +74,24 @@ internal static class ScenarioA1DemolitionChargeContract
             return new(ContractVerdict.NotEvaluated, [new($"the fact '{unknown}' is not known to this viewer", "A23.3", 90)], []);
         }
 
-        var refusal = ScenarioA1DemolitionChargeRules.PlacementRefusal(new(facts.Flag("carryingDc")!.Value, facts.Flag("infantry")!.Value,
-            facts.Text("phase")!.ToLowerInvariant(), facts.Flag("adjacent"), facts.Flag("inLos"), facts.Flag("firedInPrepFire"), facts.Flag("pinnedThisMph")));
-        if (refusal is not null)
+        // A refusal the known facts already make is certain; one only an unknown fact could make leaves the question open (the build's review, finding 3).
+        var placement = new DcPlacementFacts(facts.Flag("carryingDc")!.Value, facts.Flag("infantry")!.Value, facts.Text("phase")!.ToLowerInvariant(),
+            facts.Flag("adjacent"), facts.Flag("inLos"), facts.Flag("firedInPrepFire"), facts.Flag("pinnedThisMph"));
+        var certain = ScenarioA1DemolitionChargeRules.PlacementRefusal(placement with
         {
-            // An unknown fact is no permission, but the contract says it is open rather than refused.
-            return OpenFacts.Any(name => facts.Flag(name) is null)
-                ? new(ContractVerdict.NotEvaluated, [new(refusal, "A23.3", 90)], [])
-                : new("refused", [new(refusal, "A23.3", 90)], []);
+            Adjacent = placement.Adjacent ?? true,
+            InLos = placement.InLos ?? true,
+            FiredInPrepFire = placement.FiredInPrepFire ?? false,
+            PinnedThisMph = placement.PinnedThisMph ?? false,
+        });
+        if (certain is not null)
+        {
+            return new("refused", [new(certain, "A23.3", 90)], []);
+        }
+
+        if (OpenFacts.Any(name => facts.Flag(name) is null))
+        {
+            return new(ContractVerdict.NotEvaluated, [new(ScenarioA1DemolitionChargeRules.PlacementRefusal(placement)!, "A23.3", 90)], []);
         }
 
         return ScenarioA1DemolitionChargeRules.PlacementNeedsPaatc(facts.Flag("enemyAfvInTarget")!.Value, facts.Flag("paatcExempt")!.Value)
