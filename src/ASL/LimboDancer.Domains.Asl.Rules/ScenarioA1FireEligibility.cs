@@ -222,7 +222,8 @@ public static class ScenarioA1FireEligibility
     public static bool FireSpent(FireSpentFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
-        if (facts.Phase is not ("pfph" or "afph" or "dfph") || !facts.Fired || (facts.Phase == "dfph" && facts.FirstFire))
+        // A8.4 (the A8.41 claim): a First-Fire-marked unit fires again in the DFPh, from the Final Fire calculator.
+        if (facts.Phase is not ("pfph" or "afph" or "dfph") || !facts.Fired || ScenarioA1FinalFireCalculator.FiresAgain(facts.Phase == "dfph", facts.FirstFire))
         {
             return false;
         }
