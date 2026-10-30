@@ -31,6 +31,8 @@ The Guard follow-up also built Studio with zero warnings and errors. The Workben
 
 ## Memory and performance
 
+The A25.01 lineage adapter distinguishes lower-quality Replacement from Battle Hardening and an underscored squad becoming its own HS (PDF p. 93). Fire's ordered consequence events retain the needed distinction, including a casualty-plus-ELR result after earlier Battle Hardening. The projected status is true for inherited AE, false for permanent loss, and null for the printed reading. Ordinary non-AE replacement does not create an AE-loss history. A nullable recorded lineage marker leaves older records on their former reading; the new-event factory supplies false for ordinary new lineage, and the specific Rules verdict supplies true for lower-quality replacement. Mixed AE/non-AE recombination is explicitly not evaluated pending a ruling; A1.32 (PDF p. 45) does not settle that mixture. Nine focused cases passed with warnings as errors. Independent review identified the ordinary non-AE case, which is corrected and covered, and confirmed the event distinctions and source-trait gathering requirement.
+
 The added decisions read a few scalar facts. There is no state scan, cache, retention, new project, or rendering change. Existing state ownership, disclosure, map versions, and incremental counter rendering are unchanged. Tests reuse the existing static reference package and add no repeated expensive manifest generation. No performance improvement is claimed.
 
 ## Build outputs outside the repository
