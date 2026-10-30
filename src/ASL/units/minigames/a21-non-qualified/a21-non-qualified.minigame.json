@@ -1,0 +1,252 @@
+{
+  "id": "a21-non-qualified",
+  "title": "A21.13 Non-Qualified Use",
+  "card": "a21-non-qualified",
+  "rules": [
+    "A21.11",
+    "A21.12",
+    "A21.13",
+    "A15.23"
+  ],
+  "contracts": [
+    "a21.13-crew-served-use"
+  ],
+  "example": null,
+  "checks": [
+    {
+      "name": "The German crew fires its own 75mm Gun without penalty",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "firerId": "g-crew",
+        "user": "crew",
+        "captured": false,
+        "hero": false,
+        "mortar": false,
+        "caliber": 75,
+        "phase": "PFPh",
+        "firedThisGameTurn": false
+      },
+      "expect": {
+        "outcome": "no-penalty"
+      }
+    },
+    {
+      "name": "The German squad fires its own Gun as a non-qualified friendly MMC (A21.13)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "firerId": "g-squad",
+        "user": "mmc",
+        "captured": false,
+        "hero": false,
+        "mortar": false,
+        "caliber": 75,
+        "phase": "PFPh",
+        "firedThisGameTurn": false
+      },
+      "expect": {
+        "outcome": "penalized",
+        "reasons": [
+          "B# 2 lower",
+          "Case H +2"
+        ]
+      }
+    },
+    {
+      "name": "The German crew fires the captured Russian Gun as a qualified enemy MMC",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "firerId": "g-crew",
+        "user": "crew",
+        "captured": true,
+        "hero": false,
+        "mortar": false,
+        "caliber": 76,
+        "phase": "PFPh",
+        "firedThisGameTurn": false
+      },
+      "expect": {
+        "outcome": "penalized",
+        "reasons": [
+          "Multiple ROF 1 lower"
+        ]
+      }
+    },
+    {
+      "name": "The German HS fires the captured Russian Gun with the penalties doubled",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "firerId": "g-hs",
+        "user": "mmc",
+        "captured": true,
+        "hero": false,
+        "mortar": false,
+        "caliber": 76,
+        "phase": "PFPh",
+        "firedThisGameTurn": false
+      },
+      "expect": {
+        "outcome": "penalized-doubled",
+        "reasons": [
+          "B# 4 lower",
+          "Case H +4"
+        ]
+      }
+    },
+    {
+      "name": "Two German leaders fire the Gun as a non-qualified MMC",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "firerId": "g-leader",
+        "user": "smc-group",
+        "captured": false,
+        "hero": false,
+        "mortar": false,
+        "caliber": 75,
+        "phase": "PFPh",
+        "firedThisGameTurn": false
+      },
+      "expect": {
+        "outcome": "penalized",
+        "reasons": [
+          "red To Hit"
+        ]
+      }
+    },
+    {
+      "name": "A lone leader may not fire the Gun",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "firerId": "g-leader",
+        "user": "lone-smc",
+        "captured": false,
+        "hero": false,
+        "mortar": false,
+        "caliber": 75,
+        "phase": "PFPh",
+        "firedThisGameTurn": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "only if heroic"
+        ]
+      }
+    },
+    {
+      "name": "A lone leader fires an 81mm mortar as a light mortar (C9.2)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "firerId": "g-leader",
+        "user": "lone-smc",
+        "captured": false,
+        "hero": false,
+        "mortar": true,
+        "caliber": 81,
+        "phase": "PFPh",
+        "firedThisGameTurn": false
+      },
+      "expect": {
+        "outcome": "fires-as-light"
+      }
+    },
+    {
+      "name": "The hero fires the 75mm Gun as if captured, without his heroic DRM (A15.23)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "firerId": "g-hero",
+        "user": "lone-smc",
+        "captured": false,
+        "hero": true,
+        "mortar": false,
+        "caliber": 75,
+        "phase": "PFPh",
+        "firedThisGameTurn": false
+      },
+      "expect": {
+        "outcome": "penalized",
+        "reasons": [
+          "heroic DRM does not apply"
+        ]
+      }
+    },
+    {
+      "name": "The hero fires a 105mm Gun in the DFPh, once per Game Turn (A15.23)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "firerId": "g-hero",
+        "user": "lone-smc",
+        "captured": false,
+        "hero": true,
+        "mortar": false,
+        "caliber": 105,
+        "phase": "DFPh",
+        "firedThisGameTurn": false
+      },
+      "expect": {
+        "outcome": "penalized",
+        "reasons": [
+          "once per Game Turn"
+        ]
+      }
+    },
+    {
+      "name": "The hero may not fire the 105mm Gun in the PFPh (A15.23)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "firerId": "g-hero",
+        "user": "lone-smc",
+        "captured": false,
+        "hero": true,
+        "mortar": false,
+        "caliber": 105,
+        "phase": "PFPh",
+        "firedThisGameTurn": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "only in the MPh or DFPh"
+        ]
+      }
+    },
+    {
+      "name": "The Russian view knows none of the German Gun's facts, so the question stays open",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a21.13-crew-served-use",
+      "facts": {
+        "phase": "PFPh"
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    }
+  ],
+  "units": {
+    "g-crew": "german",
+    "g-squad": "german",
+    "g-hs": "german",
+    "g-leader": "german",
+    "g-hero": "german"
+  }
+}

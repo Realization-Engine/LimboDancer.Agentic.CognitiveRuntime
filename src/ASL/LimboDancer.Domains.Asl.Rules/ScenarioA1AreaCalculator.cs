@@ -232,6 +232,8 @@ internal static class ScenarioA1AreaCalculator
             hitIds.Length > 0, critical);
 
         // C2.24, C9.31, C9.2: the Multiple ROF, one lower for Spotted fire, none for a lone SMC; C5.4: none when pinned; C5.2: none in the AFPh.
+        // Keeps its answer (the A21.13 claim, ruling RA21.7): no captured or Non-Qualified Use penalty lowers it, where A21.12 lowers it by
+        // ScenarioA1NonQualifiedUseCalculator.RofLowering of the multiple (W-A21.13).
         var rof = gun.RateOfFire ?? 0;
         if (shot.Spotter is not null && rof > 0)
         {

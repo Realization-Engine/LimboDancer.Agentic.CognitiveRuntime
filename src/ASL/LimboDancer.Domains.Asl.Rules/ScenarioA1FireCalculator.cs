@@ -91,7 +91,7 @@ public static class ScenarioA1FireCalculator
                 || facts.WinterReduction != (attack.BreakdownReduction ?? 0)
                 || facts.AmmunitionShortage != (attack.AmmunitionShortage == true)
                 || attack.VehicleFire is { } firingVehicle
-                    && (facts.Captured ? 1 : 0) + (facts.NonQualified ? 1 : 0) != (firingVehicle.CapturedPenalty ?? 0)))
+                    && ScenarioA1NonQualifiedUseCalculator.Multiple(facts.Captured, facts.NonQualified) != (firingVehicle.CapturedPenalty ?? 0)))
             {
                 return Refused(FireResolution.Abstained, ["asl.a1.fire.vehicle-breakdown-facts-conflict"]);
             }
@@ -3143,11 +3143,13 @@ public static class ScenarioA1FireCalculator
         {
             var definition = reference.Definitions[vehicle.DefinitionId!];
             // E3.741 (ruling R16.14): Extreme Winter lowers the B#.
-            // A21.11, A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the B# two and the ROF one, each time.
+            // A21.11, A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the B# two and the ROF one, each time, by
+            // ScenarioA1NonQualifiedUseCalculator's arithmetic (the A21.13 claim, ruling RA21.7), the same answer.
             var captured = vehicle.CapturedPenalty ?? 0;
-            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0) - (2 * captured);
+            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0) - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(captured);
             var malfunctioned = arithmetic.OriginalDr >= breakdown;
-            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof && arithmetic.Dice[0] <= rof - captured;
+            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof
+                && arithmetic.Dice[0] <= rof - ScenarioA1NonQualifiedUseCalculator.RofLowering(captured);
             return new FireWeaponEffect(vehicle.VehicleId!, breakdown, malfunctioned, retained, false, FireCounter(), null);
         }
 
@@ -3173,7 +3175,7 @@ public static class ScenarioA1FireCalculator
                     var ma = name == FireOverrunEffect.MainArmament;
                     var rof = reference.Definitions[vehicle.DefinitionId!].RateOfFire;
                     var retained = ma && !outcome.Failed && vehicle.Pinned != true && attack.Phase != "AFPh"
-                        && rof is { } rate && arithmetic.Dice[0] <= rate - (vehicle.CapturedPenalty ?? 0);
+                        && rof is { } rate && arithmetic.Dice[0] <= rate - ScenarioA1NonQualifiedUseCalculator.RofLowering(vehicle.CapturedPenalty ?? 0);
                     return new FireWeaponEffect(vehicle.VehicleId!, outcome.Numbers.BNumber, outcome.Outcome == VehicleBreakdownOutcome.Malfunction,
                         retained, false, index == 0 ? FireCounter() : null,
                         usedRolls.Contains("weaponSelection:" + vehicle.VehicleId + ":" + name) ? attack.Rolls!.WeaponSelection![vehicle.VehicleId + ":" + name] : null)
@@ -3190,7 +3192,7 @@ public static class ScenarioA1FireCalculator
             }
 
             var id = vehicle.VehicleId!;
-            var breakdown = 12 - (attack.BreakdownReduction ?? 0) - (2 * (vehicle.CapturedPenalty ?? 0));
+            var breakdown = 12 - (attack.BreakdownReduction ?? 0) - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(vehicle.CapturedPenalty ?? 0);
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
             if (arithmetic.OriginalDr >= breakdown && named.Count > 1)
             {
