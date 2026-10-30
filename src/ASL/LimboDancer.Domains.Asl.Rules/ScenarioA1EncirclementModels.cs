@@ -7,7 +7,17 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// aboard, it is the Vulnerable PRC of an Immobile vehicle, the only PRC A7.7 names. Null for any of the three reads as before the claim: not in a
 /// pillbox, not aboard.
 /// </summary>
-public sealed record EncirclementSubjectFacts(string? Kind, bool Melee, bool Berserk, bool Heroic, bool? InPillbox, bool? Aboard, bool? VulnerablePrcOfImmobileVehicle);
+public sealed record EncirclementSubjectFacts(string? Kind, bool Melee, bool Berserk, bool Heroic, bool? InPillbox, bool? Aboard, bool? VulnerablePrcOfImmobileVehicle)
+{
+    /// <summary>
+    /// Whether the unit is Aerial (A7.7, p. 57: "any non-Aerial Infantry" may be Encircled), which no unit in play is today. Null reads as before the
+    /// claim: not Aerial.
+    /// </summary>
+    public bool? Aerial
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// The kind of fire an attack's unit makes, as A7.7 (p. 57; ruling RD5.8) sorts it: "using its inherent-FP/SW, ordnance, or vehicular armament" counts;

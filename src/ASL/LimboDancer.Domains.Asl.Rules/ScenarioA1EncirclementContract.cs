@@ -54,7 +54,7 @@ internal static class ScenarioA1EncirclementContract
     };
 
     [RuleContract]
-    private static RuleContract EncircledUnit() => new("a7.7-encircled", "Encircled", [new("A7.7", 57), new("A7.72", 58)],
+    private static RuleContract EncircledUnit() => new("a7.7-encircled", "Encircled", [new("A7.7", 57), new("A7.72", 58), new("B30.32", 150)],
         [
             new(Unit, ContractFactType.Unit, false, ContractDisclosure.All, "The unit") { Concerns = Unit },
             ScenarioA1RuleContracts.Flag("marker", "An Encirclement counter in its Location Encircles its side"),
@@ -67,6 +67,10 @@ internal static class ScenarioA1EncirclementContract
                 "What it is: Infantry, a hero, a vehicle, the Vulnerable PRC of an Immobile vehicle, or another PRC aboard a vehicle")
             {
                 Choices = Kinds,
+                Concerns = Unit
+            },
+            ScenarioA1RuleContracts.Flag("inPillbox", "It is in a pillbox (B30.32)", disclosure: ContractDisclosure.Owner) with
+            {
                 Concerns = Unit
             },
         ],
@@ -123,7 +127,13 @@ internal static class ScenarioA1EncirclementContract
         var berserk = facts.Flag("berserk")!.Value;
         var heroic = facts.Flag("heroic")!.Value;
         var melee = facts.Flag("melee")!.Value;
-        var subject = ScenarioA1EncirclementCalculator.Subject(kind, berserk, heroic, null, aboard, vulnerable);
+        var inPillbox = facts.Flag("inPillbox")!.Value;
+        var subject = ScenarioA1EncirclementCalculator.Subject(kind, berserk, heroic, inPillbox, aboard, vulnerable);
+        if (inPillbox)
+        {
+            return new(NotEncircled, [new("Neither a pillbox nor its contents can be Encircled", "B30.32", 150)], []);
+        }
+
         if (!subject)
         {
             var why = berserk || heroic ? "A berserk or heroic unit is never Encircled"

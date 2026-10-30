@@ -4,7 +4,9 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// The wiring contracts of D5.34 and D5.342 (pp. 203 and 204; the D5.34 claim's design, section 1.4): what a result does to an AFV's crew, and whether
 /// the AFV adds the Stun +1 to a DR, as <see cref="ScenarioA1StunCalculator"/> decides them. The attack, its rolls, the AFV's facing and armor, and its
 /// counters on the map are public; under a concealed or hidden AFV's "?" its Stun counters, and whether a SMC is its Temporary crew, are its owner's, so
-/// the opponent's view leaves them unknown and the verdict not evaluated.
+/// the opponent's view leaves them unknown and the verdict not evaluated. Whether the AFV is fully armored, closed-topped, or a 1MT AFV is disclosed to
+/// All: a Stun is decided only after an attack on the AFV itself (a MC of its CE crew, a Sniper dr on it, a MG To Kill DR, Falling Rubble on it), and the
+/// Owner Stun flags still force the verdict not evaluated in the opponent's view while its "?" stands.
 /// </summary>
 internal static class ScenarioA1StunContract
 {
@@ -12,7 +14,16 @@ internal static class ScenarioA1StunContract
 
     private static readonly string[] Causes = ["failed-mc", "sniper-dr", "mg-to-kill", "falling-rubble"];
 
-    private static readonly string[] Drs = Enum.GetNames<StunDr>();
+    // The dr choices in the contracts' kebab-case, each with the StunDr it names and its name in the reason.
+    private static readonly (string Choice, StunDr Dr, string Label)[] DrChoices =
+    [
+        ("to-hit", StunDr.ToHit, "TH"), ("mg-ift", StunDr.MachineGunIft, "MG IFT"), ("ife-ift", StunDr.IfeIft, "IFE IFT"),
+        ("ft-ift", StunDr.FlameThrowerIft, "FT IFT"), ("close-combat", StunDr.CloseCombat, "CC"), ("task-check", StunDr.TaskCheck, "TC"),
+        ("morale-check", StunDr.MoraleCheck, "MC"), ("crew-survival", StunDr.CrewSurvival, "Crew Survival"), ("overrun", StunDr.Overrun, "OVR"),
+        ("excessive-speed-breakdown", StunDr.ExcessiveSpeedBreakdown, "ESB"), ("bog", StunDr.Bog, "Bog"), ("other", StunDr.Other, "other"),
+    ];
+
+    private static readonly string[] Drs = [.. DrChoices.Select(item => item.Choice)];
 
     [RuleContract]
     private static RuleContract Stun() => new("d5.34-stun", "Stun", [new("D5.34", 203), new("D5.342", 204), new("A14.3", 82), new("A9.61", 64),
@@ -30,10 +41,11 @@ internal static class ScenarioA1StunContract
             ScenarioA1RuleContracts.Flag("closedTopped", "The AFV is closed-topped (B24.121)", mayBeUnknown: true),
             ScenarioA1RuleContracts.Flag("mcFailed", "The crew failed the MC", mayBeUnknown: true),
             new("sniperDr", ContractFactType.Number, true, ContractDisclosure.All, "The Sniper dr"),
+            new("originalDr", ContractFactType.Number, true, ContractDisclosure.All, "The MG's Original TK DR: an Original 12 is a Dud (C7.35)"),
             new("finalDr", ContractFactType.Number, true, ContractDisclosure.All, "The MG's Final TK DR"),
             new("finalTk", ContractFactType.Number, true, ContractDisclosure.All, "The MG's Final TK#"),
             ScenarioA1RuleContracts.Flag("oneManTurret", "The AFV is a 1MT AFV (D1.322), whose Stun D5.341 makes a Recall"),
-            Owners("stunned", "The AFV is already Stunned this Player Turn"),
+            Owners("stunned", "The AFV is already Stunned or Recalled this Player Turn (the counter's front; Recall is treated the same as a Stun, D5.341)"),
             Owners("stunRecovery", "The AFV is already under a \"+1\" counter (Stun +1, or Recall; +1)"),
             Owners("smcTemporaryCrew", "Its crew is a SMC acting as a Temporary crew (A21.22), whom D5.343 Wounds"),
         ],
@@ -66,9 +78,10 @@ internal static class ScenarioA1StunContract
 
     private static ContractVerdict StunVerdictOf(ContractFacts facts)
     {
-        if (!Whole(facts.Number("sniperDr"), out var sniperDr) || !Whole(facts.Number("finalDr"), out var finalDr) || !Whole(facts.Number("finalTk"), out var finalTk))
+        if (!Whole(facts.Number("sniperDr"), out var sniperDr) || !Whole(facts.Number("finalDr"), out var finalDr) || !Whole(facts.Number("finalTk"), out var finalTk)
+            || !Whole(facts.Number("originalDr"), out var originalDr))
         {
-            return new(ContractVerdict.NotEvaluated, [new("the Sniper dr, the Final TK DR, and the Final TK# are whole numbers", "D5.34", 203)], []);
+            return new(ContractVerdict.NotEvaluated, [new("the Sniper dr, the Original and Final TK DR, and the Final TK# are whole numbers", "D5.34", 203)], []);
         }
 
         var cause = facts.Text("cause") switch
@@ -83,15 +96,17 @@ internal static class ScenarioA1StunContract
         {
             OneManTurret = facts.Flag("oneManTurret"),
             SmcTemporaryCrew = facts.Flag("smcTemporaryCrew"),
+            OriginalDr = originalDr,
         });
         return new(verdict.Outcome, [new(verdict.Reason, verdict.Rule, verdict.Page)], []);
     }
 
     private static ContractVerdict PlusOneVerdict(ContractFacts facts)
     {
-        var dr = Enum.Parse<StunDr>(facts.Text("dr")!);
+        var choice = facts.Text("dr");
+        var (_, dr, label) = Array.Find(DrChoices, item => item.Choice == choice);
         return ScenarioA1StunCalculator.Drm(dr, facts.Flag("stunRecovery")!.Value) > 0
-            ? new("plus-one", [new("Under the \"+1\" counter the AFV adds one to its " + facts.Text("dr") + " DR", "D5.34", 203)], [])
+            ? new("plus-one", [new("Under the \"+1\" counter the AFV adds one to its " + label + " DR", "D5.34", 203)], [])
             : new("none", [new(facts.Flag("stunRecovery")!.Value
                 ? "The Stun +1 modifies only a TH, MG/IFE/FT IFT, CC, TC/MC, Crew Survival, or OVR DR"
                 : "The AFV is not under a \"+1\" counter", "D5.34", 203)], []);

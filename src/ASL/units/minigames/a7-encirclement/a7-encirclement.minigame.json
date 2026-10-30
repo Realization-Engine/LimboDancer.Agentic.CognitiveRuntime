@@ -99,7 +99,8 @@
         "berserk": false,
         "heroic": false,
         "upperLevelCutOff": false,
-        "kind": "infantry"
+        "kind": "infantry",
+        "inPillbox": false
       },
       "expect": {
         "outcome": "encircled",
@@ -107,6 +108,48 @@
           "Morale Level is one lower",
           "+1 on the IFT",
           "double MF"
+        ]
+      }
+    },
+    {
+      "name": "The squad in [T4], with no Encirclement counter, cannot trace a path to ground level and is Encircled (A7.72)",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a7.7-encircled",
+      "facts": {
+        "unitId": "r-squad-t4",
+        "marker": false,
+        "melee": false,
+        "berserk": false,
+        "heroic": false,
+        "upperLevelCutOff": true,
+        "kind": "infantry",
+        "inPillbox": false
+      },
+      "expect": {
+        "outcome": "encircled",
+        "reasons": [
+          "path to ground level"
+        ]
+      }
+    },
+    {
+      "name": "A squad in a pillbox in [T3] is never Encircled (B30.32)",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a7.7-encirclement-seal",
+      "facts": {
+        "targetId": "r-squad-t3",
+        "phase": "PFPh",
+        "consecutive": true,
+        "countingUnits": 2,
+        "pattern": "opposite-hexspines",
+        "inPillbox": true
+      },
+      "expect": {
+        "outcome": "no-seal",
+        "reasons": [
+          "pillbox"
         ]
       }
     },
