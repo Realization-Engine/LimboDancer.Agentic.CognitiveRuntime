@@ -28,6 +28,9 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
         Assert.Equal(["grain"], alone.Destinations);
         var october = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, true), ("woods", true, true, false, false)]);
         Assert.Equal(["woods"], october.Destinations);
+        var unknownEntry = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason(
+            [("grain", false, true, false, null)], ["play.move-grain: unknown month"]);
+        Assert.NotNull(unknownEntry.Refusal);
     }
 
     private static readonly string?[] TerrainKeys = ["open-ground", "grain", "brush", "woods", "orchard", "marsh", "wooden-rubble", "stone-rubble", "unknown", null];
