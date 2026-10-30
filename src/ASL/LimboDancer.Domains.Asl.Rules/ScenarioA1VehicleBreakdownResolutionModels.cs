@@ -45,4 +45,4 @@ public sealed record VehicleRepairHeroFacts(string UnitId, bool Active, bool IsH
 /// The caller gathers the per-weapon attempt and condition facts in WeaponFacts. A true legacy HeroRider flag is not identity evidence.
 /// </summary>
 public sealed record VehicleRepairUseFacts(VehicleRepairFacts WeaponFacts, bool WeaponExists, bool IsSecondaryArmament = false,
-    VehicleRepairHeroFacts? Hero = null);
+    VehicleRepairHeroFacts? Hero = null, bool InherentCrew = true);
