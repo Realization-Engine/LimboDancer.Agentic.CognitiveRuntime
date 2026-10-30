@@ -6,6 +6,18 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// </summary>
 public static class ScenarioA1VehicleBreakdownResolutionCalculator
 {
+    /// <summary>D3.7 (PDF p. 201): a Disabled armament cannot fire again.</summary>
+    public static string? WeaponUseRefusal(bool disabled) => disabled
+        ? "play.vehicle-weapon-disabled: the selected vehicle armament is permanently disabled (D3.7)" : null;
+
+    /// <summary>C8.9 (PDF p. 179): a vehicle's Low Ammo or breakdown result counts as firing despite absent special ammunition.</summary>
+    public static bool NeverFired(string? ammunitionUse, bool malfunctioned, bool eliminated, VehicleBreakdownResolved? current) =>
+        ScenarioA1OrdnanceProjection.NeverFired(ammunitionUse, malfunctioned, eliminated || current?.CountsAsFiredOnDepletionFailure == true);
+
+    /// <summary>D3.7/D5.341 (PDF pp. 201, 204): explicit printed capacity facts, with absence already distinguished from unknown by the caller.</summary>
+    public static bool Recalled(bool maDisabled, bool hasSecondary, bool? everySecondaryDisabled, int passengerCapacity, int towingCapacity) =>
+        ScenarioA1VehicleBreakdownCalculator.Recalled(maDisabled, hasSecondary, everySecondaryDisabled, passengerCapacity > 0 || towingCapacity > 0);
+
     /// <summary>A21.22 (PDF pp. 88-89): preserve the existing Temporary crew penalty while distinguishing actual capture from the other use penalty.</summary>
     public static VehicleBreakdownUseFacts WithVehicleCrew(VehicleBreakdownUseFacts facts, string? manning, bool captured)
     {

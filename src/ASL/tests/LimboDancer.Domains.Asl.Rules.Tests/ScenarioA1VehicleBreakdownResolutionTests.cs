@@ -6,6 +6,38 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 public sealed class ScenarioA1VehicleBreakdownResolutionTests
 {
     [Fact]
+    public void DisabledArmamentCannotFireAgain()
+    {
+        Assert.Null(ScenarioA1VehicleBreakdownResolutionCalculator.WeaponUseRefusal(false));
+        Assert.NotNull(ScenarioA1VehicleBreakdownResolutionCalculator.WeaponUseRefusal(true));
+    }
+
+    [Theory]
+    [InlineData(VehicleBreakdownOutcome.None, true)]
+    [InlineData(VehicleBreakdownOutcome.Malfunction, false)]
+    [InlineData(VehicleBreakdownOutcome.LowAmmo, false)]
+    [InlineData(VehicleBreakdownOutcome.Disabled, false)]
+    public void CurrentDepletionProjectionKeepsEveryBreakdownException(VehicleBreakdownOutcome outcome, bool neverFired)
+    {
+        var current = new VehicleBreakdownResolved(new(11, null, true, false), outcome);
+        Assert.Equal(neverFired, ScenarioA1VehicleBreakdownResolutionCalculator.NeverFired("none", false, false, current));
+        Assert.False(ScenarioA1VehicleBreakdownResolutionCalculator.NeverFired("depleted", false, false, current));
+        Assert.True(ScenarioA1VehicleBreakdownResolutionCalculator.NeverFired("none", false, false, null));
+        Assert.False(ScenarioA1VehicleBreakdownResolutionCalculator.NeverFired("none", true, false, null));
+        Assert.False(ScenarioA1VehicleBreakdownResolutionCalculator.NeverFired("none", false, true, null));
+    }
+
+    [Theory]
+    [InlineData(0, 0, true)]
+    [InlineData(1, 0, false)]
+    [InlineData(0, 1, false)]
+    public void PassengerOrTowingCapabilityPreventsRecall(int passengers, int towing, bool recalled)
+    {
+        Assert.Equal(recalled, ScenarioA1VehicleBreakdownResolutionCalculator.Recalled(true, false, null, passengers, towing));
+        Assert.False(ScenarioA1VehicleBreakdownResolutionCalculator.Recalled(true, true, null, passengers, towing));
+    }
+
+    [Fact]
     public void RecordedBreakdownEvidenceRequiresEveryNestedFact()
     {
         var json = System.Text.Json.JsonSerializer.SerializeToNode(Circled)!.AsObject();
