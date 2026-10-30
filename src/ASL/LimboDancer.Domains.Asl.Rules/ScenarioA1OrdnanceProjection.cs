@@ -21,7 +21,13 @@ public static class ScenarioA1OrdnanceProjection
     public static bool AmmunitionDepleted(string? use) => use is "depleted" or "none";
 
     /// <summary>C8.9: a shot with Special Ammunition the Gun did not have was never fired, unless the Gun malfunctioned.</summary>
-    public static bool NeverFired(string? use, bool malfunctioned) => use == "none" && !malfunctioned;
+    public static bool NeverFired(string? use, bool malfunctioned) => NeverFired(use, malfunctioned, eliminated: false);
+
+    /// <summary>
+    /// C8.9, A.11 (W-A21.13): nor if the shot reached the Gun's X# and eliminated it, a breakdown as a malfunction is. Null-free: an older record
+    /// has no elimination.
+    /// </summary>
+    public static bool NeverFired(string? use, bool malfunctioned, bool eliminated) => use == "none" && !malfunctioned && !eliminated;
 
     /// <summary>A7.352: a crew firing its Gun loses its inherent FP; an AFV's MA and a PF have no such crew.</summary>
     public static bool CrewLosesInherentFp(bool tank, bool panzerfaust, bool recorded) => !(tank || panzerfaust || recorded);
