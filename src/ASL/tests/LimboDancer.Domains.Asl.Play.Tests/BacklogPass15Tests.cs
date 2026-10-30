@@ -510,6 +510,35 @@ public sealed partial class BacklogPass15Tests : IDisposable
             {
             }));
             Assert.False(Current.PlacedCharges.Single().Operable);
+            var history = store.Read(Scope)!.Events;
+            foreach (var (payload, settles) in new (EventPayload Payload, bool Settles)[]
+            {
+                (new InstanceMoved("g2", new MapPosition(BoardLocation.Parse(L("D2")))), false),
+                (new InstanceMoved("g2", new MapPosition(BoardLocation.Parse(L("D2"))), 1), true),
+                (new EntryAttempted("g2", BoardLocation.Parse(L("D2")), 1), true),
+            })
+            {
+                var entry = history[^1] with
+                {
+                    EventId = "other-entry",
+                    Revision = Revision + 1,
+                    Type = payload is EntryAttempted ? "entry-attempted" : "instance-moved",
+                    Payload = payload,
+                };
+                var afterEntry = Planner().Replay([.. history, entry]).Current!;
+                Assert.Equal(settles, afterEntry.PlacedCharges.Single().Operable);
+                if (settles)
+                {
+                    var pin = entry with
+                    {
+                        EventId = "pin-after-entry",
+                        Revision = Revision + 2,
+                        Type = "conditions-changed",
+                        Payload = new ConditionsChanged("g1", new Dictionary<string, ConditionState> { [Conditions.Pinned] = ConditionState.True }),
+                    };
+                    Assert.True(Planner().Replay([.. history, entry, pin]).Current!.PlacedCharges.Single().Operable);
+                }
+            }
         }
         Committed(await Do(GameActions.Move, NoRoll(), new
         {
