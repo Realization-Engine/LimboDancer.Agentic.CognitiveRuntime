@@ -514,6 +514,13 @@ public sealed record FireOverrun(
     bool? BmgMalfunctioned,
     bool? CmgMalfunctioned)
 {
+    /// <summary>D3.7: Disabled armament cannot contribute to this OVR. Null preserves the earlier recorded reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? DisabledWeapons
+    {
+        get; init;
+    }
+
     /// <summary>Whether the vehicle is under a Stun "+1" counter (D5.34, p. 203; pass 35, task 35.13 d): one more on its OVR DR; null is false.</summary>
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public bool? StunRecovery

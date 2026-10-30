@@ -152,6 +152,24 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
         Assert.False(result.OverrunEffect.Immobilized);
     }
 
+    [Theory]
+    [InlineData("ma")]
+    [InlineData("bmg")]
+    [InlineData("cmg")]
+    public void DisabledArmamentDoesNotParticipateInCurrentOverruns(string disabled)
+    {
+        var legacy = new FireOverrun("de-v", "attacker-tank", At, false, false, false, false, false);
+        var current = legacy with
+        {
+            DisabledWeapons = [disabled]
+        };
+        var definition = Reference.Definitions["attacker-tank"];
+        Assert.Contains(ScenarioA1FireCalculator.OverrunWeapons(legacy, definition), item => item.Weapon == disabled);
+        Assert.DoesNotContain(ScenarioA1FireCalculator.OverrunWeapons(current, definition), item => item.Weapon == disabled);
+        Assert.Equal(2, ScenarioA1FireCalculator.OverrunWeapons(current, definition).Count);
+        Assert.False(JsonSerializer.SerializeToElement(legacy).TryGetProperty(nameof(FireOverrun.DisabledWeapons), out _));
+    }
+
     [Fact]
     public void LowAmmoCanKeepRofButDisabledCannotKeepItOnTheSameColoredDie()
     {

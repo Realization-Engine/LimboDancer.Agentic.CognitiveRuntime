@@ -1254,7 +1254,7 @@ public static class ScenarioA1FireCalculator
             weapons.Add((FireOverrunEffect.CoaxialMg, cmg));
         }
 
-        return weapons;
+        return overrun.DisabledWeapons is null ? weapons : [.. weapons.Where(item => !overrun.DisabledWeapons.Contains(item.Item1, StringComparer.Ordinal))];
     }
 
     private static bool Malformed(FireRolls rolls) =>
