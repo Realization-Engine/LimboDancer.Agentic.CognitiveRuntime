@@ -260,7 +260,7 @@ public static class ScenarioA1VehicleCloseCombat
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(reference);
-        var reasons = Precheck(facts, reference);
+        var reasons = Precheck(facts, reference, context);
         if (reasons.Count != 0)
         {
             return Refused(CloseCombatResolution.Abstained, reasons);
@@ -387,6 +387,20 @@ public static class ScenarioA1VehicleCloseCombat
         }
 
         return reasons;
+    }
+
+    /// <summary>Current-context defense requires the experience fact used by A11.62; null context retains the recorded reading.</summary>
+    public static IReadOnlyList<string> Precheck(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, CcvContext? context)
+    {
+        var reasons = Precheck(facts, reference);
+        if (reasons.Count != 0 || context is null || facts.ByVehicle != true)
+        {
+            return reasons;
+        }
+
+        return facts.Units!.Any(unit => facts.Defenders!.Contains(unit.UnitId!, StringComparer.Ordinal)
+            && Inexperience(reference.Definitions[unit.DefinitionId!]) && unit.Inexperienced is null)
+            ? ["asl.a1.cc-vehicle.fact-missing:inexperienced"] : reasons;
     }
 
     private static bool IsSmc(FireDefinition definition) => definition.IsLeader || definition.IsHero;
