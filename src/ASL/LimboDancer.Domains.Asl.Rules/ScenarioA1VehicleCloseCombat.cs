@@ -20,6 +20,13 @@ public sealed record VehicleCloseCombatVehicle(
     bool? BmgMalfunctioned,
     bool? CmgMalfunctioned)
 {
+    /// <summary>D3.7: actual malfunctioned or Disabled weapons; null preserves the recorded availability reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? UnavailableWeapons
+    {
+        get; init;
+    }
+
     /// <summary>Whether the vehicle is under a Stun "+1" counter (D5.34, p. 203; pass 35, task 35.13 d): one more on its CC DR; null is false.</summary>
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public bool? StunRecovery
@@ -83,6 +90,13 @@ public sealed record VehicleCloseCombatFacts(
     bool? Reaction,
     VehicleCloseCombatRolls? Rolls)
 {
+    /// <summary>D3.7: actual firing armaments' breakdown evidence; null retains the reading before vehicle CC breakdown was wired.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireVehicleBreakdownFacts? VehicleBreakdown
+    {
+        get; init;
+    }
+
     /// <summary>The attackers marked First or Final Fire, whose CC Reaction Fire CCV is one lower (D7.213); null for none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? FireMarked
@@ -187,6 +201,13 @@ public sealed record VehicleCloseCombatResolution(
     IReadOnlyList<CloseCombatUnitEffect> Effects)
 {
     public const string None = "none";
+    /// <summary>D3.7/A9.71: each participating armament's outcome, absent in older records.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, VehicleBreakdownResolved>? VehicleBreakdowns
+    {
+        get; init;
+    }
+
     public const string Immobilized = "immobilized";
     public const string Eliminated = "eliminated";
     public const string BurningWreck = "burning-wreck";
@@ -276,7 +297,25 @@ public static class ScenarioA1VehicleCloseCombat
             return Refused(CloseCombatResolution.Indeterminate, ["asl.a1.cc-vehicle.roll-missing:attack"]);
         }
 
-        return facts.ByVehicle == true ? ByVehicle(facts, reference, dice, context) : AgainstVehicle(facts, reference, dice, context);
+        if (facts.ByVehicle != true)
+        {
+            return AgainstVehicle(facts, reference, dice, context);
+        }
+
+        Dictionary<string, VehicleBreakdownResolved>? breakdowns = null;
+        if (facts.VehicleBreakdown is { } breakdown)
+        {
+            breakdowns = ScenarioA1VehicleBreakdownResolutionCalculator.ResolveWeapons(facts.Vehicle!.VehicleId!, breakdown.Weapons,
+                VehicleBreakdownUse.CloseCombat, dice[0] + dice[1], facts.Rolls.RandomSelection, out var keys);
+            if (breakdowns is null)
+            {
+                return Refused(CloseCombatResolution.Indeterminate, ["asl.a1.cc-vehicle.roll-missing:randomSelection:" + string.Join(",", keys)]);
+            }
+        }
+        return ByVehicle(facts, reference, dice, context) with
+        {
+            VehicleBreakdowns = breakdowns
+        };
     }
 
     /// <summary>
@@ -326,9 +365,25 @@ public static class ScenarioA1VehicleCloseCombat
             return ["asl.a1.cc-vehicle.fact-missing"];
         }
 
-        if (reference.Definitions.GetValueOrDefault(vehicle.DefinitionId) is not { IsVehicle: true })
+        if (reference.Definitions.GetValueOrDefault(vehicle.DefinitionId) is not { IsVehicle: true } definition)
         {
             reasons.Add("asl.a1.cc-vehicle.vehicle-outside");
+            return reasons;
+        }
+
+        if (facts.VehicleBreakdown is { } breakdown)
+        {
+            var names = Weapons(vehicle, definition);
+            if (facts.ByVehicle != true || breakdown.Weapons is null || names.Count != breakdown.Weapons.Count
+                || names.Any(name => !breakdown.Weapons.ContainsKey(name))
+                || breakdown.Weapons.Any(item => item.Value is null
+                    || item.Value.Weapon != (item.Key == "ma" ? VehicleBreakdownWeapon.MainArmament
+                        : item.Key == "cmg" ? VehicleBreakdownWeapon.CoaxialMg : VehicleBreakdownWeapon.AntiAircraftMg)
+                    || item.Value.IntensiveFire
+                    || ScenarioA1VehicleBreakdownResolutionCalculator.FactsRefusal(item.Value, VehicleBreakdownUse.CloseCombat) is not null))
+            {
+                reasons.Add("asl.a1.cc-vehicle.breakdown-facts-invalid");
+            }
         }
 
         var units = facts.Units.Where(unit => unit.UnitId is not null).ToDictionary(unit => unit.UnitId!, StringComparer.Ordinal);
@@ -416,8 +471,10 @@ public static class ScenarioA1VehicleCloseCombat
             return false;
         }
 
-        var aamg = definition.MainArmament == "aamg" && definition.AntiAircraftMg is not null && vehicle.CrewExposed == true && vehicle.MainArmamentMalfunctioned != true;
-        return aamg || (definition.BowMg is not null && vehicle.BmgMalfunctioned != true) || (definition.CoaxialMg is not null && vehicle.CmgMalfunctioned != true);
+        var aamg = definition.MainArmament == "aamg" && definition.AntiAircraftMg is not null && vehicle.CrewExposed == true && vehicle.MainArmamentMalfunctioned != true
+            && vehicle.UnavailableWeapons?.Contains("ma", StringComparer.Ordinal) != true;
+        return aamg || (definition.BowMg is not null && vehicle.BmgMalfunctioned != true && vehicle.UnavailableWeapons?.Contains("bmg", StringComparer.Ordinal) != true)
+            || (definition.CoaxialMg is not null && vehicle.CmgMalfunctioned != true && vehicle.UnavailableWeapons?.Contains("cmg", StringComparer.Ordinal) != true);
     }
 
     private static VehicleCloseCombatResolution AgainstVehicle(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, IReadOnlyList<int> dice,
@@ -641,15 +698,9 @@ public static class ScenarioA1VehicleCloseCombat
         var vehicle = facts.Vehicle!;
         var definition = reference.Definitions[vehicle.DefinitionId!];
         decimal fp = 0;
-        // D1.321, D1.322 (pass 35, task 35.13 c): a CE RST or 1MT AFV does not fire its CMG.
-        if (definition.CoaxialMg is { } cmg && vehicle.CmgMalfunctioned != true && !definition.TurretBarredWhileCe(vehicle.CrewExposed))
+        foreach (var weapon in Weapons(vehicle, definition))
         {
-            fp += cmg;
-        }
-
-        if (definition.AntiAircraftMg is { } aamg && vehicle.CrewExposed == true && !(definition.MainArmament == "aamg" && vehicle.MainArmamentMalfunctioned == true))
-        {
-            fp += aamg;
+            fp += weapon == "cmg" || weapon == "ma" && definition.MainArmament == "cmg" ? definition.CoaxialMg!.Value : definition.AntiAircraftMg!.Value;
         }
 
         // A11.62 (p. 76; pass 70, ruling R70.31): "CE Passengers in a halftrack" add their FP to its attack: a MMC its printed FP, a SMC one (A11.14),
@@ -674,6 +725,26 @@ public static class ScenarioA1VehicleCloseCombat
         }
 
         return (modifiers.Aggregate(fp, (total, item) => total * item.Value), modifiers);
+    }
+
+    /// <summary>A11.62/D1.321/D1.322 (PDF pp. 76, 199): the functioning CMG and exposed AAMG actually taking part.</summary>
+    public static IReadOnlyList<string> Weapons(VehicleCloseCombatVehicle vehicle, FireDefinition definition)
+    {
+        var names = new List<string>();
+        var cmgName = definition.MainArmament == "cmg" ? "ma" : "cmg";
+        if (definition.CoaxialMg is not null && vehicle.CmgMalfunctioned != true && !definition.TurretBarredWhileCe(vehicle.CrewExposed)
+            && vehicle.UnavailableWeapons?.Contains(cmgName, StringComparer.Ordinal) != true)
+        {
+            names.Add(cmgName);
+        }
+
+        var aamgName = definition.MainArmament == "aamg" ? "ma" : "aamg";
+        if (definition.AntiAircraftMg is not null && vehicle.CrewExposed == true && !(aamgName == "ma" && vehicle.MainArmamentMalfunctioned == true)
+            && vehicle.UnavailableWeapons?.Contains(aamgName, StringComparer.Ordinal) != true)
+        {
+            names.Add(aamgName);
+        }
+        return names;
     }
 
     private static VehicleCloseCombatResolution ByVehicle(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, IReadOnlyList<int> dice,

@@ -3244,30 +3244,16 @@ public static class ScenarioA1FireCalculator
 
         private Dictionary<string, VehicleBreakdownResolved>? VehicleBreakdowns(string vehicleId, VehicleBreakdownUse use, int originalDr)
         {
-            var outcomes = vehicleBreakdown!.Weapons.ToDictionary(item => item.Key,
-                item => ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(item.Value, use, originalDr), StringComparer.Ordinal);
-            // A9.71 (p.65): select among malfunction/disable candidates only. D3.71 Low Ammo is independent.
-            var failed = outcomes.Where(item => item.Value.Failed).Select(item => item.Key).ToArray();
-            if (failed.Length > 1)
+            var outcomes = ScenarioA1VehicleBreakdownResolutionCalculator.ResolveWeapons(vehicleId, vehicleBreakdown!.Weapons, use, originalDr,
+                attack.Rolls!.WeaponSelection, out var keys);
+            if (outcomes is null)
             {
-                var keys = failed.Select(name => vehicleId + ":" + name).ToArray();
-                foreach (var key in keys)
-                {
-                    if (attack.Rolls!.WeaponSelection?.ContainsKey(key) != true)
-                    {
-                        undecided.Add("asl.a1.fire.roll-missing:weaponSelection:" + string.Join(",", keys));
-                        return null;
-                    }
-                    usedRolls.Add("weaponSelection:" + key);
-                }
-                var highest = keys.Max(key => attack.Rolls!.WeaponSelection![key]);
-                foreach (var name in failed.Where(name => attack.Rolls!.WeaponSelection![vehicleId + ":" + name] != highest))
-                {
-                    outcomes[name] = outcomes[name] with
-                    {
-                        Outcome = VehicleBreakdownOutcome.None
-                    };
-                }
+                undecided.Add("asl.a1.fire.roll-missing:weaponSelection:" + string.Join(",", keys));
+                return null;
+            }
+            foreach (var key in keys)
+            {
+                usedRolls.Add("weaponSelection:" + key);
             }
             return outcomes;
         }
