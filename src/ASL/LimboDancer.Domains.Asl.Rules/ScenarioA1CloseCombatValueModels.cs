@@ -14,7 +14,8 @@ public enum NationalCcv
 /// The facts of an attack on a vehicle that set its Kill Number, the attackers' CCV (A11.5, p. 74; ruling RA11C.1): the main attacking unit, its kind,
 /// whether it is an Assault Engineer (<see cref="ScenarioA1CloseCombatValueCalculator.AssaultEngineer"/>) and Inexperienced; the SMC combining with it, or
 /// failing one the leader an Original 2 created (A18.12); and each halving penalty, once per kind (ruling RA11C.2): pinned (A7.8), D7.213's First or
-/// Final Fire counter in Reaction Fire, a concealed vehicle (A11.19), an outnumbered Guard (A20.52); and the main unit's national case.
+/// Final Fire counter in Reaction Fire, a concealed vehicle (A11.19), a Guard attacking non-prisoners (A20.52); and the main unit's national case.
+/// GuardOutnumbered retains the earlier input; Guard supplies the full rule without changing the existing constructor.
 /// </summary>
 public readonly record struct CcvAttackFacts(
     string MainUnitId,
@@ -27,7 +28,15 @@ public readonly record struct CcvAttackFacts(
     bool ReactionFireMarked,
     bool VehicleConcealed,
     bool GuardOutnumbered,
-    NationalCcv National = NationalCcv.None);
+    NationalCcv National = NationalCcv.None)
+{
+    /// <summary>A20.52 (p. 87): a Guard attacking non-prisoners, regardless of the prisoners' US#.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public bool Guard
+    {
+        get; init;
+    }
+}
 
 /// <summary>The attackers' CCV (A11.5): the main unit's base CCV, the modifiers in their order, and the CCV, which has no floor (ruling RA11C.2).</summary>
 public sealed record CcvVerdict(int Base, IReadOnlyList<FireModifier> Modifiers, int Ccv);
@@ -40,8 +49,9 @@ public readonly record struct CcvDefenderFacts(string Kind, bool Smc, bool Assau
 
 /// <summary>
 /// The facts a vehicle CC attack's <see cref="ScenarioA1VehicleCloseCombat.Resolve(VehicleCloseCombatFacts, ScenarioA1CloseCombatReference, CcvContext?)"/>
-/// takes beside its recorded facts (ruling RA11C.5), so no recorded record gains a field: the units that are Assault Engineers, whether the vehicle is
-/// concealed, the Guards whose US# is below their prisoners', each unit's national case, and the swimmers. A null collection is none. A context, even
+/// takes beside its recorded facts (ruling RA11C.5): the units that are Assault Engineers, whether the vehicle is
+/// concealed, each unit's national case, and the swimmers. Guards supplies every Guard attacking non-prisoners; OutnumberedGuards retains the earlier
+/// US#-limited input. A null collection is none. A context, even
 /// an empty one, asks for the rule's reading in full: the Unarmed and swimming refusals, no leader's DRM for a berserk attacker, the result of
 /// <see cref="ScenarioA1CloseCombatValueCalculator.VehicleResult"/>, and A11.62's floor of a defender's CCV as a DRM.
 /// </summary>
@@ -52,6 +62,16 @@ public sealed record CcvContext(
     IReadOnlyDictionary<string, NationalCcv>? National = null,
     IReadOnlyCollection<string>? Swimming = null)
 {
+    /// <summary>A20.52 (p. 87): Guards attacking non-prisoners, regardless of the prisoners' US#; null retains the earlier context reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyCollection<string>? Guards
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the unit is a Guard attacking non-prisoners (A20.52).</summary>
+    public bool IsGuard(string unitId) => Guards?.Contains(unitId) == true;
+
     /// <summary>Whether the unit is an Assault Engineer.</summary>
     public bool IsAssaultEngineer(string unitId) => AssaultEngineers?.Contains(unitId) == true;
 
