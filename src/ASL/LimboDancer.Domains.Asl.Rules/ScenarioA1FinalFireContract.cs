@@ -18,6 +18,8 @@ internal static class ScenarioA1FinalFireContract
 
     private static readonly string[] GunFacts = ["noIntensiveFire", "crewFit"];
 
+    private static readonly string[] IfeFacts = ["loneSmc"];
+
     [RuleContract]
     private static RuleContract FinalFire() => new("a8.41-final-fire", "Final Fire", [new("A8.41", 61), new("A8.4", 61), new("A9.3", 63), new("C2.241", 168)],
         [
@@ -34,7 +36,7 @@ internal static class ScenarioA1FinalFireContract
                 Choices = Weapons,
                 Concerns = Firer
             },
-            Owners("loneSmc", "A MG fired by a lone SMC (A9.3)"),
+            Owners("loneSmc", "A MG or IFE fired by a lone SMC (A8.312, A9.3)"),
             Owners("vehicular", "A vehicular MG"),
             Owners("mainArmament", "That vehicular MG is the MA (A9.3, D3.5)"),
             Owners("asOrdnance", "A MG firing as ordnance"),
@@ -111,6 +113,7 @@ internal static class ScenarioA1FinalFireContract
         {
             FinalFireWeapon.Mg => MgFacts,
             FinalFireWeapon.Gun => GunFacts,
+            FinalFireWeapon.Ife => IfeFacts,
             _ => [],
         };
         var missing = weapon is null ? "weapon" : needed.FirstOrDefault(name => facts.Flag(name) is null);

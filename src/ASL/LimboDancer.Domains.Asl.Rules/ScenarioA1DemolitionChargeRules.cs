@@ -57,11 +57,15 @@ public static class ScenarioA1DemolitionChargeRules
     /// LOS (a Cave, G11.8331, is not built), not fired during the PFPh, not pinned before the Placement this MPh. An unknown fact is no permission. Other
     /// rules' bars (A15.431, A3.3, A7.25, A22.3, A23.61, B26.45, G9.211) are their own calculators'.
     /// </summary>
-    public static string? PlacementRefusal(DcPlacementFacts facts)
+    public static string? PlacementRefusal(DcPlacementFacts facts) => PlacementRefusal(facts, false);
+
+    /// <summary>A23.3 (p. 90): a Cave target waits for G11.8331; callers supply its terrain identity, not a legality decision.</summary>
+    public static string? PlacementRefusal(DcPlacementFacts facts, bool cave)
     {
         ArgumentNullException.ThrowIfNull(facts);
         return !facts.CarryingDc || !facts.Infantry ? "play.dc-place: only a carrying Infantry unit Places a DC (A23.3)"
             : facts.Phase != "mph" ? "play.dc-place: a DC is Placed during the MPh (A23.3)"
+            : cave ? "play.dc-place: DC Placement into a Cave is not supported (A23.3, G11.8331)"
             : facts.Adjacent != true ? "play.dc-place: a DC is Placed only on an ADJACENT Location (A23.3)"
             : facts.InLos != true ? "play.dc-place: a DC is not Placed to a Location out of the unit's LOS (A23.3, A7.21)"
             : facts.FiredInPrepFire != false ? "play.dc-place: a unit that fired during the PFPh Places no DC (A23.3)"
@@ -82,6 +86,13 @@ public static class ScenarioA1DemolitionChargeRules
     /// </summary>
     public static bool? PlacementOperable(bool settled, bool brokenPinnedOrEliminated) => settled ? !brokenPinnedOrEliminated : null;
 
+    /// <summary>A8.1 (p. 59), A23.3 (p. 90): ending the placer's own move does not close Defensive First Fire in its Placement Location.</summary>
+    public static bool PlacementSettled(bool leftPlacementLocation, bool anotherUnitBeganMovement, bool movementPhaseEnded) =>
+        leftPlacementLocation || anotherUnitBeganMovement || movementPhaseEnded;
+
+    /// <summary>A23.3 (p. 90): before settlement any broken, pinned, or eliminated result invalidates the Placement permanently.</summary>
+    public static bool PlacementFailed(bool broken, bool pinned, bool eliminated) => broken || pinned || eliminated;
+
     /// <summary>A23.3, A20.24 (RA23.5): a DC not operably Placed stays with its unit, or in the unit's Location if it was eliminated or captured.</summary>
     public static DcHeldBy UnplacedDcStays(bool eliminatedOrCaptured) => eliminatedOrCaptured ? DcHeldBy.Location : DcHeldBy.Unit;
 
@@ -97,6 +108,10 @@ public static class ScenarioA1DemolitionChargeRules
     /// </summary>
     public static bool DetonationWindow(string? phase, bool ownerPhasing, bool operable, bool placedThisPlayerTurn) =>
         phase == "afph" && ownerPhasing && operable && placedThisPlayerTurn;
+
+    /// <summary>A23.4, ASOP 5.22A: an operable Placement becomes due in its AFPh and remains overdue after that window.</summary>
+    public static bool DetonationDue(bool operable, bool laterPlayerTurn, bool atOrAfterAdvancingFire) =>
+        DetonationWindow("afph", true, operable, true) && (laterPlayerTurn || atOrAfterAdvancingFire);
 
     /// <summary>
     /// A23.4 (RA23.7): an Original DR at or above the DC's removal number (A23.2's, the fire calculator's AssaultWeaponRemoval) removes it without

@@ -266,7 +266,7 @@ public static class ScenarioA1VehicleCloseCombat
             return Refused(CloseCombatResolution.Abstained, reasons);
         }
 
-        if (context is not null && facts.ByVehicle != true && AttackersRefusal(facts, context) is { } refusal)
+        if (context is not null && facts.ByVehicle != true && AttackersRefusal(facts, reference, context) is { } refusal)
         {
             return Refused(CloseCombatResolution.Abstained, [refusal]);
         }
@@ -283,12 +283,13 @@ public static class ScenarioA1VehicleCloseCombat
     /// A11.5, A20.5, E6.2: the first attacker <see cref="ScenarioA1CloseCombatValueCalculator.AttackerRefusal"/> refuses, after <see cref="Precheck"/> has
     /// admitted each as an enemy, unbroken, and uncaptured; null when none.
     /// </summary>
-    private static string? AttackersRefusal(VehicleCloseCombatFacts facts, CcvContext context)
+    private static string? AttackersRefusal(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, CcvContext context)
     {
         foreach (var id in facts.Attackers!)
         {
             var unit = facts.Units!.First(item => item.UnitId == id);
-            if (ScenarioA1CloseCombatValueCalculator.AttackerRefusal(true, unit.Side != facts.Vehicle!.Side, unit.Broken == true, unit.Captured == true,
+            var infantryOrCavalry = ScenarioA1CloseCombatValueCalculator.InfantryOrCavalry(reference.Definitions[unit.DefinitionId!].Kind);
+            if (ScenarioA1CloseCombatValueCalculator.AttackerRefusal(infantryOrCavalry, unit.Side != facts.Vehicle!.Side, unit.Broken == true, unit.Captured == true,
                 unit.Unarmed == true, context.IsSwimming(id)) is { } refusal)
             {
                 return refusal;

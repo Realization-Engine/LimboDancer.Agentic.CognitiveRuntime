@@ -141,6 +141,10 @@ public static class ScenarioA1CloseCombatValueCalculator
         : swimming ? "play.cc-vehicle: a swimmer has no CCV and attacks no vehicle (E6.2)"
         : null;
 
+    /// <summary>A11.5 (p. 74): currently supported Infantry kinds, before condition checks. Cavalry awaits its catalog representation.</summary>
+    public static bool InfantryOrCavalry(string kind) =>
+        kind is "asl:squad" or "asl:half-squad" or "asl:leader" or "asl:hero" || ScenarioA1Definitions.IsCrew(kind);
+
     /// <summary>
     /// A11.5 (p. 74): "A single CC attack cannot affect both a vehicle and Personnel (except for the PRC of a vehicle, which are eliminated if the vehicle is
     /// destroyed)": true when the result eliminates the vehicle, burning or not; not when it is captured or immobilized.

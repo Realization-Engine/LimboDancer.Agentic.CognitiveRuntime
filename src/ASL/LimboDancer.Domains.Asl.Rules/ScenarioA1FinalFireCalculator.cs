@@ -64,7 +64,7 @@ public static class ScenarioA1FinalFireCalculator
     /// <summary>
     /// A8.4, A8.41 (p. 61), A9.3 (p. 63), C2.241 (p. 168), C2.29: what Final Fire allows a unit or weapon by its own counter. With no counter, Normal
     /// (a Multiple-ROF weapon that kept its ROF in First Fire has no counter). Marked Final, Intensive, or No Fire, None. Marked First Fire: OnceMore
-    /// for a unit's inherent FP (A8.4), for a MG that <see cref="MaySustain"/>, for a Gun firing IFE (C2.29: Sustained Fire), and for a Gun that
+    /// for a unit's inherent FP (A8.4), for a MG that <see cref="MaySustain"/>, for IFE not fired by a lone SMC (A8.312, C2.29), and for a Gun that
     /// <see cref="MayIntensiveFire"/> (C2.241); None for an ordnance SW (no SW Intensive Fires, C5.6, and no ordnance sustains, A9.3), for a MG that
     /// may not sustain, and for another SW (a FT or DC, which can use neither; ruling RA8.8).
     /// </summary>
@@ -77,7 +77,8 @@ public static class ScenarioA1FinalFireCalculator
             FireMarker.None => FinalFireUse.Normal,
             FireMarker.FirstFire => facts.Weapon switch
             {
-                FinalFireWeapon.Inherent or FinalFireWeapon.Ife => FinalFireUse.OnceMore,
+                FinalFireWeapon.Inherent => FinalFireUse.OnceMore,
+                FinalFireWeapon.Ife => facts.LoneSmc ? FinalFireUse.None : FinalFireUse.OnceMore,
                 FinalFireWeapon.Mg => MaySustain(true, facts.Vehicular, facts.MainArmament, facts.AsOrdnance, facts.LoneSmc) ? FinalFireUse.OnceMore : FinalFireUse.None,
                 FinalFireWeapon.Gun => MayIntensiveFire(facts.NoIntensiveFire, facts.CrewFit) ? FinalFireUse.OnceMore : FinalFireUse.None,
                 _ => FinalFireUse.None,

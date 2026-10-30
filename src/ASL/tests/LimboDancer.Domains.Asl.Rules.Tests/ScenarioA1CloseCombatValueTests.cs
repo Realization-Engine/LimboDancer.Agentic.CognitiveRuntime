@@ -335,6 +335,16 @@ public sealed class ScenarioA1CloseCombatValueTests
     private static string Json(VehicleCloseCombatResolution resolution) => JsonSerializer.Serialize(resolution);
 
     [Fact]
+    public void AContextResolverRefusesAVehicleAsAnInfantryAttacker()
+    {
+        var facts = Against(Vehicle("attacker-tank"), [Unit("ru-vehicle", "attacker-truck")], ["ru-vehicle"], [3, 4]);
+        Assert.Empty(ScenarioA1VehicleCloseCombat.Precheck(facts, CloseCombat));
+        var result = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext());
+        Assert.Equal(CloseCombatResolution.Abstained, result.Disposition);
+        Assert.Contains(result.Reasons, reason => reason.Contains("only Infantry or Cavalry", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void TheNewOverloadWithAnEmptyContextGivesTheOldAnswerOverTheExistingCases()
     {
         string[][] attacks = [["ru-s"], ["ru-s", "ru-l"], ["ru-h"], ["ru-c"], ["ru-l"], ["ru-g"], ["ru-g", "ru-l"], ["ru-p"], ["ru-p", "ru-l"]];

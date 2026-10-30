@@ -117,6 +117,26 @@ public sealed class ScenarioA1FinalFireCalculatorTests
     }
 
     [Fact]
+    public void ALoneSmcCannotSustainIfeAndTheContractRequiresThatFact()
+    {
+        var facts = Facts(FinalFireWeapon.Ife, FireMarker.FirstFire, loneSmc: true);
+        Assert.Equal(FinalFireUse.None, ScenarioA1FinalFireCalculator.Use(facts));
+        Assert.NotNull(ScenarioA1FinalFireCalculator.FinalFireRefusal(facts));
+        Assert.Equal(FinalFireUse.Normal, ScenarioA1FinalFireCalculator.Use(facts with
+        {
+            Marker = FireMarker.None
+        }));
+        var contract = ScenarioA1RuleContracts.Find(Contract)!;
+        var input = Ask(weapon: "ife");
+        input.Remove("loneSmc");
+        Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(contract, input).Outcome);
+        input["loneSmc"] = true;
+        Assert.Equal("refused", ScenarioA1RuleContracts.Evaluate(contract, input).Outcome);
+        input["loneSmc"] = false;
+        Assert.Equal("may-fire-once-more", ScenarioA1RuleContracts.Evaluate(contract, input).Outcome);
+    }
+
+    [Fact]
     public void AnIfeGunSustainsAndAnOrdnanceSwOrAFtHasNoSecondAttack()
     {
         Assert.Equal(new FinalFireVerdict(FinalFireUse.OnceMore, true, true, false, 2, null),
