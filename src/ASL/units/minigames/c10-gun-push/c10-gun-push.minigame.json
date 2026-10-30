@@ -1,0 +1,705 @@
+{
+  "id": "c10-gun-push",
+  "title": "C10.3 Pushing a Gun",
+  "card": "c10-gun-push",
+  "rules": [
+    "C10.3",
+    "C10.31"
+  ],
+  "contracts": [
+    "c10.3-manhandling",
+    "c10.31-hook-after-push"
+  ],
+  "example": {
+    "source": "C10.3 EX, a 37L AT pushed from Open Ground into a stone building",
+    "page": 181
+  },
+  "checks": [
+    {
+      "name": "The leIG pushed from [Q3] into Open Ground [Q4] in Clear: DRM +2 (the doubled 1 MF), and DR 7 enters below its M# 10",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": "g-gun",
+        "at": "bd04:Q3:0",
+        "to": "bd04:Q4:0",
+        "mud": false,
+        "deepSnow": false,
+        "roadHexsideCrossed": false,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 0,
+        "mfSpent": 2,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "none",
+        "originalDr": 7,
+        "mNumber": 10,
+        "qsu": true,
+        "limbered": false,
+        "nm": false,
+        "rfnm": false,
+        "unhookedThisPlayerTurn": false,
+        "extraCrewsOrHalfSquads": 0,
+        "extraSquads": 0,
+        "onlyPusherIsSquad": false
+      },
+      "expect": {
+        "outcome": "enter",
+        "reasons": [
+          "DRM +2:"
+        ]
+      }
+    },
+    {
+      "name": "The same push before the DR: an Original DR of at most 8 enters",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": "g-gun",
+        "at": "bd04:Q3:0",
+        "to": "bd04:Q4:0",
+        "mud": false,
+        "deepSnow": false,
+        "roadHexsideCrossed": false,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 0,
+        "mfSpent": 2,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "none",
+        "originalDr": null,
+        "mNumber": 10,
+        "qsu": true,
+        "limbered": false,
+        "nm": false,
+        "rfnm": false,
+        "unhookedThisPlayerTurn": false,
+        "extraCrewsOrHalfSquads": 0,
+        "extraSquads": 0,
+        "onlyPusherIsSquad": false
+      },
+      "expect": {
+        "outcome": "pushable",
+        "reasons": [
+          "DRM +2:"
+        ]
+      }
+    },
+    {
+      "name": "The same push in Mud: +3 for the weather, and the doubled 1½ MF of Open Ground in Mud (E3.64), DRM +6",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": "g-gun",
+        "at": "bd04:Q3:0",
+        "to": "bd04:Q4:0",
+        "mud": true,
+        "deepSnow": false,
+        "roadHexsideCrossed": false,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 0,
+        "mfSpent": 3,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "none",
+        "originalDr": null,
+        "mNumber": 10,
+        "qsu": true,
+        "limbered": false,
+        "nm": false,
+        "rfnm": false,
+        "unhookedThisPlayerTurn": false,
+        "extraCrewsOrHalfSquads": 0,
+        "extraSquads": 0,
+        "onlyPusherIsSquad": false
+      },
+      "expect": {
+        "outcome": "pushable",
+        "reasons": [
+          "DRM +6:",
+          "weather +3"
+        ]
+      }
+    },
+    {
+      "name": "Along the unpaved road from [R2] to [Q2] in Mud: no road -2 (C10.3), DRM +6",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": "g-gun",
+        "at": "bd04:R2:0",
+        "to": "bd04:Q2:0",
+        "mud": true,
+        "deepSnow": false,
+        "roadHexsideCrossed": true,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 0,
+        "mfSpent": 3,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "none",
+        "originalDr": null,
+        "mNumber": 10,
+        "qsu": true,
+        "limbered": false,
+        "nm": false,
+        "rfnm": false,
+        "unhookedThisPlayerTurn": false,
+        "extraCrewsOrHalfSquads": 0,
+        "extraSquads": 0,
+        "onlyPusherIsSquad": false
+      },
+      "expect": {
+        "outcome": "pushable",
+        "reasons": [
+          "DRM +6:",
+          "road 0"
+        ]
+      }
+    },
+    {
+      "name": "The same road push in Ground Snow keeps the -2: C10.3 names only mud and deep snow (ruling RC10.3)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": "g-gun",
+        "at": "bd04:R2:0",
+        "to": "bd04:Q2:0",
+        "mud": false,
+        "deepSnow": false,
+        "roadHexsideCrossed": true,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 0,
+        "mfSpent": 2,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "none",
+        "originalDr": null,
+        "mNumber": 10,
+        "qsu": true,
+        "limbered": false,
+        "nm": false,
+        "rfnm": false,
+        "unhookedThisPlayerTurn": false,
+        "extraCrewsOrHalfSquads": 0,
+        "extraSquads": 0,
+        "onlyPusherIsSquad": false
+      },
+      "expect": {
+        "outcome": "pushable",
+        "reasons": [
+          "DRM 0:",
+          "road -2"
+        ]
+      }
+    },
+    {
+      "name": "Across the hedge from [Q3] into [R2]: +1 TEM (B9.3) and the hedge's MF doubled (B9.4), DRM +5",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": "g-gun",
+        "at": "bd04:Q3:0",
+        "to": "bd04:R2:0",
+        "mud": false,
+        "deepSnow": false,
+        "roadHexsideCrossed": false,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 1,
+        "mfSpent": 4,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "none",
+        "originalDr": null,
+        "mNumber": 10,
+        "qsu": true,
+        "limbered": false,
+        "nm": false,
+        "rfnm": false,
+        "unhookedThisPlayerTurn": false,
+        "extraCrewsOrHalfSquads": 0,
+        "extraSquads": 0,
+        "onlyPusherIsSquad": false
+      },
+      "expect": {
+        "outcome": "pushable",
+        "reasons": [
+          "DRM +5:",
+          "TEM +1"
+        ]
+      }
+    },
+    {
+      "name": "The C10.3 EX's numbers: a 37L AT (M# 12) pushed into a stone building, +3 TEM and +4 MF, needs an Original DR of at most 5",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": null,
+        "at": "bd04:Q3:0",
+        "to": "bd04:S2:0",
+        "mud": false,
+        "deepSnow": false,
+        "roadHexsideCrossed": false,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 3,
+        "hexsideTem": 0,
+        "mfSpent": 4,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "none",
+        "originalDr": null,
+        "mNumber": 12,
+        "qsu": true,
+        "limbered": false,
+        "nm": false,
+        "rfnm": false,
+        "unhookedThisPlayerTurn": false,
+        "extraCrewsOrHalfSquads": 0,
+        "extraSquads": 0,
+        "onlyPusherIsSquad": false
+      },
+      "expect": {
+        "outcome": "pushable",
+        "reasons": [
+          "DRM +7:"
+        ]
+      }
+    },
+    {
+      "name": "A push after a Final DR equal to the M# this MPh is refused: the Gun moves no farther (C10.3)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": "g-gun",
+        "at": "bd04:Q4:0",
+        "to": "bd04:Q5:0",
+        "mud": false,
+        "deepSnow": false,
+        "roadHexsideCrossed": false,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 0,
+        "mfSpent": 2,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "enter-stop",
+        "originalDr": null,
+        "mNumber": 10,
+        "qsu": true,
+        "limbered": false,
+        "nm": false,
+        "rfnm": false,
+        "unhookedThisPlayerTurn": false,
+        "extraCrewsOrHalfSquads": 0,
+        "extraSquads": 0,
+        "onlyPusherIsSquad": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "equalled the M#"
+        ]
+      }
+    },
+    {
+      "name": "A push after a Final DR above the M# is refused, and the Labor counter it left counts -1 on the next MPh's attempt",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": "g-gun",
+        "at": "bd04:Q3:0",
+        "to": "bd04:Q4:0",
+        "mud": false,
+        "deepSnow": false,
+        "roadHexsideCrossed": false,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 0,
+        "mfSpent": 2,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "stay",
+        "originalDr": null,
+        "mNumber": 10,
+        "qsu": true,
+        "limbered": false,
+        "nm": false,
+        "rfnm": false,
+        "unhookedThisPlayerTurn": false,
+        "extraCrewsOrHalfSquads": 0,
+        "extraSquads": 0,
+        "onlyPusherIsSquad": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "above the M#"
+        ]
+      }
+    },
+    {
+      "name": "Next MPh, the -1 Labor counter: DRM +1",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": "g-gun",
+        "at": "bd04:Q3:0",
+        "to": "bd04:Q4:0",
+        "mud": false,
+        "deepSnow": false,
+        "roadHexsideCrossed": false,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 0,
+        "mfSpent": 2,
+        "labor": 1,
+        "leastHalfMfLeft": 8,
+        "lastResult": "none",
+        "originalDr": null,
+        "mNumber": 10,
+        "qsu": true,
+        "limbered": false,
+        "nm": false,
+        "rfnm": false,
+        "unhookedThisPlayerTurn": false,
+        "extraCrewsOrHalfSquads": 0,
+        "extraSquads": 0,
+        "onlyPusherIsSquad": false
+      },
+      "expect": {
+        "outcome": "pushable",
+        "reasons": [
+          "DRM +1:",
+          "Labor -1"
+        ]
+      }
+    },
+    {
+      "name": "The Russian viewer cannot know the concealed Gun's M# or mode: not evaluated",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": null,
+        "at": "bd04:Q3:0",
+        "to": "bd04:Q4:0",
+        "mud": false,
+        "deepSnow": false,
+        "roadHexsideCrossed": false,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": false,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 0,
+        "mfSpent": 2,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "none",
+        "originalDr": null
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "gunId": "german"
+      }
+    },
+    {
+      "name": "The Russian viewer knows a push using Bypass is refused, whatever the Gun",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "c10.3-manhandling",
+      "facts": {
+        "gunId": null,
+        "at": "bd04:Q3:0",
+        "to": "bd04:Q4:0",
+        "mud": false,
+        "deepSnow": false,
+        "roadHexsideCrossed": false,
+        "pavedRoad": false,
+        "plowedRoad": false,
+        "lowAmmoPlaced": false,
+        "bypass": true,
+        "assault": false,
+        "minimumMove": false,
+        "carryingPp": false,
+        "wire": false,
+        "intoDeepStream": false,
+        "intoBamboo": false,
+        "viaTb": false,
+        "hexTem": 0,
+        "hexsideTem": 0,
+        "mfSpent": 2,
+        "labor": 0,
+        "leastHalfMfLeft": 8,
+        "lastResult": "none",
+        "originalDr": null
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "Bypass"
+        ]
+      },
+      "sealed": {
+        "gunId": "german"
+      }
+    },
+    {
+      "name": "The truck may hook up the leIG after a push that entered below the M#, its crew with 2 MF left",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.31-hook-after-push",
+      "facts": {
+        "gunId": "g-gun",
+        "pushedThisMph": true,
+        "lastResult": "enter",
+        "leastHalfMfLeft": 4,
+        "mud": false,
+        "deepSnow": false,
+        "roadExit": false,
+        "vehicleHasHookUpMp": true
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "No hook-up after a push that failed this MPh (C10.31)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.31-hook-after-push",
+      "facts": {
+        "gunId": "g-gun",
+        "pushedThisMph": true,
+        "lastResult": "stay",
+        "leastHalfMfLeft": 4,
+        "mud": false,
+        "deepSnow": false,
+        "roadExit": false,
+        "vehicleHasHookUpMp": true
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "below the M#"
+        ]
+      }
+    },
+    {
+      "name": "No hook-up after a push that stopped at the M#",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.31-hook-after-push",
+      "facts": {
+        "gunId": "g-gun",
+        "pushedThisMph": true,
+        "lastResult": "enter-stop",
+        "leastHalfMfLeft": 4,
+        "mud": false,
+        "deepSnow": false,
+        "roadExit": false,
+        "vehicleHasHookUpMp": true
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "below the M#"
+        ]
+      }
+    },
+    {
+      "name": "In Deep Snow the crew needs 3 MF left to push again, so 2½ MF do not allow the hook-up (E3.733)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.31-hook-after-push",
+      "facts": {
+        "gunId": "g-gun",
+        "pushedThisMph": true,
+        "lastResult": "enter",
+        "leastHalfMfLeft": 5,
+        "mud": false,
+        "deepSnow": true,
+        "roadExit": false,
+        "vehicleHasHookUpMp": true
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "could still attempt"
+        ]
+      }
+    },
+    {
+      "name": "In Deep Snow with a plowed road hexside leaving [R2], 2 MF left allow it",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.31-hook-after-push",
+      "facts": {
+        "gunId": "g-gun",
+        "pushedThisMph": true,
+        "lastResult": "enter",
+        "leastHalfMfLeft": 4,
+        "mud": false,
+        "deepSnow": true,
+        "roadExit": true,
+        "vehicleHasHookUpMp": true
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "The truck past the MP it may expend before hooking up refuses it (C10.11)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c10.31-hook-after-push",
+      "facts": {
+        "gunId": "g-gun",
+        "pushedThisMph": true,
+        "lastResult": "enter",
+        "leastHalfMfLeft": 4,
+        "mud": false,
+        "deepSnow": false,
+        "roadExit": false,
+        "vehicleHasHookUpMp": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "C10.11"
+        ]
+      }
+    }
+  ],
+  "units": {
+    "g-gun": "german",
+    "g-crew": "german",
+    "g-truck": "german",
+    "r-squad": "russian"
+  }
+}
