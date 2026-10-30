@@ -1878,7 +1878,7 @@ Turns tasks that reach this pass from another: D9 (pass 73) covers this pass's p
 
 **Pass 75: Infantry VIII: MOL and DC** (12 rows of the inventory). Counters: none. Needs first: 45 for DC between levels; 65 (Passengers); 70 (Searching, which Set DC Clearance reads).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 12 rows: 2 built with a deviation, 6 partly, 4 not built. Claims: 11 open, 1 claimed (owners: A23.3 (Claude)). A rule decided outside Rules on 3 rows. A Turns calculator on 1 row. Wiring: 0 of 12. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 12 rows: 2 built with a deviation, 6 partly, 4 not built. Claims: 11 open, 1 built (owners: A23.3 (Claude)). A rule decided outside Rules on 2 rows. Wiring: 0 of 12. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|

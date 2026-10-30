@@ -1,0 +1,198 @@
+{
+  "id": "a23-placed-dc",
+  "title": "A23.3 Placed DC",
+  "card": "a23-placed-dc",
+  "rules": [
+    "A23.3",
+    "A23.4"
+  ],
+  "contracts": [
+    "a23.3-dc-placement",
+    "a23.4-dc-detonation"
+  ],
+  "example": {
+    "source": "A23.3, the squad in Y6 and the building X5",
+    "page": 90
+  },
+  "checks": [
+    {
+      "name": "A23.3's squad in Y6 may Place its DC into X5",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a23.3-dc-placement",
+      "facts": {
+        "placerId": "g-squad",
+        "carryingDc": true,
+        "infantry": true,
+        "paatcExempt": false,
+        "phase": "MPh",
+        "adjacent": true,
+        "inLos": true,
+        "firedInPrepFire": false,
+        "pinnedThisMph": false,
+        "enemyAfvInTarget": false
+      },
+      "expect": {
+        "outcome": "may-place"
+      }
+    },
+    {
+      "name": "A squad that fired during the PFPh Places no DC",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a23.3-dc-placement",
+      "facts": {
+        "placerId": "g-squad",
+        "carryingDc": true,
+        "infantry": true,
+        "paatcExempt": false,
+        "phase": "MPh",
+        "adjacent": true,
+        "inLos": true,
+        "firedInPrepFire": true,
+        "pinnedThisMph": false,
+        "enemyAfvInTarget": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "PFPh"
+        ]
+      }
+    },
+    {
+      "name": "A squad pinned before the Placement Places no DC",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a23.3-dc-placement",
+      "facts": {
+        "placerId": "g-squad",
+        "carryingDc": true,
+        "infantry": true,
+        "paatcExempt": false,
+        "phase": "MPh",
+        "adjacent": true,
+        "inLos": true,
+        "firedInPrepFire": false,
+        "pinnedThisMph": true,
+        "enemyAfvInTarget": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "pinned"
+        ]
+      }
+    },
+    {
+      "name": "An enemy AFV in X5 asks a PAATC first (A11.6)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a23.3-dc-placement",
+      "facts": {
+        "placerId": "g-squad",
+        "carryingDc": true,
+        "infantry": true,
+        "paatcExempt": false,
+        "phase": "MPh",
+        "adjacent": true,
+        "inLos": true,
+        "firedInPrepFire": false,
+        "pinnedThisMph": false,
+        "enemyAfvInTarget": true
+      },
+      "expect": {
+        "outcome": "may-place-after-paatc"
+      }
+    },
+    {
+      "name": "The Russian side does not know whether a concealed German squad carries a DC",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a23.3-dc-placement",
+      "facts": {
+        "placerId": "g-squad",
+        "phase": "MPh",
+        "adjacent": true,
+        "inLos": true,
+        "firedInPrepFire": false,
+        "pinnedThisMph": false,
+        "enemyAfvInTarget": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "The DC detonates in the AFPh on a 7",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a23.4-dc-detonation",
+      "facts": {
+        "operable": true,
+        "phase": "AFPh",
+        "ownerPhasing": true,
+        "placedThisPlayerTurn": true,
+        "removalNumber": 12,
+        "originalDr": 7
+      },
+      "expect": {
+        "outcome": "detonates"
+      }
+    },
+    {
+      "name": "An Original 12 removes it without detonation",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a23.4-dc-detonation",
+      "facts": {
+        "operable": true,
+        "phase": "AFPh",
+        "ownerPhasing": true,
+        "placedThisPlayerTurn": true,
+        "removalNumber": 12,
+        "originalDr": 12
+      },
+      "expect": {
+        "outcome": "removed"
+      }
+    },
+    {
+      "name": "A non-elite user's captured DC is removed on an 8 (A23.2)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a23.4-dc-detonation",
+      "facts": {
+        "operable": true,
+        "phase": "AFPh",
+        "ownerPhasing": true,
+        "placedThisPlayerTurn": true,
+        "removalNumber": 8,
+        "originalDr": 8
+      },
+      "expect": {
+        "outcome": "removed"
+      }
+    },
+    {
+      "name": "It does not detonate in the DFPh",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a23.4-dc-detonation",
+      "facts": {
+        "operable": true,
+        "phase": "DFPh",
+        "ownerPhasing": true,
+        "placedThisPlayerTurn": true,
+        "removalNumber": 12,
+        "originalDr": 7
+      },
+      "expect": {
+        "outcome": "not-due"
+      }
+    }
+  ],
+  "units": {
+    "g-squad": "german"
+  }
+}

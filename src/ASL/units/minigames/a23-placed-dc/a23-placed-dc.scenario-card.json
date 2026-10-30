@@ -1,0 +1,69 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "a23-placed-dc",
+  "title": "Minigame: A23.3 Placed DC",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Manufactured under R0.3 as the minigame of the A23.3 claim (the Rules-first plan, section 7): a squad Places a DC beside a building, its facts entered by hand.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "A minimal card (ruling R22.3): who may Place a DC, and what its AFPh DR does, asked on the Rule Workbench."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 0
+  },
+  "introduction": "A23.3's example: a squad Places its DC from Y6 into the building X5 and it detonates in the AFPh.",
+  "boards": [
+    {
+      "board": "bd02",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "",
+        "basis": "none",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "a23-placed-dc"
+}

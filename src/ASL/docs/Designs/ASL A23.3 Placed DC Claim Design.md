@@ -1,6 +1,6 @@
 # ASL A23.3 Placed DC Claim Design
 
-**Status:** Design, 2026-10-29, revised after a sub-agent's review (section 9), waiting for the user's approval. The A23.3 claim (Claude; the inventory's section 6, claimed on main as 74a29884) takes A23.3 Placement and A23.4 Detonation, the Placed Demolition Charge, on the branch `claim/a23.3-placed-dc`. Rules only: no caller changes, so no recorded game replays differently. Rulings are numbered RA23.n.
+**Status:** Approved by the user and built, 2026-10-29 (section 10), after a sub-agent's review of the design (section 9). The A23.3 claim (Claude; the inventory's section 6, claimed on main as 74a29884) takes A23.3 Placement and A23.4 Detonation, the Placed Demolition Charge, on the branch `claim/a23.3-placed-dc`. Rules only: no caller changes, so no recorded game replays differently. Rulings are numbered RA23.n.
 
 ## 1. The rule (A23.3, A23.4, pp. 90 and 91; A23.2; A8.1; A11.6; A20.24; A4.5, A4.51; A7.21; C7.346; ASOP 5.22A)
 
@@ -65,3 +65,10 @@ The filtered test builds in `asl-gate-work`, registered as made, in the worktree
 ## 9. Review of the design
 
 A sub-agent read the first draft against pp. 90 and 91 (A4.5, A4.51, A8.1, A20.2, A20.24, A21.11, A23.2, A3.3, A7.25, C7.346, ASOP 5.22A) and the code, read-only (2026-10-29): twelve findings, all taken. Blocking: operability settles at A8.1's moment, and the projector's earlier one is a behavior change (RA23.5); capture is A20.24's and cannot come first (RA23.5); `TurnObligationRules` decides the window a third time, now held shared and forwarded (RA23.8); the CX and malfunction sites serve a Thrown DC too, so the members cover both (RA23.6, RA23.7); the placer's DC, Infantry, and A11.6 facts are its owner's (RA23.10). Also taken: detonation is mandatory with no carry-over (RA23.7); `PlacedChargeDue`'s forward decided (RA23.8); the full removal numbers (section 1); A4.5 and A4.51, CX from any cause (RA23.6); the other rules' bars, and the Bypass bar named (RA23.3, the wiring row); the missing sites; the missing tests and the contract's fact.
+
+## 10. As built (2026-10-29)
+
+- `ScenarioA1DemolitionChargeRules`: `PlacementCost`, `PlacementRefusal`, `PlacementNeedsPaatc`, `PlacementOperable`, `UnplacedDcStays`, `DcCxDrm`, `DetonationWindow`, `DcMalfunction`, `RemovedAfterAttack`; `DoubleTimeMf`'s citation corrected to A4.5. `ScenarioA1DemolitionChargeContract.cs`: the contracts `a23.3-dc-placement` and `a23.4-dc-detonation`, the record `DcPlacementFacts`, the enum `DcHeldBy`.
+- Forwarding with the same answer: the fire calculator's DC malfunction (`:1994`, `:3857`) and DC CX (`:2171`, the DC branch of `:3690`) sites; `ScenarioA1SequenceCalculator.PlacedChargeDue`; `TurnPlacedDcWindowRules.Assess`'s window. Keeping its answer, named: `TurnObligationRules`' Placed DC case, a deadline (due from the AFPh on, overdue after) rather than the window. The members read the phase lower-case, as the old ones do; the contracts lower-case it.
+- Tests: `ScenarioA1PlacedDcCalculatorTests`; the bundle `a23-placed-dc` (nine checks); the old DC tests in Rules and Play pass unchanged.
+- The wiring row W-A23.3 is in the inventory's section 7.
