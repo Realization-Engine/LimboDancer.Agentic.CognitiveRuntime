@@ -3,8 +3,11 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// <summary>
 /// The wiring contracts of E1.8 and E1.921 (p. 226; the E1.8 claim's design, section 4.4): does this act mark a Gunflash in the Location it came from, and
 /// does it open the scenario's first Starshell, as <see cref="ScenarioA1GunflashCalculator"/> decides it; and may this unit try a Starshell now, and what
-/// Usage dr fires it, as <see cref="ScenarioA1Starshells"/> decides it. A Gunflash and the attack that made it are public; whether a firer is a leader,
-/// carries an Armor Leader, sees an enemy, or where it is, and whether its force has a motorized vehicle on board, are its owner's until it tries.
+/// Usage dr fires it, as <see cref="ScenarioA1Starshells"/> decides it. A Gunflash and the attack that made it are public: an attack vs an enemy Dummy
+/// stack is an attack vs an enemy unit (RE1.3 as corrected 2026-10-30, by the Index's "Unit"), so no fact or outcome tells the attacker whether the "?"
+/// stack it attacked was a Dummy. Whether a firer is a leader, carries an Armor Leader, sees an enemy, or where it is, and whether its force has a
+/// motorized vehicle on board, are its owner's until it tries. Each contract names one Place, the PFPh (2.22A); a Gunflash is also marked, and a
+/// Starshell also tried, at Defensive First Fire (3.38D) and in the DFPh (4.11D, 4.13D), and a Gunflash in the AFPh, which one Place cannot carry.
 /// </summary>
 internal static class ScenarioA1GunflashContract
 {
@@ -17,11 +20,12 @@ internal static class ScenarioA1GunflashContract
 
     [RuleContract]
     private static RuleContract Gunflash() => new("e1.8-gunflash", "Gunflash",
-        [new("E1.8", 226), new("E1.82", 226), new("E1.89", 226), new("E1.91", 226), new("A7.25", 55)],
+        [new("E1.8", 226), new("E1.82", 226), new("E1.89", 226), new("E1.91", 226), new("A7.25", 55), new("ASOP 5.33B", 680)],
         [
             new("cause", ContractFactType.Choice, false, ContractDisclosure.All, "What the act is") { Choices = Causes },
             ScenarioA1RuleContracts.Flag("night", "The scenario is at night"),
-            ScenarioA1RuleContracts.Flag("vsEnemyUnit", "The attack was made vs a unit enemy to its attacker (a Dummy is not a unit)"),
+            ScenarioA1RuleContracts.Flag("vsEnemyUnit",
+                "The attack was made at a Location holding a unit enemy to its attacker, a Dummy stack included (Index, \"Unit\"), as both sides see on the board"),
             ScenarioA1RuleContracts.Flag("firerStillInLocation", "The unit that acted is still in the Location (the answer does not depend on it)"),
         ],
         ["gunflash-opens", "gunflash", "no-gunflash-no-counter", "no-gunflash", ContractVerdict.NotEvaluated],
@@ -32,8 +36,13 @@ internal static class ScenarioA1GunflashContract
     };
 
     [RuleContract]
-    private static RuleContract Usage() => new("e1.921-starshell-usage", "Starshell usage", [new("E1.921", 226), new("E1.91", 226), new("E1.92", 226)],
+    private static RuleContract Usage() => new("e1.921-starshell-usage", "Starshell usage",
+        [new("E1.921", 226), new("E1.9", 226), new("E1.91", 226), new("E1.92", 226)],
         [
+            ScenarioA1RuleContracts.Flag("night", "The scenario is at night"),
+            new("phase", ContractFactType.Choice, false, ContractDisclosure.All, "The phase") { Choices = ScenarioA1RuleContracts.Phases },
+            ScenarioA1RuleContracts.Flag("firerSidePhasing", "The firer's side is the phasing side"),
+            ScenarioA1RuleContracts.Flag("attemptedFromHex", "A Starshell attempt was already made from the firer's hex this phase"),
             new(Firer, ContractFactType.Unit, true, ContractDisclosure.Owner, "The unit that tries the Starshell") { Concerns = Firer },
             new("firer", ContractFactType.Choice, false, ContractDisclosure.Owner,
                 "What it is: a leader, a CE AFV with an Armor Leader, a CE AFV with none, a MMC, or other (a BU AFV among them)")
@@ -120,15 +129,20 @@ internal static class ScenarioA1GunflashContract
         var firer = FirerOf(facts.Text("firer"));
         var interior = facts.Flag("interiorOrSubterranean");
         var moved = facts.Flag("enemyMotorizedMovedWithin16");
+        var phase = facts.Text("phase")!.ToLowerInvariant();
 
+        // The bars in Play's order: night, the firer, the phase, one attempt per hex, the first Starshell, the timing after it (E1.9, E1.92, E1.91, E1.921).
         // A refusal the known facts already make is certain; one only an unknown fact could make leaves the question open (the A23.3 contract's rule).
         string? Refusal(bool? inside, bool? vehicleMoved) =>
-            ScenarioA1Starshells.FirerRefusal(unitId, firer, facts.Flag("stunned")!.Value, facts.Flag("shocked")!.Value, facts.Flag("goodOrder")!.Value,
+            ScenarioA1Starshells.DayBar(facts.Flag("night")!.Value)
+            ?? ScenarioA1Starshells.FirerRefusal(unitId, firer, facts.Flag("stunned")!.Value, facts.Flag("shocked")!.Value, facts.Flag("goodOrder")!.Value,
                 facts.Flag("pinned")!.Value, facts.Flag("ti")!.Value, facts.Flag("captured")!.Value, facts.Flag("aerial")!.Value, facts.Flag("inPillbox")!.Value, inside)
+            ?? ScenarioA1Starshells.PhaseBar(phase, facts.Flag("firerSidePhasing")!.Value)
+            ?? ScenarioA1Starshells.OnceBar(facts.Flag("attemptedFromHex")!.Value, "its hex")
             ?? ScenarioA1Starshells.FirstStarshellRefusal(facts.Flag("starshellFiredBefore")!.Value, facts.Flag("firerHasEnemyInLos")!.Value,
                 facts.Flag("friendlyMotorizedOnboard")!.Value, vehicleMoved, facts.Flag("qualifyingGunflashOccurred")!.Value)
             ?? ScenarioA1Starshells.TimingBar(facts.Flag("starshellFiredBefore")!.Value, facts.Flag("firstStarshellTurnPast")!.Value ? "earlier" : "this", "this",
-                ScenarioA1Starshells.FiresAsLeader(firer), "pfph", !facts.Flag("startOfPhaseBeforeActs")!.Value);
+                ScenarioA1Starshells.FiresAsLeader(firer), phase, !facts.Flag("startOfPhaseBeforeActs")!.Value);
 
         if (Refusal(interior ?? false, moved ?? true) is { } certain)
         {
@@ -147,5 +161,9 @@ internal static class ScenarioA1GunflashContract
             [new("starshell-usage", need, $"Usage dr: {need} or less fires the Starshell")]);
     }
 
-    private static string Rule(string refusal) => refusal.StartsWith("play.starshell-first", StringComparison.Ordinal) ? "E1.91" : "E1.921";
+    private static string Rule(string refusal) =>
+        refusal.StartsWith("play.starshell-first", StringComparison.Ordinal) ? "E1.91"
+        : refusal.StartsWith("play.starshell-day", StringComparison.Ordinal) ? "E1.9"
+        : refusal.StartsWith("play.starshell-phase", StringComparison.Ordinal) || refusal.StartsWith("play.starshell-once", StringComparison.Ordinal) ? "E1.92"
+        : "E1.921";
 }

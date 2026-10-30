@@ -135,6 +135,10 @@ public sealed class ScenarioA1StarshellUsageTests
     private static JsonObject Facts(string firer = "leader", bool firedBefore = false, bool enemyInLos = false, bool friendlyMotorized = false,
         bool? enemyMoved = false, bool gunflash = true) => new()
         {
+            ["night"] = true,
+            ["phase"] = "PFPh",
+            ["firerSidePhasing"] = true,
+            ["attemptedFromHex"] = false,
             ["firerId"] = "g-leader",
             ["firer"] = firer,
             ["goodOrder"] = true,
@@ -180,6 +184,59 @@ public sealed class ScenarioA1StarshellUsageTests
     }
 
     [Fact]
+    public void WithinTheFirstStarshellsPlayerTurnAMmcFiresOneAfterOthersHaveActed()
+    {
+        // E1.921: the timing restriction starts only after the Player Turn of the first Starshell.
+        var within = Facts("mmc", firedBefore: true);
+        within["firstStarshellTurnPast"] = false;
+        within["startOfPhaseBeforeActs"] = false;
+        Assert.Equal("usage-2", Evaluate(within).Outcome);
+    }
+
+    [Fact]
+    public void TheContractRefusesByDayOutOfPhaseAndASecondAttemptFromTheHex()
+    {
+        var day = Facts();
+        day["night"] = false;
+        var refused = Evaluate(day);
+        Assert.Equal("refused", refused.Outcome);
+        Assert.Equal("E1.9", Assert.Single(refused.Reasons).Rule);
+        Assert.StartsWith("play.starshell-day", refused.Reasons[0].Text, StringComparison.Ordinal);
+
+        // E1.92: the PFPh by the phasing side; the MPh (Defensive First Fire) or the DFPh by the other.
+        var dfph = Facts();
+        dfph["phase"] = "DFPh";
+        Assert.Equal("refused", Evaluate(dfph).Outcome);
+        Assert.Equal("E1.92", Assert.Single(Evaluate(dfph).Reasons).Rule);
+        dfph["firerSidePhasing"] = false;
+        Assert.Equal("usage-4", Evaluate(dfph).Outcome);
+        var mph = Facts("mmc");
+        mph["phase"] = "MPh";
+        mph["firerSidePhasing"] = false;
+        Assert.Equal("usage-2", Evaluate(mph).Outcome);
+        var pfph = Facts();
+        pfph["firerSidePhasing"] = false;
+        Assert.Equal("refused", Evaluate(pfph).Outcome);
+
+        // After the first Starshell's Player Turn, a MMC in the DFPh is refused; a leader is not.
+        var late = Facts("mmc", firedBefore: true);
+        late["phase"] = "DFPh";
+        late["firerSidePhasing"] = false;
+        late["firstStarshellTurnPast"] = true;
+        Assert.StartsWith("play.starshell-timing", Assert.Single(Evaluate(late).Reasons).Text, StringComparison.Ordinal);
+        late["firer"] = "leader";
+        Assert.Equal("usage-4", Evaluate(late).Outcome);
+
+        // E1.92: one attempt per hex per phase.
+        var again = Facts();
+        again["attemptedFromHex"] = true;
+        var once = Evaluate(again);
+        Assert.Equal("refused", once.Outcome);
+        Assert.Equal("E1.92", Assert.Single(once.Reasons).Rule);
+        Assert.StartsWith("play.starshell-once", once.Reasons[0].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AnUnknownFactLeavesTheQuestionOpenUnlessAKnownFactRefuses()
     {
         var interior = Facts();
@@ -199,6 +256,10 @@ public sealed class ScenarioA1StarshellUsageTests
     {
         var russian = new JsonObject
         {
+            ["night"] = true,
+            ["phase"] = "PFPh",
+            ["firerSidePhasing"] = true,
+            ["attemptedFromHex"] = false,
             ["starshellFiredBefore"] = false,
             ["firstStarshellTurnPast"] = false,
             ["startOfPhaseBeforeActs"] = true,
