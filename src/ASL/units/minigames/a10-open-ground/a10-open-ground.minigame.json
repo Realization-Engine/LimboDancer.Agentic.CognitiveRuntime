@@ -1,0 +1,284 @@
+{
+  "id": "a10-open-ground",
+  "title": "A10.531 Open Ground",
+  "card": "a10-open-ground",
+  "rules": [
+    "A10.531"
+  ],
+  "contracts": [
+    "a10.531-open-ground"
+  ],
+  "example": null,
+  "checks": [
+    {
+      "name": "Open Ground [G5] in the clear view of the Russian squad is Open Ground to it for Interdiction",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "interdiction",
+        "at": "bd04:G5:0",
+        "terrain": "open-ground",
+        "month": 7,
+        "smokeInLocation": false,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false,
+        "viewerId": "r-squad",
+        "losClear": true,
+        "losHindrance": 0,
+        "hexsideTem": false,
+        "heightAdvantage": false,
+        "seesAlongRoad": false
+      },
+      "expect": {
+        "outcome": "open-ground"
+      }
+    },
+    {
+      "name": "SMOKE in [G5] makes it not Open Ground, whatever the Russian squad sees (A4.6)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "interdiction",
+        "at": "bd04:G5:0",
+        "terrain": "open-ground",
+        "month": 7,
+        "smokeInLocation": true,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false
+      },
+      "expect": {
+        "outcome": "not-open-ground",
+        "reasons": [
+          "SMOKE"
+        ]
+      }
+    },
+    {
+      "name": "Grain [J5] in October is out of season and Open Ground (B15.6)",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "rout",
+        "at": "bd04:J5:0",
+        "terrain": "grain",
+        "month": 10,
+        "smokeInLocation": false,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false,
+        "viewerId": "r-squad",
+        "losClear": true,
+        "losHindrance": 0,
+        "hexsideTem": false,
+        "heightAdvantage": false,
+        "seesAlongRoad": false
+      },
+      "expect": {
+        "outcome": "open-ground"
+      }
+    },
+    {
+      "name": "Grain [J5] in July is not Open Ground",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "rout",
+        "at": "bd04:J5:0",
+        "terrain": "grain",
+        "month": 7,
+        "smokeInLocation": false,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false
+      },
+      "expect": {
+        "outcome": "not-open-ground",
+        "reasons": [
+          "grain"
+        ]
+      }
+    },
+    {
+      "name": "Grain [J5] in a game that names no month is not evaluated",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "rout",
+        "at": "bd04:J5:0",
+        "terrain": "grain",
+        "month": null,
+        "smokeInLocation": false,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false,
+        "viewerId": "r-squad",
+        "losClear": true,
+        "losHindrance": 0,
+        "hexsideTem": false,
+        "heightAdvantage": false,
+        "seesAlongRoad": false
+      },
+      "expect": {
+        "outcome": "not-evaluated",
+        "reasons": [
+          "month"
+        ]
+      }
+    },
+    {
+      "name": "An orchard, entered by hand, is never Open Ground (B14.3)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "dash",
+        "at": "bd04:G5:0",
+        "terrain": "orchard",
+        "month": 1,
+        "smokeInLocation": false,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false
+      },
+      "expect": {
+        "outcome": "not-open-ground",
+        "reasons": [
+          "orchard"
+        ]
+      }
+    },
+    {
+      "name": "The road [R2] seen across its hedge is not Open Ground to the Russian squad for the rout (B1.16)",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "rout",
+        "at": "bd04:R2:0",
+        "terrain": "open-ground",
+        "month": 7,
+        "smokeInLocation": false,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false,
+        "viewerId": "r-squad",
+        "losClear": true,
+        "losHindrance": 0,
+        "hexsideTem": true,
+        "heightAdvantage": false,
+        "seesAlongRoad": false
+      },
+      "expect": {
+        "outcome": "not-open-ground",
+        "reasons": [
+          "hedge"
+        ]
+      }
+    },
+    {
+      "name": "The road [R2] seen from beside its hedge is Open Ground to the Russian squad",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "rout",
+        "at": "bd04:R2:0",
+        "terrain": "open-ground",
+        "month": 7,
+        "smokeInLocation": false,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false,
+        "viewerId": "r-squad",
+        "losClear": true,
+        "losHindrance": 0,
+        "hexsideTem": false,
+        "heightAdvantage": false,
+        "seesAlongRoad": false
+      },
+      "expect": {
+        "outcome": "open-ground"
+      }
+    },
+    {
+      "name": "For concealment the hedge along the LOS keeps no \"?\" (A12.14, ruling RA10.2)",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "concealment",
+        "at": "bd04:R2:0",
+        "terrain": "open-ground",
+        "month": 7,
+        "smokeInLocation": false,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false,
+        "viewerId": "r-squad",
+        "losClear": true,
+        "losHindrance": 0,
+        "hexsideTem": true,
+        "heightAdvantage": false,
+        "seesAlongRoad": false
+      },
+      "expect": {
+        "outcome": "open-ground"
+      }
+    },
+    {
+      "name": "The German viewer cannot know where a hidden Russian squad sees from, so Open Ground [G5] is not evaluated for it",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "rout",
+        "at": "bd04:G5:0",
+        "terrain": "open-ground",
+        "month": 7,
+        "smokeInLocation": false,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "The Russian viewer knows its own squad's view of [G5]",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a10.531-open-ground",
+      "facts": {
+        "purpose": "rout",
+        "at": "bd04:G5:0",
+        "terrain": "open-ground",
+        "month": 7,
+        "smokeInLocation": false,
+        "protectedEntry": false,
+        "inLocationCover": false,
+        "roadRate": false,
+        "viewerId": "r-squad",
+        "losClear": true,
+        "losHindrance": 0,
+        "hexsideTem": false,
+        "heightAdvantage": false,
+        "seesAlongRoad": false
+      },
+      "expect": {
+        "outcome": "open-ground"
+      }
+    }
+  ],
+  "units": {
+    "g-squad": "german",
+    "r-squad": "russian"
+  }
+}

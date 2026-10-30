@@ -840,6 +840,11 @@ public static class ScenarioA1MovementCalculator
     /// Good Order enemy ground unit within 16 hexes; a forced back reveals the whole stack (A12.15). E1.31 (backlog pass 16, ruling R16.4): at night
     /// a mover loses "?" only by Non-Assault Movement in an Illuminated Location. <paramref name="enemySees"/> and <paramref name="illuminated"/>
     /// are read where the planner read them. Returns each mover that loses its "?", a Dummy to be removed and a real unit to be revealed.
+    /// This member keeps its answer: it reads Open Ground as the terrain name "open-ground". The overload that takes
+    /// <c>entersOpenGroundSeen</c>, A10.531's answer (<see cref="ScenarioA1OpenGroundCalculator.OpenGroundToAny"/> over the seers'
+    /// <see cref="ScenarioA1OpenGroundCalculator.OpenGroundTo"/> for <see cref="OpenGroundPurpose.Concealment"/>), replaces it (the A10.531 claim,
+    /// rulings RA10.2, RA10.5), and differs: an assaulting mover loses its "?" entering out-of-season grain, and keeps it entering Open Ground with
+    /// SMOKE, a wreck, or an AFV there; a road-rate mover in a hex of other terrain loses it where a seer's LOS reaches it along the road (A4.132).
     /// </summary>
     public static IReadOnlyList<MoverConcealmentFacts> Unmasked(IReadOnlyList<MoverConcealmentFacts> movers, bool forcedBack, bool assault, bool night, string terrain,
         Func<bool> enemySees, Func<bool> illuminated)
@@ -848,6 +853,24 @@ public static class ScenarioA1MovementCalculator
         ArgumentNullException.ThrowIfNull(enemySees);
         ArgumentNullException.ThrowIfNull(illuminated);
         var seen = forcedBack || (enemySees() && (night ? !assault && illuminated() : !assault || terrain == "open-ground"));
+        return [.. movers.Where(unit => seen && (unit.Dummy || unit.Concealed))];
+    }
+
+    /// <summary>
+    /// A12.14 (p. 78; ruling R10.10) with A10.531's Open Ground (p. 67; the A10.531 claim, ruling RA10.5): the old member's logic word for word, its
+    /// terrain test replaced by <paramref name="entersOpenGroundSeen"/>, whether the Location is Open Ground to a Good Order enemy ground unit within 16
+    /// hexes with a clear LOS to it (<see cref="ScenarioA1OpenGroundCalculator.OpenGroundToAny"/> over those seers, for
+    /// <see cref="OpenGroundPurpose.Concealment"/>). An unknown answer (grain with no month) is the caller's to refuse before it asks (ruling RA10.7).
+    /// Each delegate is read only where the old member read its fact.
+    /// </summary>
+    public static IReadOnlyList<MoverConcealmentFacts> Unmasked(IReadOnlyList<MoverConcealmentFacts> movers, bool forcedBack, bool assault, bool night,
+        Func<bool> entersOpenGroundSeen, Func<bool> enemySees, Func<bool> illuminated)
+    {
+        ArgumentNullException.ThrowIfNull(movers);
+        ArgumentNullException.ThrowIfNull(entersOpenGroundSeen);
+        ArgumentNullException.ThrowIfNull(enemySees);
+        ArgumentNullException.ThrowIfNull(illuminated);
+        var seen = forcedBack || (enemySees() && (night ? !assault && illuminated() : !assault || entersOpenGroundSeen()));
         return [.. movers.Where(unit => seen && (unit.Dummy || unit.Concealed))];
     }
 
