@@ -1209,6 +1209,10 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         }
 
         FireTarget[] named = [.. recorded.Subjects, .. recorded.Others ?? []];
+        if (check.Cause == "rider-bail-out" && recorded.Check != MoraleCheckFacts.Nmc)
+        {
+            return "A Rider Bail Out requires an NMC.";
+        }
         if (!named.Select(item => item.UnitId).SequenceEqual(check.Units))
         {
             return "The morale check record names other units than its facts.";
@@ -1223,11 +1227,22 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             }
 
             side ??= unit.Side;
+            var aboard = target.Aboard;
+            if (check.Cause == "rider-bail-out")
+            {
+                if (unit.Position is not ContainedPosition { Role: ContainmentRole.Rider } rider
+                    || state.Unit(rider.Container) is not { Status: InstanceStatus.Active } vehicle)
+                {
+                    return "A Rider Bail Out check must name an actual Rider and its vehicle.";
+                }
+                aboard = new FireAboard(vehicle.Id, FirePrc.Rider, ScenarioA1PassengerActionRules.VehicleMoved(false, state.Phase == "mph",
+                    state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal), GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True), null);
+            }
             var expected = LiveFire.Target(state, unit, at) with
             {
                 Unarmed = GameState.Condition(unit, Conditions.Unarmed) == ConditionState.True ? true : null,
                 Encircled = state.Encircled(unit) ? true : target.Encircled,
-                Aboard = target.Aboard,
+                Aboard = aboard,
                 SeenByGoodOrderEnemy = target.SeenByGoodOrderEnemy,
                 KnownEnemyInLos = target.KnownEnemyInLos,
                 Captors = target.Captors,

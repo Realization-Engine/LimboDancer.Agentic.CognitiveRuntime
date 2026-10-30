@@ -777,6 +777,10 @@ public static class GameEventWriter
 
                 break;
             case RiderBailedOut bailed:
+                if (bailed.MoraleCheck is { } bailCheck)
+                {
+                    writer.WriteString("moraleCheck", bailCheck);
+                }
                 writer.WriteString("unit", bailed.Unit);
                 writer.WriteString("vehicle", bailed.Vehicle);
                 writer.WriteString("at", bailed.At.ToString());

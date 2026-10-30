@@ -494,6 +494,13 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
 /// </summary>
 public sealed record RiderBailedOut(string Unit, string Vehicle, BoardLocation At, string Cause, string Roll, int Morale, string Result) : EventPayload
 {
+    /// <summary>The verified shared Hero morale-check event; null preserves the earlier Bail Out reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? MoraleCheck
+    {
+        get; init;
+    }
+
     /// <summary>Each SW the unit carries, with its dr's roll (null when the unit breaks or is eliminated, which eliminates it) and its fate (D6.24).</summary>
     public IReadOnlyList<RiderWeapon>? Weapons
     {

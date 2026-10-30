@@ -104,7 +104,7 @@ public sealed partial class GamePlanner
         foreach (var unit in riders)
         {
             var own = unit.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
-            bar ??= ScenarioA1RiderRules.MoraleBar(unit.Id, own?.Morale, own?.BrokenMorale);
+            bar ??= ScenarioA1RiderRules.MoraleBar(unit.Id, own?.Morale, own?.BrokenMorale, own?.IsHero == true, own?.WoundedMorale);
         }
 
         return bar;

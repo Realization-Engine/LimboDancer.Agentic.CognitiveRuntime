@@ -657,6 +657,7 @@ public static class GameEventReader
                     : new RiderBailedOut(bailedUnit, bailedFrom, bailedAt, bailedCause, bailedRoll, bailedMorale.Value, bailedResult)
                     {
                         Weapons = bailedWeapons,
+                        MoraleCheck = fields.OptionalString(payload, "moraleCheck", path),
                         Drm = fields.OptionalInteger(payload, "drm", path),
                         Elr = fields.OptionalInteger(payload, "elr", path),
                     };

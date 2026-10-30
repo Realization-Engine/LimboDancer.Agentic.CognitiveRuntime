@@ -382,8 +382,10 @@ public sealed class BacklogPass50Tests : IDisposable
         Assert.True(Is(tank, Conditions.Recalled));
     }
 
-    [Fact]
-    public async Task HeroRiderRepairsTheButtonedUpAamgAndForgedParticipantsDoNotReplay()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HeroRiderRepairsTheButtonedUpAamgAndForgedParticipantsDoNotReplay(bool standalone)
     {
         scenarioYear = 1943;
         var halftrack = Tank("north-east", Conditions.Malfunctioned, Conditions.ButtonedUp);
@@ -391,8 +393,8 @@ public sealed class BacklogPass50Tests : IDisposable
         var hero = new Dictionary<string, object>
         {
             ["id"] = "hero",
-            ["kind"] = "asl:leader",
-            ["definition"] = "attacker-leader-8-0",
+            ["kind"] = standalone ? "asl:hero" : "asl:leader",
+            ["definition"] = standalone ? "attacker-hero" : "attacker-leader-8-0",
             ["side"] = "german",
             ["position"] = new Dictionary<string, string> { ["in"] = "de-tank", ["role"] = "rider" },
             ["conditions"] = new Dictionary<string, bool> { [Conditions.Broken] = false, [Conditions.Captured] = false, [Conditions.Heroic] = true },
