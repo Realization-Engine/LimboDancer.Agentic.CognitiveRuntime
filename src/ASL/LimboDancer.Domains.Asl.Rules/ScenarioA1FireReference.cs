@@ -229,6 +229,16 @@ public sealed record FireDefinition(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether a MMC's counter bears the DC symbol of an Assault Engineer (A25.01, p. 93; trait <c>asl:assault-engineer</c> on its front face; the A11.5
+    /// claim's design, ruling RA11C.5): its printed status, which
+    /// <see cref="ScenarioA1CloseCombatValueCalculator.AssaultEngineer"/> combines with a designation and a Replacement. Null when not printed.
+    /// </summary>
+    public bool? AssaultEngineer
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -756,6 +766,7 @@ public sealed class ScenarioA1FireReference
             LatwType = Text("front", "latw-type"),
             BreakdownRemoves = Trait("front", "asl:breakdown-removes"),
             CsRed = Trait("wreck", "asl:cs-red"),
+            AssaultEngineer = Trait("front", "asl:assault-engineer"),
         };
     }
 }
