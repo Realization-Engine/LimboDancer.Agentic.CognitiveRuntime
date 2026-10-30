@@ -240,7 +240,7 @@ internal static class ScenarioA1ArmorCalculator
     {
         var target = shot.VehicleTarget!;
         // D3.2 (pass 50): a shot from inside the target's hex names no Target Facing, and one from outside it names the hull's, and the turret's too.
-        if (!reference.Armor.Vehicles.TryGetValue(target.DefinitionId!, out var armor) || armor.Nationality == gun.Nationality
+        if (!reference.Armor.Vehicles.TryGetValue(target.DefinitionId!, out var armor) || armor.Nationality == ScenarioA1OrdnanceCalculator.FriendlyNationality(shot, gun)
             || (shot.SameHex == true ? target.HullFacing is not null || target.TurretFacing is not null
                 : target.HullFacing is not ("front" or "side" or "rear") || (armor.Turreted && target.TurretFacing is not ("front" or "side" or "rear")))
             || shot.Hit!.Targets is { Count: > 0 })
@@ -597,10 +597,8 @@ internal static class ScenarioA1ArmorCalculator
             }
         }
 
-        // A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the Multiple ROF one each. Forwards to
-        // ScenarioA1NonQualifiedUseCalculator.RofLowering, the same answer (the A21.13 claim, ruling RA21.7), and keeps reading CapturedPenalty alone:
-        // a NonQualified shot is not lowered here, and the subtraction has no floor (W-A21.13).
-        var rof = (gun.RateOfFire ?? 0) - ScenarioA1NonQualifiedUseCalculator.RofLowering(shot.CapturedPenalty ?? 0);
+        // A21.12 (pass 65, ruling R65.22; W-A21.13): the penalty multiple lowers the Multiple ROF one each (ScenarioA1OrdnanceCalculator.RateOfFire).
+        var rof = ScenarioA1OrdnanceCalculator.RateOfFire(shot, gun);
         if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {
             rof--;
@@ -643,9 +641,12 @@ internal static class ScenarioA1ArmorCalculator
         // D10.1 (pass 65, ruling R65.23): a wreck is no unit to carry an Acquisition (C6.5: "Known enemy units"), and gives none.
         var acquires = !failed && target.Concealed != true && !latw && !machineGun && target.Wreck != true;
         var acquisition = !acquires ? 0 : Math.Max((ScenarioA1OrdnanceCalculator.AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
-        var gunEffect = new OrdnanceGunEffect(breakdown, malfunctioned, Math.Max(rof, 0), kept, counter, acquisition,
+        // A.11 (W-A21.13): under a penalty multiple the Original B# is the X#, and a DR at or above it eliminates the Gun.
+        var eliminated = breakdownOutcome is null ? ScenarioA1OrdnanceCalculator.Eliminated(shot, gun, original, failed) : null;
+        var gunEffect = new OrdnanceGunEffect(breakdown, malfunctioned && eliminated != true, Math.Max(rof, 0), kept, counter, acquisition,
             acquires ? shot.TargetLocationId : null)
         {
+            Eliminated = eliminated,
             VehicleBreakdown = breakdownOutcome
         };
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)

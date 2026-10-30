@@ -142,6 +142,12 @@ public sealed record GameState(
     public IReadOnlyList<string> GunCrewsFired { get; init; } = [];
 
     /// <summary>
+    /// The units that fired an equipment Gun this Game Turn, cleared when the Game Turn ends (W-A21.13): a record of what happened, which A15.23's
+    /// once-per-Game-Turn limit on a hero's Gun over 82mm reads through ScenarioA1NonQualifiedUseCalculator.
+    /// </summary>
+    public IReadOnlyList<string> GunFirersThisGameTurn { get; init; } = [];
+
+    /// <summary>
     /// Each Gun's Defensive First Fire shots at the moving stack in its present Location (C6.17; ruling R8.1); cleared whenever the stack
     /// enters a new Location and at every phase change.
     /// </summary>

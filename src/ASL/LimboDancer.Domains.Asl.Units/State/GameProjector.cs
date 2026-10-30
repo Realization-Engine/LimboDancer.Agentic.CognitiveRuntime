@@ -705,6 +705,7 @@ public static partial class GameProjector
                     AbandonedThisPlayerTurn = newPlayerTurn ? [] : state.AbandonedThisPlayerTurn,
                     VehicleWeaponShots = newPlayerTurn ? [] : state.VehicleWeaponShots,
                     GunCrewsFired = newPlayerTurn ? [] : state.GunCrewsFired,
+                    GunFirersThisGameTurn = change.Turn != state.Turn ? [] : state.GunFirersThisGameTurn,
                     // A3.3 (table player, pass 12): a unit that fired only a SW in the PFPh has Prep Fired and does not move.
                     NoMoveThisPlayerTurn = newPlayerTurn ? [] : Rules.ScenarioA1SequenceProjection.NoMoveListGrows(state.Phase, newPlayerTurn)
                         ? [.. state.NoMoveThisPlayerTurn, .. state.PhaseFirers.Select(item => item.Unit).Concat(state.SupportWeaponUses.Select(item => item.Unit)).Distinct().Where(id =>
@@ -1452,6 +1453,9 @@ public static partial class GameProjector
                     }]
                     : state.OrdnanceShotsHere,
                 GunCrewsFired = Rules.ScenarioA1OrdnanceProjection.CrewLosesInherentFp(tank, panzerfaust, state.GunCrewsFired.Contains(fired.Crew)) ? [.. state.GunCrewsFired, fired.Crew] : state.GunCrewsFired,
+                // W-A21.13: who fired an equipment Gun this Game Turn, as it happened.
+                GunFirersThisGameTurn = state.Find(fired.Gun) is EquipmentInstance { Kind: "asl:gun" } && !state.GunFirersThisGameTurn.Contains(fired.Crew, StringComparer.Ordinal)
+                    ? [.. state.GunFirersThisGameTurn, fired.Crew] : state.GunFirersThisGameTurn,
             };
             state = SupportWeapons(state, fired, shooter, mortar, panzerfaust);
             return state with
@@ -1844,9 +1848,11 @@ public static partial class GameProjector
         /// </summary>
         private GameState? ChangeAcquisition(GameState state, AcquisitionChanged change)
         {
-            // Rules decides it (pass 32.c).
+            // Rules decides it (pass 32.c). The side using the Gun is its manning unit's, which differs from the side that set it up only on a captured
+            // Gun (W-A21.13).
             var acquisition = state.Acquisitions.FirstOrDefault(item => item.Gun == change.Gun);
-            if (Rules.ScenarioA1FireFollowUps.VerifyAcquisitionChange(acquisition is not null, state.Find(change.Gun)?.Side, change.Units.Select(id => state.Unit(id) is { } unit
+            var gunUser = state.Find(change.Gun) is EquipmentInstance { Holding: { } holding } && state.Unit(holding.Holder) is { } holder ? holder.Side : state.Find(change.Gun)?.Side;
+            if (Rules.ScenarioA1FireFollowUps.VerifyAcquisitionChange(acquisition is not null, gunUser, change.Units.Select(id => state.Unit(id) is { } unit
                 ? new Rules.AcquiredUnitRecordFacts(unit.Status == InstanceStatus.Active, unit.Side, state.Location(id)?.Location == change.Location,
                     GameState.Condition(unit, Conditions.Concealed) == ConditionState.True)
                 : new Rules.AcquiredUnitRecordFacts(false, null, false, false))) is { } refused)
