@@ -71,3 +71,24 @@ One calculator call and a set lookup per ordnance shot planned or verified; no p
 
 - **D1. Order with Codex's claims.** wire-fire-2 (W-C9) and wire-fire-3 (W-D3.7) are claimed with designs and change the same `FromState` lines, `Outside`'s crew check, `Breakdown`, and the Canister and Area ROF; neither has pushed code (both branches are at main). Proposal: wire-fire-4 builds now and merges first, adding only the `UseMultiple` branch at each site; Codex's two claims merge main after it and keep that branch where they rewrite the same lines. A note in their rows says so, and that rule 6 now allows the field.
 - **D2. Two SMC firing a Gun together** need a second participant in the ordnance request, which W-C9's design builds for mortars. Proposal: W-C9 builds the participant once, and its row gains the call `User(kind, smcFiring)` with the count; this claim passes one SMC. The alternative is that this claim builds the participant and W-C9 uses it, which grows this claim into W-C9's request model.
+
+**Approved by the user on 2026-10-30, with D1 and D2 as proposed.** The claim commit 1eafe141 added `GameState.cs` and `GameProjector.cs` (shared) and the notes on wire-fire-2 and wire-fire-3.
+
+## 9. As built (2026-10-30)
+
+As designed, with these additions, each found when a test of the new reading was refused by a check that read the Gun's nationality or side as its user's:
+
+- **The Gun's nationality bar** (`ScenarioA1OrdnanceCalculator`, the `gun-outside` check): a shot carrying `UseMultiple` was admitted by `Use`, a captured Gun of another nationality included; a shot recorded before keeps the bar.
+- **The friendly nationality** of a shot (`ScenarioA1OrdnanceCalculator.FriendlyNationality`): the firer's for a Gun shot carrying `UseMultiple`, the Gun's otherwise, as then. Read by the Infantry Target Type's friendly-unit check, the mortar's friendly units and vehicles, the Spotter's and the director's nationality, the armor calculator's own-vehicle bar, and the Area Target Type's enemy test.
+- **The projector's Acquisition check** reads the side of the Gun's manning unit, which differs from the side that set it up only on a captured Gun.
+- **A Gun set up with no side** is not captured: it records no other owner (the calculator would refuse an unknown fact).
+- **A vehicle's X#** is not built here: a vehicle weapon's breakdown is D3.7's (`ScenarioA1VehicleBreakdownResolutionCalculator`); W-D3.7's row gains the note that A.11 makes a Temporary crew's Original B# its X#.
+- **The `ordnance.crew-outside` text** now says what that code still covers (a broken or berserk crew, a SW's Personnel, the PSK's lone leader); the use itself is refused with the calculator's text under `play.ordnance-use`.
+- **The build review** (a sub-agent, read-only) found the legacy reading byte-identical at every site and three things, all fixed:
+  - A shot that reached its X# with Special Ammunition the Gun did not have was "never fired" in the projector (C8.9 read only a malfunction) while the planner marked its crew. `ScenarioA1OrdnanceProjection.NeverFired` gains the elimination, and the planner and the projector both ask it.
+  - A15.23 reads "If firing a Gun > 82mm, it may fire only once per Game Turn": the hero, and only Guns over 82mm. The state records each Gun shot of the Game Turn by firer and definition (`GameState.GunShotsThisGameTurn`), and the fact handed to `Use` is whether the hero fired a Gun that `ScenarioA1NonQualifiedUseCalculator.HeroGunLimited` (new, also read by `Use`) limits. The model's summary said "the Gun"; it now says the hero.
+  - A15.2: a leader that becomes heroic "retains both its leadership ... and heroic qualities", so a leader marked heroic fires a Gun as a hero.
+  - Not this claim's, noted for track 3: the Studio's record text calls an eliminated Gun's shot "no more fire this phase" (`MapStudio/Services/PlayRecords.cs`); A19.131's exemption still reads the nationality (SW only, no effect on a Gun).
+- **Not tested by a recorded old game of this kind:** no game in the proof store holds a Gun manned by any but its crew; the gate's replay of every older ordnance record (a tank's MA, a hero's PSK and light mortar) proves the legacy reading.
+
+Tests: `BacklogPass8Tests.ASquadOnItsOwnGunFiresUnderTheSinglePenalty`, `APenalizedGunIsEliminatedOnItsOriginalBreakdownNumber`, `AnEnemySquadOnACapturedGunTakesTheDoubledPenalty`, `AnAlliedCrewMansItsSidesGunWithoutPenalty`, `ALoneLeaderIsRefusedAGunAndAHeroFiresItUnderTheSinglePenalty`, `AVehiclesShotCarriesItsTemporaryCrewsMultiple` (new), with the Play and Rules tests of the old reading at these sites (105 in all, passed); the strict Rules and Play builds have no warning.

@@ -16,6 +16,9 @@ public static class ScenarioA1NonQualifiedUseCalculator
     /// <summary>A15.23 (p. 83): the phases in which a hero fires a Gun over 82mm.</summary>
     public static IReadOnlyList<string> HeroGunPhases => HeroGunPhaseList;
 
+    /// <summary>A15.23 (p. 83): whether a Gun of this caliber is one a hero fires only once per Game Turn and only in the MPh or DFPh (over 82mm).</summary>
+    public static bool HeroGunLimited(int? caliber) => caliber > HeroGunCaliber;
+
     /// <summary>Ruling RA21.2 (C2.1 p. 167, D5.1 p. 203): a crew counter, an infantry crew or a vehicle crew, is qualified to man a Gun.</summary>
     public static bool Qualified(string? kind) => ScenarioA1Definitions.IsCrew(kind);
 
@@ -129,7 +132,7 @@ public static class ScenarioA1NonQualifiedUseCalculator
             return Refused("The Gun's caliber is not known (A15.23).", "A15.23");
         }
 
-        var limited = caliber > HeroGunCaliber;
+        var limited = HeroGunLimited(caliber);
         if (limited)
         {
             if (facts.Phase is not { } phase)

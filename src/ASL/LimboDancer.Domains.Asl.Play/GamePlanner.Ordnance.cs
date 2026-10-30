@@ -968,7 +968,7 @@ public sealed partial class GamePlanner
         }
 
         // C8.9: Special Ammunition the Gun turned out not to have was never fired, unless the Gun malfunctioned: no marker, no Acquisition.
-        if (resolution.AmmunitionUse == "none" && !gunResult.Malfunctioned && gunResult.Eliminated != true)
+        if (ScenarioA1OrdnanceProjection.NeverFired(resolution.AmmunitionUse, gunResult.Malfunctioned, gunResult.Eliminated == true))
         {
             return;
         }

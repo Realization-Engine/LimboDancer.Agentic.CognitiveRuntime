@@ -53,17 +53,19 @@ public static class LiveOrdnance
     /// The facts of one use of a crew-served Gun for <see cref="ScenarioA1NonQualifiedUseCalculator.Use"/> (W-A21.13): the firer's kind with one SMC
     /// firing (two SMC together come with W-C9's second participant, decision D2); captured when the Gun was set up by another side than the firer's
     /// (ruling RA21.4: possessed from an enemy side; an ally of the firer's side is the same side), and not when it was set up with no side, which
-    /// records no other owner; a hero by kind; the Gun's mortar identity and
-    /// caliber from its definition; the phase; and whether the firer has fired a Gun this Game Turn (A15.23).
+    /// records no other owner; a hero by kind, or a leader marked heroic (A15.2: it "retains both its leadership ... and heroic qualities"); the Gun's
+    /// mortar identity and caliber from its definition; the phase; and whether the firer has fired a Gun over 82mm this Game Turn (A15.23: "If firing
+    /// a Gun &gt; 82mm, it may fire only once per Game Turn", the hero), asked of the calculator for each Gun it fired.
     /// </summary>
     internal static NonQualifiedUseFacts UseFacts(GameState state, EquipmentInstance gun, UnitInstance firer, string definition, string phase)
     {
         var weapon = Reference.Value.Weapon(definition);
         return new NonQualifiedUseFacts(ScenarioA1NonQualifiedUseCalculator.User(firer.Kind, 1), gun.Side is not null && gun.Side != firer.Side,
-            firer.Kind == "asl:hero", weapon is null ? null : ScenarioA1MortarCalculator.IsMortar(gun.Kind, weapon.GunType), weapon?.Caliber)
+            firer.Kind == "asl:hero" || Is(firer, Conditions.Heroic), weapon is null ? null : ScenarioA1MortarCalculator.IsMortar(gun.Kind, weapon.GunType), weapon?.Caliber)
         {
             Phase = phase,
-            FiredThisGameTurn = state.GunFirersThisGameTurn.Contains(firer.Id, StringComparer.Ordinal),
+            FiredThisGameTurn = state.GunShotsThisGameTurn.Any(item => item.Unit == firer.Id
+                && ScenarioA1NonQualifiedUseCalculator.HeroGunLimited(item.Definition is null ? null : CaliberOf(item.Definition))),
         };
     }
 

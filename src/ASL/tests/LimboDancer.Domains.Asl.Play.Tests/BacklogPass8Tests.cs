@@ -904,7 +904,7 @@ public sealed class BacklogPass8Tests : IDisposable
         Assert.Equal(listing.Breakdown - 2, shot.Gun!.BreakdownNumber);
         Assert.Equal(Math.Max(0, (listing.RateOfFire ?? 0) - 1), shot.Gun.RateOfFire);
         Assert.Null(shot.Gun.Eliminated);
-        Assert.Contains("g1", Current.GunFirersThisGameTurn);
+        Assert.Contains(Current.GunShotsThisGameTurn, item => item.Unit == "g1" && item.Definition == "attacker-inf-gun");
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 
@@ -967,6 +967,19 @@ public sealed class BacklogPass8Tests : IDisposable
         Committed(await FireAt("de-gun-2", "bd01:B8:0", null, null, 2, 3, 6, 6));
         Assert.Equal(1, LastFacts(before).UseMultiple);
         Assert.Contains(LastShot(before).ToHit!.Drm, item => item.Name == "case-h" && item.Value == 2);
+    }
+
+    [Fact]
+    public async Task AHeroicLeaderFiresAGunAsAHeroDoes()
+    {
+        // A15.2, A15.23 (W-A21.13): a leader that becomes heroic "retains both its leadership ... and heroic qualities", so he fires the leIG alone
+        // under the single penalty.
+        await Setup("german", 7, 1942, Unit("g-l", "asl:leader", "attacker-leader-8-1", "bd01:B10:0", "german", "asl:heroic"),
+            Gun("de-gun", "attacker-inf-gun", "bd01:B10:0", "north-east", "g-l", "german"), Squad("r1", "bd01:B8:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await FireAt("de-gun", "bd01:B8:0", null, null, 2, 3, 6, 6));
+        Assert.Equal(1, LastFacts(before).UseMultiple);
     }
 
     [Fact]

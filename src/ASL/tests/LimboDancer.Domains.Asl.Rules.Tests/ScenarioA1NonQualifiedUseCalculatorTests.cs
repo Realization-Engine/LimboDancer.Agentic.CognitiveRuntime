@@ -318,4 +318,32 @@ public sealed class ScenarioA1NonQualifiedUseCalculatorTests
         fraction["caliber"] = 75.5m;
         Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(Contract, fraction).Outcome);
     }
+
+    [Fact]
+    public void AHeroGunOver82mmIsLimitedAndTheLimitReadsAsUseDoes()
+    {
+        // A15.23 (W-A21.13): over 82mm only; an unknown caliber is not limited.
+        Assert.False(ScenarioA1NonQualifiedUseCalculator.HeroGunLimited(82));
+        Assert.True(ScenarioA1NonQualifiedUseCalculator.HeroGunLimited(83));
+        Assert.False(ScenarioA1NonQualifiedUseCalculator.HeroGunLimited(null));
+        foreach (var caliber in new[] { 37, 75, 82, 83, 105 })
+        {
+            var use = ScenarioA1NonQualifiedUseCalculator.Use(new NonQualifiedUseFacts(CrewServedUser.LoneSmc, false, true, false, caliber)
+            {
+                Phase = "DFPh",
+                FiredThisGameTurn = false,
+            });
+            Assert.Equal(ScenarioA1NonQualifiedUseCalculator.HeroGunLimited(caliber), use.HeroGunLimit);
+        }
+    }
+
+    [Fact]
+    public void AShotThatEliminatesItsGunCountsAsFired()
+    {
+        // C8.9, A.11 (W-A21.13): Special Ammunition the Gun did not have was never fired, unless the Gun malfunctioned or reached its X#.
+        Assert.True(ScenarioA1OrdnanceProjection.NeverFired("none", malfunctioned: false, eliminated: false));
+        Assert.False(ScenarioA1OrdnanceProjection.NeverFired("none", malfunctioned: false, eliminated: true));
+        Assert.False(ScenarioA1OrdnanceProjection.NeverFired("none", malfunctioned: true, eliminated: false));
+        Assert.Equal(ScenarioA1OrdnanceProjection.NeverFired("none", true), ScenarioA1OrdnanceProjection.NeverFired("none", true, false));
+    }
 }
