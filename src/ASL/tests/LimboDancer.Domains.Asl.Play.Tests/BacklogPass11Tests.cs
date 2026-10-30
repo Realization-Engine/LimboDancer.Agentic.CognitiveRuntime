@@ -11,6 +11,7 @@ using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
+using Rules = LimboDancer.Domains.Asl.Rules;
 
 namespace LimboDancer.Domains.Asl.Play.Tests;
 
@@ -888,6 +889,60 @@ public sealed class BacklogPass11Tests : IDisposable
         await Advance();
         Assert.True(Is(Current.Unit("r1")!, Conditions.Melee));
         Assert.False(Is(Current.Unit("de-ht")!, Conditions.Melee));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AVehiclesCcAttackMalfunctionsOnlyItsParticipatingCmg()
+    {
+        await Setup("russian", Vehicle("de-tk", "attacker-tank", L(Ne("E5")), "german"), Squad("r1", L("E5"), "russian"), Squad("g1", L("J9"), "german"));
+        await Advance(4);
+        Committed(await Do(GameActions.Advance, Once(3, 4), new
+        {
+            unitIds = R1,
+            to = L(Ne("E5"))
+        }));
+        await Advance();
+        Committed(await VehicleCc(L(Ne("E5")), Once(5, 6), vehicle: "de-tk", attackers: ["r1"]));
+        var before = Revision;
+        var stateBefore = Current;
+        Committed(await VehicleCc(L(Ne("E5")), Once(6, 6), vehicle: "de-tk", defenders: ["r1"]));
+        var record = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>());
+        Assert.True(record.Facts.TryGetProperty("vehicleBreakdown", out var facts));
+        Assert.Equal("cmg", Assert.Single(facts.GetProperty("weapons").EnumerateObject()).Name);
+        Assert.True(Is(Current.Unit("de-tk")!, Conditions.CmgMalfunctioned));
+        Assert.False(Is(Current.Unit("de-tk")!, Conditions.BmgMalfunctioned));
+        Assert.False(Is(Current.Unit("de-tk")!, Conditions.Malfunctioned));
+        var dice = Since(before).Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(item => item.Roll, StringComparer.Ordinal);
+        var recorded = record.Facts.Deserialize<Rules.VehicleCloseCombatFacts>(LiveFire.Json)!;
+        var forged = recorded with
+        {
+            Vehicle = recorded.Vehicle! with
+            {
+                UnavailableWeapons = ["cmg"]
+            }
+        };
+        Assert.NotNull(CloseCombatRecordVerifier.Shared.VerifyVehicle(stateBefore, record with
+        {
+            Facts = JsonSerializer.SerializeToElement(forged, LiveFire.Json)
+        }, dice));
+        var legacy = recorded with
+        {
+            Vehicle = recorded.Vehicle! with
+            {
+                UnavailableWeapons = null
+            },
+            VehicleBreakdown = null
+        };
+        var legacyResolution = Rules.ScenarioA1VehicleCloseCombat.Resolve(legacy with
+        {
+            Rolls = new Rules.VehicleCloseCombatRolls([6, 6])
+        }, new Rules.ScenarioA1CloseCombatPackage().Reference);
+        Assert.Null(CloseCombatRecordVerifier.Shared.VerifyVehicle(stateBefore, record with
+        {
+            Facts = JsonSerializer.SerializeToElement(legacy, LiveFire.Json),
+            Resolution = JsonSerializer.SerializeToElement(legacyResolution, LiveFire.Json)
+        }, dice));
         NoReplayErrors();
     }
 

@@ -104,6 +104,58 @@ public static class LiveFire
             vehicle.TemporaryCrew?.Captured ?? false), null);
     }
 
+    internal static (VehicleCloseCombatFacts? Facts, string? Reason) WithVehicleCloseCombatBreakdown(GameState state, UnitInstance vehicle,
+        VehicleCloseCombatFacts facts)
+    {
+        facts = facts with
+        {
+            Vehicle = VehicleCloseCombatAvailability(vehicle, facts.Vehicle!)
+        };
+        return WithVehicleCloseCombatNumbers(state, vehicle, facts);
+    }
+
+    internal static VehicleCloseCombatVehicle VehicleCloseCombatAvailability(UnitInstance vehicle, VehicleCloseCombatVehicle facts)
+    {
+        var availability = new[]
+        {
+            ("ma", Conditions.Malfunctioned, Conditions.Disabled), ("bmg", Conditions.BmgMalfunctioned, Conditions.BmgDisabled),
+            ("cmg", Conditions.CmgMalfunctioned, Conditions.CmgDisabled), ("aamg", Conditions.AamgMalfunctioned, Conditions.AamgDisabled)
+        };
+        return facts with
+        {
+            UnavailableWeapons = [.. availability.Where(item => Is(vehicle, item.Item2) || Is(vehicle, item.Item3)).Select(item => item.Item1)]
+        };
+    }
+
+    private static (VehicleCloseCombatFacts? Facts, string? Reason) WithVehicleCloseCombatNumbers(GameState state, UnitInstance vehicle, VehicleCloseCombatFacts facts)
+    {
+        if (facts.ByVehicle != true)
+        {
+            return (facts, null);
+        }
+
+        if (CatalogReference.Value.Definitions.GetValueOrDefault(facts.Vehicle!.DefinitionId!) is not { } definition)
+        {
+            return (null, "play.cc-vehicle-facts: the vehicle definition cannot be read");
+        }
+        var weapons = new Dictionary<string, VehicleBreakdownUseFacts>(StringComparer.Ordinal);
+        foreach (var name in ScenarioA1VehicleCloseCombat.Weapons(facts.Vehicle, definition))
+        {
+            var kind = name == "ma" ? VehicleBreakdownWeapon.MainArmament
+                : name == "cmg" ? VehicleBreakdownWeapon.CoaxialMg : VehicleBreakdownWeapon.AntiAircraftMg;
+            var read = VehicleBreakdownFacts(state, vehicle, kind);
+            if (read.Facts is null)
+            {
+                return (null, read.Reason);
+            }
+            weapons.Add(name, read.Facts);
+        }
+        return (facts with
+        {
+            VehicleBreakdown = new(weapons)
+        }, null);
+    }
+
     /// <summary>The same main-armament source/use check for the owner's weapon list and the command.</summary>
     public static string? MainArmamentUseRefusal(GameState state, UnitInstance vehicle) =>
         VehicleBreakdownFacts(state, vehicle, VehicleBreakdownWeapon.MainArmament).Reason;

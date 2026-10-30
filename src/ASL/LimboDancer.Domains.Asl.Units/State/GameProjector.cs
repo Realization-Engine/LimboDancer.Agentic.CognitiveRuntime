@@ -1186,6 +1186,16 @@ public static partial class GameProjector
                 return Fail<GameState>(verifier.Code, verifier.Text);
             }
 
+            if (combat.Resolution.TryGetProperty("vehicleBreakdowns", out var breakdowns)
+                && breakdowns.EnumerateObject().Any(item => item.Value.TryGetProperty("lowAmmoGained", out var gained) && gained.ValueKind == JsonValueKind.True)
+                && !state.LowAmmoVehicles.Contains(combat.Vehicle, StringComparer.Ordinal))
+            {
+                state = state with
+                {
+                    LowAmmoVehicles = [.. state.LowAmmoVehicles, combat.Vehicle]
+                };
+            }
+
             if (Rules.ScenarioA1CloseCombatProjection.ReactionLeavesState(combat.Reaction))
             {
                 // A9.223, D7.21 (pass 60, rulings R60.3, R60.20): a MG's Fire Lane is cancelled when its manning Infantry makes CC Reaction Fire, by a
