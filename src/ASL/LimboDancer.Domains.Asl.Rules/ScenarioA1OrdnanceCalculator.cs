@@ -881,6 +881,13 @@ public static class ScenarioA1OrdnanceCalculator
 
     private static OrdnanceResolution Run(OrdnanceShot shot, ScenarioA1OrdnanceReference reference) => Run(shot, reference, null);
 
+    /// <summary>
+    /// The Infantry Target Type shot. With <see cref="OrdnanceShot.StunEncircledReading"/> null it keeps the answer it had before the D5.34 claim: no Stun
+    /// +1 on the To Hit DR of an AFV under a "+1" counter, which D5.34 (p. 203) gives to "any TH ... DR it makes"; set, it adds
+    /// <see cref="ScenarioA1StunCalculator.Drm"/> ("stun"), as the Vehicle Target Type does (the claim's ruling RD5.16, W-D5.34). Nor, null, does it add
+    /// the Encircled +1 of an Encircled crew (A7.7, p. 57: "+1 DRM on the IFT (or To Hit DR if ordnance)"); set, it adds
+    /// <see cref="ScenarioA1EncirclementCalculator.FirerDrm"/> for <see cref="OrdnanceCrew.Encircled"/> ("encircled").
+    /// </summary>
     private static OrdnanceResolution Run(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         var gun = reference.Guns[shot.Gun!.DefinitionId!];
@@ -961,6 +968,19 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-i", 1, "C5.9"));
         }
 
+        // D5.34 (p. 203; the D5.34 claim, ruling RD5.16): an AFV under a "+1" counter after a Stun adds one to "any TH ... DR it makes", the Infantry
+        // Target Type's too, under the shot's StunEncircledReading; before it, only the Vehicle Target Type took it.
+        if (shot.StunEncircledReading == true && ScenarioA1StunCalculator.Drm(StunDr.ToHit, shot.Vehicle?.StunRecovery == true) is > 0 and var stun)
+        {
+            drm.Add(new FireModifier("stun", stun, "D5.34"));
+        }
+
+        // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): an Encircled crew adds one to its To Hit DR, under the shot's StunEncircledReading.
+        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(shot.Crew.Encircled == true) is > 0 and var encircled)
+        {
+            drm.Add(new FireModifier("encircled", encircled, "A7.7"));
+        }
+
         // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the vehicle's Armor Leader modifies its MA's To Hit DR, BU or not; an
         // Inexperienced Crew adds one.
         if (ScenarioA1ArmorLeaders.Modifier(shot.Vehicle?.ArmorLeadership) is { } armorLeader)
@@ -1017,7 +1037,9 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-n", acquired, "C6.5"));
         }
 
-        var tem = ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
+        // B23.741 (p. 139; the B23.74 claim, ruling RB23F.5): a hit whose Factory TEM is set (ScenarioA1FactoryCalculator.Tem's +1) takes it in place
+        // of the key's.
+        var tem = hit.FactoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
         var unattended = Unattended(shot);
         var gunTarget = unattended || ScenarioA1FireCalculator.GunCrewAlone(hit with
         {
@@ -1036,7 +1058,7 @@ public static class ScenarioA1OrdnanceCalculator
         }
         else if (tem != 0)
         {
-            drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
+            drm.Add(new FireModifier("case-q:" + (hit.FactoryTem is null ? hit.TargetTerrain : "factory"), tem, "C6.8"));
         }
         else if (shot.CushionedOpenGround == true && hit.TargetTerrain == "open-ground")
         {
@@ -1453,9 +1475,10 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-p:" + targetSize, size, "C6.7"));
         }
 
-        if (ScenarioA1FireReference.Tem.GetValueOrDefault(shot.Hit!.TargetTerrain!) is var tem and not 0)
+        // B23.741 (the B23.74 claim, ruling RB23F.5): the Factory TEM in place of the key's when the hit carries one.
+        if ((shot.Hit!.FactoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(shot.Hit.TargetTerrain!)) is var tem and not 0)
         {
-            drm.Add(new FireModifier("case-q:" + shot.Hit.TargetTerrain, tem, "C6.8"));
+            drm.Add(new FireModifier("case-q:" + (shot.Hit.FactoryTem is null ? shot.Hit.TargetTerrain : "factory"), tem, "C6.8"));
         }
 
         if (HeightAdvantageApplies(shot, drm))

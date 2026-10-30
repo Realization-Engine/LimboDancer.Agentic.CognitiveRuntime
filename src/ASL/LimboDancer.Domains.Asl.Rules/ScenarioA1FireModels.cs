@@ -469,6 +469,37 @@ public sealed record FireAttack(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The target Location's Factory TEM (B23.741 and B23.743, pp. 139 and 140; the B23.74 claim, ruling RB23F.5): the TEM
+    /// <see cref="ScenarioA1FactoryCalculator.Tem"/> gives when its verdict's <c>FactoryTem</c> is true (+1), read in place of the terrain key's TEM.
+    /// Null is the terrain key's TEM, as in every record made before the claim, and is what an attack carries when that verdict gives the building's TEM.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? FactoryTem
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The reading switch of a Vulnerable crew's check under Stun (D5.34, D5.342, p. 203 and 204; the D5.34 claim, ruling RD5.16): when true, a merely
+    /// Stunned crew's MC takes no +1 and a second Stun is a Recall. Null is the reading before the claim, as in every record made before it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StunReading
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The reading switch of a Final KIA on a prisoner or Unarmed unit (A7.301, p. 55; A20.54, p. 87; the A20.54 claim, ruling RA20.9): when true, such a
+    /// survivor is Casualty Reduced, not broken. Null is the reading before the claim, as in every record made before it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? KiaUnarmedReduction
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -900,6 +931,16 @@ public sealed record FireCanister(string? GunId, int? Firepower)
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? CaseA
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the Canister's crew is Encircled (A7.7, p. 57; the D5.34 claim): +1 on the IFT DR, with no other firer term. Null is false, as in every
+    /// record made before the claim.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Encircled
     {
         get; init;
     }

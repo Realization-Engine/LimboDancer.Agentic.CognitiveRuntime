@@ -1,0 +1,320 @@
+{
+  "id": "b23-factory",
+  "title": "B23.74 Factory",
+  "card": "b23-factory",
+  "rules": [
+    "B23.74",
+    "B23.741",
+    "B23.742",
+    "B23.743"
+  ],
+  "contracts": [
+    "b23.741-factory-tem",
+    "b23.742-factory-movement"
+  ],
+  "example": {
+    "source": "B23.741, the Factory example: fire within and into a Factory, and its rubble",
+    "page": 139
+  },
+  "checks": [
+    {
+      "name": "A squad in [X4] fires at the adjacent [Y4] within the depiction: +1 TEM, no Factory Hindrance",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.741-factory-tem",
+      "facts": {
+        "material": "stone",
+        "roofless": false,
+        "indirectFire": false,
+        "residual": false,
+        "firerId": "g-squad",
+        "firerPlace": "inside",
+        "tracedWithinDepiction": true,
+        "factoryHexesTraced": 0
+      },
+      "sealed": { "targetId": "russian" },
+      "expect": {
+        "outcome": "factory-tem",
+        "reasons": [
+          "no Factory Hindrance"
+        ]
+      }
+    },
+    {
+      "name": "From [W4] at [Y5] through the Factory hex [X4]: +1 TEM and a +1 Factory Hindrance",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.741-factory-tem",
+      "facts": {
+        "material": "stone",
+        "roofless": false,
+        "indirectFire": false,
+        "residual": false,
+        "firerId": "g-squad",
+        "firerPlace": "inside",
+        "tracedWithinDepiction": true,
+        "factoryHexesTraced": 1
+      },
+      "sealed": { "targetId": "russian" },
+      "expect": {
+        "outcome": "factory-tem",
+        "reasons": [
+          "+1 Factory Hindrance"
+        ]
+      }
+    },
+    {
+      "name": "A German squad outside the Factory in [Z4] fires at [Y4]: the building's +3",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.741-factory-tem",
+      "facts": {
+        "material": "stone",
+        "roofless": false,
+        "indirectFire": false,
+        "residual": false,
+        "firerId": "g-squad-2",
+        "firerPlace": "outside",
+        "overAdjacentRubbleEnteringAcrossDepiction": false
+      },
+      "sealed": { "targetId": "russian" },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "+3"
+        ]
+      }
+    },
+    {
+      "name": "An ordnance HE shot from [X4] at [Y4] within the depiction meets +1, the TEM C6.8's Case Q reads",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.741-factory-tem",
+      "facts": {
+        "material": "stone",
+        "roofless": false,
+        "indirectFire": false,
+        "residual": false,
+        "firerId": "g-gun",
+        "firerPlace": "inside",
+        "tracedWithinDepiction": true,
+        "factoryHexesTraced": 0
+      },
+      "sealed": { "targetId": "russian" },
+      "expect": {
+        "outcome": "factory-tem"
+      }
+    },
+    {
+      "name": "A mortar's Indirect Fire into [X4] meets the building's +3",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b23.741-factory-tem",
+      "facts": {
+        "material": "stone",
+        "roofless": false,
+        "indirectFire": true,
+        "residual": false,
+        "targetId": "r-squad"
+      },
+      "sealed": { "firerId": "german" },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "Indirect Fire"
+        ]
+      }
+    },
+    {
+      "name": "Residual FP at a squad that entered [W4] from [W3] across a non-building hexside: the building's +3",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.741-factory-tem",
+      "facts": {
+        "material": "stone",
+        "roofless": false,
+        "indirectFire": false,
+        "residual": true,
+        "targetId": "g-squad-3",
+        "residualEntry": "non-building-hexside"
+      },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "non-building hexside"
+        ]
+      }
+    },
+    {
+      "name": "Residual FP at a squad that entered [W4] from [X4] across the Factory hexside: +1",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.741-factory-tem",
+      "facts": {
+        "material": "stone",
+        "roofless": false,
+        "indirectFire": false,
+        "residual": true,
+        "targetId": "g-squad-3",
+        "residualEntry": "building-hexside"
+      },
+      "expect": {
+        "outcome": "factory-tem"
+      }
+    },
+    {
+      "name": "The Russian side does not know where the German firer is or its LOS",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b23.741-factory-tem",
+      "facts": {
+        "material": "stone",
+        "roofless": false,
+        "indirectFire": false,
+        "residual": false,
+        "targetId": "r-squad"
+      },
+      "sealed": { "firerId": "german" },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "A squad moves from [X4] to [Y4] across the Factory hexside for 1 MF",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.742-factory-movement",
+      "facts": {
+        "moverId": "g-squad",
+        "vehicle": false,
+        "bypass": false,
+        "material": "stone",
+        "from": "factory",
+        "to": "factory",
+        "acrossFactoryHexside": true,
+        "vehicularEntrance": false,
+        "entranceRoofless": false,
+        "entranceFriendlyControlled": false,
+        "toLevel": 0
+      },
+      "expect": {
+        "outcome": "factory-cost",
+        "reasons": [
+          "1 MF"
+        ]
+      }
+    },
+    {
+      "name": "A squad enters [W4] from [W3]: the building's normal entry cost",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.742-factory-movement",
+      "facts": {
+        "moverId": "g-squad",
+        "vehicle": false,
+        "bypass": false,
+        "material": "stone",
+        "from": "outside",
+        "to": "factory",
+        "acrossFactoryHexside": false,
+        "vehicularEntrance": false,
+        "entranceRoofless": false,
+        "entranceFriendlyControlled": false,
+        "toLevel": 0
+      },
+      "expect": {
+        "outcome": "normal-cost"
+      }
+    },
+    {
+      "name": "Level 1 of the stairwell hex [X3] is not a Location of the Factory",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.742-factory-movement",
+      "facts": {
+        "moverId": "g-squad",
+        "vehicle": false,
+        "bypass": false,
+        "material": "stone",
+        "from": "factory",
+        "to": "factory",
+        "acrossFactoryHexside": true,
+        "vehicularEntrance": false,
+        "entranceRoofless": false,
+        "entranceFriendlyControlled": false,
+        "toLevel": 1
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "no upper level floors"
+        ]
+      }
+    },
+    {
+      "name": "A German half-track enters [X3] from [W3] through its Vehicular-Sized Entrance at Open Ground cost",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.742-factory-movement",
+      "facts": {
+        "moverId": "g-halftrack",
+        "vehicle": true,
+        "bypass": false,
+        "material": "stone",
+        "from": "outside",
+        "to": "factory",
+        "acrossFactoryHexside": false,
+        "vehicularEntrance": true,
+        "entranceRoofless": false,
+        "entranceFriendlyControlled": true,
+        "toLevel": 0,
+        "afv": true,
+        "movementType": "half-tracked",
+        "mpAllotment": 13
+      },
+      "expect": {
+        "outcome": "factory-cost",
+        "reasons": [
+          "1 MP"
+        ]
+      }
+    },
+    {
+      "name": "The half-track may not drive on from [X3] to [X4] inside the Factory",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.742-factory-movement",
+      "facts": {
+        "moverId": "g-halftrack",
+        "vehicle": true,
+        "bypass": false,
+        "material": "stone",
+        "from": "factory",
+        "to": "factory",
+        "acrossFactoryHexside": true,
+        "vehicularEntrance": false,
+        "entranceRoofless": false,
+        "entranceFriendlyControlled": false,
+        "toLevel": 0,
+        "afv": true,
+        "movementType": "half-tracked",
+        "mpAllotment": 13
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "fully-tracked AFV"
+        ]
+      }
+    }
+  ],
+  "units": {
+    "g-squad": "german",
+    "g-squad-2": "german",
+    "g-squad-3": "german",
+    "g-gun": "german",
+    "g-mortar": "german",
+    "g-halftrack": "german",
+    "r-squad": "russian"
+  }
+}
