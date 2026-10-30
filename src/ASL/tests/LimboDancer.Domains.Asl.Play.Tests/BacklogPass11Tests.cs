@@ -699,6 +699,62 @@ public sealed class BacklogPass11Tests : IDisposable
     }
 
     [Fact]
+    public async Task DisabledBmgContributesNoOverrunFirepower()
+    {
+        await Setup("german", Vehicle("de-tk", "attacker-tank", L("E5"), "german", "east", Conditions.BmgDisabled),
+            Squad("r1", L(Ne("E5")), "russian"));
+        Committed(await Step("de-tk", "start"));
+        await Pass();
+        Committed(await Step("de-tk", "enter", L(Ne("E5")), options: new()
+        {
+            ["overrun"] = true
+        }));
+        await Pass();
+        var before = Revision;
+        Committed(await Do(GameActions.Overrun, Once(5, 6, 3, 3), new
+        {
+        }));
+        var fire = Assert.Single(Since(before).Select(item => item.Payload).OfType<FireResolved>());
+        Assert.Equal(11.5m, fire.Resolution.GetProperty("arithmetic").GetProperty("totalFirepower").GetDecimal());
+        Assert.Equal("bmg", Assert.Single(fire.Facts.GetProperty("overrun").GetProperty("disabledWeapons").EnumerateArray()).GetString());
+        Assert.False(fire.Facts.GetProperty("vehicleBreakdown").GetProperty("weapons").TryGetProperty("bmg", out _));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task SuccessiveOverrunsPersistLowAmmoThenDisableAndRecallTheMa()
+    {
+        rules = ["ammo-shortage:german"];
+        await Setup("german", Vehicle("de-tk", "attacker-tank", L("E5"), "german"),
+            Squad("r1", L(Ne("E5")), "russian"), Squad("r2", L(Ne(Ne("E5"))), "russian"));
+        Committed(await Step("de-tk", "start"));
+        await Pass();
+        foreach (var target in new[] { Ne("E5"), Ne(Ne("E5")) })
+        {
+            Committed(await Step("de-tk", "enter", L(target), options: new()
+            {
+                ["overrun"] = true
+            }));
+            await Pass();
+            Committed(await Do(GameActions.Overrun, Once(5, 6, 3, 3), new
+            {
+            }));
+            Assert.Contains("de-tk", Current.LowAmmoVehicles);
+            if (target == Ne("E5"))
+            {
+                Assert.False(Is(Current.Unit("de-tk")!, Conditions.Disabled));
+                await Pass();
+            }
+        }
+        var vehicle = Current.Unit("de-tk")!;
+        Assert.True(Is(vehicle, Conditions.Disabled));
+        Assert.True(Is(vehicle, Conditions.Recalled));
+        Assert.False(Is(vehicle, Conditions.Motion));
+        Assert.True(Is(vehicle, Conditions.ButtonedUp));
+        NoReplayErrors();
+    }
+
+    [Fact]
     public async Task AnOvrIsRefusedInReverseAndFromVbm()
     {
         await Setup("german", Vehicle("de-tk", "attacker-tank", L("E5"), "german"), Squad("r1", L(Nw("E5")), "russian"), Squad("r2", L("J9"), "russian"));

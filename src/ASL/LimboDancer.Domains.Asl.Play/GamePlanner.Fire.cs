@@ -1187,8 +1187,21 @@ public sealed partial class GamePlanner
         // D7.17 (ruling R11.11): an OVR's Original 12 malfunctions a weapon that added FP, or immobilizes a vehicle with none; a wreck keeps no weapons.
         if (resolution.OverrunEffect is { } overrunEffect && state.Unit(overrunEffect.VehicleId) is { Status: InstanceStatus.Active })
         {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                new ConditionsChanged(overrunEffect.VehicleId, ConditionChanges(ScenarioA1FireFollowUps.OverrunEffectConditions(overrunEffect))), package, null, [fireId]));
+            var conditions = ConditionChanges(ScenarioA1FireFollowUps.OverrunEffectConditions(overrunEffect));
+            if (overrunEffect.VehicleBreakdowns?.Any(item => item.Value.Outcome == VehicleBreakdownOutcome.Disabled) == true
+                && state.Unit(overrunEffect.VehicleId) is { } armed && LiveFire.VehicleRecalledAfterDisable(armed,
+                    Is(armed, Conditions.Disabled) || overrunEffect.VehicleBreakdowns.GetValueOrDefault("ma")?.Outcome == VehicleBreakdownOutcome.Disabled))
+            {
+                foreach (var change in ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma", true))
+                {
+                    conditions[ConditionName(change.Condition)] = change.Value ? ConditionState.True : ConditionState.False;
+                }
+            }
+            if (conditions.Count > 0)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(overrunEffect.VehicleId, conditions), package, null, [fireId]));
+            }
         }
 
         // The fire markers (A3.2, A3.4, A3.5, A8.1, A8.3, A8.4); a MG firing again alone on its Multiple ROF leaves its unit as it was.

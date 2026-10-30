@@ -2081,6 +2081,18 @@ public static partial class GameProjector
             }
 
             // C2.24, D3.5 (unit step 25): a vehicle's MG shot keeps its Multiple ROF for this phase when its record says so, as a Gun's does.
+            if (fire.Resolution.TryGetProperty("overrunEffect", out var overrunEffect) && overrunEffect.ValueKind == JsonValueKind.Object
+                && overrunEffect.TryGetProperty("vehicleBreakdowns", out var breakdowns) && breakdowns.ValueKind == JsonValueKind.Object
+                && breakdowns.EnumerateObject().Any(item => item.Value.TryGetProperty("lowAmmoGained", out var gained) && gained.ValueKind == JsonValueKind.True)
+                && overrunEffect.TryGetProperty("vehicleId", out var overrunVehicle) && overrunVehicle.GetString() is { } overrunId
+                && !state.LowAmmoVehicles.Contains(overrunId, StringComparer.Ordinal))
+            {
+                state = state with
+                {
+                    LowAmmoVehicles = [.. state.LowAmmoVehicles, overrunId]
+                };
+            }
+
             var shots = state.OrdnanceShots;
             var weaponShots = state.VehicleWeaponShots;
             var turrets = state.TurretFacings;

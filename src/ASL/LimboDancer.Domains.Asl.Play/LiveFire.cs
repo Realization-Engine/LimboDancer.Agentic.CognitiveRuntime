@@ -425,12 +425,15 @@ public static class LiveFire
 
     private static (FireAttack? Attack, string? Reason) WithVehicleBreakdown(GameState state, FireAttack attack)
     {
-        if (attack.VehicleFire?.VehicleId is not { } id || state.Unit(id) is not { } vehicle)
+        if ((attack.VehicleFire?.VehicleId ?? attack.Overrun?.VehicleId) is not { } id || state.Unit(id) is not { } vehicle)
         {
             return (attack, null);
         }
-        var names = attack.VehicleFire.Weapons is { Count: > 0 } weapons
-            ? weapons.Select(item => item.Weapon!).ToArray() : [FireOverrunEffect.MainArmament];
+        var names = attack.Overrun is { } overrun && overrun.DefinitionId is { } definition
+            && CatalogReference.Value.Definitions.TryGetValue(definition, out var printed)
+            ? ScenarioA1FireCalculator.OverrunWeapons(overrun, printed).Select(item => item.Weapon).ToArray()
+            : attack.VehicleFire?.Weapons is { Count: > 0 } weapons
+                ? weapons.Select(item => item.Weapon!).ToArray() : [FireOverrunEffect.MainArmament];
         var facts = new Dictionary<string, VehicleBreakdownUseFacts>(StringComparer.Ordinal);
         foreach (var name in names)
         {
@@ -811,7 +814,7 @@ public static class LiveFire
     /// A vehicle's OVR of its Location (D7.1, D7.11; ruling R11.11), read from the state: every non-captured enemy unit there is attacked, Infantry as
     /// targets and vehicles on the Vehicle line or through their Vulnerable crews; the map facts (terrain, SMOKE, a wall crossed) are the planner's.
     /// </summary>
-    public static (FireAttack? Attack, string? Reason) OverrunFromState(GameState state, string vehicleId)
+    public static (FireAttack? Attack, string? Reason) OverrunFromState(GameState state, string vehicleId, bool legacyVehicleBreakdown = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         // D7.11 (referee, pass 11): a vehicle destroyed before its declared OVR resolves still makes it, at half FP. Rules decides it (pass 32.c).
@@ -822,7 +825,7 @@ public static class LiveFire
         var ok = at is not null && vehicle!.Definition is not null;
         UnitInstance[] units = ok ? [.. state.At(at!).OfType<UnitInstance>()] : [];
         var targetSide = ok ? state.Sides.FirstOrDefault(side => side.Id != vehicle!.Side)?.Id : null;
-        return WithGunCrews(state, ScenarioA1FireEligibility.Overrun(new OverrunFacts(found, isVehicle, at is not null, vehicle?.Definition is not null, vehicleId, vehicle?.Definition?.Definition,
+        var read = WithGunCrews(state, ScenarioA1FireEligibility.Overrun(new OverrunFacts(found, isVehicle, at is not null, vehicle?.Definition is not null, vehicleId, vehicle?.Definition?.Definition,
             at?.ToString() ?? string.Empty, vehicle?.Side, ok && CrewExposed(vehicle!), ok && Is(vehicle!, Conditions.Immobilized), ok && Is(vehicle!, Conditions.Bogged),
             vehicle?.Status == InstanceStatus.Wrecked, ok && Is(vehicle!, Conditions.Malfunctioned), ok && Is(vehicle!, Conditions.Disabled),
             ok && Is(vehicle!, Conditions.BmgMalfunctioned), ok && Is(vehicle!, Conditions.CmgMalfunctioned),
@@ -835,6 +838,25 @@ public static class LiveFire
             // D7.16 (p. 207; pass 55, ruling R55.16): the OVRing vehicle's Armor Leader modifies its OVR DR.
             ArmorLeadership = ok ? ArmorLeadership(vehicle!) : null,
         }));
+        if (legacyVehicleBreakdown || read.Attack?.Overrun is not { } overrun || vehicle is null)
+        {
+            return read;
+        }
+        var attack = read.Attack with
+        {
+            Overrun = overrun with
+            {
+                DisabledWeapons = [.. new[]
+                {
+                    (FireOverrunEffect.MainArmament, Conditions.Disabled),
+                    (FireOverrunEffect.BowMg, Conditions.BmgDisabled),
+                    (FireOverrunEffect.CoaxialMg, Conditions.CmgDisabled),
+                }.Where(item => Is(vehicle, item.Item2)).Select(item => item.Item1)],
+            },
+            AmmunitionShortage = ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, vehicle.Side) ? true : null,
+            BreakdownReduction = GamePlanner.ExtremeWinterReduction(state, vehicle.Side),
+        };
+        return WithVehicleBreakdown(state, attack);
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the calculator's shape.</summary>
@@ -1243,7 +1265,7 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         else if (recorded.FireKind == ScenarioA1FireCalculator.OverrunFire)
         {
             // D7.1 (ruling R11.11): an OVR is read from its vehicle's state; its crew's CE status is recorded as the OVR saw it.
-            (expected, reason) = LiveFire.OverrunFromState(state, recorded.Overrun?.VehicleId ?? string.Empty);
+            (expected, reason) = LiveFire.OverrunFromState(state, recorded.Overrun?.VehicleId ?? string.Empty, recorded.VehicleBreakdown is null);
         }
         else if (recorded.Canister is { } canister)
         {
