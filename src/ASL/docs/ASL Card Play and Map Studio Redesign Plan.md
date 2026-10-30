@@ -1908,7 +1908,7 @@ Turns tasks that reach this pass from another: D6 (pass 73) names the CC and her
 
 **Pass 85: SMOKE, wind, and Environmental Conditions** (new; 33 rows of the inventory). Counters: s# and WP# on Guns and mortars (the British mortar's s7 is already in the catalog, unread); a smoke dispenser value on each vehicle whose counter prints one (the audit says the PzKpfw IIIH does; not checked against the Vehicle Listing). Needs first: 35.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 33 rows: 1 built with a deviation, 7 partly, 25 not built. Claims: 32 open, 1 built (owners: A24.5 (Claude)). A Turns calculator on 2 rows. Wiring: 0 of 33. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 33 rows: 1 built with a deviation, 7 partly, 25 not built. Claims: 32 open, 1 reviewed (owners: A24.5 (Claude)). A Turns calculator on 2 rows. Wiring: 0 of 33. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1999,7 +1999,7 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: unloading, a Passen
 
 **Pass 105: Armored combat IV: equipment and formations** (new; 68 rows of the inventory). Counters: an armored car; a non-turreted AFV; an AFV with Secondary Armament; a partially armored AFV; a vehicle FT; an AA Gun with IFE of 40mm or less; an AFV with a G and one with Sz; a radioless trait on the T-34 M41. Needs first: 50, 55, 65, 100 (Armored Assault for D14.33).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 2 built with a deviation, 69 partly, 4 refused, 48 not built. Claims: 121 open, 2 built (owners: D3.7 (Claude)). A rule decided outside Rules on 6 rows. A Turns calculator on 2 rows. Wiring: 0 of 123. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 2 built with a deviation, 69 partly, 4 refused, 48 not built. Claims: 121 open, 2 built (owners: D3.7 (Codex)). A rule decided outside Rules on 6 rows. A Turns calculator on 2 rows. Wiring: 0 of 123. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2330,7 +2330,7 @@ Turns tasks that reach this pass from another: D5.4 (pass 145) accepts airborne 
 
 **Pass 175: Transport and unusual vehicles** (new; 107 rows of the inventory). Counters: a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter. Needs first: 125 (water) for D16; 105 (Impulse Movement) for E11; 95 (snow terrain) for D17; 65 (Riders) for D15 and D17.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 108 rows: 1 partly, 107 not built. Claims: 98 open, 10 built (owners: E10 (Claude)). Wiring: 0 of 108. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 108 rows: 1 partly, 107 not built. Claims: 98 open, 10 reviewed (owners: E10 (Claude)). Wiring: 0 of 108. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
