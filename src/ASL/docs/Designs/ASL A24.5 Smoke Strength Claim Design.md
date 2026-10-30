@@ -72,3 +72,9 @@ A sub-agent read the first draft against pp. 91 to 93, 143, and 212 and the code
 ## 11. Review of the build
 
 A sub-agent read the build read-only (2026-10-29), with the E10 claim's: every forwarding member gives the old answer on every input, the count members included, for negative and zero counts and the lazy `crossed`. Taken: a Full grenade now has no value, as RA24.2 says; the count members allocate nothing again (they multiply `CountedSourceHindrance`, and the by-value overloads sum with `Total`, no LINQ), per the Memory and Performance Guidelines.
+
+## Codex review of Wiring Prompt 002 (2026-10-29)
+
+Read-only review of the calculator, contract, tests and minigame against physical PDF pp. 91 to 93, 143 and 212: no blocking calculation or disclosure finding. The contract asks public source, chemical and timing facts and does not request private unit identities. No build or tests were run for this review.
+
+Wiring must distinguish the contract's display outcome `full` for grenades from the calculator's non-dispersible grenade representation (`TurnSmokeStrength.Unknown`). Existing `asl:smoke` entities need source facts from their causal placement, not their display names. Combine all applicable source values at one Location before the common cap; do not cap grenade and Blaze groups independently. Location grouping alone does not establish an elevated LOS's intersection with SMOKE. Keep height/weather and B25.2 with their calculators. Claude's B25.2 claim is now active, so re-read its merged contract before removing any legacy Blaze path. The PFPh Place metadata is not authority to place every source or a restriction on evaluating other source strengths.
