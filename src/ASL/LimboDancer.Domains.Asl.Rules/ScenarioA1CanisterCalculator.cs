@@ -276,9 +276,8 @@ public static class ScenarioA1CanisterCalculator
             };
         }
 
-        // Keeps its answer (the A21.13 claim, ruling RA21.7): no penalty lowers this ROF, neither a Temporary crew's CapturedPenalty nor a NonQualified
-        // crew's, where A21.12 lowers it by ScenarioA1NonQualifiedUseCalculator.RofLowering of the multiple (W-A21.13).
-        var rof = gun.RateOfFire ?? 0;
+        // A21.12 (W-A21.13): the penalty multiple lowers the Multiple ROF one each; a shot recorded before the wiring was not lowered.
+        var rof = ScenarioA1OrdnanceCalculator.UnloweredRateOfFire(shot, gun);
         if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
         {
             rof--;
@@ -295,10 +294,13 @@ public static class ScenarioA1CanisterCalculator
             var multipliers = Multipliers(AttackFact(shot, gun, location));
             return new OrdnanceCanisterAttack(location.LocationId!, multipliers, multipliers.Aggregate((decimal)firepower, (value, item) => value * item.Value));
         })];
+        // A.11 (W-A21.13): under a penalty multiple the Original B# is the X#, and a DR at or above it eliminates the Gun.
+        var eliminated = breakdownOutcome is null ? ScenarioA1OrdnanceCalculator.Eliminated(shot, gun, original, failed) : null;
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], null,
-            new OrdnanceGunEffect(breakdown, malfunctioned, kept ? Math.Max(rof, 0) : shot.IntensiveFire == true ? 0 : Math.Max(rof, 0), kept, counter, 0, null)
+            new OrdnanceGunEffect(breakdown, malfunctioned && eliminated != true, kept ? Math.Max(rof, 0) : shot.IntensiveFire == true ? 0 : Math.Max(rof, 0), kept, counter, 0, null)
             {
-                VehicleBreakdown = breakdownOutcome
+                VehicleBreakdown = breakdownOutcome,
+                Eliminated = eliminated,
             })
         {
             // A12.14 (ruling R8.5): the "?" is lost only in the view of a Good Order enemy ground unit within 16 hexes.
