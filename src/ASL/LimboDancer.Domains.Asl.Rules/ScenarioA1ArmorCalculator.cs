@@ -483,10 +483,11 @@ internal static class ScenarioA1ArmorCalculator
 
         // D2.38 (p. 198; pass 35, task 35.13 b): a vehicle in Bypass is in the Open Ground of its hex and takes no beneficial TEM of the woods or
         // building it Bypasses. A building Bypassed inside a woods hex (2I9, 3I1) is not told apart.
-        var tem = ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
+        // B23.741 (the B23.74 claim, ruling RB23F.5): the Factory TEM in place of the key's when the hit carries one.
+        var tem = hit.FactoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
         if (tem != 0 && !(target.Bypass == true && tem > 0))
         {
-            drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
+            drm.Add(new FireModifier("case-q:" + (hit.FactoryTem is null ? hit.TargetTerrain : "factory"), tem, "C6.8"));
         }
 
         // D4.22, B10.31 (pp. 202, 125; pass 55): "The +1 Height Advantage TEM vs Direct Fire also applies to vehicles, but only if they are not HD

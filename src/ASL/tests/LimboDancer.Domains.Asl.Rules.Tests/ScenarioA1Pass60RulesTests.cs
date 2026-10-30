@@ -535,6 +535,25 @@ public sealed class ScenarioA1Pass60RulesTests
     }
 
     [Fact]
+    public void AFactoryTemReplacesTheBuildingsTemOnTheAreaHitOfAnAfvInTheTargetLocation()
+    {
+        // C3.331, B23.741 (the B23.74 claim, ruling RB23F.5): the AFV in the hit's own Location takes the Factory's +1, not the stone building's +3.
+        var shot = Mortar("stone-building", [], Vehicle("de-tank", "attacker-tank"));
+        var old = Resolve(shot, [2, 4], ift: [3, 3]).AreaVehicles!.Single();
+        var factory = Resolve(shot with
+        {
+            Hit = shot.Hit! with
+            {
+                FactoryTem = 1
+            }
+        }, [2, 4], ift: [3, 3]).AreaVehicles!.Single();
+        Assert.Contains(old.Drm, item => item.Name == "tem:stone-building" && item.Value == 3);
+        Assert.DoesNotContain(factory.Drm, item => item.Name == "tem:stone-building");
+        Assert.Contains(factory.Drm, item => item.Name == "tem:factory" && item.Value == 1);
+        Assert.Equal(old.FinalDr - 2, factory.FinalDr);
+    }
+
+    [Fact]
     public void AMortarsHitOnAnOtHalftrackTakesTheAfAndOtDrm()
     {
         // C1.55: the SPW 251/1's every AF is 1 (-1) and it is OT (-1): an IFT DR of 4 is a Final 2, the K/# DR, a hull hit, immobilizing it.

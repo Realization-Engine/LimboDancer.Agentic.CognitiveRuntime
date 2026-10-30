@@ -376,6 +376,37 @@ public sealed class ScenarioA1Pass55RulesTests
     }
 
     [Fact]
+    public void AFactoryTemReplacesTheBuildingsCaseQOnTheInfantryAndVehicleTargetTypes()
+    {
+        // B23.741 (p. 139; the B23.74 claim, ruling RB23F.5): a shot traced entirely within a Factory takes +1, not the stone building's +3.
+        static OrdnanceShot InStone(bool vehicle, int? factoryTem)
+        {
+            var shot = Gun("american", 1944, vehicle ? "ap" : null, vehicle, [5, 6]);
+            return shot with
+            {
+                Hit = shot.Hit! with
+                {
+                    TargetTerrain = "stone-building",
+                    FactoryTem = factoryTem,
+                },
+            };
+        }
+
+        foreach (var vehicle in new[] { false, true })
+        {
+            // Null is the old reading, to the modifier.
+            var old = Resolve(InStone(vehicle, null));
+            Assert.Equal((3m, null), (Drm(old, "case-q:stone-building"), Drm(old, "case-q:factory")));
+
+            var factory = Resolve(InStone(vehicle, 1));
+            Assert.Equal((null, 1m), (Drm(factory, "case-q:stone-building"), Drm(factory, "case-q:factory")));
+            Assert.Equal(old.ToHit!.FinalDr - 2, factory.ToHit!.FinalDr);
+        }
+
+        Assert.Equal(ScenarioA1GunDuels.Classify("case-q:stone-building"), ScenarioA1GunDuels.Classify("case-q:factory"));
+    }
+
+    [Fact]
     public void HeightAdvantageIsCaseQOnTheInfantryAndVehicleTargetTypes()
     {
         // B10.31, C6.8: "Any unit in a hex receiving Direct Fire from a lower elevation is entitled to a +1 TEM".

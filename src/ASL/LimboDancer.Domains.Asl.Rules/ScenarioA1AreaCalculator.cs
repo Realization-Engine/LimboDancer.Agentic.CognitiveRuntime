@@ -559,10 +559,13 @@ internal static class ScenarioA1AreaCalculator
             drm.Add(new FireModifier("all-af-8-or-more", 1, "C1.55"));
         }
 
-        var terrain = Location(shot, vehicle.LocationId)?.TargetTerrain ?? shot.Hit!.TargetTerrain!;
-        if (!critical && terrain != "woods" && ScenarioA1FireReference.Tem.GetValueOrDefault(terrain) is var tem and not 0)
+        // B23.741 (the B23.74 claim, ruling RB23F.5): the hit's Factory TEM describes only its own target Location; another Location keeps its key's TEM.
+        var other = Location(shot, vehicle.LocationId);
+        var terrain = other?.TargetTerrain ?? shot.Hit!.TargetTerrain!;
+        var factoryTem = other is null ? shot.Hit!.FactoryTem : null;
+        if (!critical && terrain != "woods" && (factoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(terrain)) is var tem and not 0)
         {
-            drm.Add(new FireModifier("tem:" + terrain, tem, "C3.331"));
+            drm.Add(new FireModifier("tem:" + (factoryTem is null ? terrain : "factory"), tem, "C3.331"));
         }
 
         var final = dice[0] + dice[1] + (int)drm.Sum(item => item.Value);

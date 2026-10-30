@@ -1029,7 +1029,8 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-n", acquired, "C6.5"));
         }
 
-        var tem = ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
+        // B23.741 (p. 139; the B23.74 claim, ruling RB23F.5): a hit traced entirely within a Factory takes its Factory TEM in place of the key's.
+        var tem = hit.FactoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
         var unattended = Unattended(shot);
         var gunTarget = unattended || ScenarioA1FireCalculator.GunCrewAlone(hit with
         {
@@ -1048,7 +1049,7 @@ public static class ScenarioA1OrdnanceCalculator
         }
         else if (tem != 0)
         {
-            drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
+            drm.Add(new FireModifier("case-q:" + (hit.FactoryTem is null ? hit.TargetTerrain : "factory"), tem, "C6.8"));
         }
         else if (shot.CushionedOpenGround == true && hit.TargetTerrain == "open-ground")
         {
@@ -1465,9 +1466,10 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-p:" + targetSize, size, "C6.7"));
         }
 
-        if (ScenarioA1FireReference.Tem.GetValueOrDefault(shot.Hit!.TargetTerrain!) is var tem and not 0)
+        // B23.741 (the B23.74 claim, ruling RB23F.5): the Factory TEM in place of the key's when the hit carries one.
+        if ((shot.Hit!.FactoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(shot.Hit.TargetTerrain!)) is var tem and not 0)
         {
-            drm.Add(new FireModifier("case-q:" + shot.Hit.TargetTerrain, tem, "C6.8"));
+            drm.Add(new FireModifier("case-q:" + (shot.Hit.FactoryTem is null ? shot.Hit.TargetTerrain : "factory"), tem, "C6.8"));
         }
 
         if (HeightAdvantageApplies(shot, drm))
