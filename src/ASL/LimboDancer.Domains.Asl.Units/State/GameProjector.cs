@@ -2063,6 +2063,23 @@ public static partial class GameProjector
             };
             fires[eventId] = (fire, gameEvent.Visibility is not null, false);
 
+            if (fire.Resolution.TryGetProperty("weaponEffects", out var breakdownEffects) && breakdownEffects.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var effect in breakdownEffects.EnumerateArray())
+                {
+                    if (effect.TryGetProperty("vehicleBreakdown", out var breakdown) && breakdown.ValueKind == JsonValueKind.Object
+                        && breakdown.TryGetProperty("lowAmmoGained", out var lowAmmo) && lowAmmo.ValueKind == JsonValueKind.True
+                        && effect.TryGetProperty("equipmentId", out var equipment) && equipment.GetString() is { } id
+                        && !state.LowAmmoVehicles.Contains(id, StringComparer.Ordinal))
+                    {
+                        state = state with
+                        {
+                            LowAmmoVehicles = [.. state.LowAmmoVehicles, id]
+                        };
+                    }
+                }
+            }
+
             // C2.24, D3.5 (unit step 25): a vehicle's MG shot keeps its Multiple ROF for this phase when its record says so, as a Gun's does.
             var shots = state.OrdnanceShots;
             var weaponShots = state.VehicleWeaponShots;

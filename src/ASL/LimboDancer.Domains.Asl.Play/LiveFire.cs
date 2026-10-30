@@ -166,7 +166,8 @@ public static class LiveFire
     /// </summary>
     public static (FireAttack? Attack, string? Reason) FromState(GameState state, IReadOnlyList<string> firerIds, IReadOnlyList<string> directorIds,
         BoardLocation target, IReadOnlyDictionary<string, IReadOnlyList<string>>? weapons = null, IReadOnlyCollection<string>? withoutInherent = null,
-        IReadOnlyDictionary<string, string>? partners = null, string? molUser = null, bool embarking = true, bool wrecks = true)
+        IReadOnlyDictionary<string, string>? partners = null, string? molUser = null, bool embarking = true, bool wrecks = true,
+        bool legacyVehicleBreakdown = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(firerIds);
@@ -402,7 +403,7 @@ public static class LiveFire
                 ? new MgSightingFacts(true, sight.Crew == firer.UnitId, state.Location(firer.UnitId!)?.Location == sight.SetupLocation, sight.Location == target,
                     state.Find(weapon.EquipmentId!) is EquipmentInstance sighted && Is(sighted, Conditions.Dismantled))
                 : new MgSightingFacts(false, false, false, false, false))])));
-        return (ScenarioA1FireEligibility.Assemble(new AttackAssemblyFacts(state.Phase, side == state.PhasingSide, firers[0].At.ToString(), target.ToString(),
+        var attack = ScenarioA1FireEligibility.Assemble(new AttackAssemblyFacts(state.Phase, side == state.PhasingSide, firers[0].At.ToString(), target.ToString(),
             firerFacts, [.. directors.Select(Director)], state.ScenarioMonth,
             [.. selection.Targets.Select(UnitAt).Select(unit => ScenarioA1FireEligibility.AttackTarget(new AttackTargetFacts(Target(state, unit, target), unit.Side == side,
                 Is(unit, Conditions.Captured), unit.Custodian, state.Encircled(unit))))],
@@ -418,6 +419,38 @@ public static class LiveFire
 
             // A19.131 (pass 72, rulings R72.11, R72.12): the firing side's Ammunition Shortage, from the game's special rules; Rules says what it does.
             AmmunitionShortage = state.SpecialRules.Count > 0 && ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, side) ? true : null,
+        };
+        return legacyVehicleBreakdown ? (attack, null) : WithVehicleBreakdown(state, attack);
+    }
+
+    private static (FireAttack? Attack, string? Reason) WithVehicleBreakdown(GameState state, FireAttack attack)
+    {
+        if (attack.VehicleFire?.VehicleId is not { } id || state.Unit(id) is not { } vehicle)
+        {
+            return (attack, null);
+        }
+        var names = attack.VehicleFire.Weapons is { Count: > 0 } weapons
+            ? weapons.Select(item => item.Weapon!).ToArray() : [FireOverrunEffect.MainArmament];
+        var facts = new Dictionary<string, VehicleBreakdownUseFacts>(StringComparer.Ordinal);
+        foreach (var name in names)
+        {
+            var weapon = name switch
+            {
+                FireOverrunEffect.MainArmament => VehicleBreakdownWeapon.MainArmament,
+                FireOverrunEffect.BowMg => VehicleBreakdownWeapon.BowMg,
+                FireOverrunEffect.CoaxialMg => VehicleBreakdownWeapon.CoaxialMg,
+                _ => (VehicleBreakdownWeapon)(-1),
+            };
+            var read = VehicleBreakdownFacts(state, vehicle, weapon);
+            if (read.Facts is null)
+            {
+                return (null, read.Reason);
+            }
+            facts.Add(name, read.Facts);
+        }
+        return (attack with
+        {
+            VehicleBreakdown = new FireVehicleBreakdownFacts(facts)
         }, null);
     }
 
@@ -1252,7 +1285,7 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             // Pass 65 (ruling R65.14): the (un)loaders are targets only of an attack whose record names them; an older one is read as it was made. So is a
             // wreck (ruling R65.23).
             (expected, reason) = LiveFire.FromState(state, fire.Firers, directors, target, weapons, alone, partners is { Count: > 0 } ? partners : null, mol,
-                recorded.Embarking is not null, recorded.Vehicles?.Any(item => item.Wreck == true) == true);
+                recorded.Embarking is not null, recorded.Vehicles?.Any(item => item.Wreck == true) == true, recorded.VehicleBreakdown is null);
         }
 
         if (expected is null)

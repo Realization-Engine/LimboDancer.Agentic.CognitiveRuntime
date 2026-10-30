@@ -285,6 +285,44 @@ public sealed class BacklogPass50Tests : IDisposable
     }
 
     [Fact]
+    public async Task MainArmamentMgGainsLowAmmoThenDisablesWithoutRecallingAPassengerVehicle()
+    {
+        specialRules = ["ammo-shortage:german"];
+        var halftrack = Tank("north-east");
+        halftrack["definition"] = "attacker-halftrack";
+        halftrack["conditions"] = new Dictionary<string, bool> { [Conditions.ButtonedUp] = false };
+        await Setup(halftrack, Squad("r1", Target));
+        await Advance();
+        var before = Revision;
+        var beforeState = Current;
+        Committed(await FireMgs([], 5, 6));
+        Assert.Contains("de-tank", Current.LowAmmoVehicles);
+        Assert.False(Is(Current.Unit("de-tank")!, Conditions.Malfunctioned));
+        var first = Assert.Single(Since(before).Select(item => item.Payload).OfType<FireResolved>());
+        var forged = JsonSerializer.SerializeToNode(first.Facts)!.AsObject();
+        forged["vehicleBreakdown"]!["weapons"]!["ma"]!["lowAmmo"] = true;
+        var rolls = Since(before).Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(item => item.Roll);
+        Assert.NotNull(FireRecordVerifier.Shared.Verify(beforeState, first with
+        {
+            Facts = JsonSerializer.SerializeToElement(forged)
+        }, rolls));
+        for (var phase = 0; phase < 10; phase++)
+        {
+            await Advance();
+        }
+        Committed(await FireMgs([], 5, 6));
+        var vehicle = Current.Unit("de-tank")!;
+        Assert.True(Is(vehicle, Conditions.Disabled));
+        Assert.False(Is(vehicle, Conditions.Recalled));
+        before = Revision;
+        Assert.NotEqual(PlayOutcome.Committed, (await FireMgs([])).Outcome);
+        Assert.Equal(before, Revision);
+        var legacy = LiveFire.FromState(Current, TankFirer, [], BoardLocation.Parse(Target), legacyVehicleBreakdown: true);
+        Assert.NotNull(legacy.Attack);
+        Assert.Null(legacy.Attack.VehicleBreakdown);
+    }
+
+    [Fact]
     public async Task ACmgFiredOutsideTheTcaTurnsTheTurretWithCaseAAndTheMaPaysTheSame()
     {
         // Facing south-east the tank has B8 outside both of its CAs.

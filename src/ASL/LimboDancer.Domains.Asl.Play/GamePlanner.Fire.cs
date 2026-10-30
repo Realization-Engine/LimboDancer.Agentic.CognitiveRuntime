@@ -1155,6 +1155,14 @@ public sealed partial class GamePlanner
         {
             var conditions = ConditionChanges(ScenarioA1FireFollowUps.WeaponEffectConditions(weapon,
                 () => state.Find(weapon.EquipmentId) is { } equipment && GameState.Condition(equipment, Conditions.FirstFire) == ConditionState.True));
+            if (weapon.VehicleBreakdown?.Outcome == VehicleBreakdownOutcome.Disabled && state.Unit(weapon.EquipmentId) is { } armed
+                && LiveFire.VehicleRecalledAfterDisable(armed, weapon.VehicleWeapon is null || Is(armed, Conditions.Disabled)))
+            {
+                foreach (var change in ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma", true))
+                {
+                    conditions[ConditionName(change.Condition)] = change.Value ? ConditionState.True : ConditionState.False;
+                }
+            }
             if (conditions.Count > 0)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(weapon.EquipmentId, conditions),
