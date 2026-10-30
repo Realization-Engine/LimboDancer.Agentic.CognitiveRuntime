@@ -329,6 +329,45 @@
           "asl:motion": false
         }
       }
+    },
+    {
+      "eventId": "repair-7fd9ea7fa93d-1",
+      "revision": 15,
+      "time": "2026-10-30T21:35:47.6715922Z",
+      "source": "map-studio",
+      "type": "dice-rolled",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-fire, Version = sha256:6f8d3f7904e906d4d395641a0acf0f470fab62b7bac13745f476c783af37a5d1 }",
+      "visibility": "all",
+      "payload": {
+        "roll": "repair-7fd9ea7fa93d-roll-1",
+        "purpose": "repair",
+        "count": 1,
+        "sides": 6,
+        "values": [
+          4
+        ],
+        "source": "system",
+        "actor": "studio-user"
+      }
+    },
+    {
+      "eventId": "repair-7fd9ea7fa93d-2",
+      "revision": 16,
+      "time": "2026-10-30T21:35:47.6717061Z",
+      "source": "map-studio",
+      "type": "repair-attempted",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-fire, Version = sha256:6f8d3f7904e906d4d395641a0acf0f470fab62b7bac13745f476c783af37a5d1 }",
+      "visibility": "all",
+      "payload": {
+        "unit": "g-halftrack",
+        "equipment": "g-halftrack",
+        "roll": "repair-7fd9ea7fa93d-roll-1",
+        "repairNumber": 1,
+        "result": "no-change",
+        "weapon": "ma",
+        "vehicleRepairVersion": 1,
+        "hero": "g-hero"
+      }
     }
   ]
 }

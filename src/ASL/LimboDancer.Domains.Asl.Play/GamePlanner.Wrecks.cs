@@ -215,6 +215,58 @@ public sealed partial class GamePlanner
             : (snapshot.Values.GetValueOrDefault(at) ?? [], null);
     }
 
+    /// <summary>SMOKE occupying a complete Location, including a column from another level of its hex. Rules decides the vertical extent.</summary>
+    internal (IReadOnlyList<int>? Hindrances, string? Reason) SmokeHindrancesAt(GameState state, BoardLocation at)
+    {
+        var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
+        bool SameHex(BoardLocation source) => source.Board == at.Board && source.Hex == at.Hex;
+        if (snapshot.Unknown.Any(SameHex))
+        {
+            return (null, "play.smoke-facts: SMOKE source, chemical, and strength must be established (A24.5)");
+        }
+        List<int>? values = null;
+        LosElevations? elevations = null;
+        foreach (var (source, columns) in snapshot.Columns)
+        {
+            if (!SameHex(source))
+            {
+                continue;
+            }
+            foreach (var column in columns)
+            {
+                if (source == at)
+                {
+                    (values ??= []).Add(column.Hindrance);
+                    continue;
+                }
+                if (column.Height is null)
+                {
+                    // W-B25.2 owns changing the existing wreck-Blaze reading.
+                    continue;
+                }
+                elevations ??= Los(state, at, at)?.Elevations;
+                if (elevations is null || ReadLocation(state, source) is not { } place)
+                {
+                    return (null, "play.smoke-height: SMOKE's vertical extent at the Location cannot be established (A24.4)");
+                }
+                var endpoint = elevations.Source;
+                var end = new SmokeLosEnd(endpoint.Elevation, (decimal)endpoint.RooftopAdjustment, endpoint.Cellar,
+                    endpoint.Hillock, endpoint.Upslope, (decimal)endpoint.EmbankmentAdjustment);
+                var intersection = ScenarioA1SmokeHeightCalculator.Intersect(new(place.Hex.BaseLevel + place.Level.Level, place.Hex.BaseLevel,
+                    column.Height.Value, end, end, 0, 0, false, true, true));
+                if (intersection is null)
+                {
+                    return (null, "play.smoke-height: SMOKE's vertical extent at the Location cannot be established (A24.4)");
+                }
+                if (intersection.TargetWithin)
+                {
+                    (values ??= []).Add(column.Hindrance);
+                }
+            }
+        }
+        return (values is null ? Array.Empty<int>() : values, null);
+    }
+
     /// <summary>Viewer-independent facts, built once per immutable state. Equivalent concurrent fills have no side effects.</summary>
     private static SmokeSnapshot GatherSmoke(GameState state)
     {

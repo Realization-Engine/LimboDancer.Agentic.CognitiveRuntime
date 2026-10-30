@@ -1106,6 +1106,40 @@ public sealed partial class BacklogPass9Tests : IDisposable
         Assert.False(Planner().Replay(loaded.Events).HasErrors);
     }
 
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(2, false)]
+    [InlineData(-1, false)]
+    public async Task SmokeOccupancyUsesTheCompleteLocationAndRequiresHeightFacts(int level, bool occupied)
+    {
+        // A24.4 (PDF p.92): a ground-level conventional grenade reaches level 1, not level 2 or the cellar.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:A8:0", "german"), Squad("r1", "bd01:B10:0", "russian"));
+        await Advance(2);
+        Committed(await Smoke(G1, "bd01:A8:0", "g1", "bd01:B8:0", 1));
+        var state = Current;
+        var at = new BoardLocation(BoardRef.Parse("bd01"), HexName.Parse("B8"), level);
+        los.Elevations = new(new(level, 0, level == -1, false, false, 0), new(level, 0, level == -1, false, false, 0));
+        var (values, reason) = Planner().SmokeHindrancesAt(state, at);
+        Assert.Null(reason);
+        if (occupied)
+        {
+            Assert.Equal(2, Assert.Single(values!));
+        }
+        else
+        {
+            Assert.Empty(values!);
+        }
+        los.Elevations = null;
+        Assert.Null(Planner().SmokeHindrancesAt(state, at).Hindrances);
+        Assert.Contains("play.smoke-height", Planner().SmokeHindrancesAt(state, at).Reason!);
+        Assert.Empty(Planner().SmokeHindrancesAt(state, BoardLocation.Parse("bd01:B7:0")).Hindrances!);
+        var unknown = state with
+        {
+            VerifiedSmokeGrenades = []
+        };
+        Assert.Contains("play.smoke-facts", Planner().SmokeHindrancesAt(unknown, at).Reason!);
+    }
+
     [Fact]
     public async Task ASmokeDrOf6EndsThePlacingSquadsMph()
     {

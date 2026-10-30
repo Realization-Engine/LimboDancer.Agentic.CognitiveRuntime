@@ -145,7 +145,7 @@ public sealed partial class GamePlanner
 
         // A24.2 (ruling R9.6): SMOKE in the Location hinders an attack within it, +1 more than traced into it; D7.15: a wall or hedge TEM only across the
         // hexside the vehicle entered by.
-        var (smokeHindrances, smokeReason) = SmokeStrengthsAt(state, at);
+        var (smokeHindrances, smokeReason) = SmokeHindrancesAt(state, at);
         if (smokeHindrances is null)
         {
             return (null, [smokeReason!], string.Empty, null, 0, string.Empty);

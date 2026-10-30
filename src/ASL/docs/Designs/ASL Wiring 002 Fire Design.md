@@ -52,6 +52,10 @@ Board, hex and level all belong in the grouping key. Whether a line crosses a so
 
 Version the changed fact reading for new fire records and preserve old serialized facts/verifiers. `TurnWhiteSmokeRules.InitialStrength` and count overloads are removed only after all production and compatibility callers are accounted for. Tests that establish the legacy result remain with the compatibility path.
 
+Implementation checkpoint, 2026-10-30: residual fire, ordnance's own-Location hindrance, OVR, concealment gain and Sniper target TEM gather occupying SMOKE values through the same height-aware reader. It caches the self-LOS endpoint read within one Location query and combines all occupying values before the Rules cap. Concealment asks lazily only for relevant candidates and refuses missing facts before committing. Blaze keeps its prior reading until W-B25.2.
+
+New Sniper continuations and queued checks carry nullable `smokeVersion`; absence preserves the old exact-Location count through subsequent pauses, LLMC attacks and Sniper Checks. Unsupported versions refuse before dice. The pre-roll availability check uses public map Locations rather than hidden target eligibility; its conservative handling of unknown sources is recorded in backlog section 85. The strict Studio build passed with zero warnings and errors. Ten focused cases passed for occupancy boundaries, missing height facts, current and legacy target selection, repeated pauses, current/legacy/mixed queued checks and unsupported-version refusal. Logs: `build-fire3-smoke-latest.log` and `Fire3-Smoke-Occupancy-Sniper.log` under Codex's gate working folder. Replay gates and full acceptance are still pending.
+
 ## 6. Commands, UI and disclosure
 
 Use the existing repair panel and fire controls. Every offered counter includes its hex and level through shared option components. Repair weapon choices include actual AAMG and SA identities when supported. A separate Hero participant choice is required when he repairs; an adjacent Hero or a directing leader is not automatically the participant. Candidate lists and confirmation use the same refusal.

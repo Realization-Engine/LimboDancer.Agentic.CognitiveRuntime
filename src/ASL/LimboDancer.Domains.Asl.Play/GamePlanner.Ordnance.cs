@@ -293,7 +293,7 @@ public sealed partial class GamePlanner
             }
 
             // C5.5: a wreck, SMOKE, or an AFV in the hex adds its Hindrance (Case R), "other than the target or firer".
-            var (smokeHindrances, smokeReason) = SmokeStrengthsAt(state, target);
+            var (smokeHindrances, smokeReason) = SmokeHindrancesAt(state, target);
             if (smokeHindrances is null)
             {
                 return (null, smokeReason);
