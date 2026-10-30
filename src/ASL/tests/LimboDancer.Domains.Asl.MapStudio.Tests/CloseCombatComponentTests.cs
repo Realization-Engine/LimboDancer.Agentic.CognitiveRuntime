@@ -15,6 +15,28 @@ public sealed class CloseCombatComponentTests : IDisposable
 
     public void Dispose() => context.Dispose();
 
+    [Fact]
+    public void VehicleTargetOffersOnlyTheAttackersAdmittedByItsRulesVerdict()
+    {
+        var row = new VehicleCloseCombatPanel.CcLocation("bd04:E5:0", "russian", ["r1", "r2"], ["rl"],
+            [new VehicleCloseCombatPanel.VehicleChoice("gt", "german")], ["g1"])
+        {
+            VehicleAttackers = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+            {
+                ["r1"] = ["gt"],
+                ["r2"] = [],
+                ["rl"] = [],
+            },
+        };
+        var panel = context.Render<VehicleCloseCombatPanel>(parameters => parameters.Add(item => item.Locations, [row])
+            .Add(item => item.Vehicle, "gt").Add(item => item.Attacker, "r2").Add(item => item.Leader, "rl"));
+        Assert.Equal(["", "r1"], panel.FindAll(".vehicle-cc-attacker option").Select(option => option.GetAttribute("value")));
+        Assert.Single(panel.FindAll(".vehicle-cc-leader option"));
+        Assert.True(panel.Find(".propose-vehicle-cc-attack").HasAttribute("disabled"));
+        panel.Render(parameters => parameters.Add(item => item.Vehicle, string.Empty));
+        Assert.Equal(["", "r1", "r2"], panel.FindAll(".vehicle-cc-attacker option").Select(option => option.GetAttribute("value")));
+    }
+
     // C01 (A11.31): one block per open Location with its own units; each proposal names the Location it was made in.
     [Fact]
     public void VehicleCloseCombatOffersEachLocationItsOwnUnits()

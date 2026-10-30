@@ -1619,9 +1619,15 @@ public sealed partial class GamePlanner
             return lineage == EffectVerdict.Deployed
                 ? ("lineage", new LineageRecorded(LineageAction.Deployed, [unit.Id],
                     [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced),
-                        new NewInstance($"{attemptId}-{unit.Id}-2", reference.Kind, reference.Id, unit.Side, unit.Position, null, new Dictionary<string, ConditionState>(produced, StringComparer.Ordinal))]))
+                        new NewInstance($"{attemptId}-{unit.Id}-2", reference.Kind, reference.Id, unit.Side, unit.Position, null, new Dictionary<string, ConditionState>(produced, StringComparer.Ordinal))])
+                {
+                    AssaultEngineerLoss = ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByFire(effect),
+                })
                 : ("lineage", new LineageRecorded(lineage == EffectVerdict.Reduced ? LineageAction.Reduced : LineageAction.Replaced, [unit.Id],
-                    [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)]));
+                    [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)])
+                {
+                    AssaultEngineerLoss = ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByFire(effect),
+                });
         }
 
         return conditions.Count == 0 ? null : ("conditions-changed", new ConditionsChanged(unit.Id, conditions));

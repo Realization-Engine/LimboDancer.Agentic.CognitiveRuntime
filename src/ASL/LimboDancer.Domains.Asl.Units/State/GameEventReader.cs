@@ -324,7 +324,8 @@ public static class GameEventReader
 
                 return action is null ? null : new LineageRecorded(action.Value, fields.StringList(payload, "consumed", path), produced)
                 {
-                    SpotterSuccessor = fields.OptionalString(payload, "spotterSuccessor", path)
+                    SpotterSuccessor = fields.OptionalString(payload, "spotterSuccessor", path),
+                    AssaultEngineerLoss = fields.OptionalBoolean(payload, "assaultEngineerLoss", path)
                 };
             case "instance-eliminated":
                 return fields.RequiredString(payload, "id", path) is { } eliminated ? new InstanceEliminated(eliminated) : null;

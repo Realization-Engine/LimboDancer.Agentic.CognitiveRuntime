@@ -503,6 +503,13 @@ public sealed record UnitInstance(
     int MfSpent = 0,
     bool MovementEnded = false) : IGameObject
 {
+    /// <summary>Assault Engineer status inherited through lineage; null reads the current printed trait.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AssaultEngineer
+    {
+        get; init;
+    }
+
     string? IGameObject.Side => Side;
 
     /// <summary>

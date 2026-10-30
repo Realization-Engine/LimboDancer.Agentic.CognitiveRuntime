@@ -13,6 +13,65 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public static class LiveCloseCombat
 {
+    /// <summary>Inherited AE or its permanent loss, otherwise the definition's printed AE trait.</summary>
+    public static bool? AssaultEngineerState(UnitInstance unit, ScenarioA1CloseCombatReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+        ArgumentNullException.ThrowIfNull(reference);
+        return unit.AssaultEngineer ?? (ScenarioA1CloseCombatValueCalculator.AssaultEngineer(
+            reference.Definitions.GetValueOrDefault(unit.Definition?.Definition ?? string.Empty)?.AssaultEngineer, false, false) ? true : (bool?)null);
+    }
+
+    /// <summary>The same Rules refusal used by the offered Infantry attackers and their command.</summary>
+    public static string? VehicleAttackerRefusal(UnitInstance unit, UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1CloseCombatValueCalculator.AttackerRefusal(ScenarioA1CloseCombatValueCalculator.InfantryOrCavalry(unit.Kind),
+            unit.Side != vehicle.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Captured), Is(unit, Conditions.Unarmed), false);
+    }
+
+    /// <summary>Current vehicle CC facts from participating units, their vehicle, and active prisoners.</summary>
+    public static CcvContext CcvFromState(GameState state, VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(reference);
+        var ids = facts.Units!.Select(unit => unit.UnitId!).ToHashSet(StringComparer.Ordinal);
+        var engineers = new List<string>();
+        var national = new Dictionary<string, NationalCcv>(StringComparer.Ordinal);
+        var guards = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var unit in state.Units)
+        {
+            if (unit.Status == InstanceStatus.Active && unit.Custodian is { } guard && ids.Contains(guard))
+            {
+                guards.Add(guard);
+            }
+
+            if (!ids.Contains(unit.Id))
+            {
+                continue;
+            }
+
+            var definition = reference.Definitions.GetValueOrDefault(unit.Definition?.Definition ?? string.Empty);
+            if (AssaultEngineerState(unit, reference) == true)
+            {
+                engineers.Add(unit.Id);
+            }
+
+            if (definition?.Nationality == "ethiopian")
+            {
+                national.Add(unit.Id, NationalCcv.Ethiopian);
+            }
+        }
+
+        var vehicle = state.Unit(facts.Vehicle!.VehicleId!);
+        return new CcvContext(engineers, vehicle is not null && (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)), National: national)
+        {
+            Guards = guards.Count > 0 ? guards : null,
+        };
+    }
+
     /// <summary>Current Ambush facts include the experience read from each unit's class and the leaders at its Location.</summary>
     public static AmbushFacts WithStealthExperience(GameState state, AmbushFacts facts, ScenarioA1CloseCombatReference reference)
     {
@@ -21,26 +80,38 @@ public static class LiveCloseCombat
         ArgumentNullException.ThrowIfNull(reference);
         return facts with
         {
-            Units = [.. facts.Units!.Select(unit => unit with { Inexperienced = Inexperienced(unit) })],
+            Units = [.. facts.Units!.Select(unit => unit with { Inexperienced = ExperienceOf(state, unit, reference) })],
         };
+    }
 
-        bool? Inexperienced(CloseCombatUnit unit)
+    /// <summary>The vehicle CC command and verifier gather the same current experience facts.</summary>
+    public static VehicleCloseCombatFacts WithCcvExperience(GameState state, VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(reference);
+        return facts with
         {
-            var definition = reference.Definitions.GetValueOrDefault(unit.DefinitionId!);
-            var location = state.Location(unit.UnitId!);
-            RuleState[] leaders = location is null ? [] : [.. state.At(location.Location).OfType<UnitInstance>()
-                .Where(leader => leader.Id != unit.UnitId && leader.Side == unit.Side && leader.Kind == "asl:leader")
-                .Select(leader => GameState.Condition(leader, Conditions.Broken) switch
-                {
-                    ConditionState.True => RuleState.True,
-                    ConditionState.False => RuleState.False,
-                    ConditionState.Inapplicable => RuleState.Inapplicable,
-                    _ => RuleState.Unknown,
-                })];
-            return ScenarioA1StealthCalculator.Inexperienced(ScenarioA1Experience.Inexperienced(
-                ScenarioA1Definitions.MmcKinds.Contains(definition?.Kind), definition?.Class, definition?.Class is not null,
-                location is not null, leaders), unit.Unarmed == true);
-        }
+            Units = [.. facts.Units!.Select(unit => unit with { Inexperienced = ExperienceOf(state, unit, reference) })],
+        };
+    }
+
+    private static bool? ExperienceOf(GameState state, CloseCombatUnit unit, ScenarioA1CloseCombatReference reference)
+    {
+        var definition = reference.Definitions.GetValueOrDefault(unit.DefinitionId!);
+        var location = state.Location(unit.UnitId!);
+        RuleState[] leaders = location is null ? [] : [.. state.At(location.Location).OfType<UnitInstance>()
+            .Where(leader => leader.Id != unit.UnitId && leader.Side == unit.Side && leader.Kind == "asl:leader")
+            .Select(leader => GameState.Condition(leader, Conditions.Broken) switch
+            {
+                ConditionState.True => RuleState.True,
+                ConditionState.False => RuleState.False,
+                ConditionState.Inapplicable => RuleState.Inapplicable,
+                _ => RuleState.Unknown,
+            })];
+        return ScenarioA1StealthCalculator.Inexperienced(ScenarioA1Experience.Inexperienced(
+            ScenarioA1Definitions.MmcKinds.Contains(definition?.Kind), definition?.Class, definition?.Class is not null,
+            location is not null, leaders), unit.Unarmed == true);
     }
 
     /// <summary>The recorded OB designations and explicit SSR facts of the units taking part in an Ambush.</summary>
@@ -545,6 +616,10 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(combat);
         ArgumentNullException.ThrowIfNull(rolls);
+        if (combat.CcvVersion is not null and not 1)
+        {
+            return "The CCV record's reading is not supported.";
+        }
         VehicleCloseCombatFacts? recorded;
         try
         {
@@ -587,6 +662,10 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             // A18.2 (pass 71, ruling R71.17): the AFV's -1 to Leader Creation is a declaration of the attack too, taken as recorded; an older record has none.
             AfvDrm = recorded.AfvDrm,
         };
+        if (combat.CcvVersion is not null)
+        {
+            expected = LiveCloseCombat.WithCcvExperience(state, expected, reference);
+        }
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {
             return "The CC record's facts do not match the game state.";
@@ -600,7 +679,7 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
         var resolution = ScenarioA1VehicleCloseCombat.Resolve(recorded with
         {
             Rolls = dice
-        }, reference);
+        }, reference, combat.CcvVersion is null ? null : LiveCloseCombat.CcvFromState(state, expected, reference));
         return resolution.Disposition != CloseCombatResolution.Resolved
             ? "The CC record's facts and rolls do not resolve: " + string.Join("; ", resolution.Reasons)
             : !JsonElement.DeepEquals(JsonSerializer.SerializeToElement(resolution, LiveFire.Json), combat.Resolution)

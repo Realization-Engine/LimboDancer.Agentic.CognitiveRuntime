@@ -1056,7 +1056,10 @@ public sealed partial class GamePlanner
                 }
 
                 yield return ("lineage", new LineageRecorded(LineageAction.Replaced, [unit.Id],
-                    [new NewInstance($"{attemptId}-{unit.Id}", conscript.Kind, conscript.Id, unit.Side, unit.Position, null, armed)]));
+                    [new NewInstance($"{attemptId}-{unit.Id}", conscript.Kind, conscript.Id, unit.Side, unit.Position, null, armed)])
+                {
+                    AssaultEngineerLoss = true,
+                });
                 continue;
             }
 

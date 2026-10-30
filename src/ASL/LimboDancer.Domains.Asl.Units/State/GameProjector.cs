@@ -1189,6 +1189,18 @@ public static partial class GameProjector
                 return Fail<GameState>(verifier.Code, verifier.Text);
             }
 
+            if (combat.CcvVersion is not null && combat.Resolution.TryGetProperty("vehicleResult", out var vehicleResult)
+                && vehicleResult.ValueKind == JsonValueKind.String && Rules.ScenarioA1CloseCombatValueCalculator.PrcEliminated(vehicleResult.GetString()!))
+            {
+                var prc = state.Units.Where(unit => unit.Status == InstanceStatus.Active
+                    && unit.Position is ContainedPosition { Container: var container, Role: ContainmentRole.Passenger or ContainmentRole.Rider or ContainmentRole.Crew }
+                    && container == combat.Vehicle).Select(unit => unit.Id).ToArray();
+                foreach (var id in prc)
+                {
+                    state = Eliminate(state, id)!;
+                }
+            }
+
             if (Rules.ScenarioA1CloseCombatProjection.ReactionLeavesState(combat.Reaction))
             {
                 // A9.223, D7.21 (pass 60, rulings R60.3, R60.20): a MG's Fire Lane is cancelled when its manning Infantry makes CC Reaction Fire, by a
@@ -4663,8 +4675,21 @@ public static partial class GameProjector
                 next = DropHeldBy(next, ids);
             }
 
+            bool? PrintedEngineer(UnitInstance parent) => parent.Definition is { } source
+                && catalogs.FirstOrDefault(item => item.Identity == source.Catalog)?.Definition(source.Definition)?.Printed("front", "asl:assault-engineer") is { State: PrintedState.Printed } printed
+                ? printed.TraitPresent : null;
+            bool?[] parents = [.. consumed.Select(parent => parent.AssaultEngineer
+                ?? (Rules.ScenarioA1CloseCombatValueCalculator.AssaultEngineer(PrintedEngineer(parent), false, false) ? true : (bool?)null))];
             foreach (var produced in lineage.Produced)
             {
+                var engineer = Rules.ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(lineage.AssaultEngineerLoss, parents,
+                    produced.Definition is { } destination && catalog?.Definition(destination)?.Printed("front", "asl:assault-engineer") is { State: PrintedState.Printed } printed
+                        ? printed.TraitPresent : null);
+                if (engineer.Reason is { } engineerBar)
+                {
+                    return Fail<GameState>("UNIT-AE-LINEAGE", engineerBar);
+                }
+
                 var instance = produced with
                 {
                     Side = produced.Side ?? consumed[0].Side,
@@ -4686,6 +4711,7 @@ public static partial class GameProjector
                         DoubleTimeMf = consumed.Max(item => item.DoubleTimeMf),
                         OffRoad = consumed.Any(item => item.OffRoad),
                         MovedWith = consumed.Select(item => item.MovedWith).FirstOrDefault(item => item is not null),
+                        AssaultEngineer = engineer.Status,
                     })
                     : created;
             }

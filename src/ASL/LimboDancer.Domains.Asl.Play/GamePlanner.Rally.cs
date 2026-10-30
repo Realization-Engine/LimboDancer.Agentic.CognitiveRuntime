@@ -289,7 +289,10 @@ public sealed partial class GamePlanner
             // A25.222 (ruling R15.6): a Commissar's failed rally Replaces the unit by one of its size.
             var replaced = ScenarioA1RallyRules.ReplacedNotReduced(hardened, effect.ReplacedByCommissar, reference.Kind == unit.Kind);
             yield return ("lineage", new LineageRecorded(replaced ? LineageAction.Replaced : LineageAction.Reduced, [unit.Id],
-                [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)]));
+                [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)])
+            {
+                AssaultEngineerLoss = effect.ReplacedByCommissar,
+            });
             yield break;
         }
 

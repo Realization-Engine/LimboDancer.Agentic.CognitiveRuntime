@@ -2291,8 +2291,18 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     }
 
     private GameEvent Event(GameScope scope, string attemptId, int index, long expected, string type, EventPayload payload, string? rulePackage,
-        IReadOnlyList<string>? visibility, IReadOnlyList<string>? causes = null) =>
-        new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload, rulePackage, causes ?? [], visibility);
+        IReadOnlyList<string>? visibility, IReadOnlyList<string>? causes = null)
+    {
+        if (payload is LineageRecorded { AssaultEngineerLoss: null } lineage)
+        {
+            payload = lineage with
+            {
+                AssaultEngineerLoss = false,
+            };
+        }
+
+        return new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload, rulePackage, causes ?? [], visibility);
+    }
 
     private static JsonObject EventNode(int index, string type, JsonObject payload, IReadOnlyList<string>? visibility)
     {

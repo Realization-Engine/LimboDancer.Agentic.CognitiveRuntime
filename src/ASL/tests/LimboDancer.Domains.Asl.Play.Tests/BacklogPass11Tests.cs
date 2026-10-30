@@ -187,6 +187,7 @@ public sealed class BacklogPass11Tests : IDisposable
 
     /// <summary>The special rules of the next setup (backlog pass 16: night and weather).</summary>
     private string[] rules = [];
+    private int scenarioYear = 1942;
 
     private async Task Setup(string firstSide, params Dictionary<string, object>[] placements)
     {
@@ -207,7 +208,7 @@ public sealed class BacklogPass11Tests : IDisposable
                     new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
                 },
                 ["scenarioMonth"] = 7,
-                ["scenarioYear"] = 1942,
+                ["scenarioYear"] = scenarioYear,
                 ["specialRules"] = rules,
             },
             placements,
@@ -654,7 +655,9 @@ public sealed class BacklogPass11Tests : IDisposable
     {
         // D7.1, D7.11 (R11.11): the PzKpfw IIIH enters the Russian squad's Open Ground hex with an OVR: 1 + 4 MP; after the DEFENDER passes, the OVR
         // attacks with 4 + (3 + 5) x 3 / 2 = 16 FP, FFMO -1.
-        await Setup("german", Vehicle("de-tk", "attacker-tank", L("E5"), "german"), Squad("r1", L(Ne("E5")), "russian"), Squad("r2", L("J9"), "russian"));
+        var crew = Unit("de-crew", "asl:leader", "attacker-leader-8-1", L("E5"), "german");
+        crew["position"] = new Dictionary<string, string> { ["in"] = "de-tk", ["role"] = "crew" };
+        await Setup("german", Vehicle("de-tk", "attacker-tank", L("E5"), "german"), Squad("r1", L(Ne("E5")), "russian"), Squad("r2", L("J9"), "russian"), crew);
         Committed(await Step("de-tk", "start"));
         await Pass();
         var before = Revision;
@@ -691,6 +694,7 @@ public sealed class BacklogPass11Tests : IDisposable
         Committed(await VehicleCc(L(Ne("E5")), Once(2, 5, 1, 1, 4), attackers: ["r1"]));
         Assert.Single(Since(before).Select(item => item.Payload).OfType<PaatcTaken>());
         Assert.Equal(InstanceStatus.Wrecked, Current.Unit("de-tk")!.Status);
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("de-crew")!.Status);
 
         // A9.223 (pass 60, rulings R60.3, R60.20): the reaction's record carries the Fire Lane's cancellation; one made before the pass does not.
         Assert.True(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>().Single().CancelsFireLanes);
@@ -805,6 +809,63 @@ public sealed class BacklogPass11Tests : IDisposable
         Committed(await VehicleCc(L(Ne("E5")), Once(1, 2), vehicle: "de-ht", attackers: ["r1"]));
         Assert.Contains(Since(before), item => item.Payload is VehicleWrecked { Id: "de-ht", Burning: true });
         Assert.Contains(Current.Entities, entity => entity.Id == "de-ht-blaze" && entity.Kind == "asl:fire" && entity.Status == InstanceStatus.Active);
+        NoReplayErrors();
+    }
+
+    [Theory]
+    [InlineData("passenger")]
+    [InlineData("rider")]
+    [InlineData("crew")]
+    public async Task DestroyingAVehicleInNewCloseCombatEliminatesItsPassengers(string role)
+    {
+        scenarioYear = 1943;
+        var passenger = Unit("g2", "asl:leader", "attacker-leader-8-1", L(Ne("E5")), "german");
+        passenger["position"] = new Dictionary<string, string> { ["in"] = "de-ht", ["role"] = role };
+        await Setup("russian", Vehicle("de-ht", "attacker-halftrack", L(Ne("E5")), "german"),
+            Squad("r1", L("E5"), "russian"), passenger, Squad("g1", L("J9"), "german"));
+        await Advance(4);
+        Committed(await Do(GameActions.Advance, Once(3, 4), new
+        {
+            unitIds = R1,
+            to = L(Ne("E5")),
+        }));
+        await Advance();
+        var before = Revision;
+        Committed(await VehicleCc(L(Ne("E5")), Once(3, 3), vehicle: "de-ht", attackers: R1));
+        var record = Assert.Single(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>());
+        Assert.Equal(1, record.CcvVersion);
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("de-ht")!.Status);
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("g2")!.Status);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AVehicleRefusesUnknownDefenderExperienceBeforeDrawingDice()
+    {
+        var leader = Unit("rl", "asl:leader", "defender-leader", L(Ne("E5")), "russian");
+        ((Dictionary<string, bool>)leader["conditions"]).Remove(Conditions.Broken);
+        await Setup("german", Vehicle("de-ht", "attacker-halftrack", L("E5"), "german"),
+            Unit("r1", "asl:squad", "american-green-squad", L(Ne("E5")), "russian"), leader, Squad("g1", L("J9"), "german"));
+        Committed(await Step("de-ht", "start"));
+        await Pass();
+        Committed(await Step("de-ht", "enter", L(Ne("E5")), options: new()
+        {
+            ["overrun"] = true,
+        }));
+        await Pass();
+        Committed(await Do(GameActions.Overrun, Once(5, 6), new
+        {
+        }));
+        await Pass();
+        Committed(await Step("de-ht", "stop"));
+        await Pass();
+        await FinishVehicle();
+        await Advance(5);
+        Assert.Equal(ConditionState.Unknown, Experience.Inexperienced(Current, Current.Unit("r1")!, [Catalog], Vocabulary));
+        Committed(await VehicleCc(L(Ne("E5")), NoRoll(), pass: true));
+        var before = Revision;
+        Refused(await VehicleCc(L(Ne("E5")), NoRoll(), vehicle: "de-ht", defenders: R1), "inexperienced");
+        Assert.Equal(before, Revision);
         NoReplayErrors();
     }
 
