@@ -411,16 +411,23 @@ public sealed class ScenarioA1StealthCalculatorTests
             Searcher(false, false, false, false) with { Stealth = statuses[1] }]).Drm + 1);
     }
 
-    private static string Evaluate(JsonObject facts) =>
-        ScenarioA1RuleContracts.Evaluate(ScenarioA1RuleContracts.Find("a11.17-stealth")!, facts).Outcome;
+    private static readonly string[] OwnedPurposes = ["concealment", "search", "search-casualty"];
 
-    private static JsonObject Facts(string kind, string nationality, string @class, string purpose = "ambush", bool? inexperienced = false,
-        string designation = "none", bool ssrLax = false) => new()
+    private const string Owned = "a11.17-stealth";
+
+    private const string AmbushContract = "a11.17-stealth-ambush";
+
+    private static string Evaluate(JsonObject facts, string contract = Owned) =>
+        ScenarioA1RuleContracts.Evaluate(ScenarioA1RuleContracts.Find(contract)!, facts).Outcome;
+
+    private static JsonObject Facts(string kind, string nationality, string @class, string? purpose = "concealment", bool? inexperienced = false,
+        string designation = "none", bool ssrLax = false, bool berserk = false, bool goodOrder = true)
+    {
+        var facts = new JsonObject
         {
             ["unitId"] = "u1",
-            ["purpose"] = purpose,
-            ["goodOrder"] = true,
-            ["berserk"] = false,
+            ["goodOrder"] = goodOrder,
+            ["berserk"] = berserk,
             ["banzaiOrHumanWave"] = false,
             ["ssrStealthy"] = false,
             ["ssrLax"] = ssrLax,
@@ -431,6 +438,16 @@ public sealed class ScenarioA1StealthCalculatorTests
             ["designation"] = designation,
             ["inexperienced"] = inexperienced,
         };
+        if (purpose is not null)
+        {
+            facts["purpose"] = purpose;
+        }
+
+        return facts;
+    }
+
+    private static JsonObject AmbushFactsOf(string kind, string nationality, string @class, bool? inexperienced = false, bool ssrLax = false, bool berserk = false,
+        bool goodOrder = true) => Facts(kind, nationality, @class, null, inexperienced, ssrLax: ssrLax, berserk: berserk, goodOrder: goodOrder);
 
     [Fact]
     public void TheContractGivesEachOutcome()
@@ -442,12 +459,31 @@ public sealed class ScenarioA1StealthCalculatorTests
         Assert.Equal("lax", Evaluate(Facts("asl:squad", "italian", "1st-line", "search-casualty")));
         Assert.Equal("normal", Evaluate(Facts("asl:squad", "finnish", "2nd-line")));
         Assert.Equal("normal", Evaluate(Facts("asl:squad", "finnish", "green")));
+        // A berserk unit is Lax only in CC (A15.432): not for the Searching dr.
+        Assert.Equal("normal", Evaluate(Facts("asl:hero", "german", "none", "search", berserk: true, goodOrder: false)));
         // A Green MMC whose Inexperience is unknown: not evaluated.
         Assert.Equal(ContractVerdict.NotEvaluated, Evaluate(Facts("asl:squad", "finnish", "green", inexperienced: null)));
+        // Each dr is asked by one contract: the Ambush is not a purpose of this one.
+        Assert.Equal(ContractVerdict.NotEvaluated, Evaluate(Facts("asl:squad", "finnish", "elite", "ambush")));
     }
 
     [Fact]
-    public void TheEnemyOfAConcealedUnitCannotEvaluateIt()
+    public void TheAmbushContractGivesEachOutcomeAsTheAmbushDrmDoes()
+    {
+        // A11.4, A11.17, A11.18 (p. 73): the side's drm from this unit, as ScenarioA1StealthCalculator.AmbushDrm gives it.
+        Assert.Equal("stealthy", Evaluate(AmbushFactsOf("asl:squad", "finnish", "elite"), AmbushContract));
+        Assert.Equal("stealthy", Evaluate(AmbushFactsOf("asl:hero", "german", "none"), AmbushContract));
+        Assert.Equal("lax", Evaluate(AmbushFactsOf("asl:squad", "finnish", "elite", ssrLax: true), AmbushContract));
+        Assert.Equal("lax", Evaluate(AmbushFactsOf("asl:hero", "german", "none", berserk: true, goodOrder: false), AmbushContract));
+        Assert.Equal("lax", Evaluate(AmbushFactsOf("asl:squad", "italian", "1st-line"), AmbushContract));
+        Assert.Equal("normal", Evaluate(AmbushFactsOf("asl:squad", "finnish", "2nd-line"), AmbushContract));
+        Assert.Equal(ContractVerdict.NotEvaluated, Evaluate(AmbushFactsOf("asl:squad", "finnish", "green", inexperienced: null), AmbushContract));
+        // It has no purpose fact.
+        Assert.Equal(ContractVerdict.NotEvaluated, Evaluate(Facts("asl:squad", "finnish", "elite", "concealment"), AmbushContract));
+    }
+
+    [Fact]
+    public void TheEnemyOfAConcealedUnitCannotEvaluateItOutsideTheAmbush()
     {
         // The other side asks about a "?" stack: the unit and what it is are its owner's, so the facts it may give leave the verdict not evaluated.
         var facts = Facts("asl:squad", "finnish", "elite");
@@ -458,10 +494,17 @@ public sealed class ScenarioA1StealthCalculatorTests
             Assert.Equal(ContractVerdict.NotEvaluated, Evaluate(partial));
         }
 
-        var contract = ScenarioA1RuleContracts.Find("a11.17-stealth")!;
-        Assert.All(contract.Facts.Where(fact => fact.Name is "kind" or "heroic" or "nationality" or "class" or "designation" or "inexperienced" or "unitId"),
+        string[] unitFacts = ["kind", "heroic", "nationality", "class", "designation", "inexperienced"];
+        var owned = ScenarioA1RuleContracts.Find(Owned)!;
+        Assert.All(owned.Facts.Where(fact => unitFacts.Contains(fact.Name) || fact.Name == "unitId"),
             fact => Assert.Equal((ContractDisclosure.Owner, "unitId"), (fact.Disclosure, fact.Concerns)));
-        Assert.All(contract.Facts.Where(fact => fact.Name is "purpose" or "goodOrder" or "berserk" or "ssrStealthy" or "ssrLax"),
+        Assert.All(owned.Facts.Where(fact => fact.Name is "purpose" or "goodOrder" or "berserk" or "ssrStealthy" or "ssrLax"),
             fact => Assert.Equal(ContractDisclosure.All, fact.Disclosure));
+        Assert.Equal(OwnedPurposes, owned.Facts.Single(fact => fact.Name == "purpose").Choices!);
+
+        // A11.19 (p. 73) and the p. 74 example: in CC every unit reveals its Strength Factor before the Ambush dr, so both sides know what it is.
+        var ambush = ScenarioA1RuleContracts.Find(AmbushContract)!;
+        Assert.All(ambush.Facts, fact => Assert.Equal((ContractDisclosure.All, (string?)null), (fact.Disclosure, fact.Concerns)));
+        Assert.DoesNotContain(ambush.Facts, fact => fact.Name == "purpose");
     }
 }
