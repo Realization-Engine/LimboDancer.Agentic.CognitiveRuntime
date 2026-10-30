@@ -5,6 +5,21 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 
 public sealed class ScenarioA1VehicleBreakdownResolutionTests
 {
+    [Fact]
+    public void RecordedBreakdownEvidenceRequiresEveryNestedFact()
+    {
+        var json = System.Text.Json.JsonSerializer.SerializeToNode(Circled)!.AsObject();
+        foreach (var property in json.Select(item => item.Key).ToArray())
+        {
+            var incomplete = json.DeepClone().AsObject();
+            Assert.True(incomplete.Remove(property));
+            Assert.Throws<System.Text.Json.JsonException>(() =>
+                System.Text.Json.JsonSerializer.Deserialize<VehicleBreakdownUseFacts>(incomplete.ToJsonString()));
+        }
+        Assert.Throws<System.Text.Json.JsonException>(() =>
+            System.Text.Json.JsonSerializer.Deserialize<FireVehicleBreakdownFacts>("{}"));
+    }
+
     [Theory]
     [InlineData(null, false, 0)]
     [InlineData(ScenarioA1CapturedVehicleRules.VehicleCrew, false, 0)]
