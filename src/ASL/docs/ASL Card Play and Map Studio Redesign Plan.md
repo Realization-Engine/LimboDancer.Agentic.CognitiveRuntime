@@ -1908,7 +1908,7 @@ Turns tasks that reach this pass from another: D6 (pass 73) names the CC and her
 
 **Pass 85: SMOKE, wind, and Environmental Conditions** (new; 33 rows of the inventory). Counters: s# and WP# on Guns and mortars (the British mortar's s7 is already in the catalog, unread); a smoke dispenser value on each vehicle whose counter prints one (the audit says the PzKpfw IIIH does; not checked against the Vehicle Listing). Needs first: 35.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 33 rows: 1 built with a deviation, 7 partly, 25 not built. Claims: 32 open, 1 reviewed (owners: A24.5 (Claude)). A Turns calculator on 2 rows. Wiring: 0 of 33. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 33 rows: 1 built with a deviation, 7 partly, 25 not built. Claims: 31 open, 1 claimed, 1 reviewed (owners: A24.4 (Codex), A24.5 (Claude)). A Turns calculator on 2 rows. Wiring: 0 of 33. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
