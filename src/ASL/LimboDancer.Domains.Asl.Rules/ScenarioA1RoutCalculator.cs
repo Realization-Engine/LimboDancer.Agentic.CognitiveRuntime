@@ -634,13 +634,15 @@ public static class ScenarioA1RoutCalculator
     /// <summary>
     /// Whether a building goes on across a hexside into the next hex (A10.51's EXC; pass 70, ruling R70.13), as the card editor joins a building (ruling
     /// R17.8; the referee of pass 28): the hexside and the next hex are building terrain, and no Rowhouse wall or Breach divides them (Rowhouses are separate
-    /// buildings, B23.71), nor a Factory's outside wall (B23.74); a Factory's interior walls stay within it.
+    /// buildings, B23.71), nor a Factory's outside wall (B23.74, decided by <see cref="ScenarioA1FactoryCalculator.DividedByFactoryWall"/>); a Factory's
+    /// interior walls stay within it.
     /// </summary>
     public static bool BuildingGoesOn(bool hexsideBuilding, bool nextBuilding, string? sideTerrain, bool sideOutsideFactoryWall, string? hexsideTerrain,
         bool hexsideOutsideFactoryWall)
     {
-        static bool Divides(string? name, bool outsideFactoryWall) => outsideFactoryWall || name == "Breach" || name?.StartsWith("Rowhouse Wall", StringComparison.Ordinal) == true;
-        return hexsideBuilding && nextBuilding && !Divides(sideTerrain, sideOutsideFactoryWall) && !Divides(hexsideTerrain, hexsideOutsideFactoryWall);
+        static bool Divides(string? name) => name == "Breach" || name?.StartsWith("Rowhouse Wall", StringComparison.Ordinal) == true;
+        return hexsideBuilding && nextBuilding && !ScenarioA1FactoryCalculator.DividedByFactoryWall(sideOutsideFactoryWall, hexsideOutsideFactoryWall)
+            && !Divides(sideTerrain) && !Divides(hexsideTerrain);
     }
 
     /// <summary>Whether a Location is in a building (A10.51's EXC; ruling R70.13): its terrain is a wooden or stone building.</summary>

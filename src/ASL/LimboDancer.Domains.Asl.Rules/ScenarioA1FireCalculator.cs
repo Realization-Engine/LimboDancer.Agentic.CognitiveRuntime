@@ -1564,7 +1564,8 @@ public static class ScenarioA1FireCalculator
     {
         ArgumentNullException.ThrowIfNull(attack);
         // Rulings R10.5, R10.13: a positive wall or hedge TEM is the target's positive TEM, and a Snap Shot takes no TEM.
-        if (attack.AfvCover is not { } cover || !ScenarioA1FireReference.Tem.TryGetValue(attack.TargetTerrain ?? string.Empty, out var tem) || tem > 0
+        // B23.741 (the B23.74 claim, RB23F.5): a Factory's TEM, when the attack carries one, in place of the terrain key's.
+        if (attack.AfvCover is not { } cover || !ScenarioA1FireReference.Tem.TryGetValue(attack.TargetTerrain ?? string.Empty, out var tem) || (attack.FactoryTem ?? tem) > 0
             || attack.HexsideTem is { Tem: > 0 } || attack.SnapShot == true)
         {
             return null;
@@ -3676,7 +3677,9 @@ public static class ScenarioA1FireCalculator
             var shift = cowered ? (inexperienced ? 2 : 1) : 0;
 
             var drm = new List<FireModifier>();
-            var tem = ScenarioA1FireReference.Tem[attack.TargetTerrain!];
+            // B23.741 (the B23.74 claim, RB23F.5): a Factory's TEM, when the attack carries one, in place of the terrain key's; the wall and hedge rule
+            // (B9.3) below reads the same number.
+            var tem = attack.FactoryTem ?? ScenarioA1FireReference.Tem[attack.TargetTerrain!];
             var flamethrower = Flamethrower;
             var dcPlaced = attack.DemolitionCharge?.Mode == FireDemolitionCharge.Placed;
             if (flamethrower)
@@ -3742,7 +3745,7 @@ public static class ScenarioA1FireCalculator
             }
             else if (tem != 0)
             {
-                drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "A7.6"));
+                drm.Add(attack.FactoryTem is null ? new FireModifier("tem:" + attack.TargetTerrain, tem, "A7.6") : new FireModifier("tem:factory", tem, "B23.741"));
             }
 
             // B23.32, C3.71 (pp. 136, 170; pass 60, ruling R60.11): +1 for each non-rooftop building level above the target Location, against an Area

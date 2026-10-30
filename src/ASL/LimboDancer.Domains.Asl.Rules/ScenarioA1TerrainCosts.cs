@@ -37,7 +37,9 @@ public static class ScenarioA1TerrainCosts
     /// (B23.4, 1 MF); into an ADJACENT hex of the same building at an upper level (B23.421, 2 MF); or into an adjacent hex at ground level at
     /// its terrain's cost (A4.13), a road hexside's rate (A4.132), doubled one level up (A4.133, B10.4), with Abrupt Elevation Changes
     /// (B10.51), one MF more across a wall or hedge (B9.4), and one more into SMOKE or a burning wreck (A24.7, B25.141). Null with the reason
-    /// when the step is not allowed or not reviewed. <paramref name="smokeHalfMf"/> is read for the Location entered where the planner read it.
+    /// when the step is not allowed or not reviewed. <paramref name="smokeHalfMf"/> is read for the Location entered where the planner read it. A Factory
+    /// is refused here (its terrain has no key), or, keyed as a building, priced as one: 2 MF between its hexes and its stairwell levels open. The
+    /// overload with <see cref="FactoryStepFacts"/> gives B23.742's 1 MF and refuses its upper levels and cellars (the B23.74 claim, RB23F.12).
     /// </summary>
     public static (InfantryEntry? Entry, string? Reason) InfantryStep(InfantryStepFacts facts, Func<int> smokeHalfMf, InfantryWeatherRead weather)
     {
@@ -90,6 +92,52 @@ public static class ScenarioA1TerrainCosts
         }
 
         return GroundStep(crossed, terrain, toRead.BaseLevel - fromRead.BaseLevel, facts.Month, smokeHalfMf, weather, facts.TerrainRate);
+    }
+
+    /// <summary>
+    /// An Infantry step that may touch a Factory (B23.74, B23.742, B23.743, pp. 139 and 140; the B23.74 claim, RB23F.10, RB23F.12). With
+    /// <paramref name="factory"/> null it is the member without it, word for word. With it: a level change within a Factory hex is refused
+    /// (<see cref="ScenarioA1FactoryCalculator.LevelChangeRefusal"/>), and so is a step to or from a Factory Location above or below ground level
+    /// (<see cref="ScenarioA1FactoryCalculator.OccupationRefusal"/>); a ground step <see cref="ScenarioA1FactoryCalculator.InfantryHalfMf"/> prices costs
+    /// that, with SMOKE and the weather's read for the terrain entered; a step between hexes of different base levels at that price is not reviewed; any
+    /// other step is the member without it.
+    /// </summary>
+    public static (InfantryEntry? Entry, string? Reason) InfantryStep(InfantryStepFacts facts, FactoryStepFacts? factory, Func<int> smokeHalfMf, InfantryWeatherRead weather)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(smokeHalfMf);
+        ArgumentNullException.ThrowIfNull(weather);
+        if (factory is null || facts.FromIsHexside || facts.ToIsHexside)
+        {
+            return InfantryStep(facts, smokeHalfMf, weather);
+        }
+
+        if (facts.SameHex)
+        {
+            return factory.FromFactory || factory.ToFactory ? (null, ScenarioA1FactoryCalculator.LevelChangeRefusal(facts.FromHexText)) : InfantryStep(facts, smokeHalfMf, weather);
+        }
+
+        var occupation = (factory.ToFactory ? ScenarioA1FactoryCalculator.OccupationRefusal(facts.ToLevel, facts.To?.TerrainName == "Rooftop", false) : null)
+            ?? (factory.FromFactory ? ScenarioA1FactoryCalculator.OccupationRefusal(facts.FromLevel, facts.From?.TerrainName == "Rooftop", false) : null);
+        if (occupation is not null)
+        {
+            return (null, occupation);
+        }
+
+        if (ScenarioA1FactoryCalculator.InfantryHalfMf(factory) is not { } halfMf || facts.From is not { } fromRead || facts.To is not { } toRead || !facts.Adjacent
+            || facts.Crossed is not { } crossed || toRead.TerrainKey is not { } terrain || WallOn(crossed.HexsideTerrain) is not null || crossed.Cliff || crossed.Slope)
+        {
+            return InfantryStep(facts, smokeHalfMf, weather);
+        }
+
+        if (toRead.BaseLevel != fromRead.BaseLevel)
+        {
+            return (null, "play.move-factory: a Factory step between hexes of different base levels is not reviewed (B23.742)");
+        }
+
+        var smoke = smokeHalfMf();
+        var (extra, _) = weather(terrain, false, 0);
+        return (new InfantryEntry(halfMf + smoke + extra, terrain, false, false, false, false), null);
     }
 
     /// <summary>

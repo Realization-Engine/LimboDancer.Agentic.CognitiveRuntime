@@ -8,7 +8,11 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// </summary>
 public static class ScenarioA1FireMapRules
 {
-    /// <summary>The target Location must be read, and its terrain must have a TEM in the Fire package.</summary>
+    /// <summary>
+    /// The target Location must be read, and its terrain must have a TEM in the Fire package. A Factory's terrain has no key today, so fire at it is refused
+    /// here, where B23.741 gives it a TEM (the B23.74 claim, RB23F.12): the wiring keys a Factory as a stone or wooden building, and the bar then admits it,
+    /// with <see cref="FireAttack.FactoryTem"/> from <see cref="ScenarioA1FactoryCalculator.Tem"/>.
+    /// </summary>
     public static string? TargetTerrainBar(bool read, string? terrainKey, string? name) =>
         !read ? "play.fire-map: the target Location cannot be read"
         : terrainKey is null ? $"play.fire-terrain: the target's terrain ({name ?? "unknown"}) has no TEM in the Fire package"
@@ -225,21 +229,37 @@ public static class ScenarioA1FireMapRules
     /// <summary>
     /// A6.7: the largest Hindrance at each range counts; brush always, grain June to September (B15.2), marsh at the same level (B16.2); and an AFV or
     /// wreck where the map has none at that range, and a burning wreck's smoke (D9.4, B25.2; rulings R6.2, R6.3), which <paramref name="vehicleHindrance"/>
-    /// reads for the ranges with a map Hindrance. The Location's LOS facts, or the vehicle read's refusal.
+    /// reads for the ranges with a map Hindrance. The Location's LOS facts, or the vehicle read's refusal. A Factory hex in the LOS is not counted and leaves
+    /// the LOS not attributed; the overload with a Factory Hindrance counts it (B23.741). This one is that overload with no Factory Hindrance, equal on
+    /// every input to its body before the B23.74 claim.
     /// </summary>
-    public static (string? Refusal, FireLos? Los) LocationLos(LosReadFacts los, int? month, bool sameLevel, Func<HashSet<int>, (int Drm, string? Reason)> vehicleHindrance)
+    public static (string? Refusal, FireLos? Los) LocationLos(LosReadFacts los, int? month, bool sameLevel, Func<HashSet<int>, (int Drm, string? Reason)> vehicleHindrance) =>
+        LocationLos(los, month, sameLevel, vehicleHindrance, null);
+
+    /// <summary>
+    /// The Location's LOS facts as the overload without it reads them, with the Factory Hindrance of the LOS (B23.741,
+    /// p. 139; the B23.74 claim, RB23F.12), as <see cref="ScenarioA1FactoryCalculator.Hindrance"/> gives it: added to the terrain's count, so B.10's +6 test
+    /// sees the sum, and the map's Factory hexes are attributed to it.
+    /// </summary>
+    public static (string? Refusal, FireLos? Los) LocationLos(LosReadFacts los, int? month, bool sameLevel, Func<HashSet<int>, (int Drm, string? Reason)> vehicleHindrance,
+        int factoryHindrance) =>
+        LocationLos(los, month, sameLevel, vehicleHindrance, (int?)factoryHindrance);
+
+    private static (string? Refusal, FireLos? Los) LocationLos(LosReadFacts los, int? month, bool sameLevel, Func<HashSet<int>, (int Drm, string? Reason)> vehicleHindrance,
+        int? factoryHindrance)
     {
         ArgumentNullException.ThrowIfNull(los);
         ArgumentNullException.ThrowIfNull(vehicleHindrance);
         var inSeason = month is >= 6 and <= 9;
-        var attributed = los.Hindrances.All(entry => entry.Terrains.Count > 0 && entry.Terrains.All(item => item is "Brush" or "Grain" or "Marsh"));
+        var attributed = los.Hindrances.All(entry => entry.Terrains.Count > 0 && entry.Terrains.All(item => item is "Brush" or "Grain" or "Marsh"
+            || (factoryHindrance is not null && item.Contains("Factory", StringComparison.Ordinal))));
         var mapRanges = los.Hindrances.Where(entry => entry.Terrains.Contains("Brush") || (sameLevel && entry.Terrains.Contains("Marsh")) || (inSeason && entry.Terrains.Contains("Grain")))
             .Select(entry => entry.Range).ToHashSet();
         var grain = los.Hindrances.Any(entry => entry.Terrains.Contains("Grain"));
         var (vehicleDrm, vehicleReason) = vehicleHindrance(mapRanges);
         // B.10 (p. 113; pass 35, task 35.5): any combination of SMOKE, weather, and terrain Hindrance of +6 or more blocks the LOS, so the terrain's count
         // with the vehicles', wrecks', and SMOKE's is tested here; the map's own total was tested alone until now.
-        var total = mapRanges.Count + vehicleDrm;
+        var total = mapRanges.Count + vehicleDrm + (factoryHindrance ?? 0);
         return vehicleReason is not null ? (vehicleReason, null) : (null, new FireLos(los.Blocked || HindranceBlocks(total), total, attributed, grain));
     }
 
