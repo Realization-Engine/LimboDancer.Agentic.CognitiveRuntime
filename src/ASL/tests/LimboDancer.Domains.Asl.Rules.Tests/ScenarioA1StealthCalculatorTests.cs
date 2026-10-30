@@ -12,6 +12,38 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 /// </summary>
 public sealed class ScenarioA1StealthCalculatorTests
 {
+    [Theory]
+    [InlineData("stealthy")]
+    [InlineData("stealthy:")]
+    [InlineData("lax:german:group")]
+    public void MalformedStealthSsrsAreRefusedAtSetup(string token)
+    {
+        Assert.StartsWith("play.stealth-rule:", ScenarioA1NightAndWeather.RulesBar([token], (_, _) => true, true, true), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void StealthSsrsNameAnExplicitScenarioSideAndLaxStillWins()
+    {
+        Assert.Null(ScenarioA1StealthCalculator.SsrRulesBar(["stealthy:german", "lax:german"], ["german", "russian"]));
+        Assert.NotNull(ScenarioA1StealthCalculator.SsrRulesBar(["stealthy:missing"], ["german", "russian"]));
+        var stealth = ScenarioA1StealthCalculator.SsrToken("stealthy:german")!.Value;
+        var lax = ScenarioA1StealthCalculator.SsrToken("lax:german")!.Value;
+        Assert.Equal("german", stealth.Side);
+        Assert.False(stealth.Lax);
+        Assert.True(lax.Lax);
+        Assert.Equal(StealthStatus.Lax, ScenarioA1StealthCalculator.Status(Unit("asl:squad", @class: "1st-line", ssrStealthy: true, ssrLax: true), StealthPurpose.Ambush));
+    }
+
+    [Fact]
+    public void ACardDesignationIsExplicitAndUnknownIsNotOrdinary()
+    {
+        Assert.Equal(StealthDesignation.None, ScenarioA1StealthCalculator.Designation(null));
+        Assert.Equal(StealthDesignation.Anzac, ScenarioA1StealthCalculator.Designation("anzac"));
+        Assert.Null(ScenarioA1StealthCalculator.Designation("New Zealanders"));
+        Assert.Equal(StealthStatus.Stealthy, ScenarioA1StealthCalculator.Status(Unit("asl:squad", "british", "1st-line",
+            designation: ScenarioA1StealthCalculator.Designation("anzac")!.Value), StealthPurpose.Search));
+    }
+
     private static readonly ScenarioA1CloseCombatReference Reference = new ScenarioA1CloseCombatPackage().Reference;
 
     private static readonly FireModifier[] StealthyOnly = [ScenarioA1StealthCalculator.AmbushStealthy];
