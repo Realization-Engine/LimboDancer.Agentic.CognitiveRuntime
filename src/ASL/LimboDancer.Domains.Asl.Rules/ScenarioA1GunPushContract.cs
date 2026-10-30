@@ -7,7 +7,10 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// Manhandling DRM and result, and may the Gun be hooked up after its push, as <see cref="ScenarioA1GunPushCalculator"/> decides them. The weather, the
 /// terrain, the hexside, the road, the MF expended and left (A8.1), the Labor and Low Ammo counters, the DR, and its result are public; the Gun's M#,
 /// its mode, NM, RFNM, and the extra pushers are its owner's while it is hidden or concealed, so the opponent's view of such a Gun leaves them unknown and
-/// the verdict not evaluated, unless a public fact alone already refuses the push.
+/// the verdict not evaluated, unless a public fact alone already refuses the push. They are always the owner's here, since a fact's disclosure is
+/// static; an unconcealed Gun's printed values are public by the rule, so the opponent's view of it is not evaluated too, which never leaks. Who may
+/// push is not a fact here: C10.3 asks a Good Order crew (C10.111 p. 180: also unpinned), which ruling RC10.6 leaves to
+/// <see cref="ScenarioA1MovementCalculator.MoveBars"/> until a C10.111 claim, so the wiring asks that first.
 /// </summary>
 internal static class ScenarioA1GunPushContract
 {

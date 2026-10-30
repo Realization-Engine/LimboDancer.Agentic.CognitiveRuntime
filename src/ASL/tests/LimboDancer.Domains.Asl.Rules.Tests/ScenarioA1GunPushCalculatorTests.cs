@@ -260,6 +260,32 @@ public sealed class ScenarioA1GunPushCalculatorTests
         }
     }
 
+    [Fact]
+    public void EntryCostOfAPushForwardsEqualAfterTheEncircledDoublingAndBeforeTheOverstack()
+    {
+        foreach (var encircled in Both)
+        {
+            for (var half = 0; half <= 12; half++)
+            {
+                for (var excess = 0; excess <= 3; excess++)
+                {
+                    foreach (var terrain in new[] { "open-ground", "grain", "woods" })
+                    {
+                        var entry = new InfantryEntry(half, terrain, false, false, false, false);
+                        var facts = new EntryCostFacts(entry, encircled, true, false, false, false, false, 0, false, false, [new EntryMoverFacts(false, 0, false)], excess);
+
+                        // A copy of EntryCost's push path as it was before the claim: the Encircled doubling (A7.7), ruling R8.6's terrain refusal, the
+                        // push doubling (C10.3), then the overstack's MF (A5.11), which is not doubled.
+                        var old = terrain is not ("open-ground" or "grain")
+                            ? ($"play.move-push-terrain: a Gun is pushed only into Open Ground or grain at its own level in the review, not {terrain} (C10.3, A4.134; ruling R8.6)", 0)
+                            : ((string?)null, (half * (encircled ? 2 : 1) * 2) + (2 * excess));
+                        Assert.Equal(old, ScenarioA1MovementCalculator.EntryCost(facts, (_, _, _) => 4));
+                    }
+                }
+            }
+        }
+    }
+
     // The contracts.
 
     private static JsonObject Manhandling(bool owner = true) =>
