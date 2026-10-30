@@ -520,6 +520,9 @@ public static class ScenarioA1OrdnanceCalculator
         // not after firing earlier in the Player Turn; its crew fires the Gun or its inherent FP, not both.
         // C2.241, C5.6 (ruling R8.2): a Gun that has used its normal ROF (a Prep, First, or Final Fire counter) may Intensive Fire once, never
         // in the AFPh and never a vehicle's; a Gun marked First Fire fires once more only so.
+        // Keeps its answer (the A8.41 claim, ruling RA8.6): a Gun marked First Fire Intensive Fires here in the DFPh at any range, where A8.41 limits
+        // that shot to an ADJACENT or same-hex target, as ScenarioA1FinalFireCalculator.FinalFireRefusal answers for a Gun. That calculator also
+        // lets a vehicle's Gun take it (C5.6 names a shocked or stunned crew), which ruling R8.2 refuses here.
         // C13.31, A7.351 (ruling R9.7): a unit not yet marked as having fired makes a PF Check, a squad twice in a phase, any other once.
         // D3.5 (p. 201; pass 50): a vehicle's fire counter placed by its BMG or CMG alone, in this fire phase, is not the MA's ("it makes no
         // difference which weapon fires first"); a weapon fired in another fire phase forfeits the MA's shot.
