@@ -13,13 +13,9 @@
     "a7.301-kia-survivor",
     "a26.222-prisoner-cvp"
   ],
-  "example": {
-    "source": "A20.55's example, the German 2-4-7 HS and the broken crew Guarding three prisoner squads",
-    "page": 88
-  },
   "checks": [
     {
-      "name": "The Russian HS may attack its broken German Guard after a NTC, with no Melee in the Location",
+      "name": "With its Guard broken and no Melee, the Russian HS may attack the Guard after a NTC",
       "position": "setup",
       "viewer": "german",
       "contract": "a20.55-prisoner-escape",
@@ -40,7 +36,7 @@
       }
     },
     {
-      "name": "Once a Melee exists, the Russian HS attacks its Good Order Guard with no NTC",
+      "name": "With its Guard in Good Order and a Melee in the Location, the Russian HS attacks the Guard with no NTC",
       "position": "setup",
       "viewer": "russian",
       "contract": "a20.55-prisoner-escape",
@@ -58,7 +54,7 @@
       }
     },
     {
-      "name": "With no Melee, the Russian HS may not attack its Good Order Guard",
+      "name": "With its Guard in Good Order and no Melee, the Russian HS may not attack the Guard",
       "position": "setup",
       "viewer": "russian",
       "contract": "a20.55-prisoner-escape",
@@ -189,7 +185,7 @@
       "contract": "a26.222-prisoner-cvp",
       "facts": {
         "vp": 1,
-        "status": "eliminated-by-captor",
+        "status": "eliminated-otherwise",
         "ended": false
       },
       "expect": {

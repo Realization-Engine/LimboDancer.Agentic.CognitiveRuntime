@@ -307,6 +307,14 @@ public static class ScenarioA1PrisonerCalculator
     public static bool MayWithdrawFromMelee(bool meleeWithGuard, bool meleeBeganEarlierCcph) => meleeWithGuard && meleeBeganEarlierCcph;
 
     /// <summary>
+    /// A11.2 (p. 73), A20.55 (p. 88; ruling RA20.13): may a CC round carry a prisoner's Withdrawal. A withdrawing unit makes no CC attack, takes the
+    /// Withdrawal DRM "to all CC attacks made against them during that CCPh", and withdraws only if not eliminated, reduced, or captured in the CCPh; the
+    /// prisoners' sequential attacks come before the survivors and other enemy units attack in turn. So the Withdrawal is resolved in a round after the
+    /// prisoners' round, where those attacks are made, and the prisoners' round carries none.
+    /// </summary>
+    public static bool WithdrawalInRound(bool prisonersRound) => !prisonersRound;
+
+    /// <summary>
     /// A20.55 (p. 88), A11.22 (ruling RA20.10): an escape succeeds by Infiltration, by a successful Withdrawal from Melee, or when no enemy unit other than a
     /// prisoner is left in the Location.
     /// </summary>
@@ -322,12 +330,13 @@ public static class ScenarioA1PrisonerCalculator
         var required = EscapeNtcRequired(facts.MeleeInLocation);
         if (EscapeNationalityBar(facts.PrisonerId, facts.Nationality, facts.CaptorNationality, facts.Infantry, facts.AxisMinorAtHome) is { } bar)
         {
-            return new PrisonerEscapeVerdict(bar.Text, bar.Rule, required);
+            // The Infantry bar is the nationality bar's first test.
+            return new PrisonerEscapeVerdict(bar.Text, bar.Rule, required) { Bar = facts.Infantry ? PrisonerEscapeBar.Nationality : PrisonerEscapeBar.NotInfantry };
         }
 
         return MayAttackGuard(facts.GuardBroken, facts.MeleeInLocation)
             ? new PrisonerEscapeVerdict(null, null, required)
-            : new PrisonerEscapeVerdict(EscapeGuardText(facts.PrisonerId), "A20.55", required);
+            : new PrisonerEscapeVerdict(EscapeGuardText(facts.PrisonerId), "A20.55", required) { Bar = PrisonerEscapeBar.Guard };
     }
 
     /// <summary>A20.55: the refusal of a prisoner whose Guard is neither broken nor in a Melee.</summary>

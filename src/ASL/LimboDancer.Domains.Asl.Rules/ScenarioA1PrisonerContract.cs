@@ -6,14 +6,15 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// The wiring contracts of the A20.54 claim (the Five Claims B design, section 3.4): may this prisoner attack its Guard to escape, and after a NTC
 /// (A20.55); is a #KIA survivor broken or Casualty Reduced (A7.301, A20.54); and what CVP the captor scores for an enemy prisoner (A26.222), as
 /// <see cref="ScenarioA1PrisonerCalculator"/> decides them. A prisoner is never concealed or hidden, so its identity and nationality are public; the
-/// Guard's state, the attack and its side, and the card's facts are public too. Every fact is All.
+/// Guard's state, the attack and its side, and the card's facts are public too. Every fact is All. The CVP contract has no ASOP step: it applies at any
+/// Victory Conditions check, immediate ones included, and at the scenario's end.
 /// </summary>
 internal static class ScenarioA1PrisonerContract
 {
     private static readonly string[] Nationalities = ["german", "russian", "american", "british", "french", "finnish", "italian", "japanese", "chinese", "axis-minor",
         "romanian", "hungarian", "slovakian", "croatian", "bulgarian", "other"];
 
-    private static readonly string[] CvpStatuses = ["held", "exited-under-guard", "eliminated-by-own-side", "eliminated-by-captor", "escaped"];
+    private static readonly string[] CvpStatuses = ["held", "exited-under-guard", "eliminated-by-own-side", "eliminated-otherwise", "escaped"];
 
     [RuleContract]
     private static RuleContract Escape() => new("a20.55-prisoner-escape", "Prisoner escape",
@@ -55,7 +56,7 @@ internal static class ScenarioA1PrisonerContract
         [
             new("vp", ContractFactType.Number, false, ContractDisclosure.All, "The prisoner's normal VP (A26.211)"),
             new("status", ContractFactType.Choice, false, ContractDisclosure.All,
-                "The prisoner: still held (or recaptured), taken off the map by its Guard, eliminated by an attack of its own side, eliminated otherwise, or escaped")
+                "The prisoner: still held (or recaptured), taken off the map by its Guard, eliminated by an attack of its own side, eliminated otherwise (any attack not of its own side, or of a side not known), or escaped")
             {
                 Choices = CvpStatuses
             },
@@ -63,7 +64,7 @@ internal static class ScenarioA1PrisonerContract
         ],
         ["none", "normal", "double", ContractVerdict.NotEvaluated],
         [new("instance-eliminated", "the prisoner's elimination, with the side whose attack eliminated it")],
-        new("Any", "any Victory Conditions check, immediate ones included, and the scenario's end"))
+        new("Any", "none"))
     {
         Decide = CvpVerdict,
     };
@@ -75,7 +76,12 @@ internal static class ScenarioA1PrisonerContract
         if (verdict.Refusal is { } refusal)
         {
             var rule = verdict.RefusalRule!;
-            var outcome = facts.Flag("infantry") != true ? "refused-not-infantry" : rule == "A20.55" ? "refused-guard" : "refused-nationality";
+            var outcome = verdict.Bar switch
+            {
+                PrisonerEscapeBar.NotInfantry => "refused-not-infantry",
+                PrisonerEscapeBar.Guard => "refused-guard",
+                _ => "refused-nationality",
+            };
             return new ContractVerdict(outcome, [new ContractReason(refusal, rule, Page(rule))], []);
         }
 
@@ -98,14 +104,20 @@ internal static class ScenarioA1PrisonerContract
         }
 
         var vp = (int)given;
-        var status = facts.Text("status") switch
+        PrisonerCvpStatus? read = facts.Text("status") switch
         {
             "held" => PrisonerCvpStatus.Held,
             "exited-under-guard" => PrisonerCvpStatus.ExitedUnderGuard,
             "eliminated-by-own-side" => PrisonerCvpStatus.EliminatedByOwnSide,
-            "eliminated-by-captor" => PrisonerCvpStatus.EliminatedOtherwise,
-            _ => PrisonerCvpStatus.Escaped,
+            "eliminated-otherwise" => PrisonerCvpStatus.EliminatedOtherwise,
+            "escaped" => PrisonerCvpStatus.Escaped,
+            _ => null,
         };
+        if (read is not { } status)
+        {
+            return new ContractVerdict(ContractVerdict.NotEvaluated, [new ContractReason("the fact 'status' is not a standing this contract reads", "A26.222", 100)], []);
+        }
+
         var ended = facts.Flag("ended")!.Value;
         var cvp = ScenarioA1PrisonerCalculator.PrisonerCvp(vp, status, ended);
         var worth = string.Create(CultureInfo.InvariantCulture, $"; the captor scores {cvp} CVP");

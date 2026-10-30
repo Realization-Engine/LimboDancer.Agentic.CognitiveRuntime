@@ -97,6 +97,9 @@ public sealed class ScenarioA1PrisonerCvpTests
         // Escaped (active, no longer captured): nothing; recaptured, held again.
         Assert.Equal(0, GermanCvp(Russian(VictoryStatus.Active, false), true));
         Assert.Equal(4, GermanCvp(Russian(VictoryStatus.Active, true), true));
+        // A captured vehicle its own side eliminates keeps the old arm: its normal VP.
+        Assert.Equal(2, GermanCvp(Russian(VictoryStatus.Eliminated, true, vehicle: true, eliminatedBy: "russian"), false));
+        Assert.Equal(2, GermanCvp(Russian(VictoryStatus.Eliminated, true, vehicle: true, eliminatedBy: "russian"), true));
     }
 
     [Theory]
@@ -104,7 +107,7 @@ public sealed class ScenarioA1PrisonerCvpTests
     [InlineData(2, "held", true, "double")]
     [InlineData(2, "exited-under-guard", true, "double")]
     [InlineData(1, "eliminated-by-own-side", false, "double")]
-    [InlineData(1, "eliminated-by-captor", true, "normal")]
+    [InlineData(1, "eliminated-otherwise", true, "normal")]
     [InlineData(2, "escaped", true, "none")]
     public void TheCvpContractGivesTheVerdict(int vp, string status, bool ended, string outcome)
     {
@@ -117,5 +120,8 @@ public sealed class ScenarioA1PrisonerCvpTests
     {
         Assert.Contains("\"outcome\":\"not-evaluated\"", ScenarioA1RuleContracts.Evaluate("a26.222-prisoner-cvp", """{"vp":1.5,"status":"held","ended":false}"""), StringComparison.Ordinal);
         Assert.Contains("\"outcome\":\"not-evaluated\"", ScenarioA1RuleContracts.Evaluate("a26.222-prisoner-cvp", """{"status":"held","ended":false}"""), StringComparison.Ordinal);
+        // A standing the contract does not read is never counted as escaped.
+        Assert.DoesNotContain("\"outcome\":\"none\"", ScenarioA1RuleContracts.Evaluate("a26.222-prisoner-cvp", """{"vp":1,"status":"eliminated-by-captor","ended":false}"""),
+            StringComparison.Ordinal);
     }
 }
