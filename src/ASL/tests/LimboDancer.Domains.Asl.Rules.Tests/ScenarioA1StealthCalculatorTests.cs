@@ -18,7 +18,7 @@ public sealed class ScenarioA1StealthCalculatorTests
     [InlineData("lax:german:group")]
     public void MalformedStealthSsrsAreRefusedAtSetup(string token)
     {
-        Assert.StartsWith("play.stealth-rule:", ScenarioA1NightAndWeather.RulesBar([token], (_, _) => true, true, true), StringComparison.Ordinal);
+        Assert.StartsWith("play.stealth-rule:", ScenarioA1StealthCalculator.SsrRulesBar([token]), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -363,6 +363,37 @@ public sealed class ScenarioA1StealthCalculatorTests
     private static int? GainDrm(ConcealmentCandidateFacts unit) => ScenarioA1FireFollowUps.ConcealmentGains([unit],
         [new WatchingEnemyFacts(0, true, new SightSeerFacts(true, "russian", false, false, false, true, true, false, false, 1))], false, 7, new GainMap())
         .Single().Drm;
+
+    [Fact]
+    public void UnknownStealthRefusesOnlyAConcealmentDrThatIsNeeded()
+    {
+        var unit = Candidate("u", "asl:squad");
+        WatchingEnemyFacts[] watchers = [new(0, true, new SightSeerFacts(true, "russian", false, false, false, true, true, false, false, 1))];
+        var day = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit], watchers, false, 7, new GainMap());
+        Assert.Null(day.Gains);
+        Assert.StartsWith("play.stealth-facts:", day.Reason, StringComparison.Ordinal);
+        var night = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit], watchers, true, 7, new GainMap());
+        Assert.Null(night.Reason);
+        Assert.Null(Assert.Single(night.Gains!).Drm);
+        var ineligible = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit with { Broken = true }], watchers, false, 7, new GainMap());
+        Assert.Null(ineligible.Reason);
+        Assert.Empty(ineligible.Gains!);
+        Assert.Single(ScenarioA1FireFollowUps.ConcealmentGains([unit], watchers, false, 7, new GainMap()));
+        var known = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit with { Stealth = StealthStatus.Lax }], watchers, false, 7, new GainMap());
+        Assert.Null(known.Reason);
+        Assert.Equal(GainDrm(unit with
+        {
+            Stealth = StealthStatus.Lax
+        }), Assert.Single(known.Gains!).Drm);
+    }
+
+    [Fact]
+    public void UnknownContributingStealthStatusIsNotALegacyFallback()
+    {
+        Assert.NotNull(ScenarioA1StealthCalculator.FactsRefusal([StealthStatus.Normal, null]));
+        Assert.Null(ScenarioA1StealthCalculator.FactsRefusal([]));
+        Assert.Null(ScenarioA1StealthCalculator.FactsRefusal([StealthStatus.Normal, StealthStatus.Lax]));
+    }
 
     [Fact]
     public void TheHeroExampleOfA12122TakesTheStatus()
