@@ -757,7 +757,8 @@ public static class ScenarioA1OrdnanceCalculator
     public static bool OpportunityFire(OrdnanceShot shot)
     {
         ArgumentNullException.ThrowIfNull(shot);
-        return shot.Phase == "AFPh" && shot.Vehicle is null && shot.Crew?.OpportunityFire == true;
+        return shot.Phase == "AFPh" && shot.Vehicle is null && shot.Crew?.OpportunityFire == true
+            && (shot.Participation?.Second is null || shot.Participation.Second.Crew?.OpportunityFire == true);
     }
 
     /// <summary>
@@ -1396,7 +1397,7 @@ public static class ScenarioA1OrdnanceCalculator
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
             // A12.14 (ruling R8.5): the "?" is lost only in the view of a Good Order enemy ground unit within 16 hexes.
-            CrewConcealmentLost = shot.Crew!.Concealed == true && shot.CrewSeen != false ? true : null,
+            CrewConcealmentLost = ScenarioA1OrdnanceParticipationCalculator.Concealed(shot) && shot.CrewSeen != false ? true : null,
             Hit = normal,
             CriticalHit = criticalHit,
             CriticalTarget = criticalTarget,
