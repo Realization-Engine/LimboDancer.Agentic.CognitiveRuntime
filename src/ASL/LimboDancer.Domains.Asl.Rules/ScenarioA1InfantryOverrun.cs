@@ -186,10 +186,10 @@ public static class ScenarioA1InfantryOverrun
     /// </summary>
     public static (IReadOnlyList<string> Destinations, string? Refusal) EvadeDestinationsBySeason(
         IReadOnlyList<(string Location, bool Enterable, bool Playable, bool EnemyOccupied, bool? OpenGround)> adjacent,
-        IEnumerable<string?>? entryRefusals = null)
+        IEnumerable<(bool Playable, bool EnemyOccupied, string? Reason)>? entryRefusals = null)
     {
         ArgumentNullException.ThrowIfNull(adjacent);
-        if (entryRefusals?.Any(reason => reason?.StartsWith("play.move-grain:", StringComparison.Ordinal) == true) == true)
+        if (entryRefusals?.Any(item => item.Playable && !item.EnemyOccupied && item.Reason?.StartsWith("play.move-grain:", StringComparison.Ordinal) == true) == true)
         {
             return ([], "play.overrun-evade-season: the scenario month is needed to establish the possible destinations (A4.151, B15.6)");
         }

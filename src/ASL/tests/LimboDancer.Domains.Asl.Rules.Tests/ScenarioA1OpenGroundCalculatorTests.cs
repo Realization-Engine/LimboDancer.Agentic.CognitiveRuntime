@@ -29,8 +29,10 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
         var october = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, true), ("woods", true, true, false, false)]);
         Assert.Equal(["woods"], october.Destinations);
         var unknownEntry = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason(
-            [("grain", false, true, false, null)], ["play.move-grain: unknown month"]);
+            [("grain", false, true, false, null)], [(true, false, "play.move-grain: unknown month")]);
         Assert.NotNull(unknownEntry.Refusal);
+        Assert.Null(ScenarioA1InfantryOverrun.EvadeDestinationsBySeason(
+            [("woods", true, true, false, false)], [(false, false, "play.move-grain: unknown month"), (true, true, "play.move-grain: unknown month")]).Refusal);
     }
 
     private static readonly string?[] TerrainKeys = ["open-ground", "grain", "brush", "woods", "orchard", "marsh", "wooden-rubble", "stone-rubble", "unknown", null];
@@ -454,6 +456,7 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
 
         // W-A10.531: missing smoke or cover facts cannot grant a concealment loss.
         Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground", null, null, null, true)));
+        Assert.Equal("keeps-concealment", Concealment(Advance(false, "open-ground", null, null, null, false)));
         Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground", 13, seen: true)));
     }
 
