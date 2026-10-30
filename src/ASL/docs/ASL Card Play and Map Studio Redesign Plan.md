@@ -1894,7 +1894,7 @@ Turns tasks that reach this pass from another: D8.2 (pass 115) takes A23.72, Cle
 
 **Pass 80: Nationalities I: the catalog's counters** (new; 14 rows of the inventory). Counters: none. Needs first: 35.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 17 rows: 12 partly, 5 not built. Claims: 13 open, 4 built (owners: A11.17 (Claude), A11.5 (Codex)). A rule decided outside Rules on 1 row. Wiring: 0 of 17. Minigames: 2.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 17 rows: 12 partly, 5 not built. Claims: 13 open, 4 built (owners: A11.17 (Codex), A11.5 (Codex)). A rule decided outside Rules on 1 row. Wiring: 0 of 17. Minigames: 2.
 
 | Task | Rules | Estimate |
 |---|---|---|
