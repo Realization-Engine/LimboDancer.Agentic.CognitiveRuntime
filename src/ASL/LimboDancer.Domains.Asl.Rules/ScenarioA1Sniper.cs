@@ -646,10 +646,11 @@ public static class ScenarioA1Sniper
     /// <summary>
     /// A14.3, D5.34, D5.341, D5.342 (pp. 82, 203, 204; pass 71, ruling R71.5): the CE crew of a fully armored AFV is Recalled by dr 1 and Stunned by dr 2,
     /// Recalled instead when already under Stun +1; the Inherent crew of an unarmored vehicle or Partially Armored AFV breaks on dr 1 and is pinned on dr 2
-    /// (no effect on a crew already pinned).
+    /// (no effect on a crew already pinned). The second Stun is <see cref="ScenarioA1StunCalculator.SecondStun"/> (the D5.34 claim): a crew a Sniper reaches
+    /// is CE, so never Stunned already; <see cref="ScenarioA1StunCalculator.Result"/> gives the same answer for dr 2, and none for a dr other than 1 or 2.
     /// </summary>
     public static string CrewResult(int dr, bool fullyArmored, bool stunRecovery, bool pinned) =>
-        fullyArmored ? dr == 1 || stunRecovery ? Recalled : Stunned
+        fullyArmored ? dr == 1 || ScenarioA1StunCalculator.SecondStun(false, stunRecovery) ? Recalled : Stunned
         : dr == 1 ? CrewBroken
         : pinned ? NoEffect : CrewPinned;
 

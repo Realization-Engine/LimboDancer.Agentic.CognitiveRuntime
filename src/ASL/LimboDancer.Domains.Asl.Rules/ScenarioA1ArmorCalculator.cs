@@ -393,10 +393,10 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-i", 1, "C5.9"));
         }
 
-        // D5.34: an AFV under a "+1" counter after a Stun adds one to its To Hit DR.
-        if (shot.Vehicle?.StunRecovery == true)
+        // D5.34 (the D5.34 claim): an AFV under a "+1" counter after a Stun adds one to its To Hit DR.
+        if (ScenarioA1StunCalculator.Drm(StunDr.ToHit, shot.Vehicle?.StunRecovery == true) is > 0 and var stun)
         {
-            drm.Add(new FireModifier("stun", 1, "D5.34"));
+            drm.Add(new FireModifier("stun", stun, "D5.34"));
         }
 
         drm.AddRange(ScenarioA1OrdnanceCalculator.PassEightFirerDrm(shot));
@@ -712,9 +712,15 @@ internal static class ScenarioA1ArmorCalculator
                 return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:collateralCheck"]));
             }
 
-            // D5.342 (p. 204): a Carrier's crew stunned by this very hit is Recalled by a second Stun (D6.84).
-            var (check, crew) = ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true || (carrier && kill.Result == OrdnanceKill.Stun),
-                morale, target.CrewMorale);
+            // D5.342 (p. 204): a Carrier's crew stunned by this very hit is Recalled by a second Stun (D6.84). Under the shot's StunEncircledReading (the
+            // D5.34 claim, ruling RD5.4) a Carrier Stunned before the hit is Recalled too, and a merely Stunned crew's MC takes no +1; before it, the crew
+            // Stunned by this hit took the +1.
+            var (check, crew) = shot.StunEncircledReading == true
+                ? ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, ScenarioA1StunCalculator.Drm(StunDr.MoraleCheck, target.StunRecovery == true),
+                    ScenarioA1StunCalculator.SecondStun(target.Stunned == true || (carrier && kill.Result == OrdnanceKill.Stun), target.StunRecovery == true),
+                    morale, target.CrewMorale)
+                : ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true || (carrier && kill.Result == OrdnanceKill.Stun),
+                    morale, target.CrewMorale);
             effect = new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, drm, final, null, check, crew);
         }
 
@@ -805,7 +811,8 @@ internal static class ScenarioA1ArmorCalculator
 
         var dr = kill[0] + kill[1];
         OrdnanceKill Made(string result) => new(ammunition, location, facing, basicTk, modifiers, modifiedTk, af, finalTk, [.. kill], dr, result);
-        var plusOne = target.StunRecovery == true ? 1 : 0;
+        // D5.34 (the D5.34 claim): the Stun +1 on the crew's NTC and TC.
+        var plusOne = ScenarioA1StunCalculator.Drm(StunDr.TaskCheck, target.StunRecovery == true);
         IReadOnlyList<FireModifier> checkDrm = plusOne == 0 ? [] : [new FireModifier("stun", 1, "D5.34")];
 
         // C7.35: an Original 12 is a dud.

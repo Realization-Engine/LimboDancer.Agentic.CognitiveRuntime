@@ -333,6 +333,19 @@ public sealed record OrdnanceShot(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The reading switch of the firer's Stun and Encircled DRM and of the target crew's second Stun (D5.34, D5.342, pp. 203 and 204; A7.7, p. 57; the
+    /// D5.34 claim, ruling RD5.16). When true: the Infantry Target Type and Area Target Type To Hit DR of an AFV under Stun +1 take its +1 ("stun"), as
+    /// the Vehicle Target Type's always did; the Collateral Attack's crew check after a hit reads <see cref="OrdnanceVehicleTarget.Stunned"/>, so a Stunned
+    /// crew's MC takes no +1 and a second Stun is a Recall; and an Encircled firer's To Hit DR takes the Encircled +1 (A7.7) on every target type, once the
+    /// claim's Encirclement increment reads it. Null is the reading before the claim, as in every record made before it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StunEncircledReading
+    {
+        get; init;
+    }
 }
 
 /// <summary>

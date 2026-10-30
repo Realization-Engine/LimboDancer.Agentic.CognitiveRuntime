@@ -1438,9 +1438,20 @@ public static class ScenarioA1FireCalculator
     /// <summary>
     /// What a Collateral Attack's IFT result does to a Vulnerable crew (D.8, D5.34, D5.341, A7.82; rulings R25.5, R25.6; pass 60, ruling R60.7): a KIA
     /// or K Recalls it; a failed MC Stuns it, or Recalls a crew already under Stun +1 (D5.342); a failed PTC pins it; an Original 12 on a MC Recalls it
-    /// (A10.31). <paramref name="dice"/> is the check's DR, needed when <see cref="CrewChecks"/> says so.
+    /// (A10.31). <paramref name="dice"/> is the check's DR, needed when <see cref="CrewChecks"/> says so. The one <paramref name="stunRecovery"/> gives both
+    /// the MC's +1 and D5.342's second Stun, so a caller that passes a merely Stunned crew in it adds a +1 D5.34 gives only to the "+1" side (the D5.34
+    /// claim, ruling RD5.4): the overload with the two facts apart, under <see cref="ScenarioA1StunCalculator.Drm"/> and
+    /// <see cref="ScenarioA1StunCalculator.SecondStun"/>, replaces it, and this one forwards to it with both equal, keeping its answer.
     /// </summary>
-    internal static (FireCheck? Check, string Result) CrewOutcome(string outcome, IReadOnlyList<int>? dice, bool stunRecovery, int morale, int? crewMorale)
+    internal static (FireCheck? Check, string Result) CrewOutcome(string outcome, IReadOnlyList<int>? dice, bool stunRecovery, int morale, int? crewMorale) =>
+        CrewOutcome(outcome, dice, stunRecovery ? 1 : 0, stunRecovery, morale, crewMorale);
+
+    /// <summary>
+    /// <see cref="CrewOutcome(string, IReadOnlyList{int}?, bool, int, int?)"/> with D5.34's +1 and D5.342's second Stun apart (the D5.34 claim, ruling RD5.4):
+    /// <paramref name="plusOne"/> is the MC's Stun +1 (<see cref="ScenarioA1StunCalculator.Drm"/>), and <paramref name="secondStun"/> makes a failed MC a
+    /// Recall (<see cref="ScenarioA1StunCalculator.SecondStun"/>).
+    /// </summary>
+    internal static (FireCheck? Check, string Result) CrewOutcome(string outcome, IReadOnlyList<int>? dice, int plusOne, bool secondStun, int morale, int? crewMorale)
     {
         if (Regex.IsMatch(outcome, "^([1-7])KIA$") || Regex.IsMatch(outcome, "^K/([1-4])$"))
         {
@@ -1461,9 +1472,9 @@ public static class ScenarioA1FireCalculator
             checkDrm.Add(new FireModifier("ift-mc", modifier, "A7.304"));
         }
 
-        if (stunRecovery)
+        if (plusOne > 0)
         {
-            checkDrm.Add(new FireModifier("stun-recovery", 1m, "D5.34"));
+            checkDrm.Add(new FireModifier("stun-recovery", plusOne, "D5.34"));
         }
 
         var original = dice[0] + dice[1];
@@ -1473,7 +1484,7 @@ public static class ScenarioA1FireCalculator
         var result = !pin && original == 12 ? FireVehicleEffect.Recalled
             : passed ? FireVehicleEffect.None
             : pin ? FireVehicleEffect.Pinned
-            : stunRecovery ? FireVehicleEffect.Recalled
+            : secondStun ? FireVehicleEffect.Recalled
             : FireVehicleEffect.Stunned;
         return (new FireCheck(pin ? "NTC" : mc.Success ? outcome : "NMC", [.. dice], original, checkDrm, checkFinal, morale, passed, result)
         {
@@ -2804,8 +2815,12 @@ public static class ScenarioA1FireCalculator
                     usedRolls.Add("crewCheck:" + id);
                 }
 
-                // D5.342 (p. 204): a second Stun Recalls the crew; only a Carrier's crew is attacked while Stunned (D6.84).
-                var (check, crewResult) = CrewOutcome(outcome, dice, vehicle.StunRecovery == true || vehicle.Stunned == true, morale, vehicle.CrewMorale);
+                // D5.342 (p. 204): a second Stun Recalls the crew; only a Carrier's crew is attacked while Stunned (D6.84). Under the attack's StunReading
+                // (the D5.34 claim, ruling RD5.4) a merely Stunned crew's MC takes no +1; before it, the Stunned crew took the +1 too.
+                var (check, crewResult) = attack.StunReading == true
+                    ? CrewOutcome(outcome, dice, ScenarioA1StunCalculator.Drm(StunDr.MoraleCheck, vehicle.StunRecovery == true),
+                        ScenarioA1StunCalculator.SecondStun(vehicle.Stunned == true, vehicle.StunRecovery == true), morale, vehicle.CrewMorale)
+                    : CrewOutcome(outcome, dice, vehicle.StunRecovery == true || vehicle.Stunned == true, morale, vehicle.CrewMorale);
                 var crewEffect = WithPrc(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, crewDrm, crewFinal, null, check, crewResult),
                     vehicle, definition, column, arithmetic, drm);
                 if (crewEffect is null)
@@ -3849,10 +3864,10 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("hero-mg:" + hero.UnitId, 1m, "A15.23"));
             }
 
-            // D5.34: a vehicle under Stun +1 adds one to its MG IFT DR.
-            if (attack.VehicleFire is { StunRecovery: true } recovering)
+            // D5.34 (the D5.34 claim): a vehicle under Stun +1 adds one to its MG IFT DR.
+            if (attack.VehicleFire is { } recovering && ScenarioA1StunCalculator.Drm(StunDr.MachineGunIft, recovering.StunRecovery == true) is > 0 and var stunDrm)
             {
-                drm.Add(new FireModifier("stun-recovery:" + recovering.VehicleId, 1m, "D5.34"));
+                drm.Add(new FireModifier("stun-recovery:" + recovering.VehicleId, stunDrm, "D5.34"));
             }
 
             // D3.52, D3.51 (p. 201; pass 50): a CMG fired outside its TCA adds the To Hit DRM of Case A to the IFT DR, and one fired within a TCA
@@ -3868,10 +3883,10 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("case-a:" + turned.GunId, canisterCaseA, "D3.52"));
             }
 
-            // D5.34 (p. 203; pass 35, task 35.13 d): and to its OVR DR.
-            if (attack.Overrun is { StunRecovery: true } overrunning)
+            // D5.34 (p. 203; pass 35, task 35.13 d; the D5.34 claim): and to its OVR DR.
+            if (attack.Overrun is { } overrunning && ScenarioA1StunCalculator.Drm(StunDr.Overrun, overrunning.StunRecovery == true) is > 0 and var overrunStun)
             {
-                drm.Add(new FireModifier("stun-recovery:" + overrunning.VehicleId, 1m, "D5.34"));
+                drm.Add(new FireModifier("stun-recovery:" + overrunning.VehicleId, overrunStun, "D5.34"));
             }
 
             // D3.44, D7.16, D3.45 (pp. 200, 207; pass 55, rulings R55.16, R55.18): a vehicle's Armor Leader modifies the IFT DR of a MA that is a

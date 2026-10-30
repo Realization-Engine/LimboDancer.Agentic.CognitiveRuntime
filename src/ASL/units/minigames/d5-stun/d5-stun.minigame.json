@@ -1,0 +1,180 @@
+{
+  "id": "d5-stun",
+  "title": "D5.34 Stun",
+  "card": "d5-stun",
+  "rules": [
+    "D5.34",
+    "D5.342"
+  ],
+  "contracts": [
+    "d5.34-stun",
+    "d5.34-stun-plus-one"
+  ],
+  "example": {
+    "source": "D5.34 and D5.342, a German AFV under attack by a Russian squad's MG and Sniper",
+    "page": 203
+  },
+  "checks": [
+    {
+      "name": "The CE crew fails its MC and is Stunned",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d5.34-stun",
+      "facts": {
+        "vehicleId": "g-afv",
+        "cause": "failed-mc",
+        "crewExposed": true,
+        "qualifiesForCeDrm": true,
+        "fullyArmored": true,
+        "closedTopped": true,
+        "mcFailed": true,
+        "oneManTurret": false,
+        "stunned": false,
+        "stunRecovery": false,
+        "smcTemporaryCrew": false
+      },
+      "expect": {
+        "outcome": "stunned"
+      }
+    },
+    {
+      "name": "An Unprotected crew that fails its MC is not Stunned (D5.311)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d5.34-stun",
+      "facts": {
+        "vehicleId": "g-afv",
+        "cause": "failed-mc",
+        "crewExposed": true,
+        "qualifiesForCeDrm": false,
+        "fullyArmored": true,
+        "closedTopped": true,
+        "mcFailed": true,
+        "oneManTurret": false,
+        "stunned": false,
+        "stunRecovery": false,
+        "smcTemporaryCrew": false
+      },
+      "expect": {
+        "outcome": "none",
+        "reasons": [
+          "Unprotected"
+        ]
+      }
+    },
+    {
+      "name": "A Sniper dr 2 Stuns the CE crew of a fully armored AFV (A14.3)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d5.34-stun",
+      "facts": {
+        "vehicleId": "g-afv",
+        "cause": "sniper-dr",
+        "crewExposed": true,
+        "fullyArmored": true,
+        "sniperDr": 2,
+        "oneManTurret": false,
+        "stunned": false,
+        "stunRecovery": false,
+        "smcTemporaryCrew": false
+      },
+      "expect": {
+        "outcome": "stunned"
+      }
+    },
+    {
+      "name": "The Stun +1 AFV's Sniper dr 2 is a second Stun: Recall (D5.342)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d5.34-stun",
+      "facts": {
+        "vehicleId": "g-afv-plus",
+        "cause": "sniper-dr",
+        "crewExposed": true,
+        "fullyArmored": true,
+        "sniperDr": 2,
+        "oneManTurret": false,
+        "stunned": false,
+        "stunRecovery": true,
+        "smcTemporaryCrew": false
+      },
+      "expect": {
+        "outcome": "recalled",
+        "reasons": [
+          "second Stun"
+        ]
+      }
+    },
+    {
+      "name": "The MG's Final TK DR equals the Final TK#: a BU AFV is Stunned (A9.61)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d5.34-stun",
+      "facts": {
+        "vehicleId": "g-afv",
+        "cause": "mg-to-kill",
+        "crewExposed": false,
+        "finalDr": 8,
+        "finalTk": 8,
+        "oneManTurret": false,
+        "stunned": false,
+        "stunRecovery": false,
+        "smcTemporaryCrew": false
+      },
+      "expect": {
+        "outcome": "stunned"
+      }
+    },
+    {
+      "name": "The Stun +1 AFV adds one to its To Hit DR",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d5.34-stun-plus-one",
+      "facts": {
+        "vehicleId": "g-afv-plus",
+        "dr": "ToHit",
+        "stunRecovery": true
+      },
+      "expect": {
+        "outcome": "plus-one"
+      }
+    },
+    {
+      "name": "The Stun +1 adds nothing to its ESB DR",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d5.34-stun-plus-one",
+      "facts": {
+        "vehicleId": "g-afv-plus",
+        "dr": "ExcessiveSpeedBreakdown",
+        "stunRecovery": true
+      },
+      "expect": {
+        "outcome": "none"
+      }
+    },
+    {
+      "name": "The Russian side does not know the Stun counters beneath a concealed German AFV's \"?\"",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d5.34-stun",
+      "facts": {
+        "cause": "sniper-dr",
+        "crewExposed": true,
+        "fullyArmored": true,
+        "sniperDr": 2,
+        "oneManTurret": false
+      },
+      "sealed": { "vehicleId": "german" },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    }
+  ],
+  "units": {
+    "g-afv": "german",
+    "g-afv-plus": "german",
+    "g-afv-concealed": "german",
+    "r-squad": "russian"
+  }
+}
