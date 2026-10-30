@@ -9,6 +9,30 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 /// </summary>
 public sealed class ScenarioA1OpenGroundCalculatorTests
 {
+    [Fact]
+    public void DashKeepsUnknownViewsSeparateFromNoBenefit()
+    {
+        Assert.Null(ScenarioA1Dash.QualifiesAgainstViews([(null, false)]));
+        Assert.False(ScenarioA1Dash.QualifiesAgainstViews([(null, true)]));
+        Assert.True(ScenarioA1Dash.QualifiesAgainstViews([(null, false), (false, false)]));
+        Assert.False(ScenarioA1Dash.QualifiesAgainstViews([(true, false), (false, true)]));
+    }
+
+    [Fact]
+    public void EvadeDestinationsRequireSeasonOnlyWhenItChangesTheChoice()
+    {
+        var uncertain = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, null), ("woods", true, true, false, false)]);
+        Assert.NotNull(uncertain.Refusal);
+        var alone = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, null)]);
+        Assert.Null(alone.Refusal);
+        Assert.Equal(["grain"], alone.Destinations);
+        var october = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, true), ("woods", true, true, false, false)]);
+        Assert.Equal(["woods"], october.Destinations);
+        var unknownEntry = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason(
+            [("grain", false, true, false, null)], ["play.move-grain: unknown month"]);
+        Assert.NotNull(unknownEntry.Refusal);
+    }
+
     private static readonly string?[] TerrainKeys = ["open-ground", "grain", "brush", "woods", "orchard", "marsh", "wooden-rubble", "stone-rubble", "unknown", null];
 
     private static readonly int?[] MonthsAndNone = [null, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
@@ -428,8 +452,8 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
         Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground")));
         Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "grain", null, seen: true)));
 
-        // A caller written before the new facts (Play's gatherer until W-A10.531) gives the old reading for Open Ground.
-        Assert.Equal("loses-concealment", Concealment(Advance(false, "open-ground", null, null, null, true)));
+        // W-A10.531: missing smoke or cover facts cannot grant a concealment loss.
+        Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground", null, null, null, true)));
         Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground", 13, seen: true)));
     }
 

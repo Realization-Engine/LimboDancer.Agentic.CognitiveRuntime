@@ -339,8 +339,7 @@ public static class ScenarioA1RuleContracts
     /// question open, so the owner settles a woods advance alone. The opponent names the advancer by its "?" stack, which shows its side and Location
     /// and not what is under it (the review of Wiring Prompt 001, PS4); its identity reaches the calculator as unknown. The month may be unknown (a game
     /// that names none): grain is then not evaluated (ruling RA10.7). SMOKE and a wreck or AFV are on the map for both sides; an absent
-    /// <c>smokeInLocation</c> or <c>inLocationCover</c> reads as none, the contract's reading before these facts, until Play's gatherer gives them
-    /// (W-A10.531).
+    /// <c>smokeInLocation</c> or <c>inLocationCover</c> remains unknown when it could change the answer (W-A10.531).
     /// </summary>
     [RuleContract]
     private static RuleContract AdvanceConcealment() => new("a12.14-advance-concealment", "Concealment lost on advancing",
@@ -383,6 +382,12 @@ public static class ScenarioA1RuleContracts
 
                 if (inLocation == false)
                 {
+                    return false;
+                }
+
+                if (facts.Flag("smokeInLocation") is null || facts.Flag("inLocationCover") is null)
+                {
+                    unknown = "SMOKE and cover in the Location must be known to decide concealment loss";
                     return false;
                 }
 

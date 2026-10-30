@@ -184,6 +184,22 @@ public static class ScenarioA1InfantryOverrun
     /// A4.151: the Locations the ATTACKER may send the SMC to. "The ATTACKER may not force the SMC into a minefield, FFE, Wire, or Open Ground hex if
     /// an alternate choice is available": minefields, FFE, and Wire have no counters here, so Open Ground is left out when anything else is open.
     /// </summary>
+    public static (IReadOnlyList<string> Destinations, string? Refusal) EvadeDestinationsBySeason(
+        IReadOnlyList<(string Location, bool Enterable, bool Playable, bool EnemyOccupied, bool? OpenGround)> adjacent,
+        IEnumerable<string?>? entryRefusals = null)
+    {
+        ArgumentNullException.ThrowIfNull(adjacent);
+        if (entryRefusals?.Any(reason => reason?.StartsWith("play.move-grain:", StringComparison.Ordinal) == true) == true)
+        {
+            return ([], "play.overrun-evade-season: the scenario month is needed to establish the possible destinations (A4.151, B15.6)");
+        }
+
+        var coveredReading = EvadeDestinations([.. adjacent.Select(item => (item.Location, item.Enterable, item.Playable, item.EnemyOccupied, item.OpenGround ?? false))]);
+        var openReading = EvadeDestinations([.. adjacent.Select(item => (item.Location, item.Enterable, item.Playable, item.EnemyOccupied, item.OpenGround ?? true))]);
+        return coveredReading.SequenceEqual(openReading, StringComparer.Ordinal) ? (coveredReading, null)
+            : ([], "play.overrun-evade-season: the scenario month is needed to decide the Open Ground destinations (A4.151, B15.6)");
+    }
+
     public static IReadOnlyList<string> EvadeDestinations(IReadOnlyList<(string Location, bool Enterable, bool Playable, bool EnemyOccupied, bool OpenGround)> adjacent)
     {
         ArgumentNullException.ThrowIfNull(adjacent);
