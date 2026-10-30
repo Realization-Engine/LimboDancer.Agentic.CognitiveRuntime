@@ -1,12 +1,14 @@
 {
   "id": "a24-smoke",
-  "title": "A24.5 SMOKE Strength",
+  "title": "A24 SMOKE Strength and Height",
   "card": "a24-smoke",
   "rules": [
-    "A24.5"
+    "A24.5",
+    "A24.4"
   ],
   "contracts": [
-    "a24.5-smoke-placement"
+    "a24.5-smoke-placement",
+    "a24.4-smoke-height"
   ],
   "example": null,
   "checks": [
@@ -125,6 +127,58 @@
         "source": "Ordnance",
         "chemical": "Conventional",
         "ownerPrepFire": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Conventional grenade SMOKE rises two levels",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a24.4-smoke-height",
+      "facts": {
+        "source": "InfantryGrenade",
+        "chemical": "Conventional"
+      },
+      "expect": {
+        "outcome": "two-levels"
+      }
+    },
+    {
+      "name": "WP rises four levels for either viewer",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a24.4-smoke-height",
+      "facts": {
+        "source": "InfantryGrenade",
+        "chemical": "WhitePhosphorus"
+      },
+      "expect": {
+        "outcome": "four-levels"
+      }
+    },
+    {
+      "name": "A Blaze keeps its own height calculator",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a24.4-smoke-height",
+      "facts": {
+        "source": "Blaze",
+        "chemical": "Conventional"
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Unknown chemical never becomes conventional smoke",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a24.4-smoke-height",
+      "facts": {
+        "source": "Ordnance",
+        "chemical": "Unknown"
       },
       "expect": {
         "outcome": "not-evaluated"

@@ -417,6 +417,7 @@ public static class GameEventReader
                         facts.Clone(), resolution.Clone())
                     {
                         MovementStep = fields.OptionalInteger(payload, "movementStep", path),
+                        SmokeWiringVersion = fields.OptionalInteger(payload, "smokeWiringVersion", path),
                         TurretFacing = fields.OptionalString(payload, "turretFacing", path) is { } turretText && UnitFacings.TryParse(turretText, out var turretFacing)
                             ? turretFacing : null,
                     };
@@ -446,6 +447,8 @@ public static class GameEventReader
                     : new RepairAttempted(repairUnit, repaired, repairRoll, repairNumber.Value, repairResult)
                     {
                         Weapon = fields.OptionalString(payload, "weapon", path),
+                        VehicleRepairVersion = fields.OptionalInteger(payload, "vehicleRepairVersion", path),
+                        Hero = fields.OptionalString(payload, "hero", path),
                     };
             case "shock-recovery-rolled":
                 var shocked = fields.RequiredString(payload, "vehicle", path);
@@ -654,6 +657,7 @@ public static class GameEventReader
                     : new RiderBailedOut(bailedUnit, bailedFrom, bailedAt, bailedCause, bailedRoll, bailedMorale.Value, bailedResult)
                     {
                         Weapons = bailedWeapons,
+                        MoraleCheck = fields.OptionalString(payload, "moraleCheck", path),
                         Drm = fields.OptionalInteger(payload, "drm", path),
                         Elr = fields.OptionalInteger(payload, "elr", path),
                     };
@@ -1016,7 +1020,8 @@ public static class GameEventReader
                     : new OrdnanceFired(ordnanceGun, ordnanceCrew, ordnanceTarget, ordnanceFacing, kept.GetBoolean(), acquisition, acquired, ordnanceRolls,
                         ordnanceFacts.Clone(), ordnanceResolution.Clone())
                     {
-                        SpotterWiringVersion = fields.OptionalInteger(payload, "spotterWiringVersion", path)
+                        SpotterWiringVersion = fields.OptionalInteger(payload, "spotterWiringVersion", path),
+                        SmokeWiringVersion = fields.OptionalInteger(payload, "smokeWiringVersion", path),
                     };
             case "surrender-pending":
                 var surrendering = fields.RequiredString(payload, "unit", path);

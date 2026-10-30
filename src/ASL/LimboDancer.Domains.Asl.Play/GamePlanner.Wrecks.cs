@@ -126,14 +126,68 @@ public sealed partial class GamePlanner
             }
         }
 
-        // A24.2, A24.5, A24.8 (ruling R9.6): each SMOKE source of a Location, a burning wreck's or a grenade's, is +2, a Location's SMOKE at most +3,
-        // and +1 more for fire traced out of or within it.
+        var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
         var smoke = 0;
-        foreach (var hex in SmokeSources(state).GroupBy(place => (place.Board, place.Hex)))
+        bool InHex(BoardLocation at, BoardLocation end) => at.Board == end.Board && at.Hex == end.Hex;
+        bool Crosses(BoardLocation at) => los.Crossed.Any(item => item.Board == at.Board && item.Hex == at.Hex);
+        foreach (var at in snapshot.Unknown)
         {
-            var sameHex = (BoardLocation place) => place.Board == hex.Key.Board && place.Hex == hex.Key.Hex;
-            smoke += ScenarioA1VehicleSightRules.SmokeDrm(hex.Count(), sameHex(from), sameHex(target),
-                () => los.Crossed.Any(item => item.Board == hex.Key.Board && item.Hex == hex.Key.Hex));
+            if (InHex(at, from) || InHex(at, target) || Crosses(at))
+            {
+                return (0, $"play.smoke-facts: the SMOKE source at {at} has no verified source, chemical, and strength (A24.5)");
+            }
+        }
+        foreach (var (at, columns) in snapshot.Columns)
+        {
+            var sourceHex = InHex(at, from);
+            var targetHex = InHex(at, target);
+            if (!sourceHex && !targetHex && !Crosses(at))
+            {
+                continue;
+            }
+            var values = new List<int>();
+            var sourceWithin = false;
+            var targetWithin = false;
+            foreach (var column in columns)
+            {
+                SmokeLosVerdict? intersection;
+                if (column.Height is null)
+                {
+                    // W-B25.2 owns changing the existing wreck-Blaze reading.
+                    intersection = new(true, sourceHex, targetHex);
+                }
+                else if (ScenarioA1SmokeHeightCalculator.ExactLocation(from == at, target == at, sourceHex, targetHex) is { } exact)
+                {
+                    intersection = exact;
+                }
+                else if (los.Elevations is { } elevations && ReadLocation(state, at) is { } place)
+                {
+                    var crossed = los.Crossed.FirstOrDefault(item => item.Board == at.Board && item.Hex == at.Hex);
+                    var toSource = sourceHex ? 0 : targetHex ? los.Range : crossed?.Range;
+                    var toTarget = targetHex ? 0 : sourceHex ? los.Range : crossed?.RangeToTarget;
+                    static SmokeLosEnd End(LosElevationEnd end) => new(end.Elevation, (decimal)end.RooftopAdjustment, end.Cellar,
+                        end.Hillock, end.Upslope, (decimal)end.EmbankmentAdjustment);
+                    intersection = toSource is { } first && toTarget is { } second
+                        ? ScenarioA1SmokeHeightCalculator.Intersect(new(place.Hex.BaseLevel + place.Level.Level, place.Hex.BaseLevel,
+                            column.Height.Value, End(elevations.Source), End(elevations.Target), first, second, crossed is not null, sourceHex, targetHex))
+                        : null;
+                }
+                else
+                {
+                    intersection = null;
+                }
+                if (intersection is null)
+                {
+                    return (0, $"play.smoke-height: the vertical LOS through SMOKE at {at} cannot be established (A24.4)");
+                }
+                if (intersection.Intersects)
+                {
+                    values.Add(column.Hindrance);
+                    sourceWithin |= intersection.SourceWithin;
+                    targetWithin |= intersection.TargetWithin;
+                }
+            }
+            smoke += ScenarioA1VehicleSightRules.SmokeDrm(values, sourceWithin, targetWithin, () => values.Count > 0);
         }
 
         return (ranges.Count + smoke, null);
@@ -144,6 +198,120 @@ public sealed partial class GamePlanner
         state.Units.Where(unit => unit.Status == InstanceStatus.Wrecked && IsBurning(state, unit)).Select(unit => state.Location(unit.Id)!.Location)
             .Concat(state.Entities.Where(entity => entity.Status == InstanceStatus.Active && entity.Kind == "asl:smoke" && entity.Position is MapPosition)
                 .Select(entity => ((MapPosition)entity.Position).Location));
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameState, SmokeSnapshot> SmokeSnapshots = new();
+
+    private sealed record SmokeColumn(int Hindrance, int? Height);
+
+    private sealed record SmokeSnapshot(IReadOnlyDictionary<BoardLocation, IReadOnlyList<int>> Values, IReadOnlySet<BoardLocation> Unknown,
+        IReadOnlyDictionary<BoardLocation, IReadOnlyList<SmokeColumn>> Columns);
+
+    /// <summary>Current source values at one complete Location. Wreck Blazes retain their count reading until W-B25.2.</summary>
+    internal static (IReadOnlyList<int>? Hindrances, string? Reason) SmokeStrengthsAt(GameState state, BoardLocation at)
+    {
+        var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
+        return snapshot.Unknown.Contains(at)
+            ? (null, $"play.smoke-facts: the SMOKE source at {at} has no verified source, chemical, and strength (A24.5)")
+            : (snapshot.Values.GetValueOrDefault(at) ?? [], null);
+    }
+
+    /// <summary>SMOKE occupying a complete Location, including a column from another level of its hex. Rules decides the vertical extent.</summary>
+    internal (IReadOnlyList<int>? Hindrances, string? Reason) SmokeHindrancesAt(GameState state, BoardLocation at)
+    {
+        var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
+        bool SameHex(BoardLocation source) => source.Board == at.Board && source.Hex == at.Hex;
+        if (snapshot.Unknown.Any(SameHex))
+        {
+            return (null, "play.smoke-facts: SMOKE source, chemical, and strength must be established (A24.5)");
+        }
+        List<int>? values = null;
+        LosElevations? elevations = null;
+        foreach (var (source, columns) in snapshot.Columns)
+        {
+            if (!SameHex(source))
+            {
+                continue;
+            }
+            foreach (var column in columns)
+            {
+                if (source == at)
+                {
+                    (values ??= []).Add(column.Hindrance);
+                    continue;
+                }
+                if (column.Height is null)
+                {
+                    // W-B25.2 owns changing the existing wreck-Blaze reading.
+                    continue;
+                }
+                elevations ??= Los(state, at, at)?.Elevations;
+                if (elevations is null || ReadLocation(state, source) is not { } place)
+                {
+                    return (null, "play.smoke-height: SMOKE's vertical extent at the Location cannot be established (A24.4)");
+                }
+                var endpoint = elevations.Source;
+                var end = new SmokeLosEnd(endpoint.Elevation, (decimal)endpoint.RooftopAdjustment, endpoint.Cellar,
+                    endpoint.Hillock, endpoint.Upslope, (decimal)endpoint.EmbankmentAdjustment);
+                var intersection = ScenarioA1SmokeHeightCalculator.Intersect(new(place.Hex.BaseLevel + place.Level.Level, place.Hex.BaseLevel,
+                    column.Height.Value, end, end, 0, 0, false, true, true));
+                if (intersection is null)
+                {
+                    return (null, "play.smoke-height: SMOKE's vertical extent at the Location cannot be established (A24.4)");
+                }
+                if (intersection.TargetWithin)
+                {
+                    (values ??= []).Add(column.Hindrance);
+                }
+            }
+        }
+        return (values is null ? Array.Empty<int>() : values, null);
+    }
+
+    /// <summary>Viewer-independent facts, built once per immutable state. Equivalent concurrent fills have no side effects.</summary>
+    private static SmokeSnapshot GatherSmoke(GameState state)
+    {
+        var values = new Dictionary<BoardLocation, List<int>>();
+        var columns = new Dictionary<BoardLocation, List<SmokeColumn>>();
+        var unknown = new HashSet<BoardLocation>();
+        var grenades = state.VerifiedSmokeGrenades.ToHashSet(StringComparer.Ordinal);
+        void Add(BoardLocation at, int value, int? height = null)
+        {
+            if (!values.TryGetValue(at, out var location))
+            {
+                location = [];
+                values.Add(at, location);
+                columns.Add(at, []);
+            }
+            location.Add(value);
+            columns[at].Add(new(value, height));
+        }
+
+        foreach (var wreck in state.Units.Where(unit => unit.Status == InstanceStatus.Wrecked && IsBurning(state, unit)))
+        {
+            if (state.Location(wreck.Id)?.Location is { } at)
+            {
+                Add(at, ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance);
+            }
+        }
+
+        foreach (var entity in state.Entities.Where(entity => entity.Status == InstanceStatus.Active && entity.Kind == "asl:smoke"
+            && entity.Position is MapPosition))
+        {
+            var at = ((MapPosition)entity.Position).Location;
+            var source = grenades.Contains(entity.Id)
+                ? TurnSmokeSource.InfantryGrenade : TurnSmokeSource.Unknown;
+            if (ScenarioA1SmokeStrengthCalculator.Hindrance(source, TurnSmokeChemical.Conventional, TurnSmokeStrength.Unknown) is not { } value)
+            {
+                unknown.Add(at);
+                continue;
+            }
+
+            Add(at, value, ScenarioA1SmokeHeightCalculator.Height(source, TurnSmokeChemical.Conventional));
+        }
+
+        return new SmokeSnapshot(values.ToDictionary(item => item.Key, item => (IReadOnlyList<int>)item.Value.ToArray()), unknown,
+            columns.ToDictionary(item => item.Key, item => (IReadOnlyList<SmokeColumn>)item.Value.ToArray()));
+    }
 
     /// <summary>Whether a Location holds SMOKE (A24.7; rulings R6.3, R9.6).</summary>
     private static bool HasSmoke(GameState state, BoardLocation at) => SmokeSources(state).Contains(at);

@@ -14,7 +14,11 @@ public static class ScenarioA1OrdnanceCalculator
 
     private static readonly string[] Personnel = ["asl:squad", "asl:half-squad", "asl:crew", "asl:vehicle-crew", "asl:leader", "asl:hero"];
 
-    public static OrdnanceResolution Resolve(OrdnanceShot shot, ScenarioA1OrdnanceReference reference) => ResolveCore(shot, reference, null);
+    public static OrdnanceResolution Resolve(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        return ResolveCore(shot, reference, shot.VehicleBreakdown);
+    }
 
     /// <summary>D3.7 resolution using supplemental vehicle-weapon facts, without changing the recorded shot's shape or its legacy reading.</summary>
     public static OrdnanceResolution Resolve(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts breakdownFacts)
@@ -210,7 +214,11 @@ public static class ScenarioA1OrdnanceCalculator
     /// shot must stop only at its missing To Hit DR, and the Fire package must decide both a normal hit and a Critical Hit on
     /// every unit in the target Location.
     /// </summary>
-    public static IReadOnlyList<string> Precheck(OrdnanceShot shot, ScenarioA1OrdnanceReference reference) => PrecheckCore(shot, reference, null);
+    public static IReadOnlyList<string> Precheck(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        return PrecheckCore(shot, reference, shot.VehicleBreakdown);
+    }
 
     /// <summary>Prechecks the same supplemental D3.7 facts the opted-in resolution will use.</summary>
     public static IReadOnlyList<string> Precheck(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts breakdownFacts)

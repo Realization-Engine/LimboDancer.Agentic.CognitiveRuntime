@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Rules;
+using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
 
@@ -18,6 +19,145 @@ public static class LiveFire
 
     /// <summary>The built-in vocabulary (embedded, read once), for the one SMC test the planner makes too, <c>IsA(kind, "asl:smc")</c> (R5's finding 10).</summary>
     private static readonly Lazy<UnitVocabulary> Vocabulary = new(UnitVocabulary.Asl);
+
+    private sealed record VehiclePrintedFacts(VehicleBreakdownUseFacts? Breakdown, bool? HasSecondary, int? Passengers, int? Towing);
+
+    // Keep only immutable source facts per vehicle, not another retained copy of the whole catalog.
+    private static readonly Lazy<IReadOnlyDictionary<string, VehiclePrintedFacts>> VehiclePrintedNumbers = new(() =>
+        UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary.Value)!.Catalog!.Definitions.Where(definition => definition.Kind == "asl:vehicle")
+            .ToDictionary(definition => definition.Id, definition => new VehiclePrintedFacts(PrintedVehicleBreakdown(definition),
+                VehicleArmamentFacts.HasSecondary(definition),
+                PrintedCapacity(definition, "asl:passenger-capacity"), PrintedCapacity(definition, "asl:towing")), StringComparer.Ordinal));
+
+    private static int? PrintedCapacity(UnitDefinition definition, string attribute) => definition.Printed("front", attribute) switch
+    {
+        { State: PrintedState.NotPrinted } => 0,
+        { State: PrintedState.Printed, Value.Number: { } number } => number,
+        _ => null,
+    };
+
+    internal static bool VehicleRecalledAfterDisable(UnitInstance vehicle, bool maDisabled)
+    {
+        var printed = vehicle.Definition is { Catalog.Catalog: Catalog } definition
+            ? VehiclePrintedNumbers.Value.GetValueOrDefault(definition.Definition) : null;
+        return printed is not null && VehicleArmamentFacts.RecalledAfterDisable(vehicle, maDisabled, printed.HasSecondary,
+            printed.Passengers, printed.Towing);
+    }
+
+    /// <summary>D3.7 (PDF pp. 201-202): read printed evidence without treating the old inherent B12 field as a printed number.</summary>
+    internal static VehicleBreakdownUseFacts? PrintedVehicleBreakdown(UnitDefinition definition)
+    {
+        var b = definition.Printed("front", "asl:printed-breakdown");
+        var x = definition.Printed("front", "asl:printed-elimination");
+        var circled = definition.Printed("front", "asl:breakdown-circled");
+        var extension = definition.Printed("front", "asl:breakdown-note-extends");
+        static bool KnownNumber(PrintedValue? value) => value is { State: PrintedState.NotPrinted }
+            or { State: PrintedState.Printed, Value.Number: not null };
+        if (!KnownNumber(b) || !KnownNumber(x) || circled is not { State: PrintedState.Printed, TraitPresent: { } circle }
+            || extension is not { State: PrintedState.Printed, TraitPresent: { } extends })
+        {
+            return null;
+        }
+        return new(VehicleBreakdownWeapon.MainArmament, b!.Value?.Number, x!.Value?.Number, circle, extends, false, false);
+    }
+
+    /// <summary>One authoritative snapshot for command and replay; callers show it only through the established owner/inspection views.</summary>
+    internal static (VehicleBreakdownUseFacts? Facts, string? Reason) VehicleBreakdownFacts(GameState state, UnitInstance vehicle,
+        VehicleBreakdownWeapon weapon, bool intensive = false)
+    {
+        var listing = vehicle.Definition is { Catalog.Catalog: Catalog } definition
+            ? VehiclePrintedNumbers.Value.GetValueOrDefault(definition.Definition) : null;
+        var printed = listing?.Breakdown;
+        if (printed is null)
+        {
+            return (null, "play.vehicle-breakdown-facts: printed B/X, circled B and Vehicle Note evidence must be known (D3.7)");
+        }
+        if (listing is not { HasSecondary: not null, Passengers: not null, Towing: not null })
+        {
+            return (null, "play.vehicle-armament-facts: listed Secondary Armament state and Passenger/Towing capability must be known (D3.7)");
+        }
+        var disabledCondition = weapon switch
+        {
+            VehicleBreakdownWeapon.MainArmament => Conditions.Disabled,
+            VehicleBreakdownWeapon.BowMg => Conditions.BmgDisabled,
+            VehicleBreakdownWeapon.CoaxialMg => Conditions.CmgDisabled,
+            _ => null,
+        };
+        if (disabledCondition is { } condition && ScenarioA1VehicleBreakdownResolutionCalculator.WeaponUseRefusal(Is(vehicle, condition)) is { } disabled)
+        {
+            return (null, disabled);
+        }
+        if (printed.NoteExtends && weapon != VehicleBreakdownWeapon.MainArmament)
+        {
+            return (null, "play.vehicle-breakdown-note: the Vehicle Note must identify this armament before its extension can be applied (D3.7)");
+        }
+        var facts = printed with
+        {
+            Weapon = weapon,
+            LowAmmo = state.LowAmmoVehicles.Contains(vehicle.Id, StringComparer.Ordinal),
+            AmmunitionShortage = ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, vehicle.Side),
+            WinterReduction = GamePlanner.ExtremeWinterReduction(state, vehicle.Side) ?? 0,
+            IntensiveFire = intensive,
+        };
+        return (ScenarioA1VehicleBreakdownResolutionCalculator.WithVehicleCrew(facts, vehicle.TemporaryCrew?.Manning,
+            vehicle.TemporaryCrew?.Captured ?? false), null);
+    }
+
+    internal static (VehicleCloseCombatFacts? Facts, string? Reason) WithVehicleCloseCombatBreakdown(GameState state, UnitInstance vehicle,
+        VehicleCloseCombatFacts facts)
+    {
+        facts = facts with
+        {
+            Vehicle = VehicleCloseCombatAvailability(vehicle, facts.Vehicle!)
+        };
+        return WithVehicleCloseCombatNumbers(state, vehicle, facts);
+    }
+
+    internal static VehicleCloseCombatVehicle VehicleCloseCombatAvailability(UnitInstance vehicle, VehicleCloseCombatVehicle facts)
+    {
+        var availability = new[]
+        {
+            ("ma", Conditions.Malfunctioned, Conditions.Disabled), ("bmg", Conditions.BmgMalfunctioned, Conditions.BmgDisabled),
+            ("cmg", Conditions.CmgMalfunctioned, Conditions.CmgDisabled), ("aamg", Conditions.AamgMalfunctioned, Conditions.AamgDisabled)
+        };
+        return facts with
+        {
+            UnavailableWeapons = [.. availability.Where(item => Is(vehicle, item.Item2) || Is(vehicle, item.Item3)).Select(item => item.Item1)]
+        };
+    }
+
+    private static (VehicleCloseCombatFacts? Facts, string? Reason) WithVehicleCloseCombatNumbers(GameState state, UnitInstance vehicle, VehicleCloseCombatFacts facts)
+    {
+        if (facts.ByVehicle != true)
+        {
+            return (facts, null);
+        }
+
+        if (CatalogReference.Value.Definitions.GetValueOrDefault(facts.Vehicle!.DefinitionId!) is not { } definition)
+        {
+            return (null, "play.cc-vehicle-facts: the vehicle definition cannot be read");
+        }
+        var weapons = new Dictionary<string, VehicleBreakdownUseFacts>(StringComparer.Ordinal);
+        foreach (var name in ScenarioA1VehicleCloseCombat.Weapons(facts.Vehicle, definition))
+        {
+            var kind = name == "ma" ? VehicleBreakdownWeapon.MainArmament
+                : name == "cmg" ? VehicleBreakdownWeapon.CoaxialMg : VehicleBreakdownWeapon.AntiAircraftMg;
+            var read = VehicleBreakdownFacts(state, vehicle, kind);
+            if (read.Facts is null)
+            {
+                return (null, read.Reason);
+            }
+            weapons.Add(name, read.Facts);
+        }
+        return (facts with
+        {
+            VehicleBreakdown = new(weapons)
+        }, null);
+    }
+
+    /// <summary>The same main-armament source/use check for the owner's weapon list and the command.</summary>
+    public static string? MainArmamentUseRefusal(GameState state, UnitInstance vehicle) =>
+        VehicleBreakdownFacts(state, vehicle, VehicleBreakdownWeapon.MainArmament).Reason;
 
     /// <summary>The moving stack's Assault Movement as fire reads it (A4.61; pass 40): declared, and no mover broken or berserk since.</summary>
     private static bool AssaultOf(GameState state) => state.Movement is { } moving && ScenarioA1FireEligibility.AssaultHolds(moving.Assault,
@@ -51,7 +191,7 @@ public static class LiveFire
     }
 
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.18.0";
+    public const string CatalogVersion = "1.19.0";
 
     /// <summary>Whether the packages read the game's catalog: this catalog at an older or equal version of the same major (ruling R65.4; Rules decides).</summary>
     public static bool ServesCatalog(GameState state)
@@ -77,7 +217,8 @@ public static class LiveFire
     /// </summary>
     public static (FireAttack? Attack, string? Reason) FromState(GameState state, IReadOnlyList<string> firerIds, IReadOnlyList<string> directorIds,
         BoardLocation target, IReadOnlyDictionary<string, IReadOnlyList<string>>? weapons = null, IReadOnlyCollection<string>? withoutInherent = null,
-        IReadOnlyDictionary<string, string>? partners = null, string? molUser = null, bool embarking = true, bool wrecks = true)
+        IReadOnlyDictionary<string, string>? partners = null, string? molUser = null, bool embarking = true, bool wrecks = true,
+        bool legacyVehicleBreakdown = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(firerIds);
@@ -313,7 +454,7 @@ public static class LiveFire
                 ? new MgSightingFacts(true, sight.Crew == firer.UnitId, state.Location(firer.UnitId!)?.Location == sight.SetupLocation, sight.Location == target,
                     state.Find(weapon.EquipmentId!) is EquipmentInstance sighted && Is(sighted, Conditions.Dismantled))
                 : new MgSightingFacts(false, false, false, false, false))])));
-        return (ScenarioA1FireEligibility.Assemble(new AttackAssemblyFacts(state.Phase, side == state.PhasingSide, firers[0].At.ToString(), target.ToString(),
+        var attack = ScenarioA1FireEligibility.Assemble(new AttackAssemblyFacts(state.Phase, side == state.PhasingSide, firers[0].At.ToString(), target.ToString(),
             firerFacts, [.. directors.Select(Director)], state.ScenarioMonth,
             [.. selection.Targets.Select(UnitAt).Select(unit => ScenarioA1FireEligibility.AttackTarget(new AttackTargetFacts(Target(state, unit, target), unit.Side == side,
                 Is(unit, Conditions.Captured), unit.Custodian, state.Encircled(unit))))],
@@ -329,6 +470,41 @@ public static class LiveFire
 
             // A19.131 (pass 72, rulings R72.11, R72.12): the firing side's Ammunition Shortage, from the game's special rules; Rules says what it does.
             AmmunitionShortage = state.SpecialRules.Count > 0 && ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, side) ? true : null,
+        };
+        return legacyVehicleBreakdown ? (attack, null) : WithVehicleBreakdown(state, attack);
+    }
+
+    private static (FireAttack? Attack, string? Reason) WithVehicleBreakdown(GameState state, FireAttack attack)
+    {
+        if ((attack.VehicleFire?.VehicleId ?? attack.Overrun?.VehicleId) is not { } id || state.Unit(id) is not { } vehicle)
+        {
+            return (attack, null);
+        }
+        var names = attack.Overrun is { } overrun && overrun.DefinitionId is { } definition
+            && CatalogReference.Value.Definitions.TryGetValue(definition, out var printed)
+            ? ScenarioA1FireCalculator.OverrunWeapons(overrun, printed).Select(item => item.Weapon).ToArray()
+            : attack.VehicleFire?.Weapons is { Count: > 0 } weapons
+                ? weapons.Select(item => item.Weapon!).ToArray() : [FireOverrunEffect.MainArmament];
+        var facts = new Dictionary<string, VehicleBreakdownUseFacts>(StringComparer.Ordinal);
+        foreach (var name in names)
+        {
+            var weapon = name switch
+            {
+                FireOverrunEffect.MainArmament => VehicleBreakdownWeapon.MainArmament,
+                FireOverrunEffect.BowMg => VehicleBreakdownWeapon.BowMg,
+                FireOverrunEffect.CoaxialMg => VehicleBreakdownWeapon.CoaxialMg,
+                _ => (VehicleBreakdownWeapon)(-1),
+            };
+            var read = VehicleBreakdownFacts(state, vehicle, weapon);
+            if (read.Facts is null)
+            {
+                return (null, read.Reason);
+            }
+            facts.Add(name, read.Facts);
+        }
+        return (attack with
+        {
+            VehicleBreakdown = new FireVehicleBreakdownFacts(facts)
         }, null);
     }
 
@@ -689,7 +865,7 @@ public static class LiveFire
     /// A vehicle's OVR of its Location (D7.1, D7.11; ruling R11.11), read from the state: every non-captured enemy unit there is attacked, Infantry as
     /// targets and vehicles on the Vehicle line or through their Vulnerable crews; the map facts (terrain, SMOKE, a wall crossed) are the planner's.
     /// </summary>
-    public static (FireAttack? Attack, string? Reason) OverrunFromState(GameState state, string vehicleId)
+    public static (FireAttack? Attack, string? Reason) OverrunFromState(GameState state, string vehicleId, bool legacyVehicleBreakdown = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         // D7.11 (referee, pass 11): a vehicle destroyed before its declared OVR resolves still makes it, at half FP. Rules decides it (pass 32.c).
@@ -700,7 +876,7 @@ public static class LiveFire
         var ok = at is not null && vehicle!.Definition is not null;
         UnitInstance[] units = ok ? [.. state.At(at!).OfType<UnitInstance>()] : [];
         var targetSide = ok ? state.Sides.FirstOrDefault(side => side.Id != vehicle!.Side)?.Id : null;
-        return WithGunCrews(state, ScenarioA1FireEligibility.Overrun(new OverrunFacts(found, isVehicle, at is not null, vehicle?.Definition is not null, vehicleId, vehicle?.Definition?.Definition,
+        var read = WithGunCrews(state, ScenarioA1FireEligibility.Overrun(new OverrunFacts(found, isVehicle, at is not null, vehicle?.Definition is not null, vehicleId, vehicle?.Definition?.Definition,
             at?.ToString() ?? string.Empty, vehicle?.Side, ok && CrewExposed(vehicle!), ok && Is(vehicle!, Conditions.Immobilized), ok && Is(vehicle!, Conditions.Bogged),
             vehicle?.Status == InstanceStatus.Wrecked, ok && Is(vehicle!, Conditions.Malfunctioned), ok && Is(vehicle!, Conditions.Disabled),
             ok && Is(vehicle!, Conditions.BmgMalfunctioned), ok && Is(vehicle!, Conditions.CmgMalfunctioned),
@@ -713,6 +889,25 @@ public static class LiveFire
             // D7.16 (p. 207; pass 55, ruling R55.16): the OVRing vehicle's Armor Leader modifies its OVR DR.
             ArmorLeadership = ok ? ArmorLeadership(vehicle!) : null,
         }));
+        if (legacyVehicleBreakdown || read.Attack?.Overrun is not { } overrun || vehicle is null)
+        {
+            return read;
+        }
+        var attack = read.Attack with
+        {
+            Overrun = overrun with
+            {
+                DisabledWeapons = [.. new[]
+                {
+                    (FireOverrunEffect.MainArmament, Conditions.Disabled),
+                    (FireOverrunEffect.BowMg, Conditions.BmgDisabled),
+                    (FireOverrunEffect.CoaxialMg, Conditions.CmgDisabled),
+                }.Where(item => Is(vehicle, item.Item2)).Select(item => item.Item1)],
+            },
+            AmmunitionShortage = ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, vehicle.Side) ? true : null,
+            BreakdownReduction = GamePlanner.ExtremeWinterReduction(state, vehicle.Side),
+        };
+        return WithVehicleBreakdown(state, attack);
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the calculator's shape.</summary>
@@ -1014,6 +1209,10 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         }
 
         FireTarget[] named = [.. recorded.Subjects, .. recorded.Others ?? []];
+        if (check.Cause == "rider-bail-out" && recorded.Check != MoraleCheckFacts.Nmc)
+        {
+            return "A Rider Bail Out requires an NMC.";
+        }
         if (!named.Select(item => item.UnitId).SequenceEqual(check.Units))
         {
             return "The morale check record names other units than its facts.";
@@ -1028,11 +1227,22 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             }
 
             side ??= unit.Side;
+            var aboard = target.Aboard;
+            if (check.Cause == "rider-bail-out")
+            {
+                if (unit.Position is not ContainedPosition { Role: ContainmentRole.Rider } rider
+                    || state.Unit(rider.Container) is not { Status: InstanceStatus.Active } vehicle)
+                {
+                    return "A Rider Bail Out check must name an actual Rider and its vehicle.";
+                }
+                aboard = new FireAboard(vehicle.Id, FirePrc.Rider, ScenarioA1PassengerActionRules.VehicleMoved(false, state.Phase == "mph",
+                    state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal), GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True), null);
+            }
             var expected = LiveFire.Target(state, unit, at) with
             {
                 Unarmed = GameState.Condition(unit, Conditions.Unarmed) == ConditionState.True ? true : null,
                 Encircled = state.Encircled(unit) ? true : target.Encircled,
-                Aboard = target.Aboard,
+                Aboard = aboard,
                 SeenByGoodOrderEnemy = target.SeenByGoodOrderEnemy,
                 KnownEnemyInLos = target.KnownEnemyInLos,
                 Captors = target.Captors,
@@ -1088,6 +1298,10 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(fire);
         ArgumentNullException.ThrowIfNull(rolls);
+        if (fire.SmokeWiringVersion is not null and not 1)
+        {
+            return "Unknown SMOKE wiring version.";
+        }
         FireAttack? recorded;
         try
         {
@@ -1117,7 +1331,7 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         else if (recorded.FireKind == ScenarioA1FireCalculator.OverrunFire)
         {
             // D7.1 (ruling R11.11): an OVR is read from its vehicle's state; its crew's CE status is recorded as the OVR saw it.
-            (expected, reason) = LiveFire.OverrunFromState(state, recorded.Overrun?.VehicleId ?? string.Empty);
+            (expected, reason) = LiveFire.OverrunFromState(state, recorded.Overrun?.VehicleId ?? string.Empty, recorded.VehicleBreakdown is null);
         }
         else if (recorded.Canister is { } canister)
         {
@@ -1159,7 +1373,7 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             // Pass 65 (ruling R65.14): the (un)loaders are targets only of an attack whose record names them; an older one is read as it was made. So is a
             // wreck (ruling R65.23).
             (expected, reason) = LiveFire.FromState(state, fire.Firers, directors, target, weapons, alone, partners is { Count: > 0 } ? partners : null, mol,
-                recorded.Embarking is not null, recorded.Vehicles?.Any(item => item.Wreck == true) == true);
+                recorded.Embarking is not null, recorded.Vehicles?.Any(item => item.Wreck == true) == true, recorded.VehicleBreakdown is null);
         }
 
         if (expected is null)

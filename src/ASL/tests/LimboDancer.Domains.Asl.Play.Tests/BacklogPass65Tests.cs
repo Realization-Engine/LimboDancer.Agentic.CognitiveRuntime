@@ -210,6 +210,8 @@ public sealed class BacklogPass65Tests : IDisposable
     }
 
     /// <summary>The same game left in the first side's RPh, where a Shocked AFV makes its recovery dr (C7.42).</summary>
+    private bool withoutElr;
+
     private async Task Start(string firstSide, string otherSide, int year, int month, string catalog, Dictionary<string, object>[] placements)
     {
         Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
@@ -225,7 +227,11 @@ public sealed class BacklogPass65Tests : IDisposable
                 ["firstSide"] = firstSide,
                 ["scenarioMonth"] = month,
                 ["scenarioYear"] = year,
-                ["sides"] = new object[]
+                ["sides"] = withoutElr ? new object[]
+                {
+                    new { id = firstSide, nationality = firstSide, friendlyEdge = "left" },
+                    new { id = otherSide, nationality = otherSide, elr = 3, friendlyEdge = "right" },
+                } : new object[]
                 {
                     new { id = firstSide, nationality = firstSide, elr = 3, friendlyEdge = "left" },
                     new { id = otherSide, nationality = otherSide, elr = 3, friendlyEdge = "right" },
@@ -1999,6 +2005,50 @@ public sealed class BacklogPass65Tests : IDisposable
         var squad = Current.Unit("de-s")!;
         Assert.Equal(((string?)null, true, ConditionState.True), (Current.Aboard("de-s"), squad.MovementEnded, GameState.Condition(squad, Conditions.PrepFire)));
         NoReplayErrors();
+    }
+
+    [Theory]
+    [InlineData(false, 4, 5, "passed", false)]
+    [InlineData(false, 5, 5, "wounded", false)]
+    [InlineData(true, 4, 5, "eliminated", false)]
+    [InlineData(false, 4, 5, "passed", true)]
+    public async Task HeroRiderBailoutKeepsItsVerifiedMoraleOutcome(bool wounded, int first, int second, string result, bool noElr)
+    {
+        withoutElr = noElr;
+        var hero = Rider("hero", "asl:hero", "attacker-hero", "de-tank", "german");
+        ((Dictionary<string, bool>)hero["conditions"])[Conditions.Wounded] = wounded;
+        var companion = noElr ? Rider("companion", "asl:half-squad", "attacker-half-squad", "de-tank", "german")
+            : Unit("companion", "asl:half-squad", "attacker-half-squad", Firer, "german");
+        await Setup("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0", Vehicle("de-tank", "attacker-tank", Firer, "german", "south-west"),
+            companion, hero, Unit("ru-s", "asl:squad", "defender-squad", Target, "russian"));
+        var before = Revision;
+        Committed(await Shoot("de-tank", null, "he", 6, 5, first, second, 1, 1, 1));
+        var bailout = Assert.Single(Since(before).Select(item => item.Payload).OfType<RiderBailedOut>(), item => item.Unit == "hero");
+        Assert.Equal(result, bailout.Result);
+        Assert.NotNull(bailout.MoraleCheck);
+        Assert.False(GameState.Condition(Current.Unit("hero")!, Conditions.Broken) == ConditionState.True);
+        Assert.False(GameState.Condition(Current.Unit("hero")!, Conditions.Pinned) == ConditionState.True);
+        if (result == "eliminated")
+        {
+            Assert.Equal(InstanceStatus.Eliminated, Current.Unit("hero")!.Status);
+        }
+        else
+        {
+            Assert.Equal(result == "wounded", GameState.Condition(Current.Unit("hero")!, Conditions.Wounded) == ConditionState.True);
+        }
+        NoReplayErrors();
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(System.Text.Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.False(Planner().Replay(loaded.Events).HasErrors);
+        var forged = store.Read(Scope)!.Events.Select(item => item.Payload is RiderBailedOut record
+            ? item with
+            {
+                Payload = record with
+                {
+                    MoraleCheck = "unverified"
+                }
+            } : item).ToArray();
+        Assert.True(Planner().Replay(forged).HasErrors);
     }
 
     [Fact]

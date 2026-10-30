@@ -19,6 +19,13 @@ public sealed record FireResolved(
     JsonElement Facts,
     JsonElement Resolution) : EventPayload
 {
+    /// <summary>Version 1 gathers SMOKE strengths from verified sources. Absent keeps the recorded count reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? SmokeWiringVersion
+    {
+        get; init;
+    }
+
     /// <summary>The movement step a Defensive fire record answers (A8.1, unit step 22); null in the fire phases.</summary>
     public int? MovementStep
     {
