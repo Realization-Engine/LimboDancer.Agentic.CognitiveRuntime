@@ -198,7 +198,7 @@ public sealed partial class GamePlanner
     /// Concealment dr modifier it needs, or null when it gains "?" with no dr. Rules decides it (pass 32.c) as a search through a fact reader over the
     /// map (the design, D4); the units cross as facts, their costlier reads made when asked.
     /// </summary>
-    private List<(UnitInstance Unit, int? Drm, IReadOnlyList<string> With)> ConcealmentGains(GameState state)
+    private (List<(UnitInstance Unit, int? Drm, IReadOnlyList<string> With)>? Gains, string? Reason) ConcealmentGains(GameState state)
     {
         var map = new ConcealmentMap(this, state);
         UnitInstance[] units = [.. state.Units];
@@ -244,16 +244,17 @@ public sealed partial class GamePlanner
                 GunSize = gun is null ? null : OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty)?.TargetSize,
                 Inexperienced = () => Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True,
                 Heroic = Is(unit, Conditions.Heroic),
+                Stealth = StealthStatusOf(state, unit, StealthPurpose.Concealment),
                 Shared = vehicle ? () => [.. index.Aboard(unit.Id).Select(rider => (rider.Id, GoodOrder(rider)))]
                     : emplaced ? () => [(gun!.Id, true)]
                     : null,
             };
         }
 
-        var gains = ScenarioA1FireFollowUps.ConcealmentGains(units.Select(Candidate),
+        var (gains, reason) = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth(units.Select(Candidate),
             units.Select((unit, position) => new WatchingEnemyFacts(position, unit.Side != state.PhasingSide, sight.Units[position] with { Location = LocationIndex(unit) })),
             state.Night, state.ScenarioMonth, map);
-        return [.. gains.Select(gain => (index.Unit(gain.Id)!, gain.Drm, gain.With))];
+        return gains is null ? (null, reason) : ([.. gains.Select(gain => (index.Unit(gain.Id)!, gain.Drm, gain.With))], null);
     }
 
     /// <summary>The map and the night as the concealment gain's search reads them: a table of Locations by index, the hex distance and LOS between two, a unit's NVR, and Illumination.</summary>

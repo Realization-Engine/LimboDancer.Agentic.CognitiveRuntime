@@ -18,6 +18,38 @@ public sealed partial class GamePlanner
 {
     private static readonly Lazy<ScenarioA1CloseCombatReference> CloseCombatReference = new(() => new ScenarioA1CloseCombatPackage().Reference);
 
+    private StealthStatus? StealthStatusOf(GameState state, UnitInstance unit, StealthPurpose purpose)
+    {
+        var definition = DefinitionOf(unit);
+        var group = state.Sides.FirstOrDefault(side => side.Id == unit.Side)?.Groups.FirstOrDefault(group => group.Id == unit.Group);
+        if (ScenarioA1StealthCalculator.Designation(group?.StealthDesignation) is not { } designation)
+        {
+            return null;
+        }
+
+        var stealthy = false;
+        var lax = false;
+        foreach (var rule in state.SpecialRules)
+        {
+            if (ScenarioA1StealthCalculator.SsrToken(rule) is { } token && token.Side == unit.Side)
+            {
+                lax |= token.Lax;
+                stealthy |= !token.Lax;
+            }
+        }
+
+        var experience = Experience.Inexperienced(state, unit, catalogs, vocabulary) switch
+        {
+            ConditionState.True => RuleState.True,
+            ConditionState.False => RuleState.False,
+            ConditionState.Inapplicable => RuleState.Inapplicable,
+            _ => RuleState.Unknown,
+        };
+        return ScenarioA1StealthCalculator.Status(new StealthFacts(unit.Kind, Is(unit, Conditions.Heroic), definition?.Nationality, definition?.Class,
+            designation, stealthy, lax, ScenarioA1StealthCalculator.Inexperienced(experience, Is(unit, Conditions.Unarmed)),
+            Is(unit, Conditions.Berserk), GoodOrder(unit)), purpose);
+    }
+
     /// <summary>
     /// An advance (A3.7, A4.7): Infantry of the phasing side in one Location enter one ADJACENT Location at the same level, even
     /// one holding Known enemy units, in reviewed terrain (ruling R29.2).
@@ -344,7 +376,14 @@ public sealed partial class GamePlanner
         };
 
         var reference = CloseCombatReference.Value;
-        var first = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, reference);
+        facts = LiveCloseCombat.WithStealthExperience(state, facts, reference);
+        var (stealth, stealthReason) = LiveCloseCombat.StealthFromState(state, facts.Units!);
+        if (stealth is null)
+        {
+            return Refused(scope, label, expected, stealthReason!);
+        }
+
+        var first = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, reference, stealth);
         if (ScenarioA1CloseCombatRules.AmbushRollSide(first.Reasons) is null)
         {
             // Pass 31d (design D9): each reason in its sentence, as a round's refusal is worded ("Prisoner guard outside" was a code's last words).
@@ -361,7 +400,7 @@ public sealed partial class GamePlanner
             while ((resolution = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts with
             {
                 Rolls = drs
-            }, reference)).Disposition != CloseCombatResolution.Resolved)
+            }, reference, stealth)).Disposition != CloseCombatResolution.Resolved)
             {
                 if (ScenarioA1CloseCombatRules.AmbushRollSide(resolution.Reasons) is not { } side)
                 {
@@ -378,7 +417,10 @@ public sealed partial class GamePlanner
 
             var recordId = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "ambush-rolled", new AmbushRolled(location, rollIds, resolution.Ambusher,
-                JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)), package, null));
+                JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
+            {
+                StealthVersion = 1
+            }, package, null));
 
             // A11.4 (ruling R14.2): the ambushed side loses all its concealment.
             foreach (var unit in facts.Units!.Where(unit => ScenarioA1CloseCombatRules.AmbushedLosesConcealment(resolution.Ambusher, unit.Side!, unit.Concealed, unit.Captured)))
@@ -852,7 +894,14 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        var first = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, CloseCombatReference.Value);
+        facts = LiveCloseCombat.WithStealthExperience(state, facts, CloseCombatReference.Value);
+        var (stealth, reason) = LiveCloseCombat.StealthFromState(state, facts.Units!);
+        if (stealth is null)
+        {
+            return reason;
+        }
+
+        var first = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, CloseCombatReference.Value, stealth);
         return ScenarioA1CloseCombatRules.AmbushRollSide(first.Reasons) is not null ? null : ScenarioA1CloseCombatRules.AmbushUndecidedText(first.Reasons, RefusalReasons.Explain);
     }
 

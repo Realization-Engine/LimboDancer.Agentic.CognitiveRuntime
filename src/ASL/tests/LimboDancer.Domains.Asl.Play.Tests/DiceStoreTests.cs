@@ -87,6 +87,26 @@ public sealed class DiceStoreTests : IDisposable
     private AppendResult Append(string attempt, long expected, DiceRoller roller, string? firstId = null) =>
         store.AppendRolled(Scope, "Village test", expected, attempt + "-1", Roll(attempt, expected, firstId), roller, Planner().Replay);
 
+    [Fact]
+    public async Task AnUnknownFactDiscoveredAfterARollWritesNoneOfTheBatch()
+    {
+        await SetUp();
+        var before = Revision;
+        var original = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var counting = new Counting(3);
+        var roll = new PlannedRoll("search", draw =>
+        {
+            _ = draw(new RollRequest(1, 6));
+            throw new GameBuildRefusedException("play.stealth-facts: contributing facts are unknown");
+        });
+        var result = store.AppendRolled(Scope, "Village test", before, "unknown-1", roll, counting.Roller, Planner().Replay);
+        Assert.Equal(AppendStatus.Invalid, result.Status);
+        Assert.Equal(1, counting.Draws);
+        Assert.Equal(before, Revision);
+        Assert.Equal(original, GameEventWriter.Write(Scope, store.Read(Scope)!));
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "PLAY-UNDECIDED");
+    }
+
     private async Task SetUp()
     {
         var play = new GamePlay(Planner(), store, new NullAudit());

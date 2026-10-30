@@ -74,7 +74,10 @@ public sealed partial class GamePlanner
                 unit is not null && Is(unit, Conditions.Unarmed), unit?.Kind == "asl:hero", unit is not null && Is(unit, Conditions.Heroic),
                 unit is null ? 0 : ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)),
                 definition?.Leadership, unit is not null && Is(unit, Conditions.Wounded),
-                unit is not null && Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True, unit is not null && Is(unit, Conditions.Cx));
+                unit is not null && Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True, unit is not null && Is(unit, Conditions.Cx))
+            {
+                Stealth = unit is null ? null : StealthStatusOf(state, unit, StealthPurpose.Search),
+            };
         }
 
         SearcherFacts[] facts = [.. ids.Select(Facts)];
@@ -89,6 +92,11 @@ public sealed partial class GamePlanner
         if (ScenarioA1Searching.MmcBar(facts) is { } mmcBar)
         {
             return Refused(scope, label, expected, mmcBar);
+        }
+
+        if (ScenarioA1StealthCalculator.FactsRefusal(facts.Select(fact => fact.Stealth)) is { } stealthBar)
+        {
+            return Refused(scope, label, expected, stealthBar);
         }
 
         // A12.152: one more MF in its present hex, read as a step of 1 MF is for each searcher (A4.11, A4.42; the leader bonus of the stack it moved with).
@@ -149,13 +157,24 @@ public sealed partial class GamePlanner
             // the Search found them. Pass 70's fixes: the Search's record keeps that drm for the lines of the views that may know it.
             UnitInstance[] defenders = [.. enemies.Select(item => item.Unit).Where(unit => ScenarioA1Searching.CasualtyTrigger(unit.Kind == UnitKinds.Dummy, LiveFire.IsVehicle(unit),
                 Is(unit, Conditions.Broken), Is(unit, Conditions.Unarmed), Is(unit, Conditions.Captured)))];
-            int? casualtyDrm = ScenarioA1Searching.CasualtyDue(defenders.Length > 0,
-                state.ResidualFire.Any(residual => residual.Location.Level >= 0 && searched.Any(hex => hex.Board == residual.Location.Board && hex.Hex == residual.Location.Hex)))
-                ? ScenarioA1MoppingUp.CasualtyDrm([.. defenders.Where(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden))
+            int? casualtyDrm = null;
+            if (ScenarioA1Searching.CasualtyDue(defenders.Length > 0,
+                state.ResidualFire.Any(residual => residual.Location.Level >= 0 && searched.Any(hex => hex.Board == residual.Location.Board && hex.Hex == residual.Location.Hex))))
+            {
+                MopUpDefenderFacts[] casualtyFacts = [.. defenders.Where(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden))
                     .Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:hero", unit.Kind == "asl:leader", Is(unit, Conditions.Heroic),
                         ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)), DefinitionOf(unit)?.Leadership,
-                        Is(unit, Conditions.Wounded), Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True))]).Drm
-                : null;
+                        Is(unit, Conditions.Wounded), Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True)
+                    {
+                        Stealth = StealthStatusOf(state, unit, StealthPurpose.SearchCasualty),
+                    })];
+                if (ScenarioA1StealthCalculator.FactsRefusal(casualtyFacts.Select(fact => fact.Stealth)) is { } casualtyBar)
+                {
+                    throw new GameBuildRefusedException(casualtyBar);
+                }
+
+                casualtyDrm = ScenarioA1MoppingUp.CasualtyDrm(casualtyFacts).Drm;
+            }
             Push("units-searched", new UnitsSearched(ids, at, rollId, drm, accessible.Count, searched) { CasualtyDrm = casualtyDrm });
             foreach (var (enemy, _) in enemies)
             {

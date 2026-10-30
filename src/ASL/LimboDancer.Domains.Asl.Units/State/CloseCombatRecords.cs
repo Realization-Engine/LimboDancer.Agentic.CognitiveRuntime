@@ -22,7 +22,15 @@ public sealed record AdvanceMoved(IReadOnlyList<string> Units, BoardLocation To)
 /// <see cref="ICloseCombatRecordVerifier"/>.
 /// </summary>
 public sealed record AmbushRolled(BoardLocation Location, IReadOnlyDictionary<string, string> Rolls, string? Ambusher, JsonElement Facts,
-    JsonElement Resolution) : EventPayload;
+    JsonElement Resolution) : EventPayload
+{
+    /// <summary>The calculator reading of Stealth; null retains the Ambush reading before wiring.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? StealthVersion
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>close-combat-resolved</c>: one round of CC in a Location (A11.12; unit step 29): the round, the units that attack and
@@ -76,6 +84,13 @@ public sealed record CloseCombatResolved(BoardLocation Location, string Round, I
 public sealed record VehicleCloseCombatResolved(BoardLocation Location, string Vehicle, IReadOnlyList<string> Attackers, IReadOnlyList<string> Defenders, bool ByVehicle,
     bool Reaction, IReadOnlyDictionary<string, string> Rolls, JsonElement Facts, JsonElement Resolution) : EventPayload
 {
+    /// <summary>The contextual CCV reading; null retains the vehicle CC reading before wiring.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? CcvVersion
+    {
+        get; init;
+    }
+
     public string? Next
     {
         get; init;

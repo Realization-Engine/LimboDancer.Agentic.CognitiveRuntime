@@ -280,6 +280,56 @@ public sealed class CloseCombatStepsTests : IDisposable
     }
 
     [Fact]
+    public async Task FinnishStealthChangesNewAmbushesWhileNullVersionKeepsTheOldReading()
+    {
+        await Setup("german", Unit("g1", "asl:squad", "finnish-squad", "bd01:B2:0", "german"),
+            Unit("r1", "asl:squad", "defender-squad", "bd01:C2:0", "russian"));
+        await Advance(6);
+        Committed(await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = G1,
+            to = "bd01:C2:0",
+        }));
+        await Advance();
+        var before = Current;
+        var revision = Revision;
+        Committed(await Do(GameActions.Ambush, Once(2, 4), new
+        {
+            location = "bd01:C2:0",
+        }));
+        var events = Since(revision);
+        var record = Assert.Single(events.Select(item => item.Payload).OfType<AmbushRolled>());
+        Assert.Equal(1, record.StealthVersion);
+        Assert.Equal("german", record.Ambusher);
+        var rolls = events.Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(roll => roll.Roll, StringComparer.Ordinal);
+        var reference = new ScenarioA1CloseCombatPackage().Reference;
+        var verifier = new CloseCombatRecordVerifier(reference);
+        Assert.Null(verifier.VerifyAmbush(before, record, rolls));
+        var recordedFacts = record.Facts.Deserialize<AmbushFacts>(LiveFire.Json)!;
+        var oldFacts = LiveCloseCombat.AmbushFromState(before, record.Location, recordedFacts.Terrain).Facts! with
+        {
+            DarkNight = recordedFacts.DarkNight,
+        };
+        var oldResolution = ScenarioA1CloseCombatCalculator.ResolveAmbush(oldFacts with
+        {
+            Rolls = record.Rolls.ToDictionary(pair => pair.Key, pair => rolls[pair.Value].Values[0], StringComparer.Ordinal),
+        }, reference);
+        Assert.Null(oldResolution.Ambusher);
+        var legacy = record with
+        {
+            StealthVersion = null,
+            Ambusher = oldResolution.Ambusher,
+            Facts = JsonSerializer.SerializeToElement(oldFacts, LiveFire.Json),
+            Resolution = JsonSerializer.SerializeToElement(oldResolution, LiveFire.Json),
+        };
+        Assert.Null(verifier.VerifyAmbush(before, legacy, rolls));
+        Assert.NotNull(verifier.VerifyAmbush(before, record with
+        {
+            StealthVersion = 2,
+        }, rolls));
+    }
+
+    [Fact]
     public async Task ABrokenUnitHeldInMeleeMustWithdrawAndADisruptedOneIsEliminated()
     {
         // Backlog pass 13 (ruling R13.3): broken units ADJACENT to a Known enemy unit rout or are eliminated as the RtPh ends, so the three units

@@ -509,6 +509,11 @@ public static partial class GameProjector
             // is the ELR its groups share.
             foreach (var side in started.Sides.Where(side => side.Groups.Count > 0))
             {
+                if (side.Groups.Any(group => Rules.ScenarioA1StealthCalculator.Designation(group.StealthDesignation) is null))
+                {
+                    return Fail<GameState>("UNIT-STEALTH-DESIGNATION", "The recorded force designation is not supported.");
+                }
+
                 if (Rules.ScenarioA1SequenceProjection.GroupsRefusal(side.Id, side.Groups.Select(group => group.Id).Distinct(StringComparer.Ordinal).Count() == side.Groups.Count,
                     side.Groups.Any(group => !VocabularyNames.IsSlug(group.Id)), [.. side.Groups.Select(group => group.Elr)], side.Elr) is { } groupsRefusal)
                 {

@@ -1623,3 +1623,10 @@ Written on 2026-10-29. These are required before the corresponding wiring is cal
 |---|---|---|---|---|
 | DC placement while the placer occupies a Bypass position | W-A23.3 caller wiring | A23.3, p. 90; A4.3 | A placement path that preserves the placer's Bypass position | The existing explicit refusal remains. Removing it alone would discard the Bypass position. Cave placement remains explicitly refused by the calculator pending G11.8331 support. |
 | Removal of the old terrain-only movement, advance, and Dash members | W-A10.531 caller wiring | A10.531, A12.14 | Compatibility review and approval of member removal | New callers use the fact-based calculators. Automatic approval review rejected removal under the compatibility requirement; the old public members and their regression tests remain. |
+
+## 87. Wiring Prompt 003 close-combat boundaries
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Preserve a failed Search roll across retries when unknown hidden casualty facts prevent resolution | W-A11.17 caller wiring review | A12.152, A12.154, p. 79 | A recorded or persisted attempted-roll policy compatible with atomic game writes | The actual searched hexes determine casualty contributors. Unknown contributing facts reject the whole batch without writing rolls, reveals, MF, or TI. The existing store deliberately leaves no trace of rejected rolls, so a retry can draw a different search and avoid the unknown defender. Preflighting every accessible hidden unit would disclose or block on noncontributors. This limitation remains open. |
+| Read Banzai or Human Wave status for Stealth and swimming or special national CCV identities | W-A11.17 and W-A11.5 caller wiring | A11.17, A11.18, A11.5; the Rules claim design's national cases | Authoritative state and catalog facts for these activities and identities | The current game state has no such facts. Caller adapters must not infer them from unit IDs or narrative scenario text. Rules supports these inputs; their live procedures remain outside this wiring slice. |

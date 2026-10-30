@@ -143,6 +143,11 @@ public static class GameEventWriter
                             writer.WriteStartObject();
                             writer.WriteString("id", group.Id);
                             writer.WriteString("name", group.Name);
+                            if (group.StealthDesignation is { } designation)
+                            {
+                                writer.WriteString("stealthDesignation", designation);
+                            }
+
                             if (group.Elr is { } groupElr)
                             {
                                 writer.WriteNumber("elr", groupElr);
@@ -451,6 +456,11 @@ public static class GameEventWriter
                 }
                 break;
             case VehicleCloseCombatResolved vehicleCombat:
+                if (vehicleCombat.CcvVersion is { } ccvVersion)
+                {
+                    writer.WriteNumber("ccvVersion", ccvVersion);
+                }
+
                 writer.WriteString("location", vehicleCombat.Location.ToString());
                 writer.WriteString("vehicle", vehicleCombat.Vehicle);
                 Strings(writer, "attackers", vehicleCombat.Attackers);
@@ -1077,6 +1087,11 @@ public static class GameEventWriter
 
                 break;
             case AmbushRolled ambush:
+                if (ambush.StealthVersion is { } stealthVersion)
+                {
+                    writer.WriteNumber("stealthVersion", stealthVersion);
+                }
+
                 writer.WriteString("location", ambush.Location.ToString());
                 writer.WriteStartObject("rolls");
                 foreach (var (key, roll) in ambush.Rolls.OrderBy(entry => entry.Key, StringComparer.Ordinal))

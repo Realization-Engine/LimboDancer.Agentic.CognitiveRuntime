@@ -958,7 +958,17 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         // A12.12, A12.122 (ruling R12.5): as a Player Turn ends, the phasing side's Good Order Infantry may gain "?", some on a Final Concealment dr.
-        var gains = ScenarioA1SequenceCalculator.ConcealmentGainsDue(ending, state.Phase, phasing != state.PhasingSide) ? ConcealmentGains(state) : [];
+        List<(UnitInstance Unit, int? Drm, IReadOnlyList<string> With)> gains = [];
+        if (ScenarioA1SequenceCalculator.ConcealmentGainsDue(ending, state.Phase, phasing != state.PhasingSide))
+        {
+            var gainResult = ConcealmentGains(state);
+            if (gainResult.Reason is { } gainBar)
+            {
+                return Refused(scope, label, expected, gainBar);
+            }
+
+            gains = gainResult.Gains!;
+        }
         // B25.65 (backlog pass 16, rulings R16.1, R16.10): the Wind Change DR at the start of a RPh.
         var wind = !ending && WindChangeDue(state, phase, turn, phasing);
         if (gains.Any(item => item.Drm is not null) || wind || routAfter is not null)

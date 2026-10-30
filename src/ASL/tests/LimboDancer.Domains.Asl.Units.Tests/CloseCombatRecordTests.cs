@@ -191,6 +191,27 @@ public sealed class CloseCombatRecordTests
         Assert.Equal("german", Assert.IsType<AmbushRolled>(read.Record!.Events[^3].Payload).Ambusher);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData(1)]
+    public void NullableCombatReadingsRoundTripAndAreOmittedForOldRecords(int? version)
+    {
+        var ambush = new AmbushRolled(E4, new Dictionary<string, string>(), null, Facts, Facts) { StealthVersion = version };
+        var vehicle = new VehicleCloseCombatResolved(E4, "tank", G1, [], false, false, new Dictionary<string, string>(), Facts, Facts)
+        {
+            CcvVersion = version,
+        };
+        var events = With(8, ("ambush", "ambush-rolled", ambush), ("vehicle", "vehicle-close-combat-resolved", vehicle));
+        var text = GameEventWriter.Write(events[0].Scope, new GameRecord("live", true, events));
+        Assert.Equal(version is not null, text.Contains("stealthVersion", StringComparison.Ordinal));
+        Assert.Equal(version is not null, text.Contains("ccvVersion", StringComparison.Ordinal));
+        var read = GameEventReader.Read(Encoding.UTF8.GetBytes(text));
+        Assert.False(read.HasErrors, string.Join(" ", read.Diagnostics));
+        Assert.Equal(version, Assert.IsType<AmbushRolled>(read.Record!.Events[^2].Payload).StealthVersion);
+        Assert.Equal(version, Assert.IsType<VehicleCloseCombatResolved>(read.Record.Events[^1].Payload).CcvVersion);
+        Assert.Equal(text, GameEventWriter.Write(events[0].Scope, read.Record));
+    }
+
     private static List<GameEvent> Next(List<GameEvent> events, params (string Id, string Type, EventPayload Payload)[] added)
     {
         List<GameEvent> next = [.. events];

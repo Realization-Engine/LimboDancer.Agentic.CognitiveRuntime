@@ -82,7 +82,15 @@ public sealed record SideState(string Id, string Nationality, int? Elr, int? San
 }
 
 /// <summary>An OB group of a side: its id in the game, its name on the card, and its ELR (A19.1; ruling R18.3).</summary>
-public sealed record ObGroup(string Id, string Name, int? Elr);
+public sealed record ObGroup(string Id, string Name, int? Elr)
+{
+    /// <summary>The card's explicit force designation; absent means the recorded setup predates this fact.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? StealthDesignation
+    {
+        get; init;
+    }
+}
 
 /// <summary>The scenario card a game starts from (backlog pass 18, ruling R18.2): its id, the SHA-256 of its text, and its title.</summary>
 public sealed record ScenarioCardReference(string Id, string Sha256, string Title)

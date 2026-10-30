@@ -9,7 +9,7 @@
     "adaptation": [
       "The legacy text is paraphrased, not copied.",
       "The New Zealanders use the British counters (A25.4); their LMG and ATR are manufactured on sheet MFG, and their 2-in. mortar follows the British Ordnance Listing (Chapter H, p. 426) (ruling R17.9).",
-      "The New Zealanders are ANZAC: Good Order ANZAC units are Stealthy unless Green (A25.44); the game does not apply it yet (backlog).",
+      "The New Zealanders' OB group explicitly identifies them as ANZAC. New Ambush, concealment, Search and Search Casualty rolls read that designation through the Stealth calculator (A11.17, A25.44).",
       "The German 5-4-8 squad follows the National Capabilities Chart (p. 695) (ruling R17.9).",
       "The Victory Conditions are restated in A26 terms (Exit VP, A26.23 and A26.211).",
       "No Battlefield Integrity total is printed: the Germans start with fewer than ten squad-equivalents (A16)."
@@ -57,6 +57,7 @@
       "groups": [
         {
           "name": "Elements of the 22nd New Zealand Battalion",
+          "stealthDesignation": "anzac",
           "elr": 3,
           "areas": [
             {
