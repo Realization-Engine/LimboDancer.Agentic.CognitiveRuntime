@@ -505,6 +505,9 @@ internal static class ScenarioA1AreaCalculator
             Companions = others.Length > 0 ? [.. others, .. shot.Hit.Companions ?? []] : shot.Hit.Companions,
             AfvCover = locationId == shot.TargetLocationId ? attack.AfvCover : null,
             GunTarget = locationId == shot.TargetLocationId ? attack.GunTarget : null,
+
+            // B23.741 (the B23.74 claim): the hit's Factory TEM describes its own target Location; another Location (a rooftop, B23.81) keeps its key's.
+            FactoryTem = locationId == shot.TargetLocationId ? attack.FactoryTem : null,
         };
     }
 
@@ -559,10 +562,11 @@ internal static class ScenarioA1AreaCalculator
             drm.Add(new FireModifier("all-af-8-or-more", 1, "C1.55"));
         }
 
-        // B23.741 (the B23.74 claim, ruling RB23F.5): the hit's Factory TEM describes only its own target Location; another Location keeps its key's TEM.
+        // B23.741 (the B23.74 claim, ruling RB23F.5): the hit's Factory TEM describes only its own target Location, named among the shot's Locations
+        // or read from the hit's terrain when the shot names none for the vehicle; another Location keeps its key's TEM.
         var other = Location(shot, vehicle.LocationId);
         var terrain = other?.TargetTerrain ?? shot.Hit!.TargetTerrain!;
-        var factoryTem = other is null ? shot.Hit!.FactoryTem : null;
+        var factoryTem = other is null || vehicle.LocationId == shot.TargetLocationId ? shot.Hit!.FactoryTem : null;
         if (!critical && terrain != "woods" && (factoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(terrain)) is var tem and not 0)
         {
             drm.Add(new FireModifier("tem:" + (factoryTem is null ? terrain : "factory"), tem, "C3.331"));

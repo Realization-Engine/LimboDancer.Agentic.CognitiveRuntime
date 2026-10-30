@@ -464,8 +464,9 @@ public sealed record FireAttack(
     }
 
     /// <summary>
-    /// The target Location's Factory TEM when the attack is traced entirely within the Factory's building depiction (B23.741, p. 139; the B23.74 claim,
-    /// ruling RB23F.5): +1, read in place of the terrain key's TEM. Null is the terrain key's TEM, as in every record made before the claim.
+    /// The target Location's Factory TEM (B23.741 and B23.743, pp. 139 and 140; the B23.74 claim, ruling RB23F.5): the TEM
+    /// <see cref="ScenarioA1FactoryCalculator.Tem"/> gives when its verdict's <c>FactoryTem</c> is true (+1), read in place of the terrain key's TEM.
+    /// Null is the terrain key's TEM, as in every record made before the claim, and is what an attack carries when that verdict gives the building's TEM.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? FactoryTem

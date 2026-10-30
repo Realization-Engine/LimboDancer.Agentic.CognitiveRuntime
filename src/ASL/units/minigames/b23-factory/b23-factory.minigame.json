@@ -27,12 +27,12 @@
         "roofless": false,
         "indirectFire": false,
         "residual": false,
-        "targetId": "r-squad",
         "firerId": "g-squad",
         "firerPlace": "inside",
         "tracedWithinDepiction": true,
         "factoryHexesTraced": 0
       },
+      "sealed": { "targetId": "russian" },
       "expect": {
         "outcome": "factory-tem",
         "reasons": [
@@ -50,12 +50,12 @@
         "roofless": false,
         "indirectFire": false,
         "residual": false,
-        "targetId": "r-squad",
         "firerId": "g-squad",
         "firerPlace": "inside",
         "tracedWithinDepiction": true,
         "factoryHexesTraced": 1
       },
+      "sealed": { "targetId": "russian" },
       "expect": {
         "outcome": "factory-tem",
         "reasons": [
@@ -73,11 +73,11 @@
         "roofless": false,
         "indirectFire": false,
         "residual": false,
-        "targetId": "r-squad",
         "firerId": "g-squad-2",
         "firerPlace": "outside",
         "overAdjacentRubbleEnteringAcrossDepiction": false
       },
+      "sealed": { "targetId": "russian" },
       "expect": {
         "outcome": "building-tem",
         "reasons": [
@@ -95,12 +95,12 @@
         "roofless": false,
         "indirectFire": false,
         "residual": false,
-        "targetId": "r-squad",
         "firerId": "g-gun",
         "firerPlace": "inside",
         "tracedWithinDepiction": true,
         "factoryHexesTraced": 0
       },
+      "sealed": { "targetId": "russian" },
       "expect": {
         "outcome": "factory-tem"
       }
@@ -115,9 +115,9 @@
         "roofless": false,
         "indirectFire": true,
         "residual": false,
-        "targetId": "r-squad",
-        "firerId": "g-mortar"
+        "targetId": "r-squad"
       },
+      "sealed": { "firerId": "german" },
       "expect": {
         "outcome": "building-tem",
         "reasons": [
@@ -172,9 +172,9 @@
         "roofless": false,
         "indirectFire": false,
         "residual": false,
-        "targetId": "r-squad",
-        "firerId": "g-squad"
+        "targetId": "r-squad"
       },
+      "sealed": { "firerId": "german" },
       "expect": {
         "outcome": "not-evaluated"
       }

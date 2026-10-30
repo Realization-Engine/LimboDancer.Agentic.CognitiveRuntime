@@ -6,7 +6,9 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// The wiring contracts of B23.74 to B23.743 (pp. 139 and 140; the B23.74 claim, ruling RB23F.11): what TEM and Factory Hindrance an attack on a
 /// ground-level Factory Location meets, and whether a unit may move here in a Factory and at what cost, as <see cref="ScenarioA1FactoryCalculator"/>
 /// decides them. The Factory, its stairwells, road hexsides, rubble, and hex control are public; the firer's and the target's Locations, and so the LOS
-/// and the way a moving unit entered, are their owners' while hidden or concealed, as are a mover's type and MP.
+/// and the way a moving unit entered, are their owners' while hidden or concealed, as are a mover's type and MP. Each unit id is its owner's, so the other
+/// side names only its "?" stack; neither verdict reads an id beyond whether the firer is named. A rooftop Location (B23.8, by SSR) is out of the movement
+/// contract's scope: it reads every level above ground as an upper level floor.
 /// </summary>
 internal static class ScenarioA1FactoryContract
 {
@@ -32,13 +34,13 @@ internal static class ScenarioA1FactoryContract
             ScenarioA1RuleContracts.Flag("roofless", "The target Location is Roofless"),
             ScenarioA1RuleContracts.Flag("indirectFire", "The attack is Indirect Fire"),
             ScenarioA1RuleContracts.Flag("residual", "The attack is Residual FP"),
-            new("targetId", ContractFactType.Unit, false, ContractDisclosure.All, "The unit attacked in the Factory Location") { Concerns = "targetId" },
+            new("targetId", ContractFactType.Unit, true, ContractDisclosure.Owner, "The unit attacked in the Factory Location") { Concerns = "targetId" },
             new("residualEntry", ContractFactType.Choice, true, ContractDisclosure.Owner, "For Residual FP, how the moving unit entered the Location")
             {
                 Choices = ResidualEntries,
                 Concerns = "targetId",
             },
-            new("firerId", ContractFactType.Unit, true, ContractDisclosure.All, "The firer, for an attack other than Residual FP") { Concerns = "firerId" },
+            new("firerId", ContractFactType.Unit, true, ContractDisclosure.Owner,"The firer, for an attack other than Residual FP") { Concerns = "firerId" },
             new("firerPlace", ContractFactType.Choice, true, ContractDisclosure.Owner, "Where the firer is: a ground Location of the same Factory, its rubble, its rooftop, or outside it")
             {
                 Choices = FirerPlaces,
@@ -58,7 +60,7 @@ internal static class ScenarioA1FactoryContract
     [RuleContract]
     private static RuleContract FactoryMovement() => new("b23.742-factory-movement", "Factory movement", [new("B23.742", 139), new("B23.74", 139), new("B23.743", 140)],
         [
-            new("moverId", ContractFactType.Unit, false, ContractDisclosure.All, "The moving unit") { Concerns = "moverId" },
+            new("moverId", ContractFactType.Unit, false, ContractDisclosure.Owner,"The moving unit") { Concerns = "moverId" },
             Movers("vehicle", "It is a vehicle"),
             Movers("afv", "It is an AFV"),
             new("movementType", ContractFactType.Choice, true, ContractDisclosure.Owner, "A vehicle's movement type") { Choices = MovementTypes, Concerns = "moverId" },

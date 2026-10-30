@@ -400,6 +400,69 @@ public sealed class ScenarioA1FactoryCalculatorTests
         }));
     }
 
+    private static IReadOnlyList<(string Name, decimal Value, string Rule)> Drm(FireAttack attack) =>
+        [.. ScenarioA1FireCalculator.Resolve(attack, Reference).Arithmetic!.Drm.Select(item => (item.Name, item.Value, item.Rule))];
+
+    private static FireAttack OrdnanceHit(int? factoryTem, bool area, bool critical) => Attack(factoryTem) with
+    {
+        Firers = [],
+        OrdnanceHit = new FireOrdnanceHit("ge-gun", 2, critical) { Area = area ? true : null },
+    };
+
+    [Fact]
+    public void TheFireCalculatorsAreaAndCriticalHitBranchesReadTheFactoryTem()
+    {
+        // C3.331 (the review of the B23.74 build, findings 3 and 4): an Area hit takes the Factory's +1 on its Effects DR, named for the Factory; null is
+        // the old stone building's +3, to the name.
+        Assert.Contains(("tem:stone-building", 3m, "C3.331"), Drm(OrdnanceHit(null, area: true, critical: false)));
+        var area = Drm(OrdnanceHit(1, area: true, critical: false));
+        Assert.Contains(("tem:factory", 1m, "C3.331"), area);
+        Assert.DoesNotContain(area, item => item.Name == "tem:stone-building");
+
+        // C3.71: a Critical Hit reverses the Factory's +1 to -1, not the building's +3 to -3.
+        Assert.Contains(("critical-hit-tem:stone-building", -3m, "C3.71"), Drm(OrdnanceHit(null, area: false, critical: true)));
+        var critical = Drm(OrdnanceHit(1, area: false, critical: true));
+        Assert.Contains(("critical-hit-tem:factory", -1m, "C3.71"), critical);
+        Assert.DoesNotContain(critical, item => item.Name == "critical-hit-tem:stone-building");
+    }
+
+    [Fact]
+    public void TheEmplacementAndWallComparisonsReadTheFactoryTem()
+    {
+        // C11.2: an Emplaced Gun's crew takes the Emplacement's +2 instead of a lower TEM: the Factory's +1 is lower, the building's +3 is not.
+        FireAttack Crew(FireAttack attack) => attack with
+        {
+            GunTarget = new FireGunTarget("ru-gun", "defender-at-gun", "ru-1", true, false),
+        };
+        Assert.Contains(("tem:stone-building", 3m, "C3.331"), Drm(Crew(OrdnanceHit(null, area: true, critical: false))));
+        var area = Drm(Crew(OrdnanceHit(1, area: true, critical: false)));
+        Assert.Contains(("emplacement:ru-gun", 2m, "C11.2"), area);
+        Assert.DoesNotContain(area, item => item.Name.StartsWith("tem:", StringComparison.Ordinal));
+        Assert.Contains(("tem:stone-building", 3m, "A7.6"), Drm(Crew(Attack(null))));
+        var small = Drm(Crew(Attack(1)));
+        Assert.Contains(("emplacement:ru-gun", 2m, "C11.2"), small);
+        Assert.DoesNotContain(small, item => item.Name.StartsWith("tem:", StringComparison.Ordinal));
+
+        // B9.3: a wall's +2 replaces a lower in-hex TEM: the Factory's +1, not the building's +3.
+        FireAttack Walled(int? factoryTem) => Attack(factoryTem) with
+        {
+            HexsideTem = new FireHexsideTem("wall", 2),
+        };
+        Assert.Contains(("tem:stone-building", 3m, "A7.6"), Drm(Walled(null)));
+        var wall = Drm(Walled(1));
+        Assert.Contains(("wall", 2m, "B9.3"), wall);
+        Assert.DoesNotContain(wall, item => item.Name.StartsWith("tem:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AFactoryStepBetweenBaseLevelsIsRefusedByTheCalculator()
+    {
+        // B23.742 (the review of the B23.74 build, finding 7; ruling RB23F.15): the refusal the terrain costs' overload returns is the calculator's.
+        Assert.Null(ScenarioA1FactoryCalculator.BaseLevelRefusal(0, 0));
+        Assert.Equal("play.move-factory: a Factory step between hexes of different base levels is not reviewed (B23.742)",
+            ScenarioA1FactoryCalculator.BaseLevelRefusal(0, 1));
+    }
+
     private static RuleContract TemContract => ScenarioA1RuleContracts.Find("b23.741-factory-tem")!;
 
     private static RuleContract MovementContract => ScenarioA1RuleContracts.Find("b23.742-factory-movement")!;
@@ -458,6 +521,24 @@ public sealed class ScenarioA1FactoryCalculatorTests
         Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(TemContract, residual).Outcome);
         Assert.Equal("factory-tem", ScenarioA1RuleContracts.Evaluate(TemContract, With(residual, "residualEntry", "building-hexside")).Outcome);
         Assert.Equal("building-tem", ScenarioA1RuleContracts.Evaluate(TemContract, With(residual, "residualEntry", "non-building-hexside")).Outcome);
+    }
+
+    [Fact]
+    public void EachContractsUnitIdIsItsOwnersSoTheOtherSideNamesOnlyAQuestionMarkStack()
+    {
+        // The review of the B23.74 build, finding 2: each id is Owner, concerning itself (AGENTS, a contract's owner facts).
+        foreach (var (contract, name) in new[] { (TemContract, "targetId"), (TemContract, "firerId"), (MovementContract, "moverId") })
+        {
+            var fact = contract.Facts.Single(item => item.Name == name);
+            Assert.Equal(ContractDisclosure.Owner, fact.Disclosure);
+            Assert.Equal(name, fact.Concerns);
+        }
+
+        // The firer's side, which sees the target only as a "?" stack, still gets the verdict; the target's side, which sees only the firer's "?" stack,
+        // is not told the firer's case; the mover's opponent learns nothing.
+        Assert.Equal("factory-tem", ScenarioA1RuleContracts.Evaluate(TemContract, With(Fire(), "targetId", null)).Outcome);
+        Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(TemContract, With(Fire(), "firerId", null)).Outcome);
+        Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(MovementContract, With(Move(), "moverId", null)).Outcome);
     }
 
     private static JsonObject Move() => new()

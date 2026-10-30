@@ -251,8 +251,11 @@ public static class ScenarioA1FireMapRules
         ArgumentNullException.ThrowIfNull(los);
         ArgumentNullException.ThrowIfNull(vehicleHindrance);
         var inSeason = month is >= 6 and <= 9;
-        var attributed = los.Hindrances.All(entry => entry.Terrains.Count > 0 && entry.Terrains.All(item => item is "Brush" or "Grain" or "Marsh"
-            || (factoryHindrance is not null && item.Contains("Factory", StringComparison.Ordinal))));
+        // Two capture-free lambdas, so the path without a Factory Hindrance allocates no delegate the body before the claim did not.
+        var attributed = factoryHindrance is null
+            ? los.Hindrances.All(static entry => entry.Terrains.Count > 0 && entry.Terrains.All(static item => item is "Brush" or "Grain" or "Marsh"))
+            : los.Hindrances.All(static entry => entry.Terrains.Count > 0
+                && entry.Terrains.All(static item => item is "Brush" or "Grain" or "Marsh" || item.Contains("Factory", StringComparison.Ordinal)));
         var mapRanges = los.Hindrances.Where(entry => entry.Terrains.Contains("Brush") || (sameLevel && entry.Terrains.Contains("Marsh")) || (inSeason && entry.Terrains.Contains("Grain")))
             .Select(entry => entry.Range).ToHashSet();
         var grain = los.Hindrances.Any(entry => entry.Terrains.Contains("Grain"));
