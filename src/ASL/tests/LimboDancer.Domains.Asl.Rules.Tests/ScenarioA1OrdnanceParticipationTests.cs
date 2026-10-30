@@ -420,6 +420,45 @@ public sealed class ScenarioA1OrdnanceParticipationTests
         Assert.Null(ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal("asl:gun"));
     }
 
+    [Fact]
+    public void TheSecondGunFirerAlsoLosesConcealmentOnTheVehicleTargetType()
+    {
+        var original = Shot(false, true);
+        var second = original.Participation!.Second!;
+        var shot = original with
+        {
+            Gun = original.Gun! with
+            {
+                DefinitionId = "defender-at-gun"
+            },
+            TargetType = null,
+            VehicleTarget = new OrdnanceVehicleTarget("tank", "defender-tank", "front", "front", false, false, false, false, true),
+            Ammunition = "ap",
+            ScenarioYear = 1942,
+            UseMultiple = 2,
+            Hit = original.Hit! with
+            {
+                Targets = []
+            },
+            Participation = new(1, second with
+            {
+                Crew = second.Crew! with
+                {
+                    Concealed = true
+                }
+            }),
+            Rolls = new OrdnanceRolls([3, 4], null, null, null, null)
+        };
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, Reference);
+        Assert.Equal(OrdnanceResolution.Resolved, result.Disposition);
+        Assert.True(result.CrewConcealmentLost);
+        var unseen = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            CrewSeen = false
+        }, Reference);
+        Assert.Null(unseen.CrewConcealmentLost);
+    }
+
     private static OrdnanceShot Shot(bool heavy, bool pair)
     {
         var second = Second with

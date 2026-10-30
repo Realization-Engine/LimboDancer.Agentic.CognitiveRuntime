@@ -665,7 +665,7 @@ internal static class ScenarioA1ArmorCalculator
         };
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
-            CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,
+            CrewConcealmentLost = ScenarioA1OrdnanceParticipationCalculator.Concealed(shot) && shot.CrewSeen != false ? true : null,
             Kill = kill,
             SpecificCollateral = collateral,
             AmmunitionUse = use,
