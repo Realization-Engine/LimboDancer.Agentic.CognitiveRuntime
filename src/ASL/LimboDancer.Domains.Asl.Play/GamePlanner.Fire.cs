@@ -918,7 +918,10 @@ public sealed partial class GamePlanner
             }
         }
 
-        events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(chargeId), ScenarioA1FirePackage.Identity.ToString(), null));
+        if (ScenarioA1DemolitionChargeRules.RemovedAfterAttack)
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(chargeId), ScenarioA1FirePackage.Identity.ToString(), null));
+        }
         AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
     }
 

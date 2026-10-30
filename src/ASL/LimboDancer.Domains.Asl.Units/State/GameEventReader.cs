@@ -544,6 +544,7 @@ public static class GameEventReader
                         {
                             Facings = dcFacings,
                             OwnerSide = fields.OptionalString(payload, "dcOwnerSide", path),
+                            SettlementVersion = fields.OptionalInteger(payload, "dcSettlementVersion", path),
                         },
                     };
             case "bore-sighted":

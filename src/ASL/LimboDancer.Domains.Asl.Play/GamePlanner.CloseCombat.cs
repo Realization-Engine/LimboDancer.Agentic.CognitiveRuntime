@@ -208,6 +208,27 @@ public sealed partial class GamePlanner
             ? [$"play.dummies: {(unitList.All(unit => unit.Kind == UnitKinds.Dummy) ? "these Dummies" : $"the Dummies among {string.Join(", ", ids)}")} are removed in {to} as the Close Combat Phase begins, before any attack (A11.19)"]
             : [];
         var package = ScenarioA1CloseCombatPackage.Identity.ToString();
+        var openGroundSeen = !state.Night && unitList.Any(unit => Is(unit, Conditions.Concealed))
+            ? ConcealmentOpenGroundSeen(state, state.PhasingSide, to, terrain) : false;
+        if (openGroundSeen is null)
+        {
+            return Refused(scope, label, expected, "play.open-ground-unknown: the scenario month is needed to decide concealment in grain (A10.531, B15.6)");
+        }
+
+        void RevealAdvancers(List<GameEvent> built, IEnumerable<UnitInstance> advancing, string advanced)
+        {
+            if (!ScenarioA1AdvanceCalculator.LosesConcealment(state.Night, () => openGroundSeen.Value))
+            {
+                return;
+            }
+
+            foreach (var seen in advancing.Where(unit => Is(unit, Conditions.Concealed)))
+            {
+                built.Add(Event(scope, attemptId, built.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(seen.Id, new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False }), package, null, [advanced]));
+            }
+        }
+
         var testing = afv is null ? [] : unitList.Where(unit => NeedsPaatc(state, unit, afv)).ToArray();
         if (afv is not null && testing.Length > 0)
         {
@@ -234,6 +255,8 @@ public sealed partial class GamePlanner
                         built.Add(Event(scope, attemptId, built.Count + 1, expected, "conditions-changed",
                             new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Cx] = ConditionState.True }), package, null, [advanced]));
                     }
+
+                    RevealAdvancers(built, unitList.Where(unit => going.Contains(unit.Id)), advanced);
                 }
 
                 return built;
@@ -257,14 +280,7 @@ public sealed partial class GamePlanner
         // A12.14 (ruling R14.2; table player, pass 14): a concealed unit keeps its "?" advancing, even into CC, unless it enters Open Ground in the LOS of a
         // Good Order enemy ground unit within 16 hexes.
         // E1.31 (backlog pass 16, ruling R16.4): not at night.
-        if (ScenarioA1AdvanceCalculator.LosesConcealment(state.Night, terrain, () => EnemyGoodOrderInLosWithin16(state, state.PhasingSide, to)))
-        {
-            foreach (var seen in unitList.Where(unit => Is(unit, Conditions.Concealed)))
-            {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                    new ConditionsChanged(seen.Id, new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False }), package, null, [EventId(attemptId, 1)]));
-            }
-        }
+        RevealAdvancers(events, unitList, EventId(attemptId, 1));
 
         if (takers.Length > 0)
         {

@@ -205,6 +205,13 @@ public sealed record CarriedMan(string Man, string Carrier);
 /// <summary>A DC Placement (A23.3; ruling R15.2).</summary>
 public sealed record DcPlacement(string Unit, string Charge, BoardLocation Target, bool Cx, bool TargetsConcealed)
 {
+    /// <summary>A8.1 settlement reading. Null preserves the recorded end-of-own-move reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? SettlementVersion
+    {
+        get; init;
+    }
+
     /// <summary>Owner at placement, persisted by B5. Null in legacy records; never inferred from a later custodian.</summary>
     public string? OwnerSide
     {

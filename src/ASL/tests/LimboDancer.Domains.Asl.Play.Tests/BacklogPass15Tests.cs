@@ -343,7 +343,7 @@ public sealed partial class BacklogPass15Tests : IDisposable
     [Fact]
     public async Task APlacedDcIsOperableOnceItsPlacerMovesOnAndDetonatesInTheAfph()
     {
-        // A23.3 (ruling R15.2): Placing from E3 into E4 costs the MF entering E4 (1); the DEFENDER passes, the move ends, and the DC is operably Placed.
+        // A23.3, A8.1: ending the placer's own move leaves its Placement exposed until the MPh ends.
         await SetupAt(2, "german", Unit("g1", "attacker-squad", "E3", "german"), Weapon("dc", "asl:dc", "attacker-dc", "g1", "german"),
             Unit("r1", "defender-squad", "E4", "russian"));
         Committed(await Do(GameActions.Move, NoRoll(), new
@@ -362,6 +362,7 @@ public sealed partial class BacklogPass15Tests : IDisposable
         var placementEvent = store.Read(Scope)!.Events.Single(item => item.Payload is MovementStepped { DcPlacement: not null });
         var placementStep = (MovementStepped)placementEvent.Payload;
         Assert.Equal("german", placementStep.DcPlacement!.OwnerSide);
+        Assert.Equal(1, placementStep.DcPlacement.SettlementVersion);
         var serialized = GameEventWriter.Write(Scope, store.Read(Scope)!);
         var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(serialized)).Record!;
         Assert.False(Planner().Replay(loaded.Events).HasErrors);
@@ -413,13 +414,33 @@ public sealed partial class BacklogPass15Tests : IDisposable
         Committed(await Do(GameActions.EndMove, NoRoll(), new
         {
         }));
-        var placed = Current.PlacedCharges.Single();
-        Assert.True(placed.Operable);
-        Assert.Equal(L("E4"), (Current.Find("dc") as EquipmentInstance)!.Position is MapPosition at ? at.Location.ToString() : null);
+        Assert.False(Current.PlacedCharges.Single().Operable);
+        Assert.Equal("g1", (Current.Find("dc") as EquipmentInstance)!.Holding!.Holder);
+
+        var oldReading = store.Read(Scope)!.Events.Select(item => item.Payload is MovementStepped { DcPlacement: { } dc } move ? item with
+        {
+            Payload = move with
+            {
+                DcPlacement = dc with
+                {
+                    SettlementVersion = null
+                }
+            }
+        } : item).ToArray();
+        var oldState = Planner().Replay(oldReading).Current!;
+        Assert.True(oldState.PlacedCharges.Single().Operable);
+
+        var pinnedAfterEnd = interrupted with
+        {
+            Revision = Revision + 1
+        };
+        Assert.Empty(Planner().Replay([.. store.Read(Scope)!.Events, pinnedAfterEnd]).Current!.PlacedCharges);
 
         // The AFPh does not end before the DC detonates (A23.4).
         await Advance(2);
         Assert.Equal("afph", Current.Phase);
+        Assert.True(Current.PlacedCharges.Single().Operable);
+        Assert.Equal(L("E4"), (Current.Find("dc") as EquipmentInstance)!.Position is MapPosition at ? at.Location.ToString() : null);
         var due = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Adjudicator, "afph", "existing-engine-dc-v1");
         Assert.Equal(TurnObligationState.Due, Assert.Single(due.Obligations).State);
         Assert.Equal(TurnCloseDisposition.Blocked, due.PhaseClose.Disposition);

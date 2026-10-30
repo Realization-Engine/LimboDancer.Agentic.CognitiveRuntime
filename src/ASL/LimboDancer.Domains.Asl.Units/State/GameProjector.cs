@@ -4975,6 +4975,7 @@ public static partial class GameProjector
                     OriginEventId = eventId,
                     OwnerSide = placed.OwnerSide,
                     OriginGameTurn = next.Turn,
+                    SettlementVersion = placed.SettlementVersion,
                 }];
             }
 
@@ -4998,16 +4999,41 @@ public static partial class GameProjector
                     continue;
                 }
 
-                if (next.Unit(charge.Unit) is not { Status: InstanceStatus.Active } placer || GameState.Condition(placer, Conditions.Broken) == ConditionState.True
-                    || GameState.Condition(placer, Conditions.Pinned) == ConditionState.True || GameState.Condition(placer, Conditions.Captured) == ConditionState.True)
+                if (charge.SettlementVersion is not null)
                 {
-                    continue;
-                }
+                    var currentPlacer = next.Unit(charge.Unit);
+                    var eliminated = currentPlacer is not { Status: InstanceStatus.Active };
+                    var failed = Rules.ScenarioA1DemolitionChargeRules.PlacementFailed(
+                        currentPlacer is not null && GameState.Condition(currentPlacer, Conditions.Broken) == ConditionState.True,
+                        currentPlacer is not null && GameState.Condition(currentPlacer, Conditions.Pinned) == ConditionState.True, eliminated);
+                    if (failed)
+                    {
+                        // Removing the pending placement latches failure, even if the placer later rallies.
+                        continue;
+                    }
 
-                if (next.Movement is { } moving && moving.Movers.Contains(charge.Unit) && moving.Location == charge.From && !placer.MovementEnded)
+                    var settled = Rules.ScenarioA1DemolitionChargeRules.PlacementSettled(
+                        next.Location(charge.Unit)?.Location is { } at && at != charge.From,
+                        payload is VehicleStepped || payload is MovementStepped other && !other.Movers.Contains(charge.Unit), next.Phase != "mph");
+                    if (Rules.ScenarioA1DemolitionChargeRules.PlacementOperable(settled, failed) != true)
+                    {
+                        kept.Add(charge);
+                        continue;
+                    }
+                }
+                else
                 {
-                    kept.Add(charge);
-                    continue;
+                    if (next.Unit(charge.Unit) is not { Status: InstanceStatus.Active } placer || GameState.Condition(placer, Conditions.Broken) == ConditionState.True
+                        || GameState.Condition(placer, Conditions.Pinned) == ConditionState.True || GameState.Condition(placer, Conditions.Captured) == ConditionState.True)
+                    {
+                        continue;
+                    }
+
+                    if (next.Movement is { } moving && moving.Movers.Contains(charge.Unit) && moving.Location == charge.From && !placer.MovementEnded)
+                    {
+                        kept.Add(charge);
+                        continue;
+                    }
                 }
 
                 kept.Add(charge with
