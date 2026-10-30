@@ -281,10 +281,16 @@ public static class ScenarioA1FireCalculator
 
     // A9.3: a MG firing as Subsequent First Fire or FPF, or in the DFPh while marked First Fire, uses Sustained Fire (the A8.41 claim: the same
     // answer on every input, from the Final Fire calculator). A9.3 (referee, pass 9b): only a MG uses Sustained Fire.
-    private static bool IsSustained(FireAttack attack, FireWeapon weapon, ScenarioA1FireReference reference) =>
-        ScenarioA1FinalFireCalculator.Sustained(attack.FireKind is SubsequentFirstFire or FinalProtectiveFire
-            && ((attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is not { } user || UsesSubsequentFire(attack, user)),
-            attack.Phase == "DFPh", weapon.FirstFireMarked == true, reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsMg);
+    private static bool IsSustained(FireAttack attack, FireWeapon weapon, ScenarioA1FireReference reference)
+    {
+        var subsequent = attack.FireKind is SubsequentFirstFire or FinalProtectiveFire
+            && ((attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is not { } user || UsesSubsequentFire(attack, user));
+        var dfph = attack.Phase == "DFPh";
+        var marked = weapon.FirstFireMarked == true;
+        // The definition is read only when a case applies, as before the claim (the build review, finding 9).
+        var isMg = subsequent || (dfph && marked) ? reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsMg : false;
+        return ScenarioA1FinalFireCalculator.Sustained(subsequent, dfph, marked, isMg);
+    }
 
     /// <summary>
     /// A firer's own kind in an attack of Subsequent First Fire or FPF, by its own counter (A8.3, A8.31, pp. 61 to 62; pass 45, ruling R45.1): "A unit

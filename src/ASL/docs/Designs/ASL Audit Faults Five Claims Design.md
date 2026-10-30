@@ -314,3 +314,17 @@ Five builders, one per claim, each in its own worktree, merged into `claim/audit
 - **A11.5:** `ScenarioA1CloseCombatValueCalculator` (`BaseCcv` with the national cases, `AttackCcv`, `AssaultEngineer`, `VehicleResult`, `CombinationRefusal`, `AttackerRefusal`, `PrcEliminated`, `LeaderDrmApplies`, `DefenderCcv`, `DefenseCcv`, `DefenseCcvDrm`), its models (`CcvContext`) and the contract `a11.5-ccv-vs-vehicle`; `FireDefinition.AssaultEngineer`; the bundle `a11-ccv-vehicle`. Forwarding, equal: `Resolve` to its new overload with a null context, the CCV block, the defender's CCV without the new facts. Keeping their answers without a context: `Precheck`, the leader DRM line, the result block, `ByVehicle`'s defender floor. Rulings beyond the design: a Reduced-Strength unit's Full-Strength CCV (G1.64, KW 7.97) is the caller's kind; a T-H Hero is not Unarmed against a vehicle (G1.4231); the defender's floor is per MMC, its excess on that defender's DRM; the pinned -1 on defense follows the p. 75 example.
 - After the merge, the fire calculator's three captured SW lines (`:4408`, `:4440`, `:4483`) forward to `BreakdownLowering` and `RofLowering`, equal.
 - The wiring rows W-A21.13, W-A10.531, W-A8.41, W-A11.17, and W-A11.5 are in the inventory's section 7.
+
+## 10. Review of the build
+
+A sub-agent read the merged branch read-only against main and the PDF (2026-10-30). All 26 forwarded sites give the old answer on every input Play can reach. Every kept member keeps its body and names its replacement. It agreed with every ruling beyond the design: C5.6 does not bar a vehicle's Gun from Intensive Fire. No recorded record gained a field. Nine findings, none against a replay; all taken:
+
+1. A berserk unit of any kind is Lax in the Ambush, as the old line read it: `Lax` tests berserk before Personnel; a tank joins the forward's test grid.
+2. `StealthyByNature` answers false for a vehicle, a Dummy, or a vehicle crew, whatever the SSR or designation (RA11S.6).
+3. A25.66's Eritreans are not Lax: none is in the catalog; a note on the A25.64 row.
+4. The documents (built states, wiring rows, coverage, Minigames column, status lines) were written before the review reached them (5d47ccfe).
+5. `Precheck`'s summary reworded: its own check of the number of attackers gives `CombinationRefusal`'s answer, with its own texts.
+6. `AttackCcv`'s concealed-vehicle modifier is `vehicle-concealed`, not the `vs-concealed` of `VehicleFirepower`.
+7. **RA11C.8:** the a11.5 contract's `attackerId` is disclosed to All: in CC every concealed unit reveals its Strength Factor before attacks are declared (A11.19).
+8. `CcvAttackFacts` and `CcvDefenderFacts` are `readonly record struct`s; `CcvVerdict` keeps its modifier list, which the old block built as well.
+9. `IsSustained` reads the definition only when a case applies, as before the claim.

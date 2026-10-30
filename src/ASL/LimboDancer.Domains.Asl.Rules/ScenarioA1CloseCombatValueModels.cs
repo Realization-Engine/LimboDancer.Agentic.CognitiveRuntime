@@ -16,7 +16,7 @@ public enum NationalCcv
 /// failing one the leader an Original 2 created (A18.12); and each halving penalty, once per kind (ruling RA11C.2): pinned (A7.8), D7.213's First or
 /// Final Fire counter in Reaction Fire, a concealed vehicle (A11.19), an outnumbered Guard (A20.52); and the main unit's national case.
 /// </summary>
-public sealed record CcvAttackFacts(
+public readonly record struct CcvAttackFacts(
     string MainUnitId,
     string MainKind,
     bool AssaultEngineer,
@@ -36,7 +36,7 @@ public sealed record CcvVerdict(int Base, IReadOnlyList<FireModifier> Modifiers,
 /// One defender of a vehicle's CC attack (A11.62, p. 76): its kind, whether it is a SMC, an Assault Engineer (ruling RA11C.3), Inexperienced, and pinned
 /// (the p. 75 example: "3 CCV -1 pinned"), and its national case.
 /// </summary>
-public sealed record CcvDefenderFacts(string Kind, bool Smc, bool AssaultEngineer, bool Inexperienced, bool Pinned, NationalCcv National = NationalCcv.None);
+public readonly record struct CcvDefenderFacts(string Kind, bool Smc, bool AssaultEngineer, bool Inexperienced, bool Pinned, NationalCcv National = NationalCcv.None);
 
 /// <summary>
 /// The facts a vehicle CC attack's <see cref="ScenarioA1VehicleCloseCombat.Resolve(VehicleCloseCombatFacts, ScenarioA1CloseCombatReference, CcvContext?)"/>

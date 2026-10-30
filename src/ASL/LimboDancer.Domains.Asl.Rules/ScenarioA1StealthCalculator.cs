@@ -50,7 +50,8 @@ public static class ScenarioA1StealthCalculator
     /// </summary>
     public static bool? StealthyByNature(StealthFacts unit)
     {
-        if (StealthBarredByClass(unit.Class))
+        // Only Infantry Personnel are Stealthy: never a vehicle, a Dummy, or a vehicle crew (ruling RA11S.6), whatever the SSR or designation.
+        if (!Personnel(unit.Kind) || unit.Kind == VehicleCrew || StealthBarredByClass(unit.Class))
         {
             return false;
         }
@@ -77,12 +78,18 @@ public static class ScenarioA1StealthCalculator
     /// </summary>
     public static bool? Lax(StealthFacts unit, StealthPurpose purpose)
     {
+        // A15.432: a berserk unit is Lax in CC whatever its kind, as the Ambush's old Lax line reads it (the build review, finding 1).
+        if (unit.Berserk && purpose == StealthPurpose.Ambush)
+        {
+            return true;
+        }
+
         if (!Personnel(unit.Kind))
         {
             return false;
         }
 
-        if (unit.SsrLax || unit.BanzaiOrHumanWave || (unit.Berserk && purpose == StealthPurpose.Ambush) || unit.Inexperienced == true)
+        if (unit.SsrLax || unit.BanzaiOrHumanWave || unit.Inexperienced == true)
         {
             return true;
         }

@@ -80,7 +80,7 @@ public sealed class ScenarioA1CloseCombatValueTests
         Assert.Equal(4, ScenarioA1CloseCombatValueCalculator.AttackCcv(Attack(concealed: true)).Ccv);
         Assert.Equal(4, ScenarioA1CloseCombatValueCalculator.AttackCcv(Attack(guard: true)).Ccv);
         var all = ScenarioA1CloseCombatValueCalculator.AttackCcv(Attack(engineer: true, inexperienced: true, smc: "l", pinned: true, marked: true, concealed: true, guard: true));
-        Assert.Equal(["smc-combining:l", "assault-engineer:u", "inexperienced:u", "pinned", "vs-concealed", "guard-outnumbered", "reaction-fire-marked"],
+        Assert.Equal(["smc-combining:l", "assault-engineer:u", "inexperienced:u", "pinned", "vehicle-concealed", "guard-outnumbered", "reaction-fire-marked"],
             all.Modifiers.Select(item => item.Name));
         Assert.Equal(["A11.5", "A11.5", "A11.5", "A11.5", "A11.19", "A20.52", "D7.213"], all.Modifiers.Select(item => item.Rule));
         Assert.Equal(2, all.Ccv);

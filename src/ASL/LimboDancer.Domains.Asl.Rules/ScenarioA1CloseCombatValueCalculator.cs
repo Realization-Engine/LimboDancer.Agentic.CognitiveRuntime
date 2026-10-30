@@ -48,7 +48,6 @@ public static class ScenarioA1CloseCombatValueCalculator
     /// </summary>
     public static CcvVerdict AttackCcv(CcvAttackFacts facts)
     {
-        ArgumentNullException.ThrowIfNull(facts);
         var ccv = BaseCcv(facts.MainKind, facts.National);
         var modifiers = new List<FireModifier>();
         if (facts.CombiningSmcId is { } smc)
@@ -77,7 +76,7 @@ public static class ScenarioA1CloseCombatValueCalculator
 
         if (facts.VehicleConcealed)
         {
-            modifiers.Add(new FireModifier("vs-concealed", -1m, "A11.19"));
+            modifiers.Add(new FireModifier("vehicle-concealed", -1m, "A11.19"));
         }
 
         if (facts.GuardOutnumbered)
@@ -159,11 +158,8 @@ public static class ScenarioA1CloseCombatValueCalculator
     /// A11.62 (p. 76; ruling RA11C.3): one MMC defender's CCV before the floor: its base CCV with its national case, +1 an Assault Engineer, -1
     /// Inexperienced, -1 pinned (the p. 75 example: "3 CCV -1 pinned").
     /// </summary>
-    public static int DefenderCcv(CcvDefenderFacts defender)
-    {
-        ArgumentNullException.ThrowIfNull(defender);
-        return BaseCcv(defender.Kind, defender.National) + (defender.AssaultEngineer ? 1 : 0) - (defender.Inexperienced ? 1 : 0) - (defender.Pinned ? 1 : 0);
-    }
+    public static int DefenderCcv(CcvDefenderFacts defender) =>
+        BaseCcv(defender.Kind, defender.National) + (defender.AssaultEngineer ? 1 : 0) - (defender.Inexperienced ? 1 : 0) - (defender.Pinned ? 1 : 0);
 
     /// <summary>
     /// A11.62 (p. 76): the defenders' CCV against a vehicle's attack. Each MMC's <see cref="DefenderCcv"/>, at least 1 ("A defender's CCV cannot be reduced
@@ -199,9 +195,5 @@ public static class ScenarioA1CloseCombatValueCalculator
     /// A11.62 (p. 76; ruling RA11C.1): "treat any condition that would [reduce a defender's CCV below 1] as a CC DRM instead": the DRM on the vehicle's
     /// attack against this MMC defender, the amount its CCV would fall below 1, as a negative DRM; 0 for a SMC or a CCV of 1 or more.
     /// </summary>
-    public static int DefenseCcvDrm(CcvDefenderFacts defender)
-    {
-        ArgumentNullException.ThrowIfNull(defender);
-        return defender.Smc ? 0 : Math.Min(0, DefenderCcv(defender) - 1);
-    }
+    public static int DefenseCcvDrm(CcvDefenderFacts defender) => defender.Smc ? 0 : Math.Min(0, DefenderCcv(defender) - 1);
 }

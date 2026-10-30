@@ -309,8 +309,8 @@ public static class ScenarioA1VehicleCloseCombat
 
     /// <summary>
     /// Why the attack is outside the review; empty when it is admitted. It keeps its answer (the A11.5 claim's design, ruling RA11C.6): it admits an
-    /// Unarmed attacker (A20.5) and knows no swimmer (E6.2), which <see cref="ScenarioA1CloseCombatValueCalculator.AttackerRefusal"/> refuses; its
-    /// count of attackers is <see cref="ScenarioA1CloseCombatValueCalculator.CombinationRefusal"/>'s.
+    /// Unarmed attacker (A20.5) and knows no swimmer (E6.2), which <see cref="ScenarioA1CloseCombatValueCalculator.AttackerRefusal"/> refuses. Its own
+    /// check of the number of attackers gives the answer <see cref="ScenarioA1CloseCombatValueCalculator.CombinationRefusal"/> gives, with its own texts.
     /// </summary>
     public static IReadOnlyList<string> Precheck(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference)
     {

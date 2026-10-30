@@ -230,7 +230,7 @@ public sealed class ScenarioA1StealthCalculatorTests
     private static readonly string[] GridDefinitions =
     [
         "attacker-hero", "attacker-leader-8-1", "attacker-squad", "attacker-conscript-squad", "attacker-2nd-line-squad", "finnish-green-squad",
-        "finnish-elite-squad", "attacker-crew", "german-vehicle-crew", "italian-squad", "italian-conscript-squad",
+        "finnish-elite-squad", "attacker-crew", "german-vehicle-crew", "italian-squad", "italian-conscript-squad", "attacker-tank",
     ];
 
     private static IEnumerable<CloseCombatUnit> Grid(string id)
