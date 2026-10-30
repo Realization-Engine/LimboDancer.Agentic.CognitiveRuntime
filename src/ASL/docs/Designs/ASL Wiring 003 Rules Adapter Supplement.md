@@ -15,6 +15,8 @@ The fire review also found a caller requirement: a burning wreck created after F
 
 ## Replay and merge order
 
+The close-combat wiring review found one further correction in A20.52 (PDF p. 87): every Guard halves its attack FP against non-prisoners in CC. The separate US# restriction is not a condition of that halving. The CCV calculator represents that penalty by one -1 CCV modifier. Additive `CcvAttackFacts.Guard` and nullable, omitted-when-null `CcvContext.Guards` supply it without changing the old constructor or the old outnumbered-only inputs. Either fact applies the penalty once. The contract accepts the old optional `guardOutnumbered` fact and the new optional `guard` fact; at least one must be known. New minigame checks use `guard`. Both a main attacker and a combining SMC may supply the Guard fact. The callers still wait for wire-close-combat-1.
+
 No recorded record changes in this supplement. Existing rule entry points keep their answers except the two unwired new calculator paths above. The DC deadline forward is algebraically equal to its previous body.
 
 Wire-fire-4 merges before wire-fire-2 and wire-fire-3. Each merges main afterward and preserves the nullable `OrdnanceShot.UseMultiple` branch. W-C9 alone adds the second SMC participant and passes the count to `ScenarioA1NonQualifiedUseCalculator.User`. The user settled rule 6: new recorded properties are nullable, omitted when null, and null retains the old reading.
@@ -24,6 +26,8 @@ Wire-fire-4 merges before wire-fire-2 and wire-fire-3. Each merges main afterwar
 Focused methods cover the lone-SMC IFE verdict and unknown owner fact, the new-context resolver refusing a vehicle as an Infantry attacker, DC settlement and failure boundaries, Cave refusal, and the unchanged overdue deadline. On 2026-10-30 the initial focused run passed all 24 cases, including permitted IFE and empty-context CC regression checks. A follow-up build with warnings as errors and the IFE and existing placed-DC deadline methods passed all 8 cases.
 
 The Studio build passed with zero warnings and errors. Before unit tests, the Rule Workbench at port 6680 showed First Fire IFE at range 1 in DFPh refused for a lone SMC, permitted once more when not a lone SMC, and not evaluated when that fact was unknown. No caller behavior has changed, so this Rules-only supplement uses its focused tests and PR CI; each later wiring claim runs its own replay and sweep gate.
+
+The Guard follow-up also built Studio with zero warnings and errors. The Workbench minigame `wire-guard-review-2` showed CCV 4 and immobilization on Final DR 4 with `guard = true`, CCV 5 and elimination with `guard = false`, and not-evaluated when both Guard inputs were unknown. Facts were entered by hand on the manufactured A11.5 position. The Studio was stopped afterward. Five focused Rules methods passed with warnings as errors, including the existing empty-context comparison, old contract input, new Guard input, a combining SMC, one penalty when both inputs apply, and omission of null Guards. All eight vehicle CCV bundle checks passed. The independent read-only review found no further correctness or compatibility issue.
 
 ## Memory and performance
 

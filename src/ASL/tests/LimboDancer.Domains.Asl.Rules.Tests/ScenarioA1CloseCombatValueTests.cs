@@ -406,6 +406,26 @@ public sealed class ScenarioA1CloseCombatValueTests
     }
 
     [Fact]
+    public void AGuardAttackingAVehicleLosesOneCcvWithoutBeingOutnumbered()
+    {
+        // A20.52 (p. 87): a squad guarding one HS still halves its attack against non-prisoners.
+        var facts = Against(Vehicle("attacker-tank"), Russians, ["ru-s"], [3, 4]);
+        var context = new CcvContext { Guards = ["ru-s"] };
+        Assert.False(context.IsOutnumberedGuard("ru-s"));
+        var result = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, context);
+        Assert.Equal(4, result.KillNumber);
+        Assert.Contains(result.KillNumberModifiers, item => item.Name == "guard" && item.Value == -1m);
+        Assert.Equal(5, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).KillNumber);
+        Assert.DoesNotContain("\"Guards\":", JsonSerializer.Serialize(new CcvContext()), StringComparison.Ordinal);
+        var both = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext(OutnumberedGuards: ["ru-s"]) { Guards = ["ru-s"] });
+        Assert.Equal(4, both.KillNumber);
+        Assert.Single(both.KillNumberModifiers);
+        var combined = Against(Vehicle("attacker-tank"), Russians, ["ru-s", "ru-l"], [3, 4]);
+        Assert.Equal(5, ScenarioA1VehicleCloseCombat.Resolve(combined, CloseCombat, new CcvContext { Guards = ["ru-l"] }).KillNumber);
+        Assert.Null(JsonSerializer.Deserialize<CcvContext>(JsonSerializer.Serialize(new CcvContext()))!.Guards);
+    }
+
+    [Fact]
     public void AContextRefusesAnUnarmedOrSwimmingAttackerThatTheOldOverloadAdmits()
     {
         var units = Russians.Append(Unit("ru-u", "defender-squad", unarmed: true)).ToArray();
@@ -479,7 +499,7 @@ public sealed class ScenarioA1CloseCombatValueTests
             ["pinned"] = pinned,
             ["reactionFireMarked"] = marked,
             ["vehicleConcealed"] = false,
-            ["guardOutnumbered"] = false,
+            ["guard"] = false,
             ["csRed"] = false,
             ["finalDr"] = finalDr,
             ["unarmed"] = unarmed,
@@ -510,6 +530,22 @@ public sealed class ScenarioA1CloseCombatValueTests
         Assert.Equal("burning-wreck", Evaluate(Facts(3, engineer: true, smc: true)).Outcome);
         Assert.Equal("immobilized", Evaluate(Facts(4, pinned: true)).Outcome);
         Assert.Equal("no-effect", Evaluate(Facts(4, pinned: true, marked: true)).Outcome);
+    }
+
+    [Fact]
+    public void TheGuardContractAcceptsBothNewAndLegacyInputs()
+    {
+        var current = Facts(4);
+        current["guard"] = true;
+        Assert.Equal("immobilized", Evaluate(current).Outcome);
+        Assert.Contains("guard -1", Evaluate(current).Reasons[0].Text, StringComparison.Ordinal);
+        var legacy = Facts(4);
+        legacy.Remove("guard");
+        legacy["guardOutnumbered"] = true;
+        Assert.Equal("immobilized", Evaluate(legacy).Outcome);
+        Assert.Contains("guard-outnumbered -1", Evaluate(legacy).Reasons[0].Text, StringComparison.Ordinal);
+        legacy.Remove("guardOutnumbered");
+        Assert.Equal(ContractVerdict.NotEvaluated, Evaluate(legacy).Outcome);
     }
 
     [Fact]

@@ -42,7 +42,7 @@ public static class ScenarioA1CloseCombatValueCalculator
     /// <summary>
     /// A11.5 (p. 74; rulings RA11C.1, RA11C.2): the attackers' CCV, the vehicle's Basic Kill Number. The main unit's base CCV; +1 for a SMC combining with
     /// it, or failing one for the leader an Original 2 created (A18.12); +1 an Assault Engineer (H1.22, A25.01); -1 Inexperienced (A19.34); and -1 for each
-    /// halving FP penalty, once per kind (A7.8: Pin effects are not cumulative): pinned, a concealed vehicle (A11.19), an outnumbered Guard (A20.52),
+    /// halving FP penalty, once per kind (A7.8: Pin effects are not cumulative): pinned, a concealed vehicle (A11.19), a Guard attacking non-prisoners (A20.52),
     /// D7.213's First or Final Fire counter in Reaction Fire. No floor: a CCV of 0 or less leaves the Unlikely Kill (A11.501). The modifiers come in the
     /// order the attack has always listed them, the new ones where an attack without them lists the same.
     /// </summary>
@@ -79,9 +79,9 @@ public static class ScenarioA1CloseCombatValueCalculator
             modifiers.Add(new FireModifier("vehicle-concealed", -1m, "A11.19"));
         }
 
-        if (facts.GuardOutnumbered)
+        if (facts.GuardOutnumbered || facts.Guard)
         {
-            modifiers.Add(new FireModifier("guard-outnumbered", -1m, "A20.52"));
+            modifiers.Add(new FireModifier(facts.Guard ? "guard" : "guard-outnumbered", -1m, "A20.52"));
         }
 
         if (facts.ReactionFireMarked)

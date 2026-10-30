@@ -471,7 +471,10 @@ public static class ScenarioA1VehicleCloseCombat
             attackers.Any(item => item.Facts.Pinned == true),
             facts.Reaction == true && facts.FireMarked?.Any(id => facts.Attackers!.Contains(id)) == true,
             context?.VehicleConcealed == true, context is not null && attackers.Any(item => context.IsOutnumberedGuard(item.Facts.UnitId!)),
-            context?.NationalOf(main.Facts.UnitId!) ?? NationalCcv.None));
+            context?.NationalOf(main.Facts.UnitId!) ?? NationalCcv.None)
+        {
+            Guard = context is not null && attackers.Any(item => context.IsGuard(item.Facts.UnitId!))
+        });
         var modifiers = ccv.Modifiers;
         var kill = ccv.Ccv;
 
