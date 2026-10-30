@@ -344,7 +344,7 @@ public static partial class GameProjector
             next = KeepEncirclements(next);
             next = KeepFireLanes(next);
             next = KeepGuards(next);
-            next = KeepPlacedCharges(next, gameEvent.Payload);
+            next = KeepPlacedCharges(previous, next, gameEvent.Payload);
             next = KeepMelee(next);
             next = KeepCx(next);
             next = KeepAcquisitions(previous, next, gameEvent.Payload);
@@ -4963,7 +4963,7 @@ public static partial class GameProjector
         /// once its placer leaves the Placement Location or ends its move neither broken, pinned, captured, nor eliminated; a placer so affected first keeps
         /// its DC. A DC no longer in play is gone. Every Placement ends with its Player Turn's CCPh.
         /// </summary>
-        private GameState KeepPlacedCharges(GameState next, EventPayload payload)
+        private GameState KeepPlacedCharges(GameState? previous, GameState next, EventPayload payload)
         {
             var charges = next.PlacedCharges;
             if (payload is MovementStepped { DcPlacement: { } placed } step)
@@ -5008,6 +5008,16 @@ public static partial class GameProjector
                         currentPlacer is not null && GameState.Condition(currentPlacer, Conditions.Pinned) == ConditionState.True, eliminated);
                     if (failed)
                     {
+                        var captured = currentPlacer is not null && GameState.Condition(currentPlacer, Conditions.Captured) == ConditionState.True;
+                        if (Rules.ScenarioA1DemolitionChargeRules.UnplacedDcStays(eliminated || captured) == Rules.DcHeldBy.Location)
+                        {
+                            var fallenAt = previous?.Location(charge.Unit)?.Location ?? charge.From;
+                            equipment = [.. equipment.Select(item => item.Id == dc.Id ? item with
+                            {
+                                Holding = null,
+                                Position = new MapPosition(fallenAt)
+                            } : item)];
+                        }
                         // Removing the pending placement latches failure, even if the placer later rallies.
                         continue;
                     }

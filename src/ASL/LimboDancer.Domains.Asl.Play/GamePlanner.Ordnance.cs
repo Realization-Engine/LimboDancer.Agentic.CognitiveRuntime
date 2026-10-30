@@ -157,6 +157,11 @@ public sealed partial class GamePlanner
             }, map.Value.Facing);
         }
 
+        var dash = DashAgainst(state, [FirerLocation(state, shot.Gun!.GunId!)], target);
+        if (dash.Refusal is { } dashBar)
+        {
+            return (null, [dashBar]);
+        }
         shot = PassEightFacts(state, map.Value.Shot, target);
 
         // A9.74, C8.42 (pass 60, rulings R60.3, R60.17): the hit's KIA checks the weapons its victims hold.
@@ -652,7 +657,7 @@ public sealed partial class GamePlanner
                         Hazardous = ScenarioA1FireMapRules.HazardousMovement(state.HazardousMovers, shot.Hit),
 
                         // A4.63, C6.1 (pass 40): a Dashing stack in its road Location, to this firer.
-                        Dashing = DashAgainst(state, [from], target),
+                        Dashing = DashAgainst(state, [from], target).Dash,
                     },
             };
         }

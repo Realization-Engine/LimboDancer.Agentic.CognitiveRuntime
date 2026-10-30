@@ -70,6 +70,8 @@ public sealed class BacklogPass70Tests : IDisposable
 
     // Increment 3b: the scenario year of the game (D6.2: Riders of every nationality from 1943).
     private int year = 1942;
+    private int? month = 7;
+    private readonly HashSet<string> grain = new(StringComparer.Ordinal);
 
     // Increment 3f: the hexsides of a woods hex a test reads as Open Ground, for Bypass (A4.3).
     private readonly HashSet<(string Hex, HexsideDirection Side)> openSides = [];
@@ -114,7 +116,12 @@ public sealed class BacklogPass70Tests : IDisposable
         {
             var name = HexName.Parse(text);
             Assert.True(geometry.TryGetIndex(name, out var index));
-            var type = woods.Contains(text) ? Woods() : stone.Contains(text) ? Stone() : Open();
+            var type = woods.Contains(text) ? Woods() : stone.Contains(text) ? Stone() : grain.Contains(text) ? new TerrainType
+            {
+                Code = 6,
+                Name = "Grain",
+                Category = LosCategory.Open,
+            } : Open();
             var center = new LocationFacts(0, type, null);
             HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true,
                 roadSides.Contains((text, side)) ? Road() : openSides.Contains((text, side)) ? Open() : type,
@@ -237,9 +244,12 @@ public sealed class BacklogPass70Tests : IDisposable
                 new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
                 new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
             },
-            ["scenarioMonth"] = 7,
             ["scenarioYear"] = year,
         };
+        if (month is { } scenarioMonth)
+        {
+            start["scenarioMonth"] = scenarioMonth;
+        }
         if (ssrs.Length > 0)
         {
             start["specialRules"] = ssrs;
@@ -430,6 +440,38 @@ public sealed class BacklogPass70Tests : IDisposable
             to = L("E6")
         }));
         Assert.Equal(viewerHidden, Is(Current.Unit("r1")!, Conditions.Concealed));
+        NoReplayErrors();
+    }
+
+    [Theory]
+    [InlineData(7, false)]
+    [InlineData(10, false)]
+    [InlineData(null, false)]
+    [InlineData(7, true)]
+    [InlineData(10, true)]
+    [InlineData(null, true)]
+    public async Task SeasonalGrainControlsConcealedMovementAndAdvance(int? scenarioMonth, bool advance)
+    {
+        month = scenarioMonth;
+        grain.Add("E6");
+        await SetupAt(advance ? 6 : 2, "russian", Squad("r1", "E5", "russian", Conditions.Concealed), Squad("g1", "E2", "german"));
+        var result = await Do(advance ? GameActions.Advance : GameActions.Move, NoRoll(), new
+        {
+            unitIds = R1,
+            to = L("E6"),
+            assault = !advance,
+        });
+        if (scenarioMonth is null)
+        {
+            Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
+            Assert.Contains(result.Reasons, reason => reason.StartsWith(advance ? "play.advance-grain" : "play.move-grain", StringComparison.Ordinal));
+            Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
+        }
+        else
+        {
+            Committed(result);
+            Assert.Equal(scenarioMonth == 7, Is(Current.Unit("r1")!, Conditions.Concealed));
+        }
         NoReplayErrors();
     }
 

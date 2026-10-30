@@ -21,6 +21,8 @@
         "to": "bd04:H5:0",
         "night": false,
         "terrain": "open-ground",
+        "smokeInLocation": false,
+        "inLocationCover": false,
         "enemyGoodOrderInLosWithin16": true
       },
       "expect": {
@@ -37,6 +39,8 @@
         "to": "bd04:H5:0",
         "night": true,
         "terrain": "open-ground",
+        "smokeInLocation": false,
+        "inLocationCover": false,
         "enemyGoodOrderInLosWithin16": true
       },
       "expect": {
@@ -52,7 +56,9 @@
         "advancerId": "g-squad",
         "to": "bd04:H5:0",
         "night": false,
-        "terrain": "open-ground"
+        "terrain": "open-ground",
+        "smokeInLocation": false,
+        "inLocationCover": false
       },
       "expect": {
         "outcome": "not-evaluated"
@@ -67,6 +73,8 @@
         "to": "bd04:H5:0",
         "night": false,
         "terrain": "open-ground",
+        "smokeInLocation": false,
+        "inLocationCover": false,
         "enemyGoodOrderInLosWithin16": true
       },
       "expect": {

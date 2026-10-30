@@ -110,14 +110,28 @@ public sealed partial class GamePlanner
     private Dictionary<string, JsonNode?> AdvanceConcealmentFacts(GameState state, IReadOnlyDictionary<string, string> picks, GameView view)
     {
         var facts = new Dictionary<string, JsonNode?>(StringComparer.Ordinal) { ["night"] = state.Night };
+        facts["month"] = state.ScenarioMonth;
         if (picks.TryGetValue("to", out var toText) && BoardLocation.TryParse(toText, out var to) && to is not null)
         {
             facts["to"] = to.ToString();
             facts["terrain"] = ReadLocation(state, to) is { } read ? TerrainKey(read) : null;
+            var visibleHere = view.Units.Where(unit => view.Locations.TryGetValue(unit.Id, out var position) && position.Location == to).ToArray();
+            bool Burning(UnitInstance unit) => view.Entities.Any(entity => entity.Status == InstanceStatus.Active && entity.Id == BlazeId(unit.Id));
+            facts["smokeInLocation"] = view.Entities.Any(entity => entity.Status == InstanceStatus.Active && entity.Kind == "asl:smoke"
+                    && entity.Position is MapPosition position && position.Location == to)
+                || visibleHere.Any(unit => unit.Status == InstanceStatus.Wrecked && Burning(unit));
             if (picks.TryGetValue("advancerId", out var advancerId))
             {
                 var advancer = view.Units.FirstOrDefault(unit => unit.Id == advancerId);
                 var side = advancer?.Side ?? view.Sealed.FirstOrDefault(stack => stack.PlacementId == advancerId)?.Side;
+                if (side is not null)
+                {
+                    var cover = ScenarioA1VehicleSightRules.Cover(
+                        visibleHere.Where(unit => unit.Status == InstanceStatus.Wrecked).Select(unit => (unit.Id, (Func<bool>)(() => Burning(unit)), (Func<bool>)(() => Standing(state, unit)))),
+                        visibleHere.Where(unit => unit.Status == InstanceStatus.Active).Select(unit => (unit.Id, (Func<bool>)(() => IsAfv(unit)),
+                            (Func<bool>)(() => unit.Side == side || Is(unit, Conditions.Abandoned)), (Func<bool>)(() => Standing(state, unit)))));
+                    facts["inLocationCover"] = cover is not null ? true : view.Sealed.Any(stack => stack.Location == to) ? null : false;
+                }
                 if (advancer is not null && (view.Perspective.IsAdjudicator || side == view.Perspective.Name))
                 {
                     facts["advancerId"] = advancer.Id;

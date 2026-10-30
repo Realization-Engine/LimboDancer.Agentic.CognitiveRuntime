@@ -1904,6 +1904,13 @@ public sealed partial class GamePlanner
         // has no firers; a Dummy alone has no side's stack to read.
         var firerSide = (attack.VehicleFire?.VehicleId ?? (attack.Firers is { Count: > 0 } firing ? firing[0].UnitId : null)) is { } firerId ? state.Unit(firerId)?.Side : null;
         var targetSide = attack.Targets?.Select(item => item.UnitId is { } targetId ? state.Unit(targetId)?.Side : null).FirstOrDefault(side => side is not null);
+        var dash = attack.OrdnanceHit is null && attack.FireLane != true
+            && attack.FireKind is ScenarioA1FireCalculator.FirstFire or ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire
+            ? DashAgainst(state, [.. perLocation.Keys.Select(BoardLocation.Parse)], target) : default;
+        if (dash.Refusal is { } dashBar)
+        {
+            return (null, dashBar);
+        }
         facts = facts with
         {
             FirerOverstack = firerSide is null ? null
@@ -1917,9 +1924,7 @@ public sealed partial class GamePlanner
             HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(HazardousUnits(state), attack),
 
             // A4.63 (pass 40): non-ordnance Defensive First Fire at a Dashing stack in its road Location; a Fire Lane and Residual FP are excepted.
-            Dash = attack.OrdnanceHit is null && attack.FireLane != true
-                && attack.FireKind is ScenarioA1FireCalculator.FirstFire or ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire
-                ? DashAgainst(state, [.. perLocation.Keys.Select(BoardLocation.Parse)], target) : null,
+            Dash = dash.Dash,
         };
 
         // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): night and weather. Pass 65 (ruling R65.5): the PRC of each vehicle there.
@@ -1951,30 +1956,33 @@ public sealed partial class GamePlanner
     /// A4.63 (pass 40): whether fire from these Locations at a Location is at a Dashing stack in its road Location, for firers to whom neither side
     /// of the road is Open Ground; null when it is not. Rules decides from each firing Location's two reads.
     /// </summary>
-    private bool? DashAgainst(GameState state, IReadOnlyList<BoardLocation> firingLocations, BoardLocation target)
+    private (bool? Dash, string? Refusal) DashAgainst(GameState state, IReadOnlyList<BoardLocation> firingLocations, BoardLocation target)
     {
         if (state.Phase != "mph" || state.Movement is not { Dash: { } dashTo, From: { } dashFrom } dashing || dashing.Location != target)
         {
-            return null;
+            return default;
         }
 
         UnitInstance[] movers = [.. dashing.Members.Select(id => state.Unit(id)).OfType<UnitInstance>()];
         if (movers.Length == 0 || !ScenarioA1Dash.BenefitsHold(movers.Select(unit => (Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk)))))
         {
-            return null;
+            return default;
         }
 
         var side = movers[0].Side;
-        return ScenarioA1Dash.QualifiesAgainst(firingLocations.Select(firer => (OpenGroundTo(state, firer, dashFrom, side), OpenGroundTo(state, firer, dashTo, side)))) ? true : null;
+        var qualifies = ScenarioA1Dash.QualifiesAgainstViews(firingLocations.Select(firer => (OpenGroundTo(state, firer, dashFrom, side), OpenGroundTo(state, firer, dashTo, side))));
+        return qualifies is null ? (null, "play.open-ground-unknown: the scenario month is needed to decide Dash against this firer (A10.531, B15.6)")
+            : (qualifies == true ? true : null, null);
     }
 
     /// <summary>Whether a Location is Open Ground to a firing Location, as Interdiction reads it (A10.531; ruling R35.1): the reads handed to Rules.</summary>
-    private bool OpenGroundTo(GameState state, BoardLocation firer, BoardLocation at, string side)
+    private bool? OpenGroundTo(GameState state, BoardLocation firer, BoardLocation at, string side)
     {
-        var open = ReadLocation(state, at) is { } read && TerrainKey(read) == "open-ground";
+        var terrain = ReadLocation(state, at) is { } read ? TerrainKey(read) : null;
         var los = firer == at ? null : Los(state, firer, at);
         var seen = firer == at || los is { IsBlocked: false };
-        return ScenarioA1Dash.OpenGroundTo(open, seen, los?.Hindrance ?? 0, open && seen && firer != at ? InterdictionCover(state, firer, at, side) : RoutCoverFacts.None);
+        return ScenarioA1OpenGroundCalculator.OpenGroundTo(new OpenGroundLocationFacts(terrain, state.ScenarioMonth, HasSmoke(state, at), false),
+            new OpenGroundViewFacts(seen, los?.Hindrance ?? 0, seen && firer != at ? InterdictionCover(state, firer, at, side) : RoutCoverFacts.None), OpenGroundPurpose.Dash);
     }
 
     /// <summary>A table of Locations by index, with the LOS between two of them as Rules asks for it (the pass 32 design, D4; pass 32.c).</summary>

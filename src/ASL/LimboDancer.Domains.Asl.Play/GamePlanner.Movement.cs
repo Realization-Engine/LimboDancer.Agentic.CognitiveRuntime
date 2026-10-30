@@ -15,7 +15,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public sealed partial class GamePlanner
 {
     /// <summary>Read each Loss seer's view for the Open Ground calculator, using the state's existing sight index.</summary>
-    private bool? ConcealmentOpenGroundSeen(GameState state, string side, BoardLocation at, string terrain, BoardLocation? roadFrom = null)
+    private bool? ConcealmentOpenGroundSeen(GameState state, string side, BoardLocation at, string terrain, BoardLocation? roadFrom = null, HashSet<int>? qualifyingSeers = null)
     {
         var table = SightOf(state);
         var location = new OpenGroundLocationFacts(terrain, state.ScenarioMonth, HasSmoke(state, at), false);
@@ -31,8 +31,13 @@ public sealed partial class GamePlanner
             var seen = seer == at || los is { Status: Maps.Los.LosStatus.Clear } && ScenarioA1Sight.SeenWithin(los.Range, 16);
             var asSeen = roadFrom is null ? terrain : ScenarioA1Definitions.RoadRateTargetTerrain(terrain,
                 [(CrossesTerrainInTargetHex(state, seer, at, null), across is { } entrySide ? CrossesTerrainInTargetHex(state, seer, at, entrySide) : null)]);
-            return ScenarioA1OpenGroundCalculator.OpenGroundTo(location, new OpenGroundViewFacts(seen, los?.Hindrance ?? 0, cover, asSeen), OpenGroundPurpose.Concealment);
-        }));
+            var open = ScenarioA1OpenGroundCalculator.OpenGroundTo(location, new OpenGroundViewFacts(seen, los?.Hindrance ?? 0, cover, asSeen), OpenGroundPurpose.Concealment);
+            if (open == true)
+            {
+                qualifyingSeers?.Add(index);
+            }
+            return open;
+        }).ToArray());
     }
 
     // MF to enter the admitted terrain, in half MF (A4.13, B12.4, B13.4, B14.4, B15.4, B23.4, B24.4), moved to Rules (pass 32.a).
@@ -558,10 +563,11 @@ public sealed partial class GamePlanner
         // Pass 70 (A12.14, p. 78; ruling R70.21): the movers whose "?" the viewing side may decline to take, every Loss seer within 16 being concealed.
         // Offered by day on a step that needs no roll; elsewhere the loss is forced, as before (ruling R31d.2's deviation, kept for the rest).
         string[] optioned = [];
+        HashSet<int>? qualifyingLossSeers = !state.Night && assault && !forcedBack ? [] : null;
 
         var openGroundSeen = !state.Night && assault && !forcedBack && plotting == 0
             && movers.Any(unit => unit.Kind == UnitKinds.Dummy || Is(unit, Conditions.Concealed))
-            ? ConcealmentOpenGroundSeen(state, state.PhasingSide!, landed, terrain, entry.RoadRate ? from : null)
+            ? ConcealmentOpenGroundSeen(state, state.PhasingSide!, landed, terrain, entry.RoadRate ? from : null, qualifyingLossSeers)
             : false;
         if (openGroundSeen is null)
         {
@@ -580,8 +586,9 @@ public sealed partial class GamePlanner
             var unmasked = ScenarioA1MovementCalculator.Unmasked([.. movers.Select(mover => new MoverConcealmentFacts(mover.Id, mover.Kind == UnitKinds.Dummy, Is(mover, Conditions.Concealed)))],
                 forcedBack, assault, state.Night, () => openGroundSeen.Value,
                 () => EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed), () => Illuminated(state, landed));
-            if (mayOffer && !state.Night && unmasked.Count > 0 && ScenarioA1Sight.ViewerMayDecline(forcedBack, NearestGoodOrderEnemyInLos(state, state.PhasingSide!, landed),
-                () => NearestUnconcealedLossSeer(state, state.PhasingSide!, landed)))
+            if (mayOffer && !state.Night && unmasked.Count > 0 && ScenarioA1Sight.ViewerMayDecline(forcedBack,
+                NearestQualifiedLossSeer(state, state.PhasingSide!, landed, SightPurpose.Loss, qualifyingLossSeers),
+                () => NearestQualifiedLossSeer(state, state.PhasingSide!, landed, SightPurpose.LossInView, qualifyingLossSeers)))
             {
                 optioned = [.. unmasked.Select(unit => unit.Id)];
                 return;
@@ -644,7 +651,7 @@ public sealed partial class GamePlanner
             // A12.14 (ruling R70.21): the viewing side's option waits on its answer; the proposal says nothing of it to the moving side.
             if (optioned.Length > 0)
             {
-                events.Add(LossChoiceEvent(scope, attemptId, events.Count + 1, expected, state, state.PhasingSide!, landed, optioned));
+                events.Add(LossChoiceEvent(scope, attemptId, events.Count + 1, expected, state, state.PhasingSide!, landed, optioned, qualifyingLossSeers));
             }
 
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary, .. dummyWarning]) { HalfMf = halfMf + dashHalfMf, HalfMfLeft = halfMfLeft };

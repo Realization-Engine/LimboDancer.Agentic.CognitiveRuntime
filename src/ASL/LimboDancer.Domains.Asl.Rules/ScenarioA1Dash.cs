@@ -102,6 +102,25 @@ public static class ScenarioA1Dash
         return firingLocations.Any(location => !location.OriginOpenGround && !location.DestinationOpenGround);
     }
 
+    /// <summary>A4.63, A7.52: one certain qualifying member settles the group; otherwise a seasonal fact may leave its answer unknown.</summary>
+    public static bool? QualifiesAgainstViews(IEnumerable<(bool? OriginOpenGround, bool? DestinationOpenGround)> firingLocations)
+    {
+        ArgumentNullException.ThrowIfNull(firingLocations);
+        var unknown = false;
+        foreach (var (origin, destination) in firingLocations)
+        {
+            if (origin == false && destination == false)
+            {
+                return true;
+            }
+            if (origin != true && destination != true)
+            {
+                unknown = true;
+            }
+        }
+        return unknown ? null : false;
+    }
+
     /// <summary>
     /// Whether a Location is Open Ground to a firer, as Interdiction reads it (A10.531; ruling R35.1): Open Ground terrain, a clear LOS, no Hindrance
     /// along it, and no TEM the unit there could claim against that firer. The cover test is

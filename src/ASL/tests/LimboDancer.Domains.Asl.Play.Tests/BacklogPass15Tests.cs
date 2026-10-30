@@ -392,6 +392,17 @@ public sealed partial class BacklogPass15Tests : IDisposable
         var interruptedGuide = await ReadCopiedDcHistory([.. loaded.Events, interrupted], Perspective.Side("german"));
         Assert.Equal(TurnObligationState.Interrupted, Assert.Single(interruptedGuide.Obligations).State);
         Assert.Empty(interruptedGuide.Actions);
+        var eliminated = interrupted with
+        {
+            EventId = "eliminated-before-settlement",
+            Type = "instance-eliminated",
+            Payload = new InstanceEliminated("g1"),
+        };
+        var failedPlacement = Planner().Replay([.. loaded.Events, eliminated]).Current!;
+        Assert.Empty(failedPlacement.PlacedCharges);
+        var retained = Assert.IsType<EquipmentInstance>(failedPlacement.Find("dc"));
+        Assert.Null(retained.Holding);
+        Assert.Equal(L("E3"), Assert.IsType<MapPosition>(retained.Position).Location.ToString());
         var invalidOwner = legacy.Select(item => item.EventId == placementEvent.EventId ? item with
         {
             Payload = placementStep with
@@ -474,6 +485,47 @@ public sealed partial class BacklogPass15Tests : IDisposable
         Assert.Equal(TurnObligationState.Scheduled, Assert.Single(past.Obligations).State);
         Assert.Equal(TurnCloseDisposition.ReadOnly, past.PhaseClose.Disposition);
         await Advance();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task APlacedDcSettlesOnDepartureOrAnotherUnitsMovement(bool departure)
+    {
+        await SetupAt(2, "german", Unit("g1", "attacker-squad", "E3", "german"), Weapon("dc", "asl:dc", "attacker-dc", "g1", "german"),
+            Unit("g2", "attacker-squad", "D3", "german"), Unit("r1", "defender-squad", "E4", "russian"));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("E3"),
+            placeDc = "dc",
+            placeDcAt = L("E4"),
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        if (!departure)
+        {
+            Committed(await Do(GameActions.EndMove, NoRoll(), new
+            {
+            }));
+            Assert.False(Current.PlacedCharges.Single().Operable);
+        }
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = new[] { departure ? "g1" : "g2" },
+            to = L(departure ? "E2" : "D2"),
+        }));
+        Assert.True(Current.PlacedCharges.Single().Operable);
+        var last = store.Read(Scope)!.Events[^1];
+        var pinned = last with
+        {
+            EventId = "pin-after-settlement",
+            Revision = Revision + 1,
+            Type = "conditions-changed",
+            Payload = new ConditionsChanged("g1", new Dictionary<string, ConditionState> { [Conditions.Pinned] = ConditionState.True }),
+        };
+        Assert.True(Planner().Replay([.. store.Read(Scope)!.Events, pinned]).Current!.PlacedCharges.Single().Operable);
     }
 
     [Fact]
