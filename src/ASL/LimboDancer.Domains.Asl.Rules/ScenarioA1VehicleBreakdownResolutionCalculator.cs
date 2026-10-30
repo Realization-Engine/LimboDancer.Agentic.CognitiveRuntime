@@ -10,6 +10,12 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
     public static string? WeaponUseRefusal(bool disabled) => disabled
         ? "play.vehicle-weapon-disabled: the selected vehicle armament is permanently disabled (D3.7)" : null;
 
+    /// <summary>D3.7/D5.341: apply the weapon's Disabled result and, when ordered, the complete Recall transition.</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> DisabledChanges(string weapon, bool recalled) => recalled
+        ? [(ScenarioA1RallyRules.VehicleWeaponDisabled(weapon), true), (UnitCondition.Recalled, true), (UnitCondition.Stunned, false),
+            (UnitCondition.StunRecovery, false), (UnitCondition.ButtonedUp, true), (UnitCondition.Motion, false)]
+        : [(ScenarioA1RallyRules.VehicleWeaponDisabled(weapon), true)];
+
     /// <summary>C8.9 (PDF p. 179): a vehicle's Low Ammo or breakdown result counts as firing despite absent special ammunition.</summary>
     public static bool NeverFired(string? ammunitionUse, bool malfunctioned, bool eliminated, VehicleBreakdownResolved? current) =>
         ScenarioA1OrdnanceProjection.NeverFired(ammunitionUse, malfunctioned, eliminated || current?.CountsAsFiredOnDepletionFailure == true);
