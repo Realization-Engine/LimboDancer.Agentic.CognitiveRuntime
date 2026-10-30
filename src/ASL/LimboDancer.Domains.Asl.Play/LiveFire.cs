@@ -20,14 +20,13 @@ public static class LiveFire
     /// <summary>The built-in vocabulary (embedded, read once), for the one SMC test the planner makes too, <c>IsA(kind, "asl:smc")</c> (R5's finding 10).</summary>
     private static readonly Lazy<UnitVocabulary> Vocabulary = new(UnitVocabulary.Asl);
 
-    private sealed record VehiclePrintedFacts(VehicleBreakdownUseFacts? Breakdown, bool NoSecondary, int? Passengers, int? Towing);
+    private sealed record VehiclePrintedFacts(VehicleBreakdownUseFacts? Breakdown, bool? HasSecondary, int? Passengers, int? Towing);
 
     // Keep only immutable source facts per vehicle, not another retained copy of the whole catalog.
     private static readonly Lazy<IReadOnlyDictionary<string, VehiclePrintedFacts>> VehiclePrintedNumbers = new(() =>
         UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary.Value)!.Catalog!.Definitions.Where(definition => definition.Kind == "asl:vehicle")
             .ToDictionary(definition => definition.Id, definition => new VehiclePrintedFacts(PrintedVehicleBreakdown(definition),
-                definition.Printed("front", "asl:sa-mount")?.State == PrintedState.NotPrinted
-                    && definition.Printed("front", "asl:sa-caliber")?.State == PrintedState.NotPrinted,
+                VehicleArmamentFacts.HasSecondary(definition),
                 PrintedCapacity(definition, "asl:passenger-capacity"), PrintedCapacity(definition, "asl:towing")), StringComparer.Ordinal));
 
     private static int? PrintedCapacity(UnitDefinition definition, string attribute) => definition.Printed("front", attribute) switch
@@ -41,8 +40,8 @@ public static class LiveFire
     {
         var printed = vehicle.Definition is { Catalog.Catalog: Catalog } definition
             ? VehiclePrintedNumbers.Value.GetValueOrDefault(definition.Definition) : null;
-        return printed is { NoSecondary: true, Passengers: { } passengers, Towing: { } towing }
-            && ScenarioA1VehicleBreakdownResolutionCalculator.Recalled(maDisabled, false, null, passengers, towing);
+        return printed is not null && VehicleArmamentFacts.RecalledAfterDisable(vehicle, maDisabled, printed.HasSecondary,
+            printed.Passengers, printed.Towing);
     }
 
     /// <summary>D3.7 (PDF pp. 201-202): read printed evidence without treating the old inherent B12 field as a printed number.</summary>
@@ -73,7 +72,7 @@ public static class LiveFire
         {
             return (null, "play.vehicle-breakdown-facts: printed B/X, circled B and Vehicle Note evidence must be known (D3.7)");
         }
-        if (listing is not { NoSecondary: true, Passengers: not null, Towing: not null })
+        if (listing is not { HasSecondary: not null, Passengers: not null, Towing: not null })
         {
             return (null, "play.vehicle-armament-facts: listed Secondary Armament state and Passenger/Towing capability must be known (D3.7)");
         }

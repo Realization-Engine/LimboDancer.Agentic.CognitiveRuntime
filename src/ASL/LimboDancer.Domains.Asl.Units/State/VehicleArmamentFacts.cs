@@ -71,11 +71,20 @@ public static class VehicleArmamentFacts
         ? "play.vehicle-armament-facts: Secondary Armament and Passenger/Towing capability must be known (D3.7)" : null;
 
     public static bool RecalledAfterDisable(UnitInstance vehicle, UnitDefinition definition, Weapon disabled) =>
-        HasSecondary(definition) is { } secondary && Capacity(definition, "passenger-capacity") is { } passengers && Capacity(definition, "towing") is { } towing
-        && ScenarioA1VehicleBreakdownResolutionCalculator.Recalled(disabled.Id == "ma" || Marked(vehicle, Conditions.Disabled), secondary,
-            secondary ? disabled.Secondary || Marked(vehicle, Conditions.SaDisabled) : null, passengers, towing);
+        RecalledAfterDisable(vehicle, disabled.Id == "ma" || Marked(vehicle, Conditions.Disabled), HasSecondary(definition),
+            Capacity(definition, "passenger-capacity"), Capacity(definition, "towing"), disabled.Secondary);
 
-    private static bool? HasSecondary(UnitDefinition definition) => (definition.Printed("front", "asl:sa-mount"), definition.Printed("front", "asl:sa-caliber")) switch
+    public static bool RecalledAfterDisable(UnitInstance vehicle, bool maDisabled, bool? hasSecondary, int? passengers, int? towing,
+        bool secondaryJustDisabled = false) => hasSecondary is { } secondary && passengers is { } passengerCapacity && towing is { } towingCapacity
+        && ScenarioA1VehicleBreakdownResolutionCalculator.Recalled(maDisabled, secondary,
+            secondary ? secondaryJustDisabled ? true : GameState.Condition(vehicle, Conditions.SaDisabled) switch
+            {
+                ConditionState.True => true,
+                ConditionState.False => false,
+                _ => (bool?)null,
+            } : null, passengerCapacity, towingCapacity);
+
+    public static bool? HasSecondary(UnitDefinition definition) => (definition.Printed("front", "asl:sa-mount"), definition.Printed("front", "asl:sa-caliber")) switch
     {
         ({ State: PrintedState.NotPrinted }, { State: PrintedState.NotPrinted }) => false,
         ({ State: PrintedState.Printed, Value: not null }, { State: PrintedState.Printed, Value: not null }) => true,

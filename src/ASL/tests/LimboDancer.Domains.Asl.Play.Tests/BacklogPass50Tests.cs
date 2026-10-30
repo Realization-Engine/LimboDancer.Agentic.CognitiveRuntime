@@ -421,6 +421,29 @@ public sealed class BacklogPass50Tests : IDisposable
     }
 
     [Fact]
+    public async Task RecallGathersTheActualSecondaryStateAndCapacityExceptions()
+    {
+        // Synthetic SA presence facts exercise gathering without inventing a historical counter's armament.
+        await Setup(Tank("north-east", Conditions.SaDisabled), Squad("r1", Target));
+        var vehicle = Current.Unit("de-tank")!;
+        Assert.True(VehicleArmamentFacts.RecalledAfterDisable(vehicle, true, true, 0, 0));
+        Assert.False(VehicleArmamentFacts.RecalledAfterDisable(vehicle, false, true, 0, 0));
+        Assert.False(VehicleArmamentFacts.RecalledAfterDisable(vehicle, true, null, 0, 0));
+        Assert.False(VehicleArmamentFacts.RecalledAfterDisable(vehicle, true, true, 1, 0));
+        Assert.False(VehicleArmamentFacts.RecalledAfterDisable(vehicle, true, true, 0, 1));
+        var partial = vehicle with
+        {
+            Conditions = new Dictionary<string, ConditionState>(vehicle.Conditions) { [Conditions.SaDisabled] = ConditionState.False }
+        };
+        Assert.False(VehicleArmamentFacts.RecalledAfterDisable(partial, true, true, 0, 0));
+        Assert.True(VehicleArmamentFacts.RecalledAfterDisable(partial, true, true, 0, 0, secondaryJustDisabled: true));
+        Assert.False(VehicleArmamentFacts.RecalledAfterDisable(partial with
+        {
+            Conditions = new Dictionary<string, ConditionState>(partial.Conditions) { [Conditions.SaDisabled] = ConditionState.Unknown }
+        }, true, true, 0, 0));
+    }
+
+    [Fact]
     public async Task LegacyAamgAttemptAndCapturedInherentCrewRemainRecognized()
     {
         var halftrack = Tank("north-east", Conditions.Malfunctioned);

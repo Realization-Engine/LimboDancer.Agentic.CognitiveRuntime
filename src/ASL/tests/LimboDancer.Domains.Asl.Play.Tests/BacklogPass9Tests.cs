@@ -66,12 +66,19 @@ public sealed partial class BacklogPass9Tests : IDisposable
 
         public Dictionary<(string From, string To), LosHindrance[]> Hindrances { get; } = [];
 
+        public LosElevations? Elevations
+        {
+            get;
+            set;
+        }
+
         public LosResult? Read(GameState state, BoardLocation from, BoardLocation target) => Blocked.Contains(target) || Blocked.Contains(from)
             ? new(LosStatus.Blocked, true, Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty)
             : new(LosStatus.Clear, false, Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty)
             {
                 Crossed = Crossed.GetValueOrDefault((from.Hex.ToString(), target.Hex.ToString())) ?? [],
                 Hindrances = Hindrances.GetValueOrDefault((from.Hex.ToString(), target.Hex.ToString())) ?? [],
+                Elevations = Elevations,
             };
     }
 
@@ -1070,6 +1077,33 @@ public sealed partial class BacklogPass9Tests : IDisposable
         Assert.Single(incomplete.UnclassifiedSmoke);
         Assert.Equal(TurnSmokeState.NotEvaluated, Assert.Single((await legacyReader.ReadTurnGuideProfileAsync(Scope,
             Perspective.Side("german"), "dfph", profile)).Atmosphere!.Grenades).State);
+    }
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(2, false)]
+    public async Task CrossedSmokeUsesTheLosHeightAndReplaysItsRecordedHindrance(int elevation, bool hindered)
+    {
+        await Setup("german", 7, 1942, Squad("g1", "bd01:A8:0", "german"), Squad("g2", "bd01:A7:0", "german"),
+            Squad("r1", "bd01:B10:0", "russian"));
+        await Advance(2);
+        Committed(await Smoke(G1, "bd01:A8:0", "g1", "bd01:B8:0", 1));
+        await Pass();
+        await EndMove();
+        Committed(await Move(G2, "bd01:B7:0"));
+        los.Crossed[("B10", "B7")] = [Crossing("B8", 2) with { RangeToTarget = 1 }];
+        los.Elevations = new(new(elevation, 0, false, false, false, 0), new(elevation, 0, false, false, false, 0));
+        var before = Revision;
+        Committed(await Fire(R1, "bd01:B7:0", 6, 6));
+        Assert.Equal(hindered, HasDrm(LastFire(before), "los-hindrance", 2));
+
+        // Replaying consumes the recorded map verdict, even when today's map reader would answer differently.
+        los.Elevations = null;
+        los.Crossed.Clear();
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.False(Planner().Replay(loaded.Events).HasErrors);
     }
 
     [Fact]
