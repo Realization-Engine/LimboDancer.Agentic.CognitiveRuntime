@@ -471,6 +471,14 @@ public static class ScenarioA1VehicleCloseCombat
             return false;
         }
 
+        if (vehicle.UnavailableWeapons is { } unavailable)
+        {
+            return definition.BowMg is not null && !unavailable.Contains(definition.MainArmament == "bmg" ? "ma" : "bmg", StringComparer.Ordinal)
+                || definition.CoaxialMg is not null && !unavailable.Contains(definition.MainArmament == "cmg" ? "ma" : "cmg", StringComparer.Ordinal)
+                || definition.AntiAircraftMg is not null && vehicle.CrewExposed == true
+                    && !unavailable.Contains(definition.MainArmament == "aamg" ? "ma" : "aamg", StringComparer.Ordinal);
+        }
+
         var aamg = definition.MainArmament == "aamg" && definition.AntiAircraftMg is not null && vehicle.CrewExposed == true && vehicle.MainArmamentMalfunctioned != true
             && vehicle.UnavailableWeapons?.Contains("ma", StringComparer.Ordinal) != true;
         return aamg || (definition.BowMg is not null && vehicle.BmgMalfunctioned != true && vehicle.UnavailableWeapons?.Contains("bmg", StringComparer.Ordinal) != true)
@@ -746,6 +754,10 @@ public static class ScenarioA1VehicleCloseCombat
         }
         return names;
     }
+
+    /// <summary>A11.62: the same participating armament and crew facts used by the attack precheck, for turn order and choices.</summary>
+    public static bool CanAttack(VehicleCloseCombatVehicle vehicle, FireDefinition definition, bool captured) =>
+        !captured && vehicle.Stunned != true && vehicle.Shocked != true && vehicle.Abandoned != true && Weapons(vehicle, definition).Count > 0;
 
     private static VehicleCloseCombatResolution ByVehicle(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, IReadOnlyList<int> dice,
         CcvContext? context)
