@@ -40,11 +40,14 @@ var advice = typeof(GamePlanner).GetMethods().Single(method => method.Name == "G
 var supportsPair = fromState.GetParameters().Any(parameter => parameter.Name == "secondFirer");
 var results = new List<object>();
 var inputs = new List<object>();
-foreach (var workload in new[] { "gun", "canister", "mortar-solo", "mortar-pair" })
+// An optional fifth argument names the workloads, comma-separated; the 81mm rows read target advice only (Claude's PR 85 review, P2-b).
+var workloads = args.Length > 4 ? args[4].Split(',') : new[] { "gun", "canister", "mortar-solo", "mortar-pair" };
+foreach (var workload in workloads)
 {
     var mortar = workload.StartsWith("mortar", StringComparison.Ordinal);
-    var pair = workload == "mortar-pair";
-    var game = mortar ? "wire-c9-light-review" : "wire-c9-gun-review";
+    var heavy = workload.StartsWith("mortar81", StringComparison.Ordinal);
+    var pair = workload.EndsWith("-pair", StringComparison.Ordinal);
+    var game = heavy ? "wire-c9-pair-review" : mortar ? "wire-c9-light-review" : "wire-c9-gun-review";
     var scope = new GameScope(LivePlay.Tenant, game);
     var record = store.Read(scope) ?? throw new InvalidOperationException("Missing " + game);
     var firstShot = record.Events.Select(item => item.Payload).OfType<OrdnanceFired>().FirstOrDefault();
@@ -99,7 +102,7 @@ foreach (var workload in new[] { "gun", "canister", "mortar-solo", "mortar-pair"
         return $"type={shot.TargetType};use={shot.UseMultiple?.ToString() ?? "null"};participants={(hasSecond ? 2 : 1)}";
     }
     foreach (var cold in new[] { false, true })
-    foreach (var operation in new[] { "from-state", "target-advice" })
+    foreach (var operation in heavy ? new[] { "target-advice" } : new[] { "from-state", "target-advice" })
     {
         Func<object?> action = operation == "from-state" ? () => Read(cold) : () => Advise(cold);
         var expected = Summary(action());
@@ -123,6 +126,10 @@ foreach (var workload in new[] { "gun", "canister", "mortar-solo", "mortar-pair"
             medianUs = samples.Select(sample => sample.Microseconds).Order().ElementAt(4),
             p90Us = samples.Select(sample => sample.Microseconds).Order().ElementAt(8), samples };
         results.Add(row); Console.WriteLine(JsonSerializer.Serialize(row));
+    }
+    if (heavy)
+    {
+        continue;
     }
     var command = new Dictionary<string, object?> { ["gameId"] = game, ["attemptId"] = "allocation-probe", ["expectedRevision"] = cut.Length,
         ["gunId"] = gun, ["ammunition"] = ammunition };
