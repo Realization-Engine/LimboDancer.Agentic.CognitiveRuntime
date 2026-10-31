@@ -1642,3 +1642,13 @@ Written on 2026-10-31. What the review of PR 85 (wire-fire-2, carrying PR 84) le
 | C6.42 ground-level Bore Sighting | Claude's PR 85 review (RC9P.3 corrected) | C6.42, p. 174 | A level fact for `GameStart.BoreSightBar`, gathered by Play from the chosen Location | A Location chosen on a building's upper level is accepted, and a Gun or Gun-mode mortar claims Case M there. True of every Gun before PR 84. |
 | C6.43 Bore Sighting with a joining SMC | Claude's PR 85 review (ruling RC9P.7) | C6.43, p. 174; C9.2 | An original-crew fact for the Bore Sighted weapon, recorded at setup, and a Rules refusal of Case M for a second participant who is not original manning Infantry | A pair whose second SMC did not man the weapon at setup may claim Case M when the record sets `BoreSighted`. |
 | W-C9 projector participation effects | Claude's PR 85 review | A7.35, C9.2, C9.3 | A Rules projection member that says which participants enter `PhaseFirers` and whether the second firer loses inherent FP; one shared read of the gun's type and caliber for Play and the projector | `GameProjector` decides that SMC firers enter `PhaseFirers` and passes literal arguments to `CrewLosesInherentFp`; it reads type and caliber from the catalog's printed values, Play from `OrdnanceReference`. Both read the same definition. |
+
+
+## 88. Added by Claude's review of PR 75 (Wiring 003 adapters, Final Fire, Fire Lane)
+
+Written on 2026-10-31. What the Wiring 003 Rules adapter supplement leaves out (review items 17 and 49); its design, `Designs/ASL Wiring 003 Rules Adapter Supplement.md`, records the rest.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| DC Placement into a Cave | The A23.3 claim (Wiring 003 supplement; review of PR 75, item 17) | A23.3, p. 90 ("[EXC: Cave; G11.8331]"); G11.8331 | A claim of G11.83 (Caves) and a Cave fact on the Placement Location | The Cave-aware `ScenarioA1DemolitionChargeRules.PlacementRefusal` overload refuses every Placement into a Cave, including the out-of-LOS Placement G11.8331 permits; no board in use has a Cave. |
+| Recombination of Assault Engineer and other units | The A11.5 claim, A25.01 (review of PR 75, item 17) | A25.01, p. 93; A1.32, p. 45 | A ruling on whether a squad recombined from an AE HS and a non-AE HS is an Assault Engineer (A1.32 does not settle it) | `ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage` returns no status and a "not resolved" reason for mixed ancestry; no counter in the catalog prints the AE trait. |

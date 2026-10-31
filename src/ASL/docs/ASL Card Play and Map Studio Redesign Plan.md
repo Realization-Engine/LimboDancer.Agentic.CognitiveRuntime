@@ -2362,7 +2362,7 @@ Turns tasks that reach this pass from another: D7.2 (pass 125) takes amphibious 
 
 **Pass 180: Nationalities II: new formations and nations** (new; 54 rows of the inventory). Counters: SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them. Needs first: 105 (Impulse Movement) for Human Wave; 115 (entrenching); 85 (WP); 110 (PF and PSK for other nations).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 56 rows: 3 partly, 53 not built. Claims: 56 open. Wiring: 0 of 56. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 56 rows: 3 partly, 53 not built. Claims: 55 open, 1 built (owners: A11.5 (Codex)). Wiring: 0 of 56. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
