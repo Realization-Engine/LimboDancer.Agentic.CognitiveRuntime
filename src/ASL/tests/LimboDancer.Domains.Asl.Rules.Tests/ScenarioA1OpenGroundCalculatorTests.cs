@@ -9,6 +9,36 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 /// </summary>
 public sealed class ScenarioA1OpenGroundCalculatorTests
 {
+    [Fact]
+    public void DashKeepsUnknownViewsSeparateFromNoBenefit()
+    {
+        Assert.Null(ScenarioA1Dash.QualifiesAgainstViews([(null, false)]));
+        Assert.False(ScenarioA1Dash.QualifiesAgainstViews([(null, true)]));
+        Assert.True(ScenarioA1Dash.QualifiesAgainstViews([(null, false), (false, false)]));
+        Assert.False(ScenarioA1Dash.QualifiesAgainstViews([(true, false), (false, true)]));
+    }
+
+    [Fact]
+    public void EvadeDestinationsRequireSeasonOnlyWhenItChangesTheChoice()
+    {
+        var uncertain = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, null), ("woods", true, true, false, false)]);
+        Assert.NotNull(uncertain.Refusal);
+        var alone = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, null)]);
+        Assert.Null(alone.Refusal);
+        Assert.Equal(["grain"], alone.Destinations);
+        var october = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, true), ("woods", true, true, false, false)]);
+        Assert.Equal(["woods"], october.Destinations);
+
+        // A4.151: Enterable is Accessible, and grain is Accessible in every month, so with no month and nothing else open it is the destination.
+        var besideEnemy = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, null), ("woods", true, true, true, false)]);
+        Assert.Null(besideEnemy.Refusal);
+        Assert.Equal(["grain"], besideEnemy.Destinations);
+        var known = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("open", true, true, false, true), ("woods", true, true, false, false)]);
+        Assert.Null(known.Refusal);
+        Assert.Equal(["woods"], known.Destinations);
+        Assert.Equal(["grain", "woods"], ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, false), ("woods", true, true, false, false)]).Destinations);
+    }
+
     private static readonly string?[] TerrainKeys = ["open-ground", "grain", "brush", "woods", "orchard", "marsh", "wooden-rubble", "stone-rubble", "unknown", null];
 
     private static readonly int?[] MonthsAndNone = [null, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
@@ -428,9 +458,18 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
         Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground")));
         Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "grain", null, seen: true)));
 
-        // A caller written before the new facts (Play's gatherer until W-A10.531) gives the old reading for Open Ground.
-        Assert.Equal("loses-concealment", Concealment(Advance(false, "open-ground", null, null, null, true)));
+        // W-A10.531: missing smoke or cover facts cannot grant a concealment loss.
+        Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground", null, null, null, true)));
+        Assert.Equal("keeps-concealment", Concealment(Advance(false, "open-ground", null, null, null, false)));
         Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground", 13, seen: true)));
+
+        // RA10.7 as refined: grain with no month is not-evaluated unless the seer flag settles it; with no Good Order enemy in LOS (A12.14 Case B)
+        // the season cannot matter, so the "?" stays.
+        Assert.Equal("keeps-concealment", Concealment(Advance(false, "grain", null, seen: false)));
+
+        // A known SMOKE settles "not Open Ground" alone, with cover absent; a known absence of SMOKE leaves the absent cover fact deciding.
+        Assert.Equal("keeps-concealment", Concealment(Advance(false, "open-ground", smoke: true, cover: null, seen: true)));
+        Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground", smoke: false, cover: null, seen: true)));
     }
 
     private sealed class Reader(RoutLosFacts los, RoutCoverFacts cover) : IRoutFactReader

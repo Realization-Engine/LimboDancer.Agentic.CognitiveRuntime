@@ -338,9 +338,8 @@ public static class ScenarioA1RuleContracts
     /// hidden. What is under the "?" is the owner's, and the calculator does not need it. The LOS is read only when night and the Location leave the
     /// question open, so the owner settles a woods advance alone. The opponent names the advancer by its "?" stack, which shows its side and Location
     /// and not what is under it (the review of Wiring Prompt 001, PS4); its identity reaches the calculator as unknown. The month may be unknown (a game
-    /// that names none): grain is then not evaluated (ruling RA10.7). SMOKE and a wreck or AFV are on the map for both sides; an absent
-    /// <c>smokeInLocation</c> or <c>inLocationCover</c> reads as none, the contract's reading before these facts, until Play's gatherer gives them
-    /// (W-A10.531).
+    /// that names none): grain is then not evaluated, unless the seer flag is false, when the season cannot matter (ruling RA10.7). SMOKE and a wreck or AFV are on the map for both sides; an absent
+    /// <c>smokeInLocation</c> or <c>inLocationCover</c> remains unknown when it could change the answer (W-A10.531).
     /// </summary>
     [RuleContract]
     private static RuleContract AdvanceConcealment() => new("a12.14-advance-concealment", "Concealment lost on advancing",
@@ -374,6 +373,11 @@ public static class ScenarioA1RuleContracts
             bool? inLocation = null;
             var loses = ScenarioA1AdvanceCalculator.LosesConcealment(facts.Flag("night")!.Value, () =>
             {
+                if (facts.Flag("enemyGoodOrderInLosWithin16") == false)
+                {
+                    return false;
+                }
+
                 inLocation = ScenarioA1OpenGroundCalculator.OpenGroundTo(location, view, OpenGroundPurpose.Concealment);
                 if (inLocation is null)
                 {
@@ -383,6 +387,12 @@ public static class ScenarioA1RuleContracts
 
                 if (inLocation == false)
                 {
+                    return false;
+                }
+
+                if (facts.Flag("smokeInLocation") is null || facts.Flag("inLocationCover") is null)
+                {
+                    unknown = "SMOKE and cover in the Location must be known to decide concealment loss";
                     return false;
                 }
 
