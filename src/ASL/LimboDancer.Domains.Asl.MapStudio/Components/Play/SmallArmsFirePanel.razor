@@ -9,7 +9,8 @@
     the @DisplayText.Side(Side) side can see into or at any Location. The reviewed Fire package resolves the attack, and only when every outcome the dice can reach
     is decided.
 </RuleHelp>
-<div class="toolbar">
+<div class="action-form">
+<ActionFormGroup Legend="Firing group">
     <label>
         From
         <select id="fire-from" value="@From" @onchange="@(args => OnFrom.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -71,20 +72,10 @@
             </select>
         </label>
     }
-    <label>
-        Target
-        <select id="fire-target" value="@Target" @onchange="@(args => OnTarget.InvokeAsync(args.Value as string ?? string.Empty))">
-            <option value="">choose</option>
-            @foreach (var at in Targets)
-            {
-                @* Pass 31c (design section 14, R5): a target is read by range before any proposal; one that no ticked firer or weapon reaches is
-                   listed and not offered. No LOS is read (A6.11). *@
-                <option value="@at" disabled="@TargetsOut.Contains(at)">@Say($"{at}")@(TargetNotes.TryGetValue(at, out var note) ? $": {note}" : "")</option>
-            }
-        </select>
-    </label>
-    <PickedOption For="fire-target" Options="@Targets" Value="@Target" OnChange="@OnTarget" />
-    <LocationField Id="fire-free-target" Label="Or any Location" Name="the target" Value="@FreeTarget" OnChange="@OnFreeTarget" />
+</ActionFormGroup>
+<ActionFormGroup Legend="Target">
+    <ActionLocationChoice Id="fire-target" EntryId="fire-free-target" Value="@Target" Choices="@Targets" Unavailable="@TargetsOut" Notes="@TargetNotes"
+        ResetToken="@ResetToken" OnSuggested="OnTarget" OnFree="OnFreeTarget" OnEditingChanged="OnTargetEditing" />
     @* Pass 60 (ruling R60.15): a FT or MOL attack may name an AFV the side sees in the target Location as its target (A22.34, A22.612). *@
     @if (VehicleChoices.Count > 0)
     {
@@ -108,14 +99,24 @@
             <button type="button" class="link" id="fire-range-show" @onclick="@(() => OnShowRange.InvokeAsync())">Show the range on the map</button>
         </details>
     }
+</ActionFormGroup>
+<ActionFormGroup Legend="Additional choices">
     @if (Phase == "mph")
     {
         <label title="A8.15: at the hexside the moving stack crossed, with LOS to both its ends; Area Fire with no TEM, FFMO, or FFNAM, and no Residual FP."><input id="fire-snap-shot" type="checkbox" checked="@SnapShot" @onchange="@(args => OnSnapShot.InvokeAsync(args.Value is true))" /> Snap Shot</label>
     }
     @if (Phase is "pfph" or "afph" or "dfph")
     {
+        @if (sprayOpen || Spray.Length > 0)
+        {
         <LocationField Id="fire-spray" Label="Spray also" Name="the Location sprayed" Value="@Spray" OnChange="@OnSpray"
             Title="A7.34, A9.5: MGs, and squads whose Range is underscored (to three hexes), attack a second Location that shares a hexside with the target, or the next level of its building hex, as Area Fire on the same DR. Every member of the group must be capable of it." />
+            <button type="button" class="link" @onclick="RemoveSpray">Remove spraying fire</button>
+        }
+        else
+        {
+            <button type="button" class="link" @onclick="@(() => sprayOpen = true)">Add spraying fire</button>
+        }
     }
     @if (Phase == "mph" && LanesOffered)
     {
@@ -136,6 +137,8 @@
             </select>
         </label>
     }
+</ActionFormGroup>
+<ActionProposalArea Feedback="@ReadyFeedback">
     @if (FtWithOthers)
     {
         <span id="fire-ft-alone" class="toolbar-note" role="status">A FT fires alone: untick the other units and weapons, and choose no director (A22.31).</span>
@@ -144,8 +147,9 @@
     {
         <span id="fire-tank-mg" class="toolbar-note" role="status">Tick the BMG or the CMG that fires: a tank's MA fires as ordnance (D3.5).</span>
     }
-    <button id="propose-fire" disabled="@(SelectedFirers.Count == 0 || FtWithOthers || TankWithoutMg || (FreeTarget.Trim().Length == 0 && Target.Length == 0))" aria-describedby="@(FtWithOthers ? "fire-ft-alone" : TankWithoutMg ? "fire-tank-mg" : null)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
+    <button id="propose-fire" disabled="@(SelectedFirers.Count == 0 || FtWithOthers || TankWithoutMg || (TargetEditing || Target.Length == 0))" aria-describedby="@(FtWithOthers ? "fire-ft-alone" : TankWithoutMg ? "fire-tank-mg" : null)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
     <button id="fire-clear" class="link" @onclick="@(() => OnClear.InvokeAsync())">clear</button>
+</ActionProposalArea>
 </div>
 </ActionSection>
 
@@ -287,7 +291,19 @@
     public string Target { get; set; } = string.Empty;
 
     [Parameter]
-    public string FreeTarget { get; set; } = string.Empty;
+    public bool TargetEditing { get; set; }
+    [Parameter] public int ResetToken { get; set; }
+    [Parameter] public EventCallback<bool> OnTargetEditing { get; set; }
+    private bool sprayOpen;
+    private int lastReset;
+    protected override void OnParametersSet()
+    {
+        if (lastReset != ResetToken) { sprayOpen = false; lastReset = ResetToken; }
+    }
+    private async Task RemoveSpray() { sprayOpen = false; await OnSpray.InvokeAsync(string.Empty); }
+    private string? ReadyFeedback => TargetEditing ? "Finish or clear the location edit before proposing fire."
+        : SelectedFirers.Count == 0 ? "Choose the firing location and select the units or weapons that fire."
+        : Target.Length == 0 ? "Choose a target or pick it on the map." : $"Target: {Say(Target)}";
 
     [Parameter]
     public bool SnapShot { get; set; }

@@ -1,6 +1,6 @@
 @* Plan C18 (pass 26): a Gun's CA change without fire (C3.22), and how each target Location stands against its Covered Arc (C3.2), read in the map's frame on
    every board, reversed or not (ruling R26.6). The page keeps the chosen hexspine and reads the arc. *@
-<div class="toolbar">
+<div class="toolbar action-fields">
     <FacingPicker Id="ordnance-turn" Label="Turn to" Value="@Facing" OnChange="@(facing => OnFacing.InvokeAsync(facing))"
         Title="C3.22: the Gun changes its CA without firing, and fires no more this phase; in the PFPh neither it nor its crew moves this Player Turn." />
     <button id="propose-turn-gun" @onclick="@(() => OnPropose.InvokeAsync())">Propose: turn without firing</button>

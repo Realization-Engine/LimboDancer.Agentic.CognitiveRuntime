@@ -1,7 +1,7 @@
 @* Plan N08 (pass 27): where a unit infiltrates to after an Original 2 by its attack or 12 against it (A11.22). The planner supplies the units the
    view may declare for (ruling R23.1) and their destinations, as the side sees them (pass 70, ruling R70.26); a unit above its IPC offers its SW to drop
    (A11.21). The page keeps the declarations and submits them with the round. *@
-<div class="toolbar" id="cc-infiltrations">
+<div class="toolbar action-fields" id="cc-infiltrations">
     <span class="muted">Infiltration on an Original 2 or 12 (A11.22):</span>
     @foreach (var unit in Units)
     {
@@ -17,7 +17,7 @@
         </label>
         @if (unit.Drops.Count > 0)
         {
-            <span class="toolbar-note">@(unit.Destinations.Count == 0 ? "above its IPC, it infiltrates once it drops enough (A11.21):" : "above its IPC, it drops (A11.21):")</span>
+            <span class="toolbar action-fields-note">@(unit.Destinations.Count == 0 ? "above its IPC, it infiltrates once it drops enough (A11.21):" : "above its IPC, it drops (A11.21):")</span>
             @foreach (var weapon in unit.Drops)
             {
                 <label><input class="cc-infiltration-drop" type="checkbox" data-unit="@unit.Id" data-weapon="@weapon.Id" checked="@Dropped.Contains(weapon.Id)" @onchange="@(args => OnDrop.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Say(weapon.Label)</label>

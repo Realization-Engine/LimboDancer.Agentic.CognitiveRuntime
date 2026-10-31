@@ -26,17 +26,7 @@
 }
 else
 {
-<label>
-    Target
-    <select id="ordnance-target" value="@Target" @onchange="@(args => OnTarget.InvokeAsync(args.Value as string ?? string.Empty))">
-        <option value="">choose</option>
-        @foreach (var at in Targets)
-        {
-            <option value="@at">@Say($"{at}")</option>
-        }
-    </select>
-</label>
-<PickedOption For="ordnance-target" Options="@Targets" Value="@Target" OnChange="@OnTarget" />
+<ActionLocationChoice Id="ordnance-target" AllowFreeEntry="false" Value="@Target" Choices="@Targets" OnSuggested="OnTarget" />
 }
 @if (CanisterAims is null && Ammunition != AmmunitionKind.None && Vehicles.Count > 0)
 {

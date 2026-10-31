@@ -1,6 +1,7 @@
 @* Plan A08 (pass 28b): two HS Recombining into a squad (A1.32). The page gives the HS the view sees, the partners of the first, and the leaders with
    it (ruling R23.1); choosing another first HS clears the partner and the leader, which the page does in its OnOne handler (section 15.3). *@
-<div class="toolbar">
+<div class="action-form">
+<ActionFormGroup Legend="Units and leader">
     <label>
         HS
         <select id="recombine-one" value="@One" @onchange="@(args => OnOne.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -22,11 +23,14 @@
             <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
         </select>
     </label>
+</ActionFormGroup>
+<ActionProposalArea>
     <button id="propose-recombine" disabled="@(!HalfSquads.Any(unit => unit.Id == One) || !Partners.Contains(Two))" aria-describedby="propose-recombine-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: recombine</button>
     @if (!HalfSquads.Any(unit => unit.Id == One) || !Partners.Contains(Two))
     {
         <span id="propose-recombine-ready" class="toolbar-note">Choose the two HS that Recombine.</span>
     }
+</ActionProposalArea>
 </div>
 
 @code {

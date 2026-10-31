@@ -4,23 +4,25 @@
    is toggled. *@
 @foreach (var side in Sides)
 {
-    <div class="toolbar cc-side" data-side="@side.Side">
+    <div class="toolbar action-fields cc-side" data-side="@side.Side">
         <span>@DisplayText.Side(side.Side)@(side.Attacker ? " (ATTACKER)" : "")</span>
-        <span>attack with</span>
+<ActionFormGroup Legend="Attackers">
         @foreach (var unit in side.Attackers)
         {
             <label><input class="cc-attacker" type="checkbox" data-unit="@unit.Id" disabled="@unit.Broken" checked="@Attackers.Contains(unit.Id)" @onchange="@(args => OnAttacker.InvokeAsync(new UnitSelectionList.Toggle(unit.Id, args.Value is true)))" /> @Say(unit.Label)</label>
         }
-        <span>attack</span>
+</ActionFormGroup>
+<ActionFormGroup Legend="Defenders">
         @foreach (var unit in side.Defenders)
         {
             <label><input class="cc-defender" type="checkbox" data-unit="@unit.Id" data-by="@side.Side" checked="@Defenders.Contains(unit.Id)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit.Id, args.Value is true)))" /> @Say(unit.Label)</label>
         }
+</ActionFormGroup>
     </div>
 }
 @if (Declaring)
 {
-    <div class="toolbar" id="cc-attack">
+    <div class="toolbar action-fields" id="cc-attack">
         <label>
             Director
             <select id="cc-director" value="@Director" @onchange="@(args => OnDirector.InvokeAsync(args.Value as string ?? string.Empty))">

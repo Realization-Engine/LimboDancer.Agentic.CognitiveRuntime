@@ -2,7 +2,7 @@
    it may read of the target; each button proposes, and the gate detonates only once confirmed. Pass 60 (ruling R60.16): a DC whose Location holds an
    enemy AFV the side sees may name it instead (A23.5). Its charge, Location, and AFV are said in the view's words (the UI review of pass 60). *@
 <ActionSection Title="Placed DCs" Key="placed-dcs">
-<div class="toolbar">
+<div class="toolbar action-fields">
     @foreach (var placed in Charges)
     {
         <button class="detonate-dc" data-dc="@placed.Charge" @onclick="@(() => OnDetonate.InvokeAsync(placed.Charge))">Propose: detonate @Say(placed.Charge) in @Say(placed.Target) (30 FP@(placed.TargetsConcealed ? ", halved" : "")@(placed.Cx ? ", +1 CX" : ""); A23.4)</button>

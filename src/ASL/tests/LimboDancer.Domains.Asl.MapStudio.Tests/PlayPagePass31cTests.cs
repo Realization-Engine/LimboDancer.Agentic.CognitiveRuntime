@@ -628,7 +628,7 @@ public sealed class PlayPagePass31cTests : IDisposable
 
         page.Find("#move-to-pick").Click();
         Assert.Equal("true", page.Find("span.location-field:has(#move-to)").GetAttribute("data-armed"));
-        Assert.Equal("Stop picking", page.Find("#move-to-pick").TextContent);
+        Assert.Equal("Cancel picking", page.Find("#move-to-pick").TextContent);
         Assert.Contains("The next hex clicked on the map fills \"To\", at ground level.", page.Find("#play-picking").TextContent, StringComparison.Ordinal);
         Assert.Equal(string.Empty, page.Find("#move-to").GetAttribute("value"));
 
@@ -651,7 +651,7 @@ public sealed class PlayPagePass31cTests : IDisposable
         page.ViewAs("german");
         Assert.Empty(page.FindAll("#play-picking"));
         Assert.Equal("false", page.Find("span.location-field:has(#move-to)").GetAttribute("data-armed"));
-        Assert.Equal("Pick on the map", page.Find("#move-to-pick").TextContent);
+        Assert.Equal("Pick \"To\" on map", page.Find("#move-to-pick").TextContent);
     }
 
     // Design D15: the card opens from the header's link and takes no room in the workspace; the units table is a panel of the activity strip, one

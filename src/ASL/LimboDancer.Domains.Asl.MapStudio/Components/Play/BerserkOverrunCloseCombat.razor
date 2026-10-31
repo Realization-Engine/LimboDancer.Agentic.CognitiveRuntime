@@ -1,7 +1,7 @@
 @* Pass 27 (ruling R27.3): the CC of a berserk Infantry OVR onto a lone SMC, resolved at once in the MPh once the DEFENDER's window on the entry
    has closed (A4.152, A15.432). Every berserk unit there attacks the SMC, and the SMC attacks them back when it can, since that never costs it
    anything. Every view sees the notice; only a view that may act for the phasing side proposes the CC. *@
-<div class="toolbar" id="overrun-cc" data-location="@Location" role="status" aria-live="polite">
+<div class="toolbar action-fields" id="overrun-cc" data-location="@Location" role="status" aria-live="polite">
     <span class="fail">
         @Say(string.Join(", ", Attackers)) overran the lone @Say(Smc) in @Say(Location): their CC comes now, before anything else this MPh@(SmcAttacks ? Say($", and {Smc} attacks back") : Say($"; {Smc} cannot attack back")). If both survive they are
         held in Melee for the CCPh (A4.152, A15.432).

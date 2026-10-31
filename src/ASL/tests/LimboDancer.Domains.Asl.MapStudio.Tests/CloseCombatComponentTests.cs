@@ -338,6 +338,8 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Equal("g1", panel.Find(".fire-alone").GetAttribute("data-unit"));
         Assert.Single(panel.FindAll(".fire-alone"));
         Assert.Equal(["", "g1", "g2"], panel.FindAll("#fire-mol option").Select(option => option.GetAttribute("value")));
+        Assert.Empty(panel.FindAll("#fire-spray"));
+        panel.FindAll("button").Single(button => button.TextContent == "Add spraying fire").Click();
         Assert.NotNull(panel.Find("#fire-spray"));
         Assert.Empty(panel.FindAll("#fire-snap-shot"));
         Assert.Empty(panel.FindAll("#fire-lane-weapon"));
@@ -347,7 +349,7 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Equal("bd04:E5:0", from);
 
         // A typed Location is a target; the MPh brings Snap Shot and the Fire Lane of a chosen MG; a firing leader his partner.
-        panel.Render(parameters => parameters.Add(item => item.FreeTarget, "bd04:E8:0").Add(item => item.Phase, "mph").Add(item => item.MolAllowed, false)
+        panel.Render(parameters => parameters.Add(item => item.Target, "bd04:E8:0").Add(item => item.Phase, "mph").Add(item => item.MolAllowed, false)
             .Add(item => item.Partners, ["l2"]));
         Assert.False(panel.Find("#propose-fire").HasAttribute("disabled"));
         Assert.NotNull(panel.Find("#fire-snap-shot"));

@@ -228,6 +228,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         var page = Start("german", "russian", ("g1", "attacker-squad", hexes.One), ("r1", "defender-squad", hexes.Two));
         Advance(page, 1);
         Assert.Equal("pfph", live.History("village")!.Current!.Phase);
+        page.FindAll("button").Single(button => button.TextContent == "Add spraying fire").Click();
         Assert.NotNull(page.Find("#fire-spray"));
         page.Find(".opportunity-unit[data-unit='g1']").Change(true);
         Commit(page, "#propose-opportunity");

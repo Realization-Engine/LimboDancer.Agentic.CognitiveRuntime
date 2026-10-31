@@ -1,7 +1,7 @@
 @* Plan C05 (pass 27): units held in Melee withdraw to an ADJACENT Location with no Known enemy unit (A11.2, A11.21), and a broken one must try (A11.16). The
    planner supplies each unit's destinations, as the side sees them (pass 70, ruling R70.26), and whether it must try; a unit above its IPC offers its SW to
    drop, which stay unpossessed in the Location (A11.21). The page keeps the declarations and submits them with the round. *@
-<div class="toolbar" id="cc-withdrawals">
+<div class="toolbar action-fields" id="cc-withdrawals">
     @foreach (var unit in Units)
     {
         <label>
@@ -16,7 +16,7 @@
         </label>
         @if (unit.Drops.Count > 0)
         {
-            <span class="toolbar-note">@(unit.Destinations.Count == 0 ? "above its IPC, it withdraws once it drops enough (A11.21):" : "above its IPC, it drops (A11.21):")</span>
+            <span class="toolbar action-fields-note">@(unit.Destinations.Count == 0 ? "above its IPC, it withdraws once it drops enough (A11.21):" : "above its IPC, it drops (A11.21):")</span>
             @foreach (var weapon in unit.Drops)
             {
                 <label><input class="cc-drop" type="checkbox" data-unit="@unit.Id" data-weapon="@weapon.Id" checked="@Dropped.Contains(weapon.Id)" @onchange="@(args => OnDrop.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Say(weapon.Label)</label>

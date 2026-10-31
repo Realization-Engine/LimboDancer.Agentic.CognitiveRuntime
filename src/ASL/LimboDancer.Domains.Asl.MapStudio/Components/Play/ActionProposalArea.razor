@@ -1,0 +1,11 @@
+<div class="action-proposal">
+    @if (!string.IsNullOrWhiteSpace(Feedback))
+    {
+        <p class="action-feedback" role="status">@Feedback</p>
+    }
+    <div class="action-buttons">@ChildContent</div>
+</div>
+@code {
+    [Parameter] public string? Feedback { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

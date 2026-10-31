@@ -1,0 +1,112 @@
+@implements IDisposable
+<div class="action-location-choice" @onkeydown="CancelKey">
+    <label for="@Id">@Label</label>
+    <select id="@Id" value="@Value" @onchange="Select">
+        <option value="">Choose location</option>
+        @if (Value.Length > 0 && !Choices.Contains(Value))
+        {
+            <option value="@Value">@Say(Value) (entered location)</option>
+        }
+        @foreach (var choice in Choices)
+        {
+            <option value="@choice" disabled="@Unavailable.Contains(choice)">@Say(choice)@(Notes.TryGetValue(choice, out var note) ? $": {note}" : "")</option>
+        }
+    </select>
+    <PickedOption For="@Id" Options="@EnabledChoices" Value="@Value" OnChange="SelectValue" />
+    @if (AllowFreeEntry)
+    {
+    <button type="button" class="link" aria-expanded="@manual" @onclick="ToggleManual">@(manual ? "Close location editor" : "Enter another location")</button>
+    <div hidden="@(!manual)">
+        <LocationField @key="(ResetToken, editorGeneration)" Id="@EditorId" Label="Location" Name="@Label.ToLowerInvariant()" Value="@Value"
+                       OnChange="FreeValue" ValidateSyntax="true" OnEditingChanged="OnEditingChanged" Visible="@manual" />
+    </div>
+    @if (!manual)
+    {
+        <button type="button" class="pick-on-map" @onclick="Pick">Pick @Label.ToLowerInvariant() on map</button>
+    }
+    }
+    else if (Picking is not null)
+    {
+        <button type="button" class="pick-on-map" aria-pressed="@(Picking.Armed == Id)" @onclick="PickRestricted">@(Picking.Armed == Id ? "Cancel picking" : $"Pick {Label.ToLowerInvariant()} on map")</button>
+        @if (pickNote is not null) { <span class="action-feedback" role="status">@pickNote</span> }
+    }
+</div>
+@code {
+    [CascadingParameter(Name = "Picking")] public LocationPicking? Picking { get; set; }
+    [CascadingParameter(Name = "Say")] public Func<string, string>? Words { get; set; }
+    [Parameter, EditorRequired] public string Id { get; set; } = string.Empty;
+    [Parameter] public string Label { get; set; } = "Target";
+    [Parameter] public string? EntryId { get; set; }
+    [Parameter] public bool AllowFreeEntry { get; set; } = true;
+    [CascadingParameter(Name = "ActionSectionVisible")] public bool SectionVisible { get; set; } = true;
+    private string EditorId => EntryId ?? $"{Id}-entry";
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public IReadOnlyList<string> Choices { get; set; } = [];
+    [Parameter] public IReadOnlySet<string> Unavailable { get; set; } = new HashSet<string>();
+    [Parameter] public IReadOnlyDictionary<string, string> Notes { get; set; } = new Dictionary<string, string>();
+    [Parameter] public int ResetToken { get; set; }
+    [Parameter] public EventCallback<string> OnSuggested { get; set; }
+    [Parameter] public EventCallback<string> OnFree { get; set; }
+    [Parameter] public EventCallback<bool> OnEditingChanged { get; set; }
+    private bool manual;
+    private int editorGeneration;
+    private int previousReset;
+    private long seen;
+    private string previousPick = string.Empty;
+    private string? pickNote;
+    private IReadOnlyList<string> EnabledChoices => Choices.Where(choice => !Unavailable.Contains(choice)).ToArray();
+    private string Say(string text) => Words?.Invoke(text) ?? text;
+    protected override void OnInitialized() => seen = Picking?.Serial ?? 0;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ResetToken != previousReset) { manual = false; previousReset = ResetToken; }
+        if (AllowFreeEntry || Picking is null) return;
+        if (!SectionVisible && Picking.Armed == Id) Picking.Arm(null, null);
+        var fresh = seen != Picking.Serial;
+        seen = Picking.Serial;
+        if (!fresh || Picking.Armed != Id || !BoardLocation.TryParse(Picking.Picked, out var picked)) return;
+        var matches = EnabledChoices.Where(choice => BoardLocation.TryParse(choice, out var at) && at.Board == picked.Board && at.Hex == picked.Hex).ToArray();
+        if (matches.Length == 1) await SelectValue(matches[0]);
+        else pickNote = matches.Length == 0 ? "No offered destination is in that hex. Pick another hex or cancel."
+            : "Choose the required level using one of the Use buttons above.";
+    }
+    private Task Select(ChangeEventArgs args) => SelectValue(args.Value as string ?? string.Empty);
+    private async Task SelectValue(string value)
+    {
+        if (Unavailable.Contains(value) || (!AllowFreeEntry && value.Length > 0 && !Choices.Contains(value))) return;
+        if (Picking?.Armed == Id || Picking?.Armed == EditorId) Picking.Arm(null, null);
+        pickNote = null;
+        manual = false;
+        editorGeneration++;
+        await OnEditingChanged.InvokeAsync(false);
+        await OnSuggested.InvokeAsync(value);
+    }
+    private Task FreeValue(string value) => OnFree.InvokeAsync(value);
+    private void ToggleManual() => manual = !manual;
+    private void Pick()
+    {
+        manual = true;
+        Picking?.Arm(EditorId, $"fills {Label.ToLowerInvariant()}");
+    }
+    private async Task PickRestricted()
+    {
+        if (Picking is null) return;
+        if (Picking.Armed == Id)
+        {
+            Picking.Arm(null, null);
+            pickNote = null;
+            if (EnabledChoices.Contains(previousPick)) await OnSuggested.InvokeAsync(previousPick);
+            return;
+        }
+        previousPick = Value;
+        seen = Picking.Serial;
+        Picking.Arm(Id, $"chooses {Label.ToLowerInvariant()} from the offered locations");
+        pickNote = "Pick a hex on the map; only offered locations can be selected.";
+        await OnSuggested.InvokeAsync(string.Empty);
+    }
+    private Task CancelKey(KeyboardEventArgs args) => args.Key == "Escape" && Picking?.Armed == Id ? PickRestricted() : Task.CompletedTask;
+    public void Dispose()
+    {
+        if (Picking?.Armed == Id) { Picking.Armed = null; Picking.ArmedLabel = null; }
+    }
+}

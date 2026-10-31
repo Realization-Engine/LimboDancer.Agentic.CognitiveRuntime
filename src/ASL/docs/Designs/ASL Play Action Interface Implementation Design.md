@@ -1,6 +1,6 @@
 # ASL Play Action Interface Implementation Design
 
-Status: approved for implementation and merge after green CI by the user on 2026-10-31.
+Status: approved for implementation. The user subsequently withdrew merge authorization on 2026-10-31 and requires a Studio demo before explicitly approving any merge to main.
 
 Date: 2026-10-31. Baseline: `96fcf297`.
 

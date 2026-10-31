@@ -20,7 +20,8 @@
     FP (C13.2, C13.24). A Panzerschreck, from September 1943, fires HEAT at a vehicle on its own table (10, 9, 8, 7 at 1 to 4 hexes), +2 from a
     ground-level building (not above it, nor pinned there), and is removed on 11 or 12 (C13.47, C13.8). Both are manufactured counters.
 </RuleHelp>
-<div class="toolbar">
+<div class="action-form">
+<ActionFormGroup Legend="Weapon and assistance">
     <label>
         Weapon
         <select id="ordnance-gun" value="@Gun" @onchange="@(args => OnGun.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -58,6 +59,8 @@
             </select>
         </label>
     }
+</ActionFormGroup>
+<ActionFormGroup Legend="Target and ammunition">
     @Target
     @if (IntensiveAllowed)
     {
@@ -67,11 +70,14 @@
     {
         <span class="muted" id="ordnance-pf-usage">@usage</span>
     }
+</ActionFormGroup>
+<ActionProposalArea>
     <button id="propose-ordnance" disabled="@(!Ready)" aria-describedby="propose-ordnance-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
     @if (!Ready)
     {
         <span id="propose-ordnance-ready" class="toolbar-note">@(ReadyNote ?? "Choose the weapon and its target, or its aim for Canister.")</span>
     }
+</ActionProposalArea>
 </div>
 </ActionSection>
 

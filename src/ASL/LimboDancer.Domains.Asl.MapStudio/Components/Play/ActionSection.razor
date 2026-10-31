@@ -3,11 +3,16 @@
    heading changes that, and the choice holds while the section stays on the page. Everything in a closed section stays in the page. *@
 <details class="play-section" data-section="@Key" open="@Open">
     <summary @onclick="Toggle" @onclick:preventDefault="true"><h4>@Title</h4></summary>
-    @ChildContent
+    <CascadingValue Name="ActionSectionVisible" Value="@(Open && ParentVisible)">
+        <CascadingValue Name="CompactActionHelp" Value="true">
+            <div class="action-form">@ChildContent</div>
+        </CascadingValue>
+    </CascadingValue>
 </details>
 
 @code {
     private bool? chosen;
+    [CascadingParameter(Name = "ActionSectionVisible")] public bool ParentVisible { get; set; } = true;
 
     /// <summary>The sections the phase is about, by key, which start open; the page cascades them. Without them every section starts open.</summary>
     [CascadingParameter(Name = "PrimarySections")]

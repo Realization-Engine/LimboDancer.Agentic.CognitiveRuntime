@@ -13,24 +13,18 @@
         edge, and the APh does not end while one still may (A2.5; ruling R25.1).
     </p>
 }
-<div class="toolbar">
+<div class="action-form">
     <UnitSelectionList Rows="@Units" Selected="@Selected" CssClass="advance-unit" Legend="Units advancing" Empty="none may advance now." OnToggle="@OnToggle" />
-    <label>
-        To
-        <select id="advance-to" aria-describedby="@(Waiting.Count > 0 ? "advance-help-summary advance-entry" : "advance-help-summary")" value="@To" @onchange="@(args => OnTo.InvokeAsync(args.Value as string ?? string.Empty))">
-            <option value="">choose</option>
-            @foreach (var to in Destinations)
-            {
-                <option value="@to">@Say(to)</option>
-            }
-        </select>
-    </label>
-    <PickedOption For="advance-to" Options="@Destinations" Value="@To" OnChange="@OnTo" />
+<ActionFormGroup Legend="Destination">
+    <ActionLocationChoice Id="advance-to" Label="Destination" AllowFreeEntry="false" Value="@To" Choices="@Destinations" OnSuggested="OnTo" />
+</ActionFormGroup>
+<ActionProposalArea>
     <button id="propose-advance-units" disabled="@(Selected.Count == 0 || To.Trim().Length == 0)" aria-describedby="propose-advance-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: advance</button>
     @if (Selected.Count == 0 || To.Trim().Length == 0)
     {
         <span id="propose-advance-ready" class="toolbar-note">Check the units advancing and choose where.</span>
     }
+</ActionProposalArea>
     <MapExitAction SelectId="advance-exit" ButtonId="propose-advance-exit" DescribedBy="advance-help-summary" Edges="@Edges" Edge="@Edge" Ready="@(Selected.Count > 0)" OnEdge="@OnEdge" OnPropose="@OnExit" />
 </div>
 </ActionSection>

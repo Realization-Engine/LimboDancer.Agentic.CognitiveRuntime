@@ -7,7 +7,7 @@
     it has more; a MG becomes a LMG of the vehicle's nationality, a U.S. one a British LMG (D10.5, D10.51, D10.52). Whatever the dr, the vehicle is marked
     Scrounged and its scroungeable weapons Disabled, and the unit and what it salvages are TI for the rest of the Player Turn (D10.5).
 </RuleHelp>
-<div class="toolbar">
+<div class="toolbar action-fields">
     @foreach (var vehicle in Vehicles)
     {
         var chosen = Chosen.GetValueOrDefault(vehicle.Id, string.Empty);

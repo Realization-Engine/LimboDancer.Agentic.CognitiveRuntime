@@ -7,7 +7,7 @@
     with the Extent of Error halved; or in a hex exactly three hexes away, then a Random Direction DR. It Illuminates three hexes around it until
     the end of the CCPh; firing it is not firing (E1.92, E1.923).
 </RuleHelp>
-<div class="toolbar">
+<div class="toolbar action-fields">
     <label>Fired by
         <select id="starshell-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
@@ -25,7 +25,7 @@
     <button id="propose-starshell" disabled="@(!Firers.Contains(Unit) || (Method != OwnHex && At.Trim().Length == 0))" aria-describedby="propose-starshell-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire a Starshell</button>
     @if (!Firers.Contains(Unit) || (Method != OwnHex && At.Trim().Length == 0))
     {
-        <span id="propose-starshell-ready" class="toolbar-note">Choose the firer, and the Location unless it fires into its own hex.</span>
+        <span id="propose-starshell-ready" class="toolbar action-fields-note">Choose the firer, and the Location unless it fires into its own hex.</span>
     }
 </div>
 </ActionSection>

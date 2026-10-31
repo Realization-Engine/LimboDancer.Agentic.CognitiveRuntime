@@ -2,7 +2,7 @@
    (designs D12 and D13): the field shows the Location in words and reads the words, the short "G4" and "G4:1", and the identifier; it takes the
    hex picked on the map ("Use G4"), can be armed so the next hex clicked fills it, offers the hex's levels, and, as a route, takes one hex a click. *@
 @implements IDisposable
-<span class="location-field" data-armed="@(Armed ? "true" : "false")">
+<span class="location-field" data-armed="@(Armed ? "true" : "false")" @onkeydown="CancelOnEscape">
     <label title="@Title">@Label <input id="@Id" value="@Shown" disabled="@Disabled" @oninput="CaptureTyped" @onkeydown="ApplyTypedOnEnter" @onchange="@(args => Typed(args.Value as string ?? string.Empty))" size="@Size" placeholder="@Placeholder" aria-describedby="@DescribedBy" /></label>
     @if (!Many && Levels is { Count: > 1 } levels && BoardLocation.TryParse(Value, out var at))
     {
@@ -15,9 +15,9 @@
     }
     @if (!Disabled && Picking is not null)
     {
-        <button type="button" class="link pick-on-map" id="@($"{Id}-pick")" aria-pressed="@(Armed ? "true" : "false")"
+        <button type="button" class="pick-on-map" id="@($"{Id}-pick")" aria-pressed="@(Armed ? "true" : "false")"
                 title="@(Many ? "Each hex clicked on the map is added, in order, until you stop." : "The next hex clicked on the map fills this Location.")"
-                @onclick="@(() => Picking.Arm(Armed ? null : Id, Armed ? null : (Many ? "adds to " : "fills ") + Noun))">@(Armed ? "Stop picking" : "Pick on the map")</button>
+                @onclick="@(() => Picking.Arm(Armed ? null : Id, Armed ? null : (Many ? "adds to " : "fills ") + Noun))">@(Armed ? "Cancel picking" : $"Pick {Noun} on map")</button>
     }
     @if (!Disabled && !Armed && Picked is { Length: > 0 } picked && !Tokens.Contains(picked))
     {
@@ -31,10 +31,19 @@
             <button type="button" class="link clear-route" id="@($"{Id}-clear")" @onclick="@(() => OnChange.InvokeAsync(string.Empty))">Clear the route</button>
         }
     }
+    @if (editingNote is not null)
+    {
+        <span class="action-feedback" role="status">@editingNote</span>
+    }
 </span>
 
 @code {
     private long seen;
+    private string? editingNote;
+    [CascadingParameter(Name = "ActionSectionVisible")] public bool SectionVisible { get; set; } = true;
+    [Parameter] public bool Visible { get; set; } = true;
+    [Parameter] public bool ValidateSyntax { get; set; }
+    [Parameter] public EventCallback<bool> OnEditingChanged { get; set; }
 
     /// <summary>The hex picked on the map, as a ground-level Location, when the page cascades one (table player, pass 29); the field offers to take it.</summary>
     [CascadingParameter(Name = "PickedLocation")]
@@ -92,7 +101,8 @@
     private IReadOnlyList<int>? Levels => Picking?.Levels(Value);
 
     /// <summary>What the input shows: a Location in words, or a route as its hexes ("G4, H4:1").</summary>
-    private string Shown => Many ? string.Join(", ", Tokens.Select(Short)) : Words(Value);
+    private string Shown => ValidateSyntax && typedInput is not null && typedForValue == Value ? typedInput
+        : Many ? string.Join(", ", Tokens.Select(Short)) : Words(Value);
 
     private string Words(string location) => Boards.Count > 0 ? DisplayText.Place(Boards.Count, location) : DisplayText.Location(location);
 
@@ -102,6 +112,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        if ((!Visible || !SectionVisible || Disabled) && Armed) Picking?.Arm(null, null);
         // A pick made while this field is armed fills it; the pick that was already there when it was armed does not.
         if (Picking is not { } picking)
         {
@@ -123,23 +134,56 @@
 
     protected override void OnInitialized() => seen = Picking?.Serial ?? 0;
 
-    private Task Take(string picked) => OnChange.InvokeAsync(Many ? string.Join(", ", Tokens.Append(picked)) : picked);
+    private async Task Take(string picked)
+    {
+        typedInput = null;
+        editingNote = null;
+        await OnEditingChanged.InvokeAsync(false);
+        await OnChange.InvokeAsync(Many ? string.Join(", ", Tokens.Append(picked)) : picked);
+    }
+
+    private void CancelOnEscape(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape" && Armed) Picking?.Arm(null, null);
+    }
 
     // A route typed with a level in words ("H4, level 1") is read as "H4:1" before its steps are split (the reviews, pass 31c).
     // Keep in-progress text local, so Enter applies it without reformatting each keystroke.
     private string? typedInput;
     private string? typedForValue;
 
-    private void CaptureTyped(ChangeEventArgs args) =>
+    private async Task CaptureTyped(ChangeEventArgs args)
+    {
         (typedInput, typedForValue) = (args.Value as string ?? string.Empty, Value);
+        if (ValidateSyntax)
+        {
+            editingNote = "Press Enter or leave the field to apply this location.";
+            await OnEditingChanged.InvokeAsync(true);
+        }
+    }
 
     private Task ApplyTypedOnEnter(KeyboardEventArgs args) =>
         args.Key == "Enter" && typedInput is { } text && typedForValue == Value ? Typed(text) : Task.CompletedTask;
 
-    private Task Typed(string text)
+    private async Task Typed(string text)
     {
+        if (ValidateSyntax)
+        {
+            var parsed = DisplayText.ReadPlace(text.Trim(), Boards);
+            if (parsed.Length > 0 && !BoardLocation.TryParse(parsed, out _))
+            {
+                editingNote = "Enter a location including its board when more than one board is in play.";
+                await OnEditingChanged.InvokeAsync(true);
+                return;
+            }
+            editingNote = null;
+            typedInput = null;
+            await OnEditingChanged.InvokeAsync(false);
+            if (parsed != Value) await OnChange.InvokeAsync(parsed);
+            return;
+        }
         typedInput = null;
-        return OnChange.InvokeAsync(Many
+        await OnChange.InvokeAsync(Many
         ? string.Join(", ", System.Text.RegularExpressions.Regex.Replace(System.Text.RegularExpressions.Regex.Replace(text.Replace("[", string.Empty, StringComparison.Ordinal).Replace("]", string.Empty, StringComparison.Ordinal), @",?\s*level\s+(-?\d)", ":$1", System.Text.RegularExpressions.RegexOptions.IgnoreCase),
                 @",?\s*cellar", ":-1", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
             .Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(token => DisplayText.ReadPlace(token, Boards)))
