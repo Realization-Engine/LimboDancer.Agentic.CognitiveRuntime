@@ -10,6 +10,27 @@ public sealed class ScenarioA1OrdnanceParticipationTests
     private const string At = "bd01:G5:0";
 
     [Fact]
+    public void DirectorCandidateUsesTheRecordedShotRefusal()
+    {
+        var director = new FireDirector("director", "attacker-leader-8-0", At, false, false, false, false, false);
+        var nationality = Reference.Fire.Definitions[director.DefinitionId!].Nationality;
+        Assert.Null(ScenarioA1OrdnanceCalculator.DirectorRefusal(director, "firer", nationality, Reference.Fire));
+        Assert.NotNull(ScenarioA1OrdnanceCalculator.DirectorRefusal(director with
+        {
+            DirectedThisPlayerTurn = true
+        }, "firer", nationality, Reference.Fire));
+        Assert.NotNull(ScenarioA1OrdnanceCalculator.DirectorRefusal(director with
+        {
+            Broken = true
+        }, "firer", nationality, Reference.Fire));
+        Assert.NotNull(ScenarioA1OrdnanceCalculator.DirectorRefusal(director with
+        {
+            Pinned = true
+        }, "firer", nationality, Reference.Fire));
+        Assert.NotNull(ScenarioA1OrdnanceCalculator.DirectorRefusal(director, "director", nationality, Reference.Fire));
+    }
+
+    [Fact]
     public void ThePrimarySmcCannotReuseParticipationAsPermissionForAnotherWeapon()
     {
         Assert.NotNull(ScenarioA1OrdnanceParticipationCalculator.PrimaryUseRefusal("asl:leader", true, false, false));
