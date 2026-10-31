@@ -125,6 +125,16 @@ The final Studio build at `action-form-design/studio-cc-final` reports zero warn
 
 Self-review covered staged versus unfinished attacks, explicit no-attack declarations, side handover, optional choice preservation, board/level distinction, map-input ownership, reset lifetime, empty states and bounded presentation state. The user's Support Weapons question exposed an existing rule/offer issue outside this presentation change: start-of-CC dropping is offered without withdrawal intent. A4.43 and A11.21 were checked on PDF pages 50 and 73. Analysis and backlog section 91 record the correction and the accompanying generic-control clutter; no new rule was added to the UI. The first text extraction hit the terminal's legacy encoding; using UTF-8 output completed the read. No merge is authorized.
 
+## Rally map scoping, 2026-10-31
+
+The user's report authorized the missing map-scoping correction. Rally now filters the existing viewer-scoped candidates by the inspected board and hex, retains level-qualified labels, switches on another candidate hex, and releases on an unrelated hex or "Show all rally units". Switching to a scope that excludes the selected unit clears the unit and leader together. Component identity resets scope with game, viewer, turn and phase; foreign picker clicks are ignored. No rule eligibility, assistance defaults, Deploy/Recombine behavior or Support Weapons behavior changed.
+
+Studio verified in `ui-rally-demo-02`: [F5] shows only its squad; an assisted Rally preview passed every check and was cancelled; [D10] replaces the scope and clears the previous squad and leader; explicit release restores all three German candidates; clicking [D10] again restores scope; [J5], with no Rally candidates, releases it. The verification committed no Rally attempt. The user continued playing and opened Replay during documentation; that view was preserved, with the final scope capture taken in a separate tab. This check does not claim full Rally rules or special-case coverage. The remaining Rally review proposals await approval, and Support Weapons is deferred across all phases.
+
+The initial review fixture used an unrecognized DM condition name. The helper now writes the vocabulary's `asl:dm`; the corrected, separately named demo replayed successfully. The failed unused fixture was removed, without modifying existing review games. `prepare_rally_demo.py` refuses overwrites.
+
+`E:/Archive/GitHub/dlandi/asl-gate-work-codex/build-codex-studio.log` reports the strict Studio build passed with zero warnings/errors in 2:02.75. The replacement server is PID 54684 on port 6680, using `action-form-design/studio-rally-scope`. Superseded task binaries, including `studio-cc-final`, were removed after the Studio checks. No automated test suite was run for this presentation filter. The implementation self-review covered repeated picks, scope invalidation, viewer boundaries, stale selections and bounded component state. No merge is authorized.
+
 ### Retained outputs
 
 `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex`. Task builds and checks are registered under `action-form-design`. The active demo stays on port 6680 for review; other Studio ports are untouched. Keep logs/results as verification evidence, and clean superseded task-owned binaries after the active demo build is established.

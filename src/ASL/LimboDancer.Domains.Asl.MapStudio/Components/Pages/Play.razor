@@ -643,7 +643,8 @@ else if (state is not null)
                 @if (state.Phase == "rph" && RallyChoices is { Count: > 0 } rallyShown)
                 {
                     <ActionSection Title="Rally" Key="rally">
-                    <RallyActionPanel Units="@rallyShown" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader" Barred="@RallyBarNow"
+                    <RallyActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" Units="@rallyShown" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader" Barred="@RallyBarNow"
+                        Locations="@(rallyShown.ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)?.Location.ToString(), StringComparer.Ordinal))"
                         OnUnit="@(id => { rallyUnit = id; rallyLeader = string.Empty; })" OnLeader="@(id => rallyLeader = id)" OnPropose="@ProposeRally" />
                     </ActionSection>
                 }

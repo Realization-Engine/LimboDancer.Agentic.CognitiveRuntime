@@ -6,13 +6,20 @@
     not Stunned or Recalled, may repair its AAMG: a dr of 1 repairs it, a 6 disables it (D3.7).
     The reviewed Rally package resolves the attempt only when every outcome the dice can reach is decided.
 </RuleHelp>
+@if (scope is { } scoped)
+{
+    <div class="toolbar" id="rally-scope">
+        <strong>Rallying in @Say(scoped)</strong>
+        <button type="button" class="link" @onclick="ReleaseScope">Show all rally units</button>
+    </div>
+}
 <div class="action-form">
 <ActionFormGroup Legend="Unit and assistance">
     <label>
         Broken unit
         <select id="rally-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            <UnitOptions Units="@Units" Text="@At" />
+            <UnitOptions Units="@ShownUnits" Text="@At" />
         </select>
     </label>
     <label>
@@ -24,8 +31,8 @@
     </label>
 </ActionFormGroup>
 <ActionProposalArea>
-    <button id="propose-rally" disabled="@(!Units.Any(unit => unit.Id == Unit) || Barred is not null)" aria-describedby="propose-rally-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
-    @if (!Units.Any(unit => unit.Id == Unit))
+    <button id="propose-rally" disabled="@(!HasUnit || Barred is not null)" aria-describedby="propose-rally-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
+    @if (!HasUnit)
     {
         <span id="propose-rally-ready" class="toolbar-note">Choose the broken unit that tries to rally.</span>
     }
@@ -38,6 +45,31 @@
 </div>
 
 @code {
+    [CascadingParameter(Name = "PickedLocation")] public string? Picked { get; set; }
+    [CascadingParameter(Name = "Picking")] public LocationPicking? Picking { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string?> Locations { get; set; } = new Dictionary<string, string?>();
+
+    private string? scope;
+    private string? lastPicked;
+    private long seenPick = -1;
+    private IReadOnlyList<PlayChoice> ShownUnits => scope is null ? Units : [.. Units.Where(unit => InHex(unit.Id, scope))];
+    private bool HasUnit => Units.Any(unit => unit.Id == Unit && (scope is null || InHex(unit.Id, scope)));
+    private bool InHex(string id, string hex) => BoardLocation.TryParse(hex, out var picked)
+        && BoardLocation.TryParse(Locations.GetValueOrDefault(id), out var at) && at.Board == picked.Board && at.Hex == picked.Hex;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var serial = Picking?.Serial ?? 0;
+        var fresh = serial != seenPick || Picked != lastPicked;
+        (seenPick, lastPicked) = (serial, Picked);
+        if (fresh && Picking?.Armed is null && Picking?.PickedBy is null)
+            scope = Picked is { } picked && Units.Any(unit => InHex(unit.Id, picked)) ? picked : null;
+        else if (scope is { } current && !Units.Any(unit => InHex(unit.Id, current))) scope = null;
+        if (Unit.Length > 0 && !HasUnit) await OnUnit.InvokeAsync(string.Empty);
+    }
+
+    private void ReleaseScope() => scope = null;
+
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }
