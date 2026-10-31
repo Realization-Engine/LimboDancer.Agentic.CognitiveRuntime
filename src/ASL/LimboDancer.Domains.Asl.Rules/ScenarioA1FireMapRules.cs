@@ -8,7 +8,11 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// </summary>
 public static class ScenarioA1FireMapRules
 {
-    /// <summary>The target Location must be read, and its terrain must have a TEM in the Fire package.</summary>
+    /// <summary>
+    /// The target Location must be read, and its terrain must have a TEM in the Fire package. A Factory's terrain has no key today, so fire at it is refused
+    /// here, where B23.741 gives it a TEM (the B23.74 claim, RB23F.12): the wiring keys a Factory as a stone or wooden building, and the bar then admits it,
+    /// with <see cref="FireAttack.FactoryTem"/> from <see cref="ScenarioA1FactoryCalculator.Tem"/>.
+    /// </summary>
     public static string? TargetTerrainBar(bool read, string? terrainKey, string? name) =>
         !read ? "play.fire-map: the target Location cannot be read"
         : terrainKey is null ? $"play.fire-terrain: the target's terrain ({name ?? "unknown"}) has no TEM in the Fire package"
@@ -39,7 +43,8 @@ public static class ScenarioA1FireMapRules
                     return ("play.fire-grain: grain is Open Ground outside its season, which the game does not name, so FFMO there is not decided (B15.6)", terrain);
                 }
             }
-            else if (known is < 6 or > 9)
+            // The season is A10.531's calculator's (the A10.531 claim, ruling RA10.9).
+            else if (ScenarioA1OpenGroundCalculator.OpenGroundTerrain(terrain, known) == true)
             {
                 return (null, "open-ground");
             }
@@ -87,10 +92,6 @@ public static class ScenarioA1FireMapRules
         ArgumentNullException.ThrowIfNull(targetSides);
         return targetSides.FirstOrDefault(side => side is not null);
     }
-
-    /// <summary>A8.2 (rulings R6.6, R9.6): Residual FP has no LOS Hindrance, but the SMOKE of its Location applies: a burning wreck's and each grenade counter's +2, at most +3, never the outgoing +1 (B25.2, A24.8).</summary>
-    public static FireAttack ResidualMapFacts(FireAttack attack, string terrain, int smokeSourcesAtTarget) =>
-        Residual(attack, terrain, ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance * smokeSourcesAtTarget);
 
     /// <summary>A8.2 by value (the A24.5 claim, RA24.5): the target Location's SMOKE, its sources' Hindrance at most +3 (A24.2), never the outgoing +1.</summary>
     public static FireAttack ResidualMapFacts(FireAttack attack, string terrain, IReadOnlyList<int> smokeHindrancesAtTarget) =>
@@ -224,21 +225,40 @@ public static class ScenarioA1FireMapRules
     /// <summary>
     /// A6.7: the largest Hindrance at each range counts; brush always, grain June to September (B15.2), marsh at the same level (B16.2); and an AFV or
     /// wreck where the map has none at that range, and a burning wreck's smoke (D9.4, B25.2; rulings R6.2, R6.3), which <paramref name="vehicleHindrance"/>
-    /// reads for the ranges with a map Hindrance. The Location's LOS facts, or the vehicle read's refusal.
+    /// reads for the ranges with a map Hindrance. The Location's LOS facts, or the vehicle read's refusal. A Factory hex in the LOS is not counted and leaves
+    /// the LOS not attributed; the overload with a Factory Hindrance counts it (B23.741). This one is that overload with no Factory Hindrance, equal on
+    /// every input to its body before the B23.74 claim.
     /// </summary>
-    public static (string? Refusal, FireLos? Los) LocationLos(LosReadFacts los, int? month, bool sameLevel, Func<HashSet<int>, (int Drm, string? Reason)> vehicleHindrance)
+    public static (string? Refusal, FireLos? Los) LocationLos(LosReadFacts los, int? month, bool sameLevel, Func<HashSet<int>, (int Drm, string? Reason)> vehicleHindrance) =>
+        LocationLos(los, month, sameLevel, vehicleHindrance, null);
+
+    /// <summary>
+    /// The Location's LOS facts as the overload without it reads them, with the Factory Hindrance of the LOS (B23.741,
+    /// p. 139; the B23.74 claim, RB23F.12), as <see cref="ScenarioA1FactoryCalculator.Hindrance"/> gives it: added to the terrain's count, so B.10's +6 test
+    /// sees the sum, and the map's Factory hexes are attributed to it.
+    /// </summary>
+    public static (string? Refusal, FireLos? Los) LocationLos(LosReadFacts los, int? month, bool sameLevel, Func<HashSet<int>, (int Drm, string? Reason)> vehicleHindrance,
+        int factoryHindrance) =>
+        LocationLos(los, month, sameLevel, vehicleHindrance, (int?)factoryHindrance);
+
+    private static (string? Refusal, FireLos? Los) LocationLos(LosReadFacts los, int? month, bool sameLevel, Func<HashSet<int>, (int Drm, string? Reason)> vehicleHindrance,
+        int? factoryHindrance)
     {
         ArgumentNullException.ThrowIfNull(los);
         ArgumentNullException.ThrowIfNull(vehicleHindrance);
         var inSeason = month is >= 6 and <= 9;
-        var attributed = los.Hindrances.All(entry => entry.Terrains.Count > 0 && entry.Terrains.All(item => item is "Brush" or "Grain" or "Marsh"));
+        // Two capture-free lambdas, so the path without a Factory Hindrance allocates no delegate the body before the claim did not.
+        var attributed = factoryHindrance is null
+            ? los.Hindrances.All(static entry => entry.Terrains.Count > 0 && entry.Terrains.All(static item => item is "Brush" or "Grain" or "Marsh"))
+            : los.Hindrances.All(static entry => entry.Terrains.Count > 0
+                && entry.Terrains.All(static item => item is "Brush" or "Grain" or "Marsh" || item.Contains("Factory", StringComparison.Ordinal)));
         var mapRanges = los.Hindrances.Where(entry => entry.Terrains.Contains("Brush") || (sameLevel && entry.Terrains.Contains("Marsh")) || (inSeason && entry.Terrains.Contains("Grain")))
             .Select(entry => entry.Range).ToHashSet();
         var grain = los.Hindrances.Any(entry => entry.Terrains.Contains("Grain"));
         var (vehicleDrm, vehicleReason) = vehicleHindrance(mapRanges);
         // B.10 (p. 113; pass 35, task 35.5): any combination of SMOKE, weather, and terrain Hindrance of +6 or more blocks the LOS, so the terrain's count
         // with the vehicles', wrecks', and SMOKE's is tested here; the map's own total was tested alone until now.
-        var total = mapRanges.Count + vehicleDrm;
+        var total = mapRanges.Count + vehicleDrm + (factoryHindrance ?? 0);
         return vehicleReason is not null ? (vehicleReason, null) : (null, new FireLos(los.Blocked || HindranceBlocks(total), total, attributed, grain));
     }
 
@@ -399,7 +419,11 @@ public static class ScenarioA1FireMapRules
     /// <summary>
     /// An attack's share of an Encirclement (A7.7; ruling R12.11): the units firing inherent FP or a SW at no more than Normal Range, when its FP could
     /// inflict at least a NMC allowing for Cowering, with the positions where their LOS enters the target hex; none for other fire. <paramref name="firers"/>
-    /// gives, for each firer of the attack in order, whether its Location is known and its LOS entry read.
+    /// gives, for each firer of the attack in order, whether its Location is known and its LOS entry read. It keeps the answer it had before the D5.34
+    /// claim (rulings RD5.8, RD5.9, RD5.15, RD5.16): <see cref="ScenarioA1EncirclementCalculator.ValidFire"/> replaces its test of each firer, and differs
+    /// in that vehicular armament and an ordnance hit count (A7.7: "inherent-FP/SW/ordnance/vehicular-armament"; here they count for nothing), a firer of
+    /// inherent FP and a SW counts at the Normal Range of its longest-ranged weapon (here by its inherent range alone), and no weapon counts beyond 16
+    /// hexes (A10.532). W-D5.34 moves its callers.
     /// </summary>
     public static (int Units, List<int> Entries) EncirclementShare(FireAttack facts, FireArithmetic? arithmetic, bool targetKnown, ScenarioA1FireReference reference,
         IReadOnlyList<EncirclementFirerFacts> firers)
@@ -455,7 +479,11 @@ public static class ScenarioA1FireMapRules
     /// The side this attack Encircles in its target Location, or null (A7.7; ruling R12.11): with the side's earlier attacks this phase on that Location,
     /// made consecutively (none of its attacks at another Location between; a Gun's shot at another Location breaks the sequence too), by at least two
     /// counting units whose LOS entries Encircle it. <paramref name="unitSide"/> reads a target's side; <paramref name="encirclementExists"/> whether the
-    /// Location already Encircles a side; <paramref name="earlier"/> is the phase's attacks, latest first, each read when reached.
+    /// Location already Encircles a side; <paramref name="earlier"/> is the phase's attacks, latest first, each read when reached. The seal itself is
+    /// <see cref="ScenarioA1EncirclementCalculator.Seals"/>'s (the D5.34 claim, ruling RD5.7). It keeps the answer it had before the claim (ruling RD5.16):
+    /// it counts each attack by <see cref="EncirclementShare"/>, so an earlier ordnance shot of the side at the same target is skipped even when it hit,
+    /// and it has no pillbox exception, which <see cref="ScenarioA1EncirclementCalculator.SealRefusal"/> and
+    /// <see cref="ScenarioA1EncirclementCalculator.Subject(string?, bool, bool, bool?, bool?, bool?)"/> give (B30.32). W-D5.34 moves its callers.
     /// </summary>
     public static string? EncirclementSeal(string? phase, FireAttack facts, bool targetKnown, Func<string, string?> unitSide, Func<string, bool> encirclementExists,
         ScenarioA1FireReference reference, IReadOnlyList<EncirclementFirerFacts> firers, IEnumerable<EarlierAttackFacts> earlier, string firingSide)
@@ -515,7 +543,7 @@ public static class ScenarioA1FireMapRules
             entries.AddRange(seen);
         }
 
-        return units >= 2 && ScenarioA1Geometry.Encircles(entries) ? targetSide : null;
+        return ScenarioA1EncirclementCalculator.Seals(units, entries) ? targetSide : null;
     }
 
     /// <summary>

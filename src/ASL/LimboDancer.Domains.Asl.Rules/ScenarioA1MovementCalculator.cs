@@ -237,7 +237,13 @@ public static class ScenarioA1MovementCalculator
     public static string? Origin(bool entering, int distinctOrigins, bool originKnown) =>
         entering || (distinctOrigins == 1 && originKnown) ? null : "play.move-stack: the stack moves from one Location (A4.2)";
 
-    /// <summary>The bars of a move (the planner's PlanMove, blocks 3 and 4), in their order; null when none applies.</summary>
+    /// <summary>
+    /// The bars of a move (the planner's PlanMove, blocks 3 and 4), in their order; null when none applies. Its push branch keeps its answer (the C10.3
+    /// claim, ruling RC10.12): <see cref="ScenarioA1GunPushCalculator.PushRefusal"/> decides C10.3. This member admits, and that one refuses, a Gun that
+    /// is NM, RFNM, or neither QSU nor limbered, a Gun unhooked this Player Turn, PP, Wire, a deep stream or Bamboo, a pusher of the Player Turn short of
+    /// MF, and a push on after a result at or above the M# this MPh, which <c>PushingOn</c> admits here (Bypass and a Minimum Move are refused by
+    /// <see cref="EntryCost"/>).
+    /// </summary>
     public static string? MoveBars(MoveBarsFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
@@ -491,7 +497,9 @@ public static class ScenarioA1MovementCalculator
     /// <summary>
     /// The entry's cost in half MF (A7.7, C10.3, A4.134, B16.4; rulings R8.6, R10.9, R12.11): doubled for an Encircled mover and for a pushed Gun; a
     /// Gun pushed only into Open Ground or grain at its level; a Minimum Move the stack's first and only step; marsh by Minimum Move from below and
-    /// at the whole allotment. <paramref name="allotment"/> is read by a mover's index where the planner read it.
+    /// at the whole allotment. <paramref name="allotment"/> is read by a mover's index where the planner read it. The push doubling forwards to
+    /// <see cref="ScenarioA1GunPushCalculator.PushHalfMf"/>, equal; ruling R8.6's terrain refusal keeps its answer and text (the C10.3 claim, ruling RC10.8):
+    /// C10.3 itself admits any terrain at its TEM and MF, which <see cref="ScenarioA1GunPushCalculator.ManhandlingDrm"/> takes.
     /// </summary>
     public static (string? Refusal, int HalfMf) EntryCost(EntryCostFacts facts, Func<int, int, bool, int?> allotment)
     {
@@ -500,8 +508,8 @@ public static class ScenarioA1MovementCalculator
         var entry = facts.Entry;
         var terrain = entry.Terrain;
 
-        // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
-        var halfMf = entry.HalfMf * (facts.AnyEncircled ? 2 : 1);
+        // A7.7 (ruling R12.11; the D5.34 claim, ruling RD5.16): the first Location an Encircled unit enters costs twice its MF.
+        var halfMf = entry.HalfMf * ScenarioA1EncirclementCalculator.EntryMultiplier(facts.AnyEncircled);
 
         // C10.3 (ruling R8.6): a Gun is pushed only into Open Ground or grain (a road hex counted as its terrain), at double the MF, never up a
         // level, into Bypass, or by Minimum Move (A4.134).
@@ -510,9 +518,10 @@ public static class ScenarioA1MovementCalculator
             return ($"play.move-push-terrain: a Gun is pushed only into Open Ground or grain at its own level in the review, not {terrain} (C10.3, A4.134; ruling R8.6)", 0);
         }
 
+        // C10.3 (the C10.3 claim, ruling RC10.12): the doubled MF of a push forwards to the claim's calculator, after the Encircled doubling.
         if (facts.Pushed)
         {
-            halfMf *= 2;
+            halfMf = ScenarioA1GunPushCalculator.PushHalfMf(halfMf);
         }
 
         // A5.11 (p. 52; pass 40): entering a Location the entry leaves overstacked costs one more MF for each squad-equivalent (FRU) above the
@@ -840,6 +849,11 @@ public static class ScenarioA1MovementCalculator
     /// Good Order enemy ground unit within 16 hexes; a forced back reveals the whole stack (A12.15). E1.31 (backlog pass 16, ruling R16.4): at night
     /// a mover loses "?" only by Non-Assault Movement in an Illuminated Location. <paramref name="enemySees"/> and <paramref name="illuminated"/>
     /// are read where the planner read them. Returns each mover that loses its "?", a Dummy to be removed and a real unit to be revealed.
+    /// This member keeps its answer: it reads Open Ground as the terrain name "open-ground". The overload that takes
+    /// <c>entersOpenGroundSeen</c>, A10.531's answer (<see cref="ScenarioA1OpenGroundCalculator.OpenGroundToAny"/> over the seers'
+    /// <see cref="ScenarioA1OpenGroundCalculator.OpenGroundTo"/> for <see cref="OpenGroundPurpose.Concealment"/>), replaces it (the A10.531 claim,
+    /// rulings RA10.2, RA10.5), and differs: an assaulting mover loses its "?" entering out-of-season grain, and keeps it entering Open Ground with
+    /// SMOKE, a wreck, or an AFV there; a road-rate mover in a hex of other terrain loses it where a seer's LOS reaches it along the road (A4.132).
     /// </summary>
     public static IReadOnlyList<MoverConcealmentFacts> Unmasked(IReadOnlyList<MoverConcealmentFacts> movers, bool forcedBack, bool assault, bool night, string terrain,
         Func<bool> enemySees, Func<bool> illuminated)
@@ -848,6 +862,24 @@ public static class ScenarioA1MovementCalculator
         ArgumentNullException.ThrowIfNull(enemySees);
         ArgumentNullException.ThrowIfNull(illuminated);
         var seen = forcedBack || (enemySees() && (night ? !assault && illuminated() : !assault || terrain == "open-ground"));
+        return [.. movers.Where(unit => seen && (unit.Dummy || unit.Concealed))];
+    }
+
+    /// <summary>
+    /// A12.14 (p. 78; ruling R10.10) with A10.531's Open Ground (p. 67; the A10.531 claim, ruling RA10.5): the old member's logic word for word, its
+    /// terrain test replaced by <paramref name="entersOpenGroundSeen"/>, whether the Location is Open Ground to a Good Order enemy ground unit within 16
+    /// hexes with a clear LOS to it (<see cref="ScenarioA1OpenGroundCalculator.OpenGroundToAny"/> over those seers, for
+    /// <see cref="OpenGroundPurpose.Concealment"/>). An unknown answer (grain with no month) is the caller's to refuse before it asks (ruling RA10.7).
+    /// Each delegate is read only where the old member read its fact.
+    /// </summary>
+    public static IReadOnlyList<MoverConcealmentFacts> Unmasked(IReadOnlyList<MoverConcealmentFacts> movers, bool forcedBack, bool assault, bool night,
+        Func<bool> entersOpenGroundSeen, Func<bool> enemySees, Func<bool> illuminated)
+    {
+        ArgumentNullException.ThrowIfNull(movers);
+        ArgumentNullException.ThrowIfNull(entersOpenGroundSeen);
+        ArgumentNullException.ThrowIfNull(enemySees);
+        ArgumentNullException.ThrowIfNull(illuminated);
+        var seen = forcedBack || (enemySees() && (night ? !assault && illuminated() : !assault || entersOpenGroundSeen()));
         return [.. movers.Where(unit => seen && (unit.Dummy || unit.Concealed))];
     }
 

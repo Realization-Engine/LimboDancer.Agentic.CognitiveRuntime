@@ -81,9 +81,6 @@ public static class ScenarioA1OverrunCalculator
         return windowOpen ? "play.overrun: the DEFENDER may still fire at the OVR's MP expenditure; the OVR is resolved when he passes (D7.1)" : null;
     }
 
-    /// <summary>A24.2 (ruling R9.6): SMOKE in the OVR's Location hinders the attack within it, +2 per source and at most +3, and +1 more than traced into it.</summary>
-    public static int OverrunSmoke(int sources) => sources == 0 ? 0 : Math.Min(3, ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance * sources) + 1;
-
     /// <summary>A24.2, A24.8 by value (the A24.5 claim, RA24.5): the OVR Location's SMOKE, its sources' Hindrance at most +3, and +1 within it.</summary>
     public static int OverrunSmoke(IReadOnlyList<int> hindrances)
     {

@@ -325,7 +325,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // Ruling R26.2: a Passenger acts only with its vehicle until it unloads.
         if (ScenarioA1SequenceCalculator.PassengerBar(action.Id.Value, existing.Count > 0,
-            () => Replay(existing).Current is { } boardState ? AboardBar(boardState, arguments) : null) is { } aboard)
+            () => Replay(existing).Current is { } boardState
+                ? action.Id == GameActions.Repair.Id ? RepairParticipantBar(boardState, arguments) : AboardBar(boardState, arguments)
+                : null) is { } aboard)
         {
             return Refused(scope, label, expected, aboard);
         }
@@ -438,6 +440,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         // DR order; those Fire's own calls answered are not called again.
         if (plan.Status == GamePlanStatus.Ready && plan.Roll is { } sniping)
         {
+            if (Replay(existing).Current is { } sniperState && SniperSmokeBar(sniperState) is { } smokeBar)
+            {
+                return Refused(scope, label, expected, smokeBar);
+            }
             plan = plan with
             {
                 Roll = sniping with
@@ -957,7 +963,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         // A12.12, A12.122 (ruling R12.5): as a Player Turn ends, the phasing side's Good Order Infantry may gain "?", some on a Final Concealment dr.
-        var gains = ScenarioA1SequenceCalculator.ConcealmentGainsDue(ending, state.Phase, phasing != state.PhasingSide) ? ConcealmentGains(state) : [];
+        string? smokeReason = null;
+        var gains = ScenarioA1SequenceCalculator.ConcealmentGainsDue(ending, state.Phase, phasing != state.PhasingSide) ? ConcealmentGains(state, out smokeReason) : [];
+        if (smokeReason is not null)
+        {
+            return Refused(scope, label, expected, smokeReason);
+        }
         // B25.65 (backlog pass 16, rulings R16.1, R16.10): the Wind Change DR at the start of a RPh.
         var wind = !ending && WindChangeDue(state, phase, turn, phasing);
         if (gains.Any(item => item.Drm is not null) || wind || routAfter is not null)
@@ -2281,7 +2292,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
     private GameEvent Event(GameScope scope, string attemptId, int index, long expected, string type, EventPayload payload, string? rulePackage,
         IReadOnlyList<string>? visibility, IReadOnlyList<string>? causes = null) =>
-        new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload, rulePackage, causes ?? [], visibility);
+        new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload switch
+        {
+            FireResolved fire => fire with { SmokeWiringVersion = 1 },
+            OrdnanceFired shot => shot with { SmokeWiringVersion = 1 },
+            _ => payload,
+        }, rulePackage, causes ?? [], visibility);
 
     private static JsonObject EventNode(int index, string type, JsonObject payload, IReadOnlyList<string>? visibility)
     {

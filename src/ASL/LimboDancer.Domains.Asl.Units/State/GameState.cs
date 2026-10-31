@@ -35,6 +35,20 @@ public sealed record GameState(
     IReadOnlyList<EquipmentInstance> Equipment,
     IReadOnlyList<EntityInstance> Entities)
 {
+    /// <summary>The already loaded catalog, retained only for this state's breakdown/repair fact reads.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public UnitCatalog? VehicleArmamentCatalog
+    {
+        get; init;
+    }
+
+    /// <summary>A verifier-local source snapshot. Never part of projected or serialized state.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public VehicleArmamentEvidence? VehicleArmamentEvidence
+    {
+        get; init;
+    }
+
     /// <summary>Player Turn ordinal since this journal began, independent of its initial Game Turn number.</summary>
     public int PlayerTurnOrdinal { get; init; } = 1;
 
@@ -142,6 +156,12 @@ public sealed record GameState(
     public IReadOnlyList<string> GunCrewsFired { get; init; } = [];
 
     /// <summary>
+    /// Each equipment Gun shot of this Game Turn, by its firer and the Gun's definition, cleared when the Game Turn ends (W-A21.13): a record of what
+    /// happened, which A15.23's once-per-Game-Turn limit on a hero firing a Gun over 82mm reads through ScenarioA1NonQualifiedUseCalculator.
+    /// </summary>
+    public IReadOnlyList<GunShotThisGameTurn> GunShotsThisGameTurn { get; init; } = [];
+
+    /// <summary>
     /// Each Gun's Defensive First Fire shots at the moving stack in its present Location (C6.17; ruling R8.1); cleared whenever the stack
     /// enters a new Location and at every phase change.
     /// </summary>
@@ -186,6 +206,13 @@ public sealed record GameState(
 
     /// <summary>The units that attempted to place SMOKE grenades this MPh (A24.1; ruling R9.5); cleared at every phase change.</summary>
     public IReadOnlyList<string> SmokeAttempts { get; init; } = [];
+
+    /// <summary>
+    /// Counters whose creation was verified against a successful Infantry SMOKE attempt. Derived from events, never inferred from a counter's name.
+    /// Kept only while the grenades remain in play; their Locations come from the current instances.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IReadOnlyList<string> VerifiedSmokeGrenades { get; init; } = [];
 
     /// <summary>Each light mortar's Spotter (C9.3; ruling R9.4): the unit that spots for it until it is broken, eliminated, or captured.</summary>
     /// <summary>Successful new Deployment choices awaiting their lineage consequence.</summary>
@@ -579,6 +606,11 @@ public sealed record GameState(
             : StampStatus.Stale;
     }
 }
+
+/// <summary>
+/// An equipment Gun shot of this Game Turn (W-A21.13): its firer and the Gun's definition, as it happened.
+/// </summary>
+public sealed record GunShotThisGameTurn(string Unit, string? Definition);
 
 /// <summary>
 /// A DC Placed (A23.3; ruling R15.2): the DC, its placer and the Location it Placed it from, its target Location, whether the placer was CX, whether

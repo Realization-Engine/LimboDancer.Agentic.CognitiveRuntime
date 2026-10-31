@@ -119,11 +119,11 @@ public static class ScenarioA1RoutCalculator
 
     /// <summary>
     /// Open Ground (A10.531; ruling R13.3): a hex where the enemy could apply the FFMO DRM, read as Open Ground or road terrain, or grain outside June to
-    /// September (B15.6; ruling R5.19), with no SMOKE there.
+    /// September (B15.6; ruling R5.19), with no SMOKE there. The terrain's part is <see cref="ScenarioA1OpenGroundCalculator.OpenGroundTerrain"/>'s
+    /// (the A10.531 claim, ruling RA10.9): grain with no month is not Open Ground here (ruling RA10.7).
     /// </summary>
     public static bool OpenGround(RoutLocationFacts? read, int? scenarioMonth) =>
-        read is { } location && !location.Smoke
-            && (location.TerrainKey == "open-ground" || (location.TerrainKey == "grain" && scenarioMonth is < 6 or > 9));
+        read is { } location && !location.Smoke && ScenarioA1OpenGroundCalculator.OpenGroundTerrain(location.TerrainKey, scenarioMonth) == true;
 
     /// <summary>
     /// The cover facts of one LOS (A10.531; pass 35, task 35.4): fire's count of the map Hindrance stands when fire can attribute every Hindrance on
@@ -146,8 +146,8 @@ public static class ScenarioA1RoutCalculator
             return false;
         }
 
-        var cover = reader.Cover(enemyLocation, at, steppedFrom);
-        return (cover.MapHindrance ?? los.Hindrance) + cover.OtherHindrance == 0 && !cover.HexsideTem && !cover.HeightAdvantage && !cover.InHexCover;
+        // The cover test is A10.531's (the A10.531 claim, ruling RA10.9).
+        return ScenarioA1OpenGroundCalculator.NoFfmoCover(reader.Cover(enemyLocation, at, steppedFrom), los.Hindrance);
     }
 
     /// <summary>
@@ -267,12 +267,15 @@ public static class ScenarioA1RoutCalculator
     /// TCA, never from a RST or 1MT AFV whose crew is CE (D1.321, D1.322); the MA Gun through the TCA when turreted, else the VCA, only with a CE crew,
     /// since a BU CT AFV's MA takes Case I's +1 (C5.9: "prevents Interdiction") and a RST or 1MT AFV fires its MA only BU; the MA MG through the VCA. An
     /// open-topped AFV uses no weapon but its BMG unless CE (D5.3), and an AFV's AAMG, which fires in any direction, needs a CE crew (D1.83). An Armor
-    /// Leader's DRM is not read: negating a positive DRM does not let his vehicle Interdict (D3.44).
+    /// Leader's DRM is not read: negating a positive DRM does not let his vehicle Interdict (D3.44). Under a "+1" counter after a Stun
+    /// (<see cref="RoutVehicleFacts.StunRecovery"/>, the D5.34 claim, ruling RD5.14) its armament takes <see cref="ScenarioA1StunCalculator.Drm"/>, so none;
+    /// null reads as before the claim, when only the Stunned side barred it.
     /// </summary>
     public static (int Range, IReadOnlyList<RoutArcWeapon> ArcWeapons) VehicleInterdiction(RoutVehicleFacts vehicle)
     {
         ArgumentNullException.ThrowIfNull(vehicle);
-        if (vehicle.Abandoned || vehicle.Shocked || vehicle.Motion || vehicle.Stunned)
+        if (vehicle.Abandoned || vehicle.Shocked || vehicle.Motion || vehicle.Stunned
+            || ScenarioA1StunCalculator.Drm(StunDr.ToHit, vehicle.StunRecovery == true) > 0)
         {
             return (0, []);
         }
@@ -392,7 +395,8 @@ public static class ScenarioA1RoutCalculator
 
     /// <summary>
     /// The half MF a routing unit pays to step between ADJACENT Locations (A10.5): the Infantry entry cost, without Bypass or Road Bonus, doubled for the
-    /// first Location an Encircled unit enters (A7.7; ruling R12.11); or why it may not.
+    /// first Location an Encircled unit enters (A7.7; ruling R12.11; <see cref="ScenarioA1EncirclementCalculator.EntryMultiplier"/>, the D5.34 claim,
+    /// ruling RD5.16); or why it may not.
     /// </summary>
     public static RoutStepCost RoutEntry(IRoutFactReader reader, int fromLocation, int toLocation, bool encircledFirst)
     {
@@ -403,7 +407,7 @@ public static class ScenarioA1RoutCalculator
             null => new RoutStepCost(null, false, reason ?? $"play.rout-step: the step from {reader.Name(fromLocation)} to {reader.Name(toLocation)} is not one the game allows"),
             { MinimumMoveOnly: true } => new RoutStepCost(null, false, $"play.rout-step: {reader.Name(toLocation)} is entered only by Minimum Move, which a rout does not use (A10.5)"),
             { AllMf: true } => new RoutStepCost(null, true, null),
-            _ => new RoutStepCost(entry.HalfMf * (encircledFirst ? 2 : 1), false, null),
+            _ => new RoutStepCost(entry.HalfMf * ScenarioA1EncirclementCalculator.EntryMultiplier(encircledFirst), false, null),
         };
     }
 
@@ -634,13 +638,15 @@ public static class ScenarioA1RoutCalculator
     /// <summary>
     /// Whether a building goes on across a hexside into the next hex (A10.51's EXC; pass 70, ruling R70.13), as the card editor joins a building (ruling
     /// R17.8; the referee of pass 28): the hexside and the next hex are building terrain, and no Rowhouse wall or Breach divides them (Rowhouses are separate
-    /// buildings, B23.71), nor a Factory's outside wall (B23.74); a Factory's interior walls stay within it.
+    /// buildings, B23.71), nor a Factory's outside wall (B23.74, decided by <see cref="ScenarioA1FactoryCalculator.DividedByFactoryWall"/>); a Factory's
+    /// interior walls stay within it.
     /// </summary>
     public static bool BuildingGoesOn(bool hexsideBuilding, bool nextBuilding, string? sideTerrain, bool sideOutsideFactoryWall, string? hexsideTerrain,
         bool hexsideOutsideFactoryWall)
     {
-        static bool Divides(string? name, bool outsideFactoryWall) => outsideFactoryWall || name == "Breach" || name?.StartsWith("Rowhouse Wall", StringComparison.Ordinal) == true;
-        return hexsideBuilding && nextBuilding && !Divides(sideTerrain, sideOutsideFactoryWall) && !Divides(hexsideTerrain, hexsideOutsideFactoryWall);
+        static bool Divides(string? name) => name == "Breach" || name?.StartsWith("Rowhouse Wall", StringComparison.Ordinal) == true;
+        return hexsideBuilding && nextBuilding && !ScenarioA1FactoryCalculator.DividedByFactoryWall(sideOutsideFactoryWall, hexsideOutsideFactoryWall)
+            && !Divides(sideTerrain) && !Divides(hexsideTerrain);
     }
 
     /// <summary>Whether a Location is in a building (A10.51's EXC; ruling R70.13): its terrain is a wooden or stone building.</summary>

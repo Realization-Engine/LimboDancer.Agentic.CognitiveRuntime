@@ -1,0 +1,223 @@
+{
+  "id": "a11-ccv-vehicle",
+  "title": "A11.5 CC vs a vehicle, the CCV",
+  "card": "a11-ccv-vehicle",
+  "rules": [
+    "A11.5",
+    "A11.51",
+    "A11.62"
+  ],
+  "contracts": [
+    "a11.5-ccv-vs-vehicle"
+  ],
+  "example": {
+    "source": "A11.5's comprehensive example, the 9-2 and 4-6-7 against the T-34 in F4",
+    "page": 74
+  },
+  "checks": [
+    {
+      "name": "The 4-6-7 with the 9-2, CCV 6, eliminates the T-34 on a Final DR of 4 (p. 74)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a11.5-ccv-vs-vehicle",
+      "facts": {
+        "attackerId": "g-467",
+        "attackerKind": "squad",
+        "inexperienced": false,
+        "smcCombining": true,
+        "pinned": false,
+        "reactionFireMarked": false,
+        "vehicleConcealed": false,
+        "guardOutnumbered": false,
+        "csRed": false,
+        "finalDr": 4,
+        "unarmed": false,
+        "berserk": false,
+        "swimming": false,
+        "assaultEngineer": false,
+        "nationalCcv": "none"
+      },
+      "expect": {
+        "outcome": "eliminated",
+        "reasons": [
+          "CCV 6",
+          "PRC"
+        ]
+      }
+    },
+    {
+      "name": "The Assault Engineer alone, CCV 6, immobilizes it on a Final DR of 6",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a11.5-ccv-vs-vehicle",
+      "facts": {
+        "attackerId": "g-838",
+        "attackerKind": "squad",
+        "inexperienced": false,
+        "smcCombining": false,
+        "pinned": false,
+        "reactionFireMarked": false,
+        "vehicleConcealed": false,
+        "guardOutnumbered": false,
+        "csRed": false,
+        "finalDr": 6,
+        "unarmed": false,
+        "berserk": false,
+        "swimming": false,
+        "assaultEngineer": true,
+        "nationalCcv": "none"
+      },
+      "expect": {
+        "outcome": "immobilized",
+        "reasons": [
+          "assault-engineer:g-838"
+        ]
+      }
+    },
+    {
+      "name": "The Assault Engineer with the 9-2, CCV 7, burns it on a Final DR of 3",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a11.5-ccv-vs-vehicle",
+      "facts": {
+        "attackerId": "g-838",
+        "attackerKind": "squad",
+        "inexperienced": false,
+        "smcCombining": true,
+        "pinned": false,
+        "reactionFireMarked": false,
+        "vehicleConcealed": false,
+        "guardOutnumbered": false,
+        "csRed": false,
+        "finalDr": 3,
+        "unarmed": false,
+        "berserk": false,
+        "swimming": false,
+        "assaultEngineer": true,
+        "nationalCcv": "none"
+      },
+      "expect": {
+        "outcome": "burning-wreck",
+        "reasons": [
+          "CCV 7"
+        ]
+      }
+    },
+    {
+      "name": "The pinned 5-4-8, CCV 4, immobilizes it on a Final DR of 4 (p. 75)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a11.5-ccv-vs-vehicle",
+      "facts": {
+        "attackerId": "g-548",
+        "attackerKind": "squad",
+        "inexperienced": false,
+        "smcCombining": false,
+        "pinned": true,
+        "reactionFireMarked": false,
+        "vehicleConcealed": false,
+        "guardOutnumbered": false,
+        "csRed": false,
+        "finalDr": 4,
+        "unarmed": false,
+        "berserk": false,
+        "swimming": false,
+        "assaultEngineer": false,
+        "nationalCcv": "none"
+      },
+      "expect": {
+        "outcome": "immobilized",
+        "reasons": [
+          "CCV 4"
+        ]
+      }
+    },
+    {
+      "name": "Pinned and marked Final Fire in Reaction Fire, CCV 3: a Final DR of 4 does nothing (p. 208)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a11.5-ccv-vs-vehicle",
+      "facts": {
+        "attackerId": "g-548",
+        "attackerKind": "squad",
+        "inexperienced": false,
+        "smcCombining": false,
+        "pinned": true,
+        "reactionFireMarked": true,
+        "vehicleConcealed": false,
+        "guardOutnumbered": false,
+        "csRed": false,
+        "finalDr": 4,
+        "unarmed": false,
+        "berserk": false,
+        "swimming": false,
+        "assaultEngineer": false,
+        "nationalCcv": "none"
+      },
+      "expect": {
+        "outcome": "no-effect",
+        "reasons": [
+          "CCV 3"
+        ]
+      }
+    },
+    {
+      "name": "The Russian side does not know whether the 8-3-8 is an Assault Engineer",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a11.5-ccv-vs-vehicle",
+      "facts": {
+        "attackerId": "g-838",
+        "attackerKind": "squad",
+        "inexperienced": false,
+        "smcCombining": false,
+        "pinned": false,
+        "reactionFireMarked": false,
+        "vehicleConcealed": false,
+        "guardOutnumbered": false,
+        "csRed": false,
+        "finalDr": 6,
+        "unarmed": false,
+        "berserk": false,
+        "swimming": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "An Unarmed squad attacks no vehicle (A20.5)",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a11.5-ccv-vs-vehicle",
+      "facts": {
+        "attackerId": "g-unarmed",
+        "attackerKind": "squad",
+        "inexperienced": false,
+        "smcCombining": false,
+        "pinned": false,
+        "reactionFireMarked": false,
+        "vehicleConcealed": false,
+        "guardOutnumbered": false,
+        "csRed": false,
+        "finalDr": 4,
+        "unarmed": true,
+        "berserk": false,
+        "swimming": false
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "Unarmed"
+        ]
+      }
+    }
+  ],
+  "units": {
+    "g-467": "german",
+    "g-838": "german",
+    "g-548": "german",
+    "g-unarmed": "german",
+    "r-t34": "russian"
+  }
+}

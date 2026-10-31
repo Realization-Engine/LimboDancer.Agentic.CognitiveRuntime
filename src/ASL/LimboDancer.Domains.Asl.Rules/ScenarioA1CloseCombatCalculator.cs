@@ -25,7 +25,21 @@ public static class ScenarioA1CloseCombatCalculator
                 && (AmbushTerrain.Contains(terrain, StringComparer.Ordinal) || force.Any(unit => unit.Concealed == true))));
     }
 
-    public static AmbushResolution ResolveAmbush(AmbushFacts facts, ScenarioA1CloseCombatReference reference)
+    /// <summary>
+    /// The Ambush under the reading recorded games were made under: forwards to the overload with no <see cref="StealthContext"/>, the same answer on
+    /// every input (the A11.17 claim, ruling RA11S.7). Its Lax and Stealthy lines are <see cref="ScenarioA1StealthCalculator.Status"/> asked with only
+    /// the facts they read before: so only a Good Order hero or heroic leader is Stealthy here, and Elite and 1st Line Finns, non-elite Italians,
+    /// designations, and SSR are not read. <see cref="ResolveAmbush(AmbushFacts, ScenarioA1CloseCombatReference, StealthContext?)"/> with
+    /// <see cref="StealthReading.Calculator"/> reads them.
+    /// </summary>
+    public static AmbushResolution ResolveAmbush(AmbushFacts facts, ScenarioA1CloseCombatReference reference) => ResolveAmbush(facts, reference, null);
+
+    /// <summary>
+    /// The Ambush (A11.4), its Stealth and Lax lines read under <paramref name="stealth"/> (ruling RA11S.8): null, or <see cref="StealthReading.HeroOnly"/>,
+    /// is the reading before the A11.17 claim; <see cref="StealthReading.Calculator"/> gives <see cref="ScenarioA1StealthCalculator.Status"/> each unit's
+    /// catalog nationality and class, its designation, the card's SSR, and a Banzai or Human Wave, and is Indeterminate when a status is unknown.
+    /// </summary>
+    public static AmbushResolution ResolveAmbush(AmbushFacts facts, ScenarioA1CloseCombatReference reference, StealthContext? stealth)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(reference);
@@ -60,6 +74,17 @@ public static class ScenarioA1CloseCombatCalculator
         }
 
         units = [.. units.Where(unit => unit.Captured != true)];
+        if (stealth is { Reading: StealthReading.Calculator })
+        {
+            // The A11.17 claim (ruling RA11S.8): a status an unknown fact decides, such as an Italian squad's class, is asked for.
+            var unknown = units.Where(unit => ScenarioA1StealthCalculator.Status(StealthFactsOf(unit, reference, stealth), StealthPurpose.Ambush) is null)
+                .Select(unit => "asl.a1.cc.fact-missing:stealth:" + unit.UnitId).ToList();
+            if (unknown.Count != 0)
+            {
+                return new AmbushResolution(CloseCombatResolution.Indeterminate, unknown, [], null);
+            }
+        }
+
         string[] sides = [facts.AttackerSide, .. units.Select(unit => unit.Side!).Where(side => side != facts.AttackerSide).Distinct(StringComparer.Ordinal)];
         var results = new List<AmbushSide>();
         foreach (var side in sides)
@@ -74,7 +99,7 @@ public static class ScenarioA1CloseCombatCalculator
                 return new AmbushResolution(CloseCombatResolution.Abstained, ["asl.a1.cc.roll-malformed"], [], null);
             }
 
-            var drm = AmbushDrm([.. units.Where(unit => unit.Side == side)], reference);
+            var drm = AmbushDrm([.. units.Where(unit => unit.Side == side)], reference, stealth);
 
             // A11.4's table (p. 73; pass 70, ruling R70.30): +2 for a side with a vehicle there, and +1 for each of its BU or Stunned AFV, as the H3 example
             // (p. 74) counts them.
@@ -106,14 +131,15 @@ public static class ScenarioA1CloseCombatCalculator
 
     /// <summary>
     /// A side's Ambush drm (A11.4, A11.17, A11.18): each cause once when any unit of its force has it (rulings R29.9, R14.13): +1 broken,
-    /// +1 pinned, +1 berserk, +1 Lax (Inexperienced, A19.36, or berserk, A15.432), -1 Stealthy (a Good Order hero or heroic leader,
-    /// A15.24, A15.21), -2 concealed (ruling R14.2),
+    /// +1 pinned, +1 berserk, +1 Lax, -2 concealed (ruling R14.2), -1 Stealthy (Lax and Stealthy as <see cref="ScenarioA1StealthCalculator.Status"/>
+    /// decides them, under the reading <paramref name="stealth"/> names; the A11.17 claim),
     /// and the leadership of its best unpinned Good Order leader unless he is alone or any of the force is berserk.
     /// </summary>
-    private static List<FireModifier> AmbushDrm(IReadOnlyList<CloseCombatUnit> force, ScenarioA1CloseCombatReference reference)
+    private static List<FireModifier> AmbushDrm(IReadOnlyList<CloseCombatUnit> force, ScenarioA1CloseCombatReference reference, StealthContext? stealth)
     {
         var drm = new List<FireModifier>();
         bool Any(Func<CloseCombatUnit, bool> test) => force.Any(test);
+        StealthStatus? Stealth(CloseCombatUnit unit) => ScenarioA1StealthCalculator.Status(StealthFactsOf(unit, reference, stealth), StealthPurpose.Ambush);
         if (Any(unit => unit.Broken == true))
         {
             drm.Add(new FireModifier("broken", 1m, "A11.4"));
@@ -136,9 +162,10 @@ public static class ScenarioA1CloseCombatCalculator
             drm.Add(new FireModifier("cx", 1m, "A4.51"));
         }
 
-        if (berserk || Any(unit => Inexperienced(unit, reference)))
+        // A11.18 (the A11.17 claim): on the old reading, berserk (A15.432) or an Inexperienced MMC (A19.36), as before.
+        if (Any(unit => Stealth(unit) == StealthStatus.Lax))
         {
-            drm.Add(new FireModifier("lax", 1m, "A11.18"));
+            drm.Add(ScenarioA1StealthCalculator.AmbushLax);
         }
 
         // A11.4 (ruling R14.2): -2 when any of the force is concealed.
@@ -147,9 +174,10 @@ public static class ScenarioA1CloseCombatCalculator
             drm.Add(new FireModifier("concealed", -2m, "A11.4"));
         }
 
-        if (Any(unit => (reference.Definitions[unit.DefinitionId!].IsHero || (reference.Definitions[unit.DefinitionId!].IsLeader && unit.Heroic == true)) && GoodOrder(unit)))
+        // A11.17 (the A11.17 claim): on the old reading, a Good Order hero or heroic leader (A15.24, A15.21), as before.
+        if (Any(unit => Stealth(unit) == StealthStatus.Stealthy))
         {
-            drm.Add(new FireModifier("stealthy", -1m, "A11.17"));
+            drm.Add(ScenarioA1StealthCalculator.AmbushStealthy);
         }
 
         var leader = force.Where(unit => reference.Definitions[unit.DefinitionId!].IsLeader && GoodOrder(unit) && unit.Pinned != true)
@@ -163,6 +191,32 @@ public static class ScenarioA1CloseCombatCalculator
     }
 
     private static bool GoodOrder(CloseCombatUnit unit) => unit.Broken != true && unit.Berserk != true && unit.Captured != true;
+
+    /// <summary>
+    /// A unit's facts for <see cref="ScenarioA1StealthCalculator"/> (the A11.17 claim): on the old reading only those the Ambush read before (its kind,
+    /// heroic, Inexperienced, berserk, Good Order), so the status is the old one on every input; on the calculator's, its catalog nationality and
+    /// class, its designation, the card's SSR, and a Banzai or Human Wave too.
+    /// </summary>
+    private static StealthFacts StealthFactsOf(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference, StealthContext? stealth)
+    {
+        var definition = reference.Definitions[unit.DefinitionId!];
+        var old = new StealthFacts(definition.Kind, unit.Heroic == true, null, null, StealthDesignation.None, false, false, Inexperienced(unit, reference),
+            unit.Berserk == true, GoodOrder(unit));
+        if (stealth is not { Reading: StealthReading.Calculator })
+        {
+            return old;
+        }
+
+        return old with
+        {
+            Nationality = definition.Nationality,
+            Class = definition.Class,
+            Designation = unit.UnitId is { } id && stealth.Designations?.GetValueOrDefault(id) is { } designation ? designation : StealthDesignation.None,
+            SsrStealthy = stealth.SsrStealthySides?.Contains(unit.Side, StringComparer.Ordinal) == true,
+            SsrLax = stealth.SsrLaxSides?.Contains(unit.Side, StringComparer.Ordinal) == true,
+            BanzaiOrHumanWave = stealth.LaxThisPlayerTurn?.Contains(unit.UnitId, StringComparer.Ordinal) == true,
+        };
+    }
 
     private static bool Inexperienced(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference) =>
         reference.Definitions[unit.DefinitionId!] is { } definition && Mmc(definition)
@@ -424,15 +478,23 @@ public static class ScenarioA1CloseCombatCalculator
 
             // A20.55, A20.54 (rulings R14.5, R14.6): prisoners attack only in their escape round, each attack taking in the Guard of each of its
             // attackers, whose Guard is broken or held in Melee; they are never attacked, and a CC attack against a Guard does not affect them.
+            // The A20.54 claim (rulings RA20.8, RA20.10, RA20.12): the Guard's state is ScenarioA1PrisonerCalculator.MayAttackGuard's; under the round's
+            // PrisonerEscapeReading an attack may leave out a Guard that an attack declared before it takes in (EscapeTargetsRefusal; the resolution
+            // holds it back unless that attack eliminates the Guard), and a withdrawing prisoner may be attacked in the other rounds.
             if (round == CloseCombatFacts.PrisonersRound)
             {
                 if (attackers.Any(id => byId[id] is not { Captured: true, GuardId: { } guard } || !byId.TryGetValue(guard, out var custodian)
-                    || !(custodian.Broken == true || custodian.InMelee == true) || !defenders.Contains(guard)) || defenders.Any(id => byId[id].Captured == true))
+                    || !ScenarioA1PrisonerCalculator.MayAttackGuard(custodian.Broken == true, custodian.InMelee == true)
+                    || (facts.PrisonerEscapeReading == true
+                        ? ScenarioA1PrisonerCalculator.EscapeTargetsRefusal(defenders.Contains(guard), facts.Attacks!.Take(index).Any(earlier => earlier.Defenders?.Contains(guard) == true)) is not null
+                        : !defenders.Contains(guard))) || defenders.Any(id => byId[id].Captured == true))
                 {
                     outside.Add($"asl.a1.cc.escape-outside:{index}");
                 }
             }
-            else if (attackers.Concat(defenders).Any(id => byId[id].Captured == true))
+            else if (facts.PrisonerEscapeReading == true
+                ? attackers.Any(id => byId[id].Captured == true) || defenders.Any(id => byId[id] is { Captured: true, WithdrawingTo: null })
+                : attackers.Concat(defenders).Any(id => byId[id].Captured == true))
             {
                 outside.Add($"asl.a1.cc.prisoner-outside:{index}");
             }
@@ -483,11 +545,24 @@ public static class ScenarioA1CloseCombatCalculator
         }
 
         // A11.2: only a unit held in Melee withdraws, never a pinned, berserk, or Disrupted one, and a SMC withdraws with the MMC it is
-        // stacked with or declared alone.
-        if (units.Any(unit => unit.WithdrawingTo is not null && (unit.InMelee != true || unit.Pinned == true || unit.Berserk == true || unit.Disrupted == true
+        // stacked with or declared alone. The A20.54 claim (A20.55; ruling RA20.10): under the round's PrisonerEscapeReading a prisoner is held in Melee
+        // when ScenarioA1PrisonerCalculator.MayWithdrawFromMelee says so: its Guard is in Melee, which the facts at the CCPh's start show began earlier.
+        // The Guard's one flag answers both of its facts because a Melee present at the CCPh's start was formed in an earlier phase, and A11.2 lets any
+        // unit in Melee then withdraw; a caller that knows the Location's own facts passes them to MayWithdrawFromMelee instead.
+        if (units.Any(unit => unit.WithdrawingTo is not null && (!(unit.InMelee == true || (facts.PrisonerEscapeReading == true && unit is { Captured: true, GuardId: { } guard }
+                && byId.TryGetValue(guard, out var custodian) && ScenarioA1PrisonerCalculator.MayWithdrawFromMelee(custodian.InMelee == true, custodian.InMelee == true)))
+            || unit.Pinned == true || unit.Berserk == true || unit.Disrupted == true
             || (unit.StackedWith is { } mmc && byId.TryGetValue(mmc, out var under) && under.WithdrawingTo is null))))
         {
             outside.Add("asl.a1.cc.withdrawal-outside");
+        }
+
+        // The A20.54 claim (A11.2, A20.55; ruling RA20.13): under the round's PrisonerEscapeReading a prisoner's Withdrawal is carried by a round after the
+        // prisoners' round, where the attacks against it are made (ScenarioA1PrisonerCalculator.WithdrawalInRound).
+        if (facts.PrisonerEscapeReading == true && !ScenarioA1PrisonerCalculator.WithdrawalInRound(round == CloseCombatFacts.PrisonersRound)
+            && units.Any(unit => unit is { Captured: true, WithdrawingTo: not null }))
+        {
+            outside.Add("asl.a1.cc.prisoner-withdrawal-round");
         }
 
         // The ambusher's attacks are sequential (A11.3), so its units that must attack are checked when the ambushed side's round begins.
@@ -632,7 +707,9 @@ public static class ScenarioA1CloseCombatCalculator
             {
                 foreach (var id in attacks.SelectMany(item => item.Attackers!).Distinct(StringComparer.Ordinal))
                 {
-                    if (units[units[id].Facts.GuardId!].Facts.InMelee == true)
+                    // The A20.54 claim (rulings RA20.7, RA20.11, RA20.12): ScenarioA1PrisonerCalculator.EscapeNtcRequired and EscapeNtcPassed decide, the
+                    // Guard's Melee read for a Melee in the Location.
+                    if (!ScenarioA1PrisonerCalculator.EscapeNtcRequired(units[units[id].Facts.GuardId!].Facts.InMelee == true))
                     {
                         continue;
                     }
@@ -644,7 +721,7 @@ public static class ScenarioA1CloseCombatCalculator
 
                     usedRolls.Add("escapeNtc:" + id);
                     var morale = units[id].Printed.Morale!.Value;
-                    var passed = ntc!.Sum() <= morale;
+                    var passed = ScenarioA1PrisonerCalculator.EscapeNtcPassed(ntc!.Sum(), morale);
                     checks.Add(new CloseCombatEscapeCheck(id, [.. ntc!], morale, passed));
                     if (!passed)
                     {
@@ -666,11 +743,28 @@ public static class ScenarioA1CloseCombatCalculator
             List<string> ActiveAttackers(int index) => [.. attacks[index].Attackers!.Where(id => !failed.Contains(id) && !Gone(id, position[index]))];
             List<string> ActiveDefenders(int index) => [.. attacks[index].Defenders!.Where(id => !Gone(id, position[index]))];
 
+            // The A20.54 claim (A20.55; ruling RA20.8): under the round's PrisonerEscapeReading an escape attack that leaves out a prisoner's Guard is made
+            // only once an attack resolved before it eliminates that Guard (EscapeTargetsRefusal); else it is held back, and its prisoners do not escape.
+            HashSet<string>? heldBack = null;
+            bool HeldBack(int index)
+            {
+                if (facts.PrisonerEscapeReading != true || facts.Round != CloseCombatFacts.PrisonersRound
+                    || !ActiveAttackers(index).Any(id => units[id].Facts.GuardId is { } guard && ScenarioA1PrisonerCalculator.EscapeTargetsRefusal(attacks[index].Defenders!.Contains(guard),
+                        firstPass.Where(item => position[item.Key] < position[index]).Any(item => item.Value.Defending.Any(result => result.UnitId == guard
+                            && result.Result == CloseCombatDefenderResult.Eliminated))) is not null))
+                {
+                    return false;
+                }
+
+                (heldBack ??= new HashSet<string>(StringComparer.Ordinal)).UnionWith(attacks[index].Attackers!);
+                return true;
+            }
+
             // Each attack's DR as its turn comes: an attack none of whose attackers or defenders is left is forfeited (A11.22), and an Original 2 by an
             // attacking MMC calls for a Leader Creation dr at once (A18.12).
             foreach (var index in order)
             {
-                if (ActiveAttackers(index).Count == 0 || ActiveDefenders(index).Count == 0)
+                if (ActiveAttackers(index).Count == 0 || ActiveDefenders(index).Count == 0 || HeldBack(index))
                 {
                     if (rolls.Attacks?.ContainsKey(Key(index)) == true)
                     {
@@ -934,7 +1028,16 @@ public static class ScenarioA1CloseCombatCalculator
 
             if (facts.Round == CloseCombatFacts.PrisonersRound)
             {
-                foreach (var unit in attacks.SelectMany(item => item.Attackers!).Distinct(StringComparer.Ordinal).Where(id => !failed.Contains(id)).Select(id => units[id]))
+                foreach (var unit in attacks.SelectMany(item => item.Attackers!).Distinct(StringComparer.Ordinal).Where(id => !failed.Contains(id) && heldBack?.Contains(id) != true)
+                    .Select(id => units[id]))
+                {
+                    unit.Escape();
+                }
+            }
+            else if (facts.PrisonerEscapeReading == true)
+            {
+                // The A20.54 claim (A20.55, A11.2; ruling RA20.10): a prisoner that withdraws from Melee with its Guard escapes.
+                foreach (var unit in units.Values.Where(unit => unit.Facts.Captured == true && unit.WithdrewTo is not null))
                 {
                     unit.Escape();
                 }
@@ -945,10 +1048,14 @@ public static class ScenarioA1CloseCombatCalculator
             Concealment(arithmetic);
 
             // A20.55: an escape succeeds when no enemy unit but a prisoner is left in the Location, or by Infiltration; only then is a SMC Armed (A20.551).
+            // The A20.54 claim (rulings RA20.10, RA20.12): ScenarioA1PrisonerCalculator.EscapeSucceeds decides; a Withdrawal counts under the round's
+            // PrisonerEscapeReading.
             foreach (var unit in units.Values.Where(unit => unit.Escaping))
             {
-                unit.EscapeSucceeds(unit.InfiltratedTo is not null
-                    || !units.Values.Any(other => other.Facts.Side != unit.Facts.Side && other.Facts.Captured != true && other.Present));
+                var infiltrated = unit.InfiltratedTo is not null;
+                var withdrew = facts.PrisonerEscapeReading == true && unit.WithdrewTo is not null;
+                unit.EscapeSucceeds(infiltrated || withdrew || ScenarioA1PrisonerCalculator.EscapeSucceeds(false, false,
+                    units.Values.Any(other => other.Facts.Side != unit.Facts.Side && other.Facts.Captured != true && other.Present)));
             }
 
             var extraRolls = ExtraRolls();

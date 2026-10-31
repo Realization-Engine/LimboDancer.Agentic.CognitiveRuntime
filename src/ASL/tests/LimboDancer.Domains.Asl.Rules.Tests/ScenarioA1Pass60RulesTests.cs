@@ -535,6 +535,55 @@ public sealed class ScenarioA1Pass60RulesTests
     }
 
     [Fact]
+    public void AFactoryTemReplacesTheBuildingsTemOnTheAreaHitOfAnAfvInTheTargetLocation()
+    {
+        // C3.331, B23.741 (the B23.74 claim, ruling RB23F.5): the AFV in the hit's own Location takes the Factory's +1, not the stone building's +3.
+        var shot = Mortar("stone-building", [], Vehicle("de-tank", "attacker-tank"));
+        var old = Resolve(shot, [2, 4], ift: [3, 3]).AreaVehicles!.Single();
+        var factory = Resolve(shot with
+        {
+            Hit = shot.Hit! with
+            {
+                FactoryTem = 1
+            }
+        }, [2, 4], ift: [3, 3]).AreaVehicles!.Single();
+        Assert.Contains(old.Drm, item => item.Name == "tem:stone-building" && item.Value == 3);
+        Assert.DoesNotContain(factory.Drm, item => item.Name == "tem:stone-building");
+        Assert.Contains(factory.Drm, item => item.Name == "tem:factory" && item.Value == 1);
+        Assert.Equal(old.FinalDr - 2, factory.FinalDr);
+    }
+
+    [Fact]
+    public void AFactoryTemStaysWithTheHitsOwnLocationWhenTheShotNamesSeveral()
+    {
+        // B23.741, B23.81 (the review of the B23.74 build, finding 1): with the hex's Locations named, the AFV in the target Location still takes the
+        // Factory's +1, and a unit at another Location (a rooftop, by SSR) takes that Location's key TEM, not the hit's Factory TEM.
+        var shot = Mortar("stone-building", [Target("de-b", "attacker-squad") with { LocationId = Upstairs }], Vehicle("de-tank", "attacker-tank")) with
+        {
+            AreaLocations = [new OrdnanceAreaLocation(At) { TargetTerrain = "stone-building", Los = new FireLos(false, 0, true, false) },
+                new OrdnanceAreaLocation(Upstairs) { TargetTerrain = "stone-building", Los = new FireLos(false, 0, true, false) }],
+        };
+        var old = Resolve(shot, [2, 3], ift: [3, 4]);
+        var factory = Resolve(shot with
+        {
+            Hit = shot.Hit! with
+            {
+                FactoryTem = 1
+            }
+        }, [2, 3], ift: [3, 4]);
+        Resolved(factory);
+        Assert.Contains(old.AreaVehicles!.Single().Drm, item => item.Name == "tem:stone-building" && item.Value == 3);
+        Assert.Contains(factory.AreaVehicles!.Single().Drm, item => item.Name == "tem:factory" && item.Value == 1);
+        Assert.DoesNotContain(factory.AreaVehicles!.Single().Drm, item => item.Name == "tem:stone-building");
+
+        var upper = factory.LevelHits!.Single();
+        Assert.Equal(["de-b"], upper.Effects.Select(item => item.UnitId));
+        Assert.DoesNotContain(upper.Arithmetic!.Drm, item => item.Name == "tem:factory");
+        Assert.Contains(upper.Arithmetic.Drm, item => item.Name == "tem:stone-building" && item.Value == 3);
+        Assert.Equal(old.LevelHits!.Single().Arithmetic!.FinalDr, upper.Arithmetic.FinalDr);
+    }
+
+    [Fact]
     public void AMortarsHitOnAnOtHalftrackTakesTheAfAndOtDrm()
     {
         // C1.55: the SPW 251/1's every AF is 1 (-1) and it is OT (-1): an IFT DR of 4 is a Final 2, the K/# DR, a hull hit, immobilizing it.

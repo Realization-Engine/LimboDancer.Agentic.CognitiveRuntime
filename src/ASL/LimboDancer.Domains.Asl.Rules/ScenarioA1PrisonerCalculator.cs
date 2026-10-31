@@ -241,4 +241,135 @@ public static class ScenarioA1PrisonerCalculator
         ArgumentNullException.ThrowIfNull(prisoners);
         return $"play.prisoners-transferred: {guardId} hands {string.Join(", ", prisoners)} to {heirId} (A20.5, A4.431)";
     }
+
+    /// <summary>
+    /// A7.301 (p. 55), A20.54 (p. 88; ruling RA20.2): a unit a #KIA does not eliminate breaks, unless it cannot be broken ("e.g., berserk/heroic/broken/unarmed"):
+    /// then it suffers Casualty Reduction instead. A prisoner is unarmed (A20.5), so the caller passes <c>unarmed</c> for a prisoner and for an Unarmed unit.
+    /// </summary>
+    public static KiaSurvivorEffect KiaSurvivor(bool broken, bool heroic, bool berserk, bool unarmed) =>
+        broken || heroic || berserk || unarmed ? KiaSurvivorEffect.CasualtyReduction : KiaSurvivorEffect.Broken;
+
+    /// <summary>
+    /// A26.222 (p. 100), A20.1 (p. 86), A20.54, A20.55 (p. 88; rulings RA20.3 to RA20.5): the CVP the captor scores for an enemy prisoner. Held, or taken
+    /// off the map by its Guard: its VP during play, double once the scenario has ended. Eliminated by an attack of its own side: double at once, and so at
+    /// the end. Eliminated otherwise: its normal VP (A26.221). Escaped: none.
+    /// </summary>
+    public static int PrisonerCvp(int vp, PrisonerCvpStatus status, bool ended) => status switch
+    {
+        PrisonerCvpStatus.Held or PrisonerCvpStatus.ExitedUnderGuard => vp * (ended ? 2 : 1),
+        PrisonerCvpStatus.EliminatedByOwnSide => vp * 2,
+        PrisonerCvpStatus.EliminatedOtherwise => vp,
+        _ => 0,
+    };
+
+    /// <summary>
+    /// A26.222, A20.54 (rulings RA20.3, RA20.4): how an eliminated unit counts: eliminated by its own side when it was captured and the attack that eliminated it
+    /// was its own side's; otherwise (not a prisoner, the captor's attack, or a side not known) as any eliminated unit.
+    /// </summary>
+    public static PrisonerCvpStatus EliminatedStatus(bool captured, string side, string? eliminatedBy) =>
+        captured && eliminatedBy is not null && string.Equals(eliminatedBy, side, StringComparison.Ordinal) ? PrisonerCvpStatus.EliminatedByOwnSide : PrisonerCvpStatus.EliminatedOtherwise;
+
+    /// <summary>Whether a nationality is an Axis Minor's (A25.8): the catalog's "axis-minor", or one of the Axis Minor nations.</summary>
+    public static bool AxisMinor(string? nationality) =>
+        nationality is not null && (nationality == "axis-minor" || ScenarioA1Definitions.AxisMinorNations.Contains(nationality, StringComparer.Ordinal));
+
+    /// <summary>
+    /// A20.55 (p. 88), A25.63 (p. 97), A25.82 (p. 98), G1.621 (p. 280; ruling RA20.6): why a prisoner does not attempt escape, or null when it may. Only
+    /// Infantry escape; an unknown nationality never allows; Italians and Japanese never attempt it; an Axis Minor attempts it only within its own national
+    /// borders (the card's fact) against Russians (its captor's nationality). "Unless abandoned" needs no fact: an abandoned prisoner has no Guard.
+    /// </summary>
+    public static string? EscapeRefusal(string prisonerId, string? nationality, string? captorNationality, bool infantry, bool? axisMinorAtHome) =>
+        EscapeNationalityBar(prisonerId, nationality, captorNationality, infantry, axisMinorAtHome)?.Text;
+
+    /// <summary>A20.55 (p. 88): prisoners attack their Guard only when it is broken, or once a Melee exists in the Location.</summary>
+    public static bool MayAttackGuard(bool guardBroken, bool meleeInLocation) => guardBroken || meleeInLocation;
+
+    /// <summary>A20.55 (p. 88; ruling RA20.7): unless a Melee exists in the Location, a prisoner must pass a NTC before it attacks its Guard.</summary>
+    public static bool EscapeNtcRequired(bool meleeInLocation) => !meleeInLocation;
+
+    /// <summary>
+    /// A20.55 (rulings R14.6, RA20.11): the escape NTC passes when the dice total at most the prisoner's Morale (its printed Morale: no Unarmed counter is in
+    /// the catalog).
+    /// </summary>
+    public static bool EscapeNtcPassed(int diceTotal, int morale) => diceTotal <= morale;
+
+    /// <summary>
+    /// A20.55 (p. 88; ruling RA20.8): prisoners must eliminate their Guard before they attack any other unit in the Location, unless one attack takes in the
+    /// Guard and the others; once the Guard is eliminated they may attack the others alone.
+    /// </summary>
+    public static string? EscapeTargetsRefusal(bool includesGuard, bool guardEliminated) =>
+        includesGuard || guardEliminated ? null : "play.escape-targets: prisoners must eliminate their Guard before they attack any other unit in the Location, unless the same attack takes in the Guard (A20.55)";
+
+    /// <summary>
+    /// A20.55 (p. 88), A11.2 (ruling RA20.10): once a Melee exists with its Guard, a prisoner may attempt Withdrawal from Melee in a subsequent CCPh; the
+    /// Withdrawal itself is A11.2's.
+    /// </summary>
+    public static bool MayWithdrawFromMelee(bool meleeWithGuard, bool meleeBeganEarlierCcph) => meleeWithGuard && meleeBeganEarlierCcph;
+
+    /// <summary>
+    /// A11.2 (p. 73), A20.55 (p. 88; ruling RA20.13): may a CC round carry a prisoner's Withdrawal. A withdrawing unit makes no CC attack, takes the
+    /// Withdrawal DRM "to all CC attacks made against them during that CCPh", and withdraws only if not eliminated, reduced, or captured in the CCPh; the
+    /// prisoners' sequential attacks come before the survivors and other enemy units attack in turn. So the Withdrawal is resolved in a round after the
+    /// prisoners' round, where those attacks are made, and the prisoners' round carries none.
+    /// </summary>
+    public static bool WithdrawalInRound(bool prisonersRound) => !prisonersRound;
+
+    /// <summary>
+    /// A20.55 (p. 88), A11.22 (ruling RA20.10): an escape succeeds by Infiltration, by a successful Withdrawal from Melee, or when no enemy unit other than a
+    /// prisoner is left in the Location.
+    /// </summary>
+    public static bool EscapeSucceeds(bool infiltrated, bool withdrew, bool enemyNonPrisonerLeft) => infiltrated || withdrew || !enemyNonPrisonerLeft;
+
+    /// <summary>
+    /// A20.55, A25.63, A25.82, G1.621 (rulings RA20.6, RA20.7): may this prisoner attack its Guard to escape this CCPh, and must it pass a NTC first. The
+    /// nationality bar comes first, then the Guard's state; the NTC is required whenever no Melee exists in the Location.
+    /// </summary>
+    public static PrisonerEscapeVerdict Escape(PrisonerEscapeFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        var required = EscapeNtcRequired(facts.MeleeInLocation);
+        if (EscapeNationalityBar(facts.PrisonerId, facts.Nationality, facts.CaptorNationality, facts.Infantry, facts.AxisMinorAtHome) is { } bar)
+        {
+            // The Infantry bar is the nationality bar's first test.
+            return new PrisonerEscapeVerdict(bar.Text, bar.Rule, required) { Bar = facts.Infantry ? PrisonerEscapeBar.Nationality : PrisonerEscapeBar.NotInfantry };
+        }
+
+        return MayAttackGuard(facts.GuardBroken, facts.MeleeInLocation)
+            ? new PrisonerEscapeVerdict(null, null, required)
+            : new PrisonerEscapeVerdict(EscapeGuardText(facts.PrisonerId), "A20.55", required) { Bar = PrisonerEscapeBar.Guard };
+    }
+
+    /// <summary>A20.55: the refusal of a prisoner whose Guard is neither broken nor in a Melee.</summary>
+    public static string EscapeGuardText(string prisonerId) =>
+        $"play.escape-guard: {prisonerId} may attack its Guard only when the Guard is broken or a Melee exists in the Location (A20.55)";
+
+    private static (string Text, string Rule)? EscapeNationalityBar(string prisonerId, string? nationality, string? captorNationality, bool infantry, bool? axisMinorAtHome)
+    {
+        if (!infantry)
+        {
+            return ($"play.escape-infantry: {prisonerId} is not Infantry; only Infantry may escape (A20.55)", "A20.55");
+        }
+
+        if (nationality is null)
+        {
+            return ($"play.escape-nationality: the nationality of {prisonerId} is not known, so it does not attempt escape (A20.55)", "A20.55");
+        }
+
+        if (nationality == "italian")
+        {
+            return ($"play.escape-nationality: {prisonerId} is Italian; once captured, no Italian unit attempts escape (A25.63, A20.55)", "A25.63");
+        }
+
+        if (nationality == "japanese")
+        {
+            return ($"play.escape-nationality: {prisonerId} is Japanese; Japanese taken prisoner do not attempt escape (G1.621, A20.55)", "G1.621");
+        }
+
+        if (AxisMinor(nationality) && !(axisMinorAtHome == true && captorNationality == "russian"))
+        {
+            return ($"play.escape-nationality: {prisonerId} is an Axis Minor unit; it attempts escape only within its own national borders against Russians (A25.82, A20.55)", "A25.82");
+        }
+
+        return null;
+    }
 }

@@ -7,7 +7,8 @@
     "D3.71"
   ],
   "contracts": [
-    "d3.7-vehicle-breakdown"
+    "d3.7-vehicle-breakdown",
+    "d3.7-vehicle-breakdown-use"
   ],
   "example": {
     "source": "D3.71, IS-3 example",
@@ -197,6 +198,167 @@
       },
       "expect": {
         "outcome": "malfunction"
+      }
+    },
+    {
+      "name": "The new reading gives Low Ammo on the IS-3 original 11",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown-use",
+      "facts": {
+        "vehicleId": "r-is3",
+        "numbersKnown": true,
+        "weapon": "MainArmament",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": false,
+        "ammunitionShortage": false,
+        "captured": false,
+        "nonQualified": false,
+        "winterReduction": 0,
+        "intensiveFire": false,
+        "use": "OrdnanceToHit",
+        "originalDr": 11
+      },
+      "expect": {
+        "outcome": "low-ammo"
+      }
+    },
+    {
+      "name": "Low Ammo makes the following original 11 Disable the weapon",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown-use",
+      "facts": {
+        "vehicleId": "r-is3",
+        "numbersKnown": true,
+        "weapon": "MainArmament",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": true,
+        "ammunitionShortage": false,
+        "captured": false,
+        "nonQualified": false,
+        "winterReduction": 0,
+        "intensiveFire": false,
+        "use": "OrdnanceToHit",
+        "originalDr": 11
+      },
+      "expect": {
+        "outcome": "disabled"
+      }
+    },
+    {
+      "name": "A normal original 12 still malfunctions the circled weapon",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown-use",
+      "facts": {
+        "vehicleId": "r-is3",
+        "numbersKnown": true,
+        "weapon": "MainArmament",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": false,
+        "ammunitionShortage": false,
+        "captured": false,
+        "nonQualified": false,
+        "winterReduction": 0,
+        "intensiveFire": false,
+        "use": "OrdnanceToHit",
+        "originalDr": 12
+      },
+      "expect": {
+        "outcome": "malfunction"
+      }
+    },
+    {
+      "name": "Captured Low Ammo lowers its existing X number",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown-use",
+      "facts": {
+        "vehicleId": "r-is3",
+        "numbersKnown": true,
+        "weapon": "MainArmament",
+        "printedB": 11,
+        "circled": true,
+        "noteExtends": false,
+        "lowAmmo": true,
+        "ammunitionShortage": false,
+        "captured": true,
+        "nonQualified": false,
+        "winterReduction": 0,
+        "intensiveFire": false,
+        "use": "OrdnanceToHit",
+        "originalDr": 9
+      },
+      "expect": {
+        "outcome": "disabled"
+      }
+    },
+    {
+      "name": "Unknown printed facts do not become default B12",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown-use",
+      "facts": {
+        "vehicleId": "r-is3",
+        "numbersKnown": false,
+        "weapon": "MainArmament",
+        "printedB": null,
+        "circled": false,
+        "noteExtends": false,
+        "lowAmmo": false,
+        "ammunitionShortage": false,
+        "captured": false,
+        "nonQualified": false,
+        "winterReduction": 0,
+        "intensiveFire": false,
+        "use": "OrdnanceToHit",
+        "originalDr": 7
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Close Combat does not apply an Ammunition Shortage",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "d3.7-vehicle-breakdown-use",
+      "facts": {
+        "vehicleId": "r-is3",
+        "numbersKnown": true,
+        "weapon": "MainArmament",
+        "printedB": 12,
+        "circled": false,
+        "noteExtends": false,
+        "lowAmmo": false,
+        "ammunitionShortage": true,
+        "captured": false,
+        "nonQualified": false,
+        "winterReduction": 0,
+        "intensiveFire": false,
+        "use": "CloseCombat",
+        "originalDr": 11
+      },
+      "expect": {
+        "outcome": "none"
+      }
+    },
+    {
+      "name": "The opposing viewer cannot supply the owner-only weapon facts",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d3.7-vehicle-breakdown-use",
+      "facts": {},
+      "sealed": { "vehicleId": "russian" },
+      "expect": {
+        "outcome": "not-evaluated"
       }
     }
   ],

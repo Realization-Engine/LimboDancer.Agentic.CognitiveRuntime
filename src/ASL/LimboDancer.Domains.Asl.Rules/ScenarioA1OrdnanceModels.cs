@@ -22,6 +22,20 @@ public sealed record OrdnanceShot(
     FireAttack? Hit,
     OrdnanceRolls? Rolls)
 {
+    /// <summary>C9.2/A21.13 participation evidence. Null preserves the recorded single-crew reading and serializes without this property.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceParticipation? Participation
+    {
+        get; init;
+    }
+
+    /// <summary>D3.7 source and use facts for the current vehicle reading. Null preserves a shot recorded before this wiring.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public VehicleBreakdownUseFacts? VehicleBreakdown
+    {
+        get; init;
+    }
+
     /// <summary>The tank whose MA fires (ruling R7.10); null for a Gun manned by its crew.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceVehicleFirer? Vehicle
@@ -227,9 +241,23 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
-    /// <summary>Whether a squad or HS of the Gun's nationality mans it (C5.8 Case H, A21.13; ruling R8.8).</summary>
+    /// <summary>
+    /// Whether a squad or HS of the Gun's nationality mans it (C5.8 Case H, A21.13; ruling R8.8). The reading of a shot recorded before W-A21.13;
+    /// a shot that carries <see cref="UseMultiple"/> leaves it null.
+    /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? NonQualified
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The multiple of the A21.11 and A21.12 penalties on this use of a crew-served Gun or a vehicle's weapon, from
+    /// <see cref="ScenarioA1NonQualifiedUseCalculator.Use"/> (a Gun) or A21.22's <c>WeaponPenalty</c> (a vehicle) (W-A21.13; rule 6 as amended
+    /// 2026-10-30). Null is a shot recorded before the wiring, read through <see cref="NonQualified"/> and <see cref="CapturedPenalty"/> as then.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? UseMultiple
     {
         get; init;
     }
@@ -316,6 +344,20 @@ public sealed record OrdnanceShot(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceCanister? Canister
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The reading switch of the firer's Stun and Encircled DRM and of the target crew's second Stun (D5.34, D5.342, pp. 203 and 204; A7.7, p. 57; the
+    /// D5.34 claim, ruling RD5.16). When true: the Infantry Target Type and Area Target Type To Hit DR of an AFV under Stun +1 take its +1 ("stun"), as
+    /// the Vehicle Target Type's always did; the Collateral Attack's crew check after a hit reads <see cref="OrdnanceVehicleTarget.Stunned"/>, so a Stunned
+    /// crew's MC takes no +1 and a second Stun is a Recall; and the To Hit DR of a crew whose <see cref="OrdnanceCrew.Encircled"/> is true takes the
+    /// Encircled +1 ("encircled", A7.7) on the Infantry, Vehicle, and Area Target Types. Null is the reading before the claim, as in every record made
+    /// before it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StunEncircledReading
     {
         get; init;
     }
@@ -455,6 +497,17 @@ public sealed record OrdnanceCrew(string? UnitId, string? DefinitionId, bool? Br
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the crew is Encircled (A7.7, p. 57: "All fire by an Encircled unit is subject to a +1 DRM on the IFT (or To Hit DR if ordnance)"; the
+    /// D5.34 claim, ruling RD5.16), by the Encirclement counter or A7.72: +1 to the Gun's To Hit DR on every target type, read only under
+    /// <see cref="OrdnanceShot.StunEncircledReading"/>. Null is false, as in every record made before the claim.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Encircled
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -558,7 +611,25 @@ public sealed record OrdnanceToHit(
 
 /// <summary>What the shot did to the Gun: malfunction (C2.28), Multiple ROF kept (C2.24, C2.5), and the Acquisition it holds after it (C6.5).</summary>
 public sealed record OrdnanceGunEffect(int BreakdownNumber, bool Malfunctioned, int RateOfFire, bool RateOfFireKept, string? FireCounter, int Acquisition,
-    string? AcquiredLocationId);
+    string? AcquiredLocationId)
+{
+    /// <summary>D3.7's explicit vehicle-weapon result for an opted-in resolution; absent on the recorded legacy reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public VehicleBreakdownResolved? VehicleBreakdown
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// A.11 (p. 43; W-A21.13): a Gun fired under a penalty multiple has its Original B# as its X#, and an Original DR at or above it eliminates the
+    /// Gun rather than malfunctions it. Null otherwise, and on every resolution made before the wiring.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Eliminated
+    {
+        get; init;
+    }
+}
 
 /// <summary>The Ordnance package's answer: resolved with its To Hit arithmetic, the Gun's state, and the IFT resolutions of the hit.</summary>
 public sealed record OrdnanceResolution(

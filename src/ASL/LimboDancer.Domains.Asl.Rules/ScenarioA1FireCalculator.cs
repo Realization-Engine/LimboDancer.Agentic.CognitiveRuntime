@@ -33,6 +33,20 @@ public static class ScenarioA1FireCalculator
     public static FireResolution Resolve(FireAttack attack, ScenarioA1FireReference reference)
     {
         ArgumentNullException.ThrowIfNull(attack);
+        return ResolveCore(attack, reference, attack.VehicleBreakdown);
+    }
+
+    /// <summary>D3.7/D3.71 opt-in vehicle breakdown reading. The recorded FireAttack and the legacy entry point remain unchanged.</summary>
+    public static FireResolution Resolve(FireAttack attack, ScenarioA1FireReference reference, FireVehicleBreakdownFacts vehicleBreakdown)
+    {
+        ArgumentNullException.ThrowIfNull(vehicleBreakdown);
+        ArgumentNullException.ThrowIfNull(vehicleBreakdown.Weapons);
+        return ResolveCore(attack, reference, vehicleBreakdown);
+    }
+
+    private static FireResolution ResolveCore(FireAttack attack, ScenarioA1FireReference reference, FireVehicleBreakdownFacts? vehicleBreakdown)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
         ArgumentNullException.ThrowIfNull(reference);
         var missing = Missing(attack);
         if (missing.Count != 0)
@@ -52,7 +66,49 @@ public static class ScenarioA1FireCalculator
             return Refused(FireResolution.Indeterminate, undecided);
         }
 
-        return new Resolution(attack, reference).Run();
+        if (vehicleBreakdown is not null)
+        {
+            if (vehicleBreakdown.OverrunVersion is not null and not 1 || vehicleBreakdown.OverrunVersion is not null && attack.Overrun is null)
+            {
+                return Refused(FireResolution.Abstained, ["asl.a1.fire.vehicle-breakdown-version"]);
+            }
+            if (vehicleBreakdown.Weapons is null || vehicleBreakdown.Weapons.Values.Any(facts => facts is null))
+            {
+                return Refused(FireResolution.Indeterminate, ["asl.a1.fire.vehicle-breakdown: supply the participating vehicle weapon facts"]);
+            }
+            var use = attack.Overrun is not null ? VehicleBreakdownUse.Overrun : VehicleBreakdownUse.MachineGun;
+            foreach (var facts in vehicleBreakdown.Weapons.Values)
+            {
+                if (ScenarioA1VehicleBreakdownResolutionCalculator.FactsRefusal(facts, use) is { } refusal)
+                {
+                    return Refused(FireResolution.Abstained, ["asl.a1.fire." + refusal]);
+                }
+            }
+            var names = attack.VehicleFire is { } vehicle
+                ? vehicle.Weapons is { Count: > 0 } named ? named.Select(item => item.Weapon!).ToArray() : [FireOverrunEffect.MainArmament]
+                : attack.Overrun is { } overrun ? OverrunWeapons(overrun, reference.Definitions[overrun.DefinitionId!]).Select(item => item.Weapon).ToArray() : null;
+            if (names is null || names.Length != vehicleBreakdown.Weapons.Count || names.Any(name => !vehicleBreakdown.Weapons.ContainsKey(name))
+                || vehicleBreakdown.Weapons.Any(item => item.Value is null || item.Value.Weapon != (item.Key switch
+                {
+                    FireOverrunEffect.MainArmament => VehicleBreakdownWeapon.MainArmament,
+                    FireOverrunEffect.BowMg => VehicleBreakdownWeapon.BowMg,
+                    FireOverrunEffect.CoaxialMg => VehicleBreakdownWeapon.CoaxialMg,
+                    _ => (VehicleBreakdownWeapon?)null,
+                })))
+            {
+                return Refused(FireResolution.Indeterminate, ["asl.a1.fire.vehicle-breakdown: supply exactly the participating vehicle weapons"]);
+            }
+            if (vehicleBreakdown.Weapons.Values.Any(facts => facts.IntensiveFire
+                || facts.WinterReduction != (attack.BreakdownReduction ?? 0)
+                || facts.AmmunitionShortage != (attack.AmmunitionShortage == true)
+                || attack.VehicleFire is { } firingVehicle
+                    && ScenarioA1NonQualifiedUseCalculator.Multiple(facts.Captured, facts.NonQualified) != (firingVehicle.CapturedPenalty ?? 0)))
+            {
+                return Refused(FireResolution.Abstained, ["asl.a1.fire.vehicle-breakdown-facts-conflict"]);
+            }
+        }
+
+        return new Resolution(attack, reference, vehicleBreakdown).Run();
     }
 
     /// <summary>
@@ -230,17 +286,22 @@ public static class ScenarioA1FireCalculator
         (attack.Firers ?? []).Where(item => item.Concealed == true).Select(item => (item.UnitId!, item.SeenByGoodOrderEnemy))
             .Concat(Directors(attack).Where(item => item.Concealed == true).Select(item => (item.UnitId!, item.SeenByGoodOrderEnemy)));
 
-    // A8.4: in the DFPh, a unit already marked First Fire fires again as Area Fire at an adjacent or same-hex target.
-    private static bool IsFinalFireAgain(FireAttack attack, FireFirer firer) => attack.Phase == "DFPh" && firer.FirstFireMarked == true;
+    // A8.4: in the DFPh, a unit already marked First Fire fires again as Area Fire at an adjacent or same-hex target. It reads the unit's own counter,
+    // the right one for the unit's inherent FP (the A8.41 claim, ruling RA8.2); the two sites that read it for the unit's weapons keep their answers.
+    private static bool IsFinalFireAgain(FireAttack attack, FireFirer firer) => ScenarioA1FinalFireCalculator.FiresAgain(attack.Phase == "DFPh", firer.FirstFireMarked == true);
 
-    // A9.3: a MG firing as Subsequent First Fire or FPF, or in the DFPh while marked First Fire, uses Sustained Fire.
-    private static bool IsSustained(FireAttack attack, FireWeapon weapon, ScenarioA1FireReference reference) =>
-        ((attack.FireKind is SubsequentFirstFire or FinalProtectiveFire
-            && ((attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is not { } user || UsesSubsequentFire(attack, user)))
-            || (attack.Phase == "DFPh" && weapon.FirstFireMarked == true))
-
-        // A9.3 (referee, pass 9b): only a MG uses Sustained Fire.
-        && reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsMg != false;
+    // A9.3: a MG firing as Subsequent First Fire or FPF, or in the DFPh while marked First Fire, uses Sustained Fire (the A8.41 claim: the same
+    // answer on every input, from the Final Fire calculator). A9.3 (referee, pass 9b): only a MG uses Sustained Fire.
+    private static bool IsSustained(FireAttack attack, FireWeapon weapon, ScenarioA1FireReference reference)
+    {
+        var subsequent = attack.FireKind is SubsequentFirstFire or FinalProtectiveFire
+            && ((attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is not { } user || UsesSubsequentFire(attack, user));
+        var dfph = attack.Phase == "DFPh";
+        var marked = weapon.FirstFireMarked == true;
+        // The definition is read only when a case applies, as before the claim (the build review, finding 9).
+        var isMg = subsequent || (dfph && marked) ? reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsMg : false;
+        return ScenarioA1FinalFireCalculator.Sustained(subsequent, dfph, marked, isMg);
+    }
 
     /// <summary>
     /// A firer's own kind in an attack of Subsequent First Fire or FPF, by its own counter (A8.3, A8.31, pp. 61 to 62; pass 45, ruling R45.1): "A unit
@@ -835,6 +896,10 @@ public static class ScenarioA1FireCalculator
         }
 
         // A8.4: a First-Fire-marked unit fires again in the DFPh only at an adjacent or same-hex target.
+        // Keeps its answer (the A8.41 claim, ruling RA8.6): ScenarioA1FinalFireCalculator.FinalFireRefusal replaces it and differs. This reads the
+        // unit's counter for its weapons too, so a First-Fire-marked MG held by an unmarked unit fires here at any range, and an unmarked MG fired
+        // alone by a First-Fire-marked unit is refused beyond range 1; the calculator reads each weapon's own counter, and an unknown range is not
+        // in reach there (here it passes).
         if (firers.Any(item => IsFinalFireAgain(attack, item) && RangeOf(attack, item) > 1))
         {
             outside.Add("asl.a1.fire.final-fire-outside");
@@ -1016,7 +1081,10 @@ public static class ScenarioA1FireCalculator
     /// A vehicle's MA MG attack (ruling R25.7): the MA AAMG, fired in its side's PFPh, AFPh, or DFPh by a CE crew that is not Stunned
     /// (D1.83, D5.3, D5.34), once per Player Turn unless it kept its Multiple ROF (D3.5, C2.24), not malfunctioned (D3.7), within twice
     /// its Normal Range of eight hexes (D1.83, A7.22), with a clear LOS, at an enemy Location other than its own; no Infantry fire group
-    /// or leader joins it (D3.4; D6.64 is not reviewed); never in the PFPh by a vehicle in Motion (D2.4).
+    /// or leader joins it (D3.4; D6.64 is not reviewed); never in the PFPh by a vehicle in Motion (D2.4). Keeps its answer (the A8.41 claim,
+    /// ruling RA8.3): an MA MG marked First Fire is refused here (ruling R50.2, D3.5 alone), where A9.3's EXC lets it sustain once in Final Fire at
+    /// an ADJACENT or same-hex target, as <see cref="ScenarioA1FinalFireCalculator.MaySustain"/> and
+    /// <see cref="ScenarioA1FinalFireCalculator.FinalFireRefusal"/> answer.
     /// </summary>
     private static void VehicleFireOutside(FireAttack attack, FireVehicleFire vehicle, ScenarioA1FireReference reference,
         IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
@@ -1124,6 +1192,10 @@ public static class ScenarioA1FireCalculator
     private static void OverrunOutside(FireAttack attack, FireOverrun overrun, ScenarioA1FireReference reference,
         IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
     {
+        if (overrun.DisabledWeapons?.Any(name => name is not ("ma" or "bmg" or "cmg")) == true)
+        {
+            outside.Add("asl.a1.fire.overrun-disabled-weapon-unknown");
+        }
         var definition = reference.Definitions.GetValueOrDefault(overrun.DefinitionId!);
         if (definition is not { IsVehicle: true } || attack.Firers is { Count: > 0 } || Directors(attack).Any() || attack.VehicleFire is not null
             || attack.OrdnanceHit is not null || overrun.LocationId != attack.FirerLocationId || overrun.LocationId != attack.TargetLocationId)
@@ -1190,7 +1262,7 @@ public static class ScenarioA1FireCalculator
             weapons.Add((FireOverrunEffect.CoaxialMg, cmg));
         }
 
-        return weapons;
+        return overrun.DisabledWeapons is null ? weapons : [.. weapons.Where(item => !overrun.DisabledWeapons.Contains(item.Item1, StringComparer.Ordinal))];
     }
 
     private static bool Malformed(FireRolls rolls) =>
@@ -1251,17 +1323,21 @@ public static class ScenarioA1FireCalculator
             // A8.31, A8.312 (pass 45, ruling R45.1): a unit with no counter fires First Fire in one group with Subsequent First Fire and FPF firers.
             SubsequentFirstFire => !finalFire && (firstFire || firer.FiredThisPlayerTurn != true),
             FinalProtectiveFire => finalFire || firstFire || firer.FiredThisPlayerTurn != true,
-            _ when attack.Phase == "DFPh" => rateOfFireShot || (!finalFire && (firstFire || firer.FiredThisPlayerTurn != true)),
+            _ when attack.Phase == "DFPh" => rateOfFireShot || ScenarioA1FinalFireCalculator.UnitMayFinalFire(firstFire, finalFire, firer.FiredThisPlayerTurn == true),
             _ => rateOfFireShot || firer.FiredThisPlayerTurn != true,
         };
     }
 
-    /// <summary>Whether a MG may fire in this attack: not yet marked, or marked First Fire where Sustained Fire allows it (A8.3, A8.31, A8.4, A9.3).</summary>
+    /// <summary>
+    /// Whether a MG may fire in this attack: not yet marked, or marked First Fire where Sustained Fire allows it (A8.3, A8.31, A8.4, A9.3). The DFPh
+    /// arm reads the counter alone, from <see cref="ScenarioA1FinalFireCalculator.WeaponMayFinalFire"/> (the A8.41 claim, ruling RA8.8); the range
+    /// of a First-Fire-marked weapon is <see cref="ScenarioA1FinalFireCalculator.FinalFireRefusal"/>'s, which no caller asks yet.
+    /// </summary>
     private static bool WeaponMayFire(FireAttack attack, FireWeapon weapon) => attack.FireKind switch
     {
         FinalProtectiveFire => true,
         SubsequentFirstFire => weapon.FiredThisPlayerTurn != true,
-        _ when attack.Phase == "DFPh" => weapon.FiredThisPlayerTurn != true,
+        _ when attack.Phase == "DFPh" => ScenarioA1FinalFireCalculator.WeaponMayFinalFire(weapon.FiredThisPlayerTurn == true),
         _ => weapon.FiredThisPlayerTurn != true && weapon.FirstFireMarked != true,
     };
 
@@ -1377,9 +1453,20 @@ public static class ScenarioA1FireCalculator
     /// <summary>
     /// What a Collateral Attack's IFT result does to a Vulnerable crew (D.8, D5.34, D5.341, A7.82; rulings R25.5, R25.6; pass 60, ruling R60.7): a KIA
     /// or K Recalls it; a failed MC Stuns it, or Recalls a crew already under Stun +1 (D5.342); a failed PTC pins it; an Original 12 on a MC Recalls it
-    /// (A10.31). <paramref name="dice"/> is the check's DR, needed when <see cref="CrewChecks"/> says so.
+    /// (A10.31). <paramref name="dice"/> is the check's DR, needed when <see cref="CrewChecks"/> says so. The one <paramref name="stunRecovery"/> gives both
+    /// the MC's +1 and D5.342's second Stun, so a caller that passes a merely Stunned crew in it adds a +1 D5.34 gives only to the "+1" side (the D5.34
+    /// claim, ruling RD5.4): the overload with the two facts apart, under <see cref="ScenarioA1StunCalculator.Drm"/> and
+    /// <see cref="ScenarioA1StunCalculator.SecondStun"/>, replaces it, and this one forwards to it with both equal, keeping its answer.
     /// </summary>
-    internal static (FireCheck? Check, string Result) CrewOutcome(string outcome, IReadOnlyList<int>? dice, bool stunRecovery, int morale, int? crewMorale)
+    internal static (FireCheck? Check, string Result) CrewOutcome(string outcome, IReadOnlyList<int>? dice, bool stunRecovery, int morale, int? crewMorale) =>
+        CrewOutcome(outcome, dice, stunRecovery ? 1 : 0, stunRecovery, morale, crewMorale);
+
+    /// <summary>
+    /// <see cref="CrewOutcome(string, IReadOnlyList{int}?, bool, int, int?)"/> with D5.34's +1 and D5.342's second Stun apart (the D5.34 claim, ruling RD5.4):
+    /// <paramref name="plusOne"/> is the MC's Stun +1 (<see cref="ScenarioA1StunCalculator.Drm"/>), and <paramref name="secondStun"/> makes a failed MC a
+    /// Recall (<see cref="ScenarioA1StunCalculator.SecondStun"/>).
+    /// </summary>
+    internal static (FireCheck? Check, string Result) CrewOutcome(string outcome, IReadOnlyList<int>? dice, int plusOne, bool secondStun, int morale, int? crewMorale)
     {
         if (Regex.IsMatch(outcome, "^([1-7])KIA$") || Regex.IsMatch(outcome, "^K/([1-4])$"))
         {
@@ -1400,9 +1487,9 @@ public static class ScenarioA1FireCalculator
             checkDrm.Add(new FireModifier("ift-mc", modifier, "A7.304"));
         }
 
-        if (stunRecovery)
+        if (plusOne > 0)
         {
-            checkDrm.Add(new FireModifier("stun-recovery", 1m, "D5.34"));
+            checkDrm.Add(new FireModifier("stun-recovery", plusOne, "D5.34"));
         }
 
         var original = dice[0] + dice[1];
@@ -1412,7 +1499,7 @@ public static class ScenarioA1FireCalculator
         var result = !pin && original == 12 ? FireVehicleEffect.Recalled
             : passed ? FireVehicleEffect.None
             : pin ? FireVehicleEffect.Pinned
-            : stunRecovery ? FireVehicleEffect.Recalled
+            : secondStun ? FireVehicleEffect.Recalled
             : FireVehicleEffect.Stunned;
         return (new FireCheck(pin ? "NTC" : mc.Success ? outcome : "NMC", [.. dice], original, checkDrm, checkFinal, morale, passed, result)
         {
@@ -1503,7 +1590,8 @@ public static class ScenarioA1FireCalculator
     {
         ArgumentNullException.ThrowIfNull(attack);
         // Rulings R10.5, R10.13: a positive wall or hedge TEM is the target's positive TEM, and a Snap Shot takes no TEM.
-        if (attack.AfvCover is not { } cover || !ScenarioA1FireReference.Tem.TryGetValue(attack.TargetTerrain ?? string.Empty, out var tem) || tem > 0
+        // B23.741 (the B23.74 claim, RB23F.5): a Factory's TEM, when the attack carries one, in place of the terrain key's.
+        if (attack.AfvCover is not { } cover || !ScenarioA1FireReference.Tem.TryGetValue(attack.TargetTerrain ?? string.Empty, out var tem) || (attack.FactoryTem ?? tem) > 0
             || attack.HexsideTem is { Tem: > 0 } || attack.SnapShot == true)
         {
             return null;
@@ -1529,7 +1617,7 @@ public static class ScenarioA1FireCalculator
     }
 
     /// <summary>One resolution, with the target units' changing state.</summary>
-    private sealed class Resolution(FireAttack attack, ScenarioA1FireReference reference)
+    private sealed class Resolution(FireAttack attack, ScenarioA1FireReference reference, FireVehicleBreakdownFacts? vehicleBreakdown = null)
     {
         private readonly List<string> undecided = [];
         private readonly HashSet<string> usedRolls = new(StringComparer.Ordinal);
@@ -1992,8 +2080,8 @@ public static class ScenarioA1FireCalculator
                 vehicleSpared = true;
 
                 // A23.4 (p. 90): "An Original malfunction DR of 12 (or >= 10 if captured) for a Placed/Thrown DC attack" removes it without detonation.
-                if (position.OriginalDr >= AssaultWeaponRemoval(reference.Definitions[charge.DefinitionId!], reference.Definitions.GetValueOrDefault(charge.UserDefinitionId ?? string.Empty),
-                    charge.Captured == true, charge.Inexperienced == true))
+                if (ScenarioA1DemolitionChargeRules.DcMalfunction(position.OriginalDr, AssaultWeaponRemoval(reference.Definitions[charge.DefinitionId!],
+                    reference.Definitions.GetValueOrDefault(charge.UserDefinitionId ?? string.Empty), charge.Captured == true, charge.Inexperienced == true)))
                 {
                     dcMalfunctioned = true;
                     targetsSpared = true;
@@ -2173,7 +2261,7 @@ public static class ScenarioA1FireCalculator
 
             if (charge.Cx == true)
             {
-                drm.Add(new FireModifier("cx:" + charge.UserId, 1m, "A23.4"));
+                drm.Add(new FireModifier("cx:" + charge.UserId, ScenarioA1DemolitionChargeRules.DcCxDrm(true), "A23.4"));
             }
 
             if (named.HullFacing == "rear")
@@ -2455,6 +2543,21 @@ public static class ScenarioA1FireCalculator
         /// </summary>
         private FireOverrunEffect? OverrunEffect(FireOverrun overrun, FireArithmetic arithmetic)
         {
+            if (vehicleBreakdown is not null)
+            {
+                if (undecided.Count != 0)
+                {
+                    return null;
+                }
+                var outcomes = VehicleBreakdowns(overrun.VehicleId!, VehicleBreakdownUse.Overrun, arithmetic.OriginalDr);
+                return outcomes is null ? null : new FireOverrunEffect(overrun.VehicleId!,
+                    [.. outcomes.Where(item => item.Value.Outcome == VehicleBreakdownOutcome.Malfunction).Select(item => item.Key)],
+                    outcomes.Count == 0 && arithmetic.OriginalDr == 12)
+                {
+                    VehicleBreakdowns = outcomes
+                };
+            }
+
             if (arithmetic.OriginalDr != 12 || undecided.Count != 0)
             {
                 return null;
@@ -2728,8 +2831,12 @@ public static class ScenarioA1FireCalculator
                     usedRolls.Add("crewCheck:" + id);
                 }
 
-                // D5.342 (p. 204): a second Stun Recalls the crew; only a Carrier's crew is attacked while Stunned (D6.84).
-                var (check, crewResult) = CrewOutcome(outcome, dice, vehicle.StunRecovery == true || vehicle.Stunned == true, morale, vehicle.CrewMorale);
+                // D5.342 (p. 204): a second Stun Recalls the crew; only a Carrier's crew is attacked while Stunned (D6.84). Under the attack's StunReading
+                // (the D5.34 claim, ruling RD5.4) a merely Stunned crew's MC takes no +1; before it, the Stunned crew took the +1 too.
+                var (check, crewResult) = attack.StunReading == true
+                    ? CrewOutcome(outcome, dice, ScenarioA1StunCalculator.Drm(StunDr.MoraleCheck, vehicle.StunRecovery == true),
+                        ScenarioA1StunCalculator.SecondStun(vehicle.Stunned == true, vehicle.StunRecovery == true), morale, vehicle.CrewMorale)
+                    : CrewOutcome(outcome, dice, vehicle.StunRecovery == true || vehicle.Stunned == true, morale, vehicle.CrewMorale);
                 var crewEffect = WithPrc(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, crewDrm, crewFinal, null, check, crewResult),
                     vehicle, definition, column, arithmetic, drm);
                 if (crewEffect is null)
@@ -3083,11 +3190,13 @@ public static class ScenarioA1FireCalculator
         {
             var definition = reference.Definitions[vehicle.DefinitionId!];
             // E3.741 (ruling R16.14): Extreme Winter lowers the B#.
-            // A21.11, A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the B# two and the ROF one, each time.
+            // A21.11, A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the B# two and the ROF one, each time, by
+            // ScenarioA1NonQualifiedUseCalculator's arithmetic (the A21.13 claim, ruling RA21.7), the same answer.
             var captured = vehicle.CapturedPenalty ?? 0;
-            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0) - (2 * captured);
+            var breakdown = (definition.Breakdown ?? 12) - (attack.BreakdownReduction ?? 0) - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(captured);
             var malfunctioned = arithmetic.OriginalDr >= breakdown;
-            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof && arithmetic.Dice[0] <= rof - captured;
+            var retained = !malfunctioned && vehicle.Pinned != true && attack.Phase != "AFPh" && definition.RateOfFire is { } rof
+                && arithmetic.Dice[0] <= rof - ScenarioA1NonQualifiedUseCalculator.RofLowering(captured);
             return new FireWeaponEffect(vehicle.VehicleId!, breakdown, malfunctioned, retained, false, FireCounter(), null);
         }
 
@@ -3099,13 +3208,38 @@ public static class ScenarioA1FireCalculator
         /// </summary>
         private List<FireWeaponEffect> VehicleWeaponEffects(FireVehicleFire vehicle, FireArithmetic arithmetic)
         {
+            if (vehicleBreakdown is not null)
+            {
+                var outcomes = VehicleBreakdowns(vehicle.VehicleId!, VehicleBreakdownUse.MachineGun, arithmetic.OriginalDr);
+                if (outcomes is null)
+                {
+                    return [];
+                }
+                var names = vehicle.Weapons is { Count: > 0 } declared ? declared.Select(item => item.Weapon!).ToArray() : [FireOverrunEffect.MainArmament];
+                return [.. names.Select((name, index) =>
+                {
+                    var outcome = outcomes[name];
+                    var ma = name == FireOverrunEffect.MainArmament;
+                    var rof = reference.Definitions[vehicle.DefinitionId!].RateOfFire;
+                    var retained = ma && !outcome.Failed && vehicle.Pinned != true && attack.Phase != "AFPh"
+                        && rof is { } rate && arithmetic.Dice[0] <= rate - ScenarioA1NonQualifiedUseCalculator.RofLowering(vehicle.CapturedPenalty ?? 0);
+                    return new FireWeaponEffect(vehicle.VehicleId!, outcome.Numbers.BNumber, outcome.Outcome == VehicleBreakdownOutcome.Malfunction,
+                        retained, false, index == 0 ? FireCounter() : null,
+                        usedRolls.Contains("weaponSelection:" + vehicle.VehicleId + ":" + name) ? attack.Rolls!.WeaponSelection![vehicle.VehicleId + ":" + name] : null)
+                    {
+                        VehicleWeapon = ma ? null : name,
+                        VehicleBreakdown = outcome,
+                    };
+                })];
+            }
+
             if (vehicle.Weapons is not { Count: > 0 } named)
             {
                 return [VehicleWeaponEffect(vehicle, arithmetic)];
             }
 
             var id = vehicle.VehicleId!;
-            var breakdown = 12 - (attack.BreakdownReduction ?? 0) - (2 * (vehicle.CapturedPenalty ?? 0));
+            var breakdown = 12 - (attack.BreakdownReduction ?? 0) - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(vehicle.CapturedPenalty ?? 0);
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
             if (arithmetic.OriginalDr >= breakdown && named.Count > 1)
             {
@@ -3130,6 +3264,22 @@ public static class ScenarioA1FireCalculator
             {
                 VehicleWeapon = item.Weapon,
             })];
+        }
+
+        private Dictionary<string, VehicleBreakdownResolved>? VehicleBreakdowns(string vehicleId, VehicleBreakdownUse use, int originalDr)
+        {
+            var outcomes = ScenarioA1VehicleBreakdownResolutionCalculator.ResolveWeapons(vehicleId, vehicleBreakdown!.Weapons, use, originalDr,
+                attack.Rolls!.WeaponSelection, out var keys, legacyOverrun: use == VehicleBreakdownUse.Overrun && vehicleBreakdown.OverrunVersion is null);
+            if (outcomes is null)
+            {
+                undecided.Add("asl.a1.fire.roll-missing:weaponSelection:" + string.Join(",", keys));
+                return null;
+            }
+            foreach (var key in keys)
+            {
+                usedRolls.Add("weaponSelection:" + key);
+            }
+            return outcomes;
         }
 
         /// <summary>
@@ -3543,7 +3693,9 @@ public static class ScenarioA1FireCalculator
             var shift = cowered ? (inexperienced ? 2 : 1) : 0;
 
             var drm = new List<FireModifier>();
-            var tem = ScenarioA1FireReference.Tem[attack.TargetTerrain!];
+            // B23.741 (the B23.74 claim, RB23F.5): a Factory's TEM, when the attack carries one, in place of the terrain key's; the wall and hedge rule
+            // (B9.3) below reads the same number.
+            var tem = attack.FactoryTem ?? ScenarioA1FireReference.Tem[attack.TargetTerrain!];
             var flamethrower = Flamethrower;
             var dcPlaced = attack.DemolitionCharge?.Mode == FireDemolitionCharge.Placed;
             if (flamethrower)
@@ -3569,7 +3721,7 @@ public static class ScenarioA1FireCalculator
             else if (hit is { Area: true } && hit.CriticalHit != true && tem != 0)
             {
                 // C3.331 (ruling R9.3): an Area Target Type hit takes its TEM on the Effects DR.
-                drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "C3.331"));
+                drm.Add(new FireModifier("tem:" + (attack.FactoryTem is null ? attack.TargetTerrain : "factory"), tem, "C3.331"));
             }
             else if (hit is { Area: true } && hit.CriticalHit != true && attack.CushionedOpenGround == true && attack.TargetTerrain == "open-ground")
             {
@@ -3582,7 +3734,7 @@ public static class ScenarioA1FireCalculator
                 // positive TEM into a negative Effects DRM (a Direct Fire hit has no Air Burst, B13.3).
                 if (hit.CriticalHit == true && tem != 0)
                 {
-                    drm.Add(new FireModifier("critical-hit-tem:" + attack.TargetTerrain, -Math.Abs(tem), "C3.71"));
+                    drm.Add(new FireModifier("critical-hit-tem:" + (attack.FactoryTem is null ? attack.TargetTerrain : "factory"), -Math.Abs(tem), "C3.71"));
                 }
 
                 // C3.71, B10.31 (p. 170; pass 60, ruling R60.14): the Height Advantage the target claimed on the To Hit DR is reversed as well.
@@ -3609,7 +3761,7 @@ public static class ScenarioA1FireCalculator
             }
             else if (tem != 0)
             {
-                drm.Add(new FireModifier("tem:" + attack.TargetTerrain, tem, "A7.6"));
+                drm.Add(attack.FactoryTem is null ? new FireModifier("tem:" + attack.TargetTerrain, tem, "A7.6") : new FireModifier("tem:factory", tem, "B23.741"));
             }
 
             // B23.32, C3.71 (pp. 136, 170; pass 60, ruling R60.11): +1 for each non-rooftop building level above the target Location, against an Area
@@ -3681,10 +3833,18 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("lv-hindrance", lowVisibility, "E1.7"));
             }
 
-            // A7.7 (ruling R12.11): +1 when an Encircled unit fires in the group, once however many do (A7.52).
-            if ((attack.Firers ?? []).FirstOrDefault(item => item.Encircled == true) is { } encircled)
+            // A7.7 (ruling R12.11; the D5.34 claim, ruling RD5.16): +1 when an Encircled unit fires in the group, once however many do (A7.52).
+            if ((attack.Firers ?? []).FirstOrDefault(item => item.Encircled == true) is { } encircled
+                && ScenarioA1EncirclementCalculator.FirerDrm(true) is > 0 and var encircledDrm)
             {
-                drm.Add(new FireModifier("encircled:" + encircled.UnitId, 1m, "A7.7"));
+                drm.Add(new FireModifier("encircled:" + encircled.UnitId, encircledDrm, "A7.7"));
+            }
+            // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): a Canister shot has no firers (C8.4), so its crew's Encircled is a fact of the Canister,
+            // read here alone: +1 on the IFT DR, and no other firer term; once per attack (A7.52), so never beside an Encircled firer's. Null is the
+            // reading before the claim.
+            else if (attack.Canister is { Encircled: true } encircledCanister && ScenarioA1EncirclementCalculator.FirerDrm(true) is > 0 and var canisterDrm)
+            {
+                drm.Add(new FireModifier("encircled:" + encircledCanister.GunId, canisterDrm, "A7.7"));
             }
 
             // A4.51 (ruling R5.2): +1 when a CX unit makes or directs the attack, once however many do. A23.4, A23.6, A23.62, C7.346 (pass 60, ruling
@@ -3693,7 +3853,9 @@ public static class ScenarioA1FireCalculator
             if (((attack.Firers ?? []).FirstOrDefault(item => item.Cx == true)?.UnitId ?? Directors(attack).FirstOrDefault(item => item.Cx == true)?.UnitId
                 ?? (attack.DemolitionCharge is { Cx: true } cxCharge && !chargeAtAfv ? cxCharge.UserId : null)) is { } exhausted)
             {
-                drm.Add(new FireModifier("cx:" + exhausted, 1m, attack.DemolitionCharge is null ? "A4.51" : "A23.4"));
+                // The DC's +1 is A23.4's (the A23.3 claim, RA23.6); an ordinary firer's is A4.51's.
+                drm.Add(new FireModifier("cx:" + exhausted, attack.DemolitionCharge is null ? 1m : ScenarioA1DemolitionChargeRules.DcCxDrm(true),
+                    attack.DemolitionCharge is null ? "A4.51" : "A23.4"));
             }
 
             // A23.6, A23.62 (ruling R15.3): a Thrown DC is +2 at its target and +3 at its thrower's Location, each +1 more in the AFPh unless its
@@ -3714,10 +3876,10 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("hero-mg:" + hero.UnitId, 1m, "A15.23"));
             }
 
-            // D5.34: a vehicle under Stun +1 adds one to its MG IFT DR.
-            if (attack.VehicleFire is { StunRecovery: true } recovering)
+            // D5.34 (the D5.34 claim): a vehicle under Stun +1 adds one to its MG IFT DR.
+            if (attack.VehicleFire is { } recovering && ScenarioA1StunCalculator.Drm(StunDr.MachineGunIft, recovering.StunRecovery == true) is > 0 and var stunDrm)
             {
-                drm.Add(new FireModifier("stun-recovery:" + recovering.VehicleId, 1m, "D5.34"));
+                drm.Add(new FireModifier("stun-recovery:" + recovering.VehicleId, stunDrm, "D5.34"));
             }
 
             // D3.52, D3.51 (p. 201; pass 50): a CMG fired outside its TCA adds the To Hit DRM of Case A to the IFT DR, and one fired within a TCA
@@ -3733,10 +3895,10 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("case-a:" + turned.GunId, canisterCaseA, "D3.52"));
             }
 
-            // D5.34 (p. 203; pass 35, task 35.13 d): and to its OVR DR.
-            if (attack.Overrun is { StunRecovery: true } overrunning)
+            // D5.34 (p. 203; pass 35, task 35.13 d; the D5.34 claim): and to its OVR DR.
+            if (attack.Overrun is { } overrunning && ScenarioA1StunCalculator.Drm(StunDr.Overrun, overrunning.StunRecovery == true) is > 0 and var overrunStun)
             {
-                drm.Add(new FireModifier("stun-recovery:" + overrunning.VehicleId, 1m, "D5.34"));
+                drm.Add(new FireModifier("stun-recovery:" + overrunning.VehicleId, overrunStun, "D5.34"));
             }
 
             // D3.44, D7.16, D3.45 (pp. 200, 207; pass 55, rulings R55.16, R55.18): a vehicle's Armor Leader modifies the IFT DR of a MA that is a
@@ -3856,8 +4018,9 @@ public static class ScenarioA1FireCalculator
 
             // A23.4 (ruling R15.2): a DC's Original DR at its malfunction number removes it with no effect. C7.346 (pass 60, ruling R60.16): at a named AFV,
             // its Original Position DR does instead.
-            if (attack.DemolitionCharge is { Mode: not FireDemolitionCharge.Thrower } exploded && !chargeAtAfv && original >= AssaultWeaponRemoval(reference.Definitions[exploded.DefinitionId!],
-                reference.Definitions.GetValueOrDefault(exploded.UserDefinitionId ?? string.Empty), exploded.Captured == true, exploded.Inexperienced == true))
+            if (attack.DemolitionCharge is { Mode: not FireDemolitionCharge.Thrower } exploded && !chargeAtAfv
+                && ScenarioA1DemolitionChargeRules.DcMalfunction(original, AssaultWeaponRemoval(reference.Definitions[exploded.DefinitionId!],
+                    reference.Definitions.GetValueOrDefault(exploded.UserDefinitionId ?? string.Empty), exploded.Captured == true, exploded.Inexperienced == true)))
             {
                 dcMalfunctioned = true;
                 result = "none";
@@ -4101,6 +4264,9 @@ public static class ScenarioA1FireCalculator
                 foreach (var weapon in weapons)
                 {
                     var mg = reference.Definitions[weapon.DefinitionId!];
+
+                    // Keeps its answer (the A8.41 claim, ruling RA8.6): a weapon's Area Fire is read here from its unit's First Fire counter, so an
+                    // unmarked MG fired alone by a First-Fire-marked unit is halved; ScenarioA1FinalFireCalculator.Verdict reads the weapon's own.
                     var multipliers = Multipliers(range, mg.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), IsSustained(attack, weapon, reference), LevelAboveOf(attack, firer), firer);
                     if (mg.IsFt)
                     {
@@ -4270,9 +4436,9 @@ public static class ScenarioA1FireCalculator
                 }
             }
 
-            Cause(IsSustained(attack, weapon, reference) ? 2 : 0, "in Sustained Fire, A9.3");
+            Cause(IsSustained(attack, weapon, reference) ? ScenarioA1FinalFireCalculator.SustainedBreakdownReduction : 0, "in Sustained Fire, A9.3");
             Cause(Inexperience(weapon), "in Inexperienced hands, A19.32");
-            Cause(weapon.Captured == true ? 2 : 0, "captured, A21.11");
+            Cause(ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(weapon.Captured == true ? 1 : 0), "captured, A21.11");
             Cause(attack.BreakdownReduction ?? 0, "in Extreme Winter, E3.741");
             Cause(Shortage(weapon), "for Ammunition Shortage, A19.131");
             if (causes.Count == 0)
@@ -4303,8 +4469,8 @@ public static class ScenarioA1FireCalculator
                     ? -(attack.BreakdownReduction ?? 0) - Shortage(weapon) + AssaultWeaponRemoval(ft, (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is { } user
                         ? reference.Definitions[user.DefinitionId!] : null, weapon.Captured == true,
                         (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true)?.Inexperienced == true)
-                    : (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? 2 : 0) - Inexperience(weapon)
-                    - (weapon.Captured == true ? 2 : 0) - (attack.BreakdownReduction ?? 0) - Shortage(weapon), StringComparer.Ordinal);
+                    : (reference.Definitions[weapon.DefinitionId!].Breakdown ?? 12) - (IsSustained(attack, weapon, reference) ? ScenarioA1FinalFireCalculator.SustainedBreakdownReduction : 0) - Inexperience(weapon)
+                    - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(weapon.Captured == true ? 1 : 0) - (attack.BreakdownReduction ?? 0) - Shortage(weapon), StringComparer.Ordinal);
             var reached = malfunction ? weapons.Where(weapon => original >= breakdown[weapon.EquipmentId!]).Select(weapon => weapon.EquipmentId!).ToArray() : [];
             var malfunctioned = new HashSet<string>(StringComparer.Ordinal);
             var selection = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -4347,7 +4513,7 @@ public static class ScenarioA1FireCalculator
                     && !(operatorUnit is not null && cowering.Contains(operatorUnit.UnitId!))
                     && !(attack.FireKind == FinalProtectiveFire && operatorUnit?.FinalFireMarked == true)
                     && (attack.Phase != "AFPh" || operatorUnit?.OpportunityFire == true)
-                    && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof - (weapon.Captured == true ? 1 : 0);
+                    && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof - ScenarioA1NonQualifiedUseCalculator.RofLowering(weapon.Captured == true ? 1 : 0);
                 // A.11 (p. 43; pass 45): "it also transforms the weapon's Original B# to an X# during that use": a weapon whose B# this fire lowered is
                 // removed on a DR at least its printed B# (the page's LMG in Sustained Fire: B10, X12). A FT's own removal is ruling R15.1's.
                 var definition = reference.Definitions[weapon.DefinitionId!];
@@ -4358,7 +4524,7 @@ public static class ScenarioA1FireCalculator
                 var removed = attack.CoweringMarksAndWeaponResidual == true && !definition.IsFt && malfunctioned.Contains(id) && lowered
                     && original >= printed - (attack.BreakdownReduction ?? 0);
                 return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,
-                    retained ? null : sustained ? "final-fire" : operatorUnit is null ? counter : OwnCounter(operatorUnit), selection.TryGetValue(id, out var dr) ? dr : null)
+                    retained ? null : sustained ? ScenarioA1FinalFireCalculator.SustainedCounter : operatorUnit is null ? counter : OwnCounter(operatorUnit), selection.TryGetValue(id, out var dr) ? dr : null)
                 {
                     Removed = removed ? true : null,
                 };
@@ -4542,7 +4708,10 @@ public static class ScenarioA1FireCalculator
                     {
                         unit.Eliminate("eliminated-kia");
                     }
-                    else if (!unit.Broken && !unit.IsHeroType && !unit.Berserk)
+                    // The A20.54 claim (rulings RA20.2, RA20.9): ScenarioA1PrisonerCalculator.KiaSurvivor decides; a prisoner or an Unarmed unit is
+                    // unarmed there only when the attack carries KiaUnarmedReduction, so an older record breaks it as it did (A7.301, A20.54).
+                    else if (ScenarioA1PrisonerCalculator.KiaSurvivor(unit.Broken, unit.IsHeroType, unit.Berserk,
+                        attack.KiaUnarmedReduction == true && (unit.Target.GuardId is not null || unit.Target.Unarmed == true)) == KiaSurvivorEffect.Broken)
                     {
                         unit.Break("broken-kia");
                     }
@@ -5329,18 +5498,17 @@ public static class ScenarioA1FireCalculator
         {
             get;
         } = Morale(definition, target.Broken == true, target.Wounded == true, target.Fanatic == true, target.Heroic == true,
-            target.Berserk == true) - (Encircles(target) ? 1 : 0);
+            target.Berserk == true) - ScenarioA1EncirclementCalculator.MoraleDrop(target.Encircled == true, target.Berserk == true, target.Heroic == true);
 
         /// <summary>
         /// The current Morale Level: one lower when wounded (A17.3); a hero's is printed on his wounded side and never lowered
         /// (A15.2); a heroic leader's is at least 9 (A15.21: a 10-2 is a 1-4-10 hero); a Fanatic unit's is one higher (A10.8);
         /// a hero's or heroic leader's never exceeds 10, or 9 if wounded (A15.2); a berserk unit's is 10, never lowered, and one
-        /// higher when Fanatic (A15.42, ruling R30.3).
+        /// higher when Fanatic (A15.42, ruling R30.3). A7.7 (ruling R12.11; the D5.34 claim, ruling RD5.16): an Encircled unit's is one lower, unless it
+        /// is berserk or heroic, on its counter or by this attack (<see cref="ScenarioA1EncirclementCalculator.MoraleDrop"/>).
         /// </summary>
-        public int? MoraleLevel => Morale(Definition, Broken, Wounded, Fanatic, Heroic, Berserk) - (Encircles(Target) && !Berserk && !Heroic ? 1 : 0);
-
-        /// <summary>A7.7 (ruling R12.11): an Encircled unit's Morale Level is one lower, unless it is berserk or heroic.</summary>
-        private static bool Encircles(FireTarget target) => target.Encircled == true && target.Berserk != true && target.Heroic != true;
+        public int? MoraleLevel => Morale(Definition, Broken, Wounded, Fanatic, Heroic, Berserk)
+            - ScenarioA1EncirclementCalculator.MoraleDrop(Target.Encircled == true, Target.Berserk == true || Berserk, Target.Heroic == true || Heroic);
 
         private static int? Morale(FireDefinition definition, bool broken, bool wounded, bool fanatic, bool heroic, bool berserk)
         {

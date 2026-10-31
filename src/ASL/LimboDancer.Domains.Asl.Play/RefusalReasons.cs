@@ -100,7 +100,7 @@ public static class RefusalReasons
         ["ordnance.canister-outside"] = "a fact of the Canister shot is outside the reviewed cases: it names one of the five aims of its Covered Arc and no vehicle (C8.4)",
         ["ordnance.canister-movement-phase"] = "Canister as Defensive First Fire in the MPh is not built; fire it in the PFPh, AFPh, or DFPh (C8.4)",
         // Pass 72 (the reviews' known items): a lone leader with a PSK is refused here too (C13.45, ruling R9.11); a hero alone may fire it (A15.23).
-        ["ordnance.crew-outside"] = "the Gun is not manned by a crew of its side able to fire it (A21.13); a lone leader may not fire a PSK, which one SMC fires only as a hero (C13.45, A15.23)",
+        ["ordnance.crew-outside"] = "the weapon's firer may not fire it: a broken or berserk crew does not fire a Gun, a SW is fired by Personnel of its nationality, and a lone leader may not fire a PSK, which one SMC fires only as a hero (A21.13, C13.45, A15.23)",
         ["ordnance.gun-already-fired"] = "the Gun has fired and did not keep its Multiple ROF (C2.24)",
         ["ordnance.out-of-range"] = "the target is beyond the Gun's range, nearer than its minimum range, or in its own hex (C2.25, C5.5)",
         ["ordnance.elevation-outside"] = "the target is at another level at a range less than the elevation difference between them: a Gun fires at another level only at a range of at least that difference (C2.6)",

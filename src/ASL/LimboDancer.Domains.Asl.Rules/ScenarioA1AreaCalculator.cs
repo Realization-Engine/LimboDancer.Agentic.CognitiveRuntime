@@ -18,9 +18,24 @@ internal static class ScenarioA1AreaCalculator
     private static readonly string[] HullAndTurret = ["hull", "turret"];
     private static readonly string[] Facings = ["front", "side"];
 
-    public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference)
+    public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) => Run(shot, gun, reference, null);
+
+    /// <summary>
+    /// The Area Target Type shot. With <see cref="OrdnanceShot.StunEncircledReading"/> null it keeps the answer it had before the D5.34 claim: no Stun +1 on
+    /// the To Hit DR of an AFV under a "+1" counter, which D5.34 (p. 203) gives to "any TH ... DR it makes"; set, it adds
+    /// <see cref="ScenarioA1StunCalculator.Drm"/> ("stun"; the claim's ruling RD5.16, W-D5.34). No vehicle-mounted mortar is in the catalog today. Nor,
+    /// null, does it add the Encircled +1 of an Encircled crew (A7.7, p. 57: "+1 DRM on the IFT (or To Hit DR if ordnance)"); set, it adds
+    /// <see cref="ScenarioA1EncirclementCalculator.FirerDrm"/> for <see cref="OrdnanceCrew.Encircled"/> ("encircled").
+    /// </summary>
+    public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         var rolls = shot.Rolls!;
+        static bool MalformedEffects(IReadOnlyList<int>? dice) => dice is not null && (dice.Count != 2 || dice.Any(die => die is < 1 or > 6));
+        if (breakdownFacts is not null && (MalformedEffects(rolls.ToHit) || MalformedEffects(rolls.Hit?.Attack) || MalformedEffects(rolls.CriticalHit?.Attack)))
+        {
+            return new(OrdnanceResolution.Abstained, [Prefix + "roll-malformed"], null, null);
+        }
+
         var hit = shot.Hit!;
         var range = shot.Range!.Value;
         var crew = shot.Crew!;
@@ -33,21 +48,35 @@ internal static class ScenarioA1AreaCalculator
 
         // C3.331: Cases C1 to C4, E, G, L, and Q do not apply; a SW has no Case A (no CA) and no Case F.
         var drm = new List<FireModifier>();
+        drm.AddRange(ScenarioA1OrdnanceParticipationCalculator.MortarDrm(shot, gun, reference));
         if (ScenarioA1OrdnanceCalculator.AfphFire(shot))
         {
             drm.Add(new FireModifier("case-b", shot.FirerInWoodsOrBuilding == true ? 3 : 2, "C5.2"));
         }
 
         // C5.4, C9.3: a pinned firer, or a pinned Spotter, which in effect pins the mortar's firer.
-        var pinned = crew.Pinned == true || shot.Spotter?.Pinned == true;
+        var pinned = ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) || shot.Spotter?.Pinned == true;
         if (pinned)
         {
             drm.Add(new FireModifier("case-d", 2, "C5.4"));
         }
 
-        if (crew.Cx == true)
+        if (ScenarioA1OrdnanceParticipationCalculator.Cx(shot))
         {
             drm.Add(new FireModifier("cx", 1, "A4.51"));
+        }
+
+        // D5.34 (p. 203; the D5.34 claim, ruling RD5.16): an AFV under a "+1" counter after a Stun adds one to its To Hit DR, under the shot's
+        // StunEncircledReading.
+        if (shot.StunEncircledReading == true && ScenarioA1StunCalculator.Drm(StunDr.ToHit, shot.Vehicle?.StunRecovery == true) is > 0 and var stun)
+        {
+            drm.Add(new FireModifier("stun", stun, "D5.34"));
+        }
+
+        // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): an Encircled crew adds one to its To Hit DR, under the shot's StunEncircledReading.
+        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(ScenarioA1OrdnanceParticipationCalculator.Encircled(shot)) is > 0 and var encircled)
+        {
+            drm.Add(new FireModifier("encircled", encircled, "A7.7"));
         }
 
         // C9.31 (ruling R9.4): Spotted fire.
@@ -80,6 +109,19 @@ internal static class ScenarioA1AreaCalculator
         // C6.521 (pass 60, rulings R60.3, R60.13): the Area Acquisition covers every Location of its hex in the firer's LOS.
         var acquisition = shot.AreaAcquisition ?? shot.Acquisition!.Value;
 
+        void AcquisitionDrm(List<FireModifier> list, string? locationId)
+        {
+            // C6.4 pp. 174-175: use Bore Sighting or Acquisition, never both. The older light-mortar path admitted no Bore Sighting.
+            if (shot.Participation is not null && shot.BoreSighted == true && (locationId ?? shot.TargetLocationId) == shot.TargetLocationId)
+            {
+                list.Add(new FireModifier("case-m", -2, "C6.4"));
+            }
+            else if (acquisition < 0)
+            {
+                list.Add(new FireModifier("case-n", acquisition, "C6.521"));
+            }
+        }
+
         // C3.331 (ruling R9.3): each unit's own DRM: Case K for a concealed enemy unit, the Area Target Acquisition for every unit, concealed or
         // not (C6.521, C6.57; referee, pass 9), and the -1 per squad equivalent its side overstacks the Location (A5.131).
         // B23.32, C3.4 (pass 60, ruling R60.11): each Location of the hex in the firer's LOS adds its own Case R. C3.33 (p. 169; ruling R60.24): one out
@@ -96,10 +138,7 @@ internal static class ScenarioA1AreaCalculator
                 list.Add(new FireModifier("case-k", 2, "C6.2"));
             }
 
-            if (acquisition < 0)
-            {
-                list.Add(new FireModifier("case-n", acquisition, "C6.521"));
-            }
+            AcquisitionDrm(list, locationId);
 
             if (levels is not null && Location(shot, locationId)?.Los?.HindranceDrm is > 0 and var own)
             {
@@ -111,17 +150,14 @@ internal static class ScenarioA1AreaCalculator
         foreach (var target in targets)
         {
             var list = new List<FireModifier>();
-            var enemy = target.Dummy == true || reference.Fire.Definitions.GetValueOrDefault(target.DefinitionId ?? string.Empty)?.Nationality != gun.Nationality;
+            var enemy = target.Dummy == true || reference.Fire.Definitions.GetValueOrDefault(target.DefinitionId ?? string.Empty)?.Nationality != ScenarioA1OrdnanceCalculator.FriendlyNationality(shot, gun);
             var concealed = enemy && (target.Concealed == true || target.Hidden == true || target.Dummy == true);
             if (concealed)
             {
                 list.Add(new FireModifier("case-k", 2, "C6.2"));
             }
 
-            if (acquisition < 0)
-            {
-                list.Add(new FireModifier("case-n", acquisition, "C6.521"));
-            }
+            AcquisitionDrm(list, target.LocationId);
 
             if (enemy && shot.TargetOverstack is { } crowded && crowded > 0)
             {
@@ -170,6 +206,17 @@ internal static class ScenarioA1AreaCalculator
 
         var common = (int)drm.Sum(item => item.Value);
         var original = dice[0] + dice[1];
+        var breakdownOutcome = breakdownFacts is null ? null
+            : ScenarioA1VehicleBreakdownResolutionCalculator.ResolveArea(breakdownFacts, original, null);
+        var ownEffectsRead = false;
+        void ReadOwnEffects(IReadOnlyList<int>? effects)
+        {
+            if (breakdownFacts is not null && !ownEffectsRead && effects is not null)
+            {
+                breakdownOutcome = ScenarioA1VehicleBreakdownResolutionCalculator.ResolveArea(breakdownFacts, original, effects[0] + effects[1]);
+                ownEffectsRead = true;
+            }
+        }
         int Lowest(Judged item) => 2 + common + (int)item.Drm.Sum(modifier => modifier.Value);
 
         // C3.7, C3.6, C3.331 (referee, pass 9): judged for each unit, an Original 2 is a Critical Hit on a unit more than the lowest Final DR could
@@ -212,24 +259,25 @@ internal static class ScenarioA1AreaCalculator
         var toHit = new OrdnanceToHit("red", basic, modifications, modified, [.. dice], original, drm, original + common, improbable, subsequent,
             hitIds.Length > 0, critical);
 
-        // C2.28: an Original To Hit DR at or above the B# malfunctions the mortar.
-        var malfunctioned = original >= ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
-
         // C2.24, C9.31, C9.2: the Multiple ROF, one lower for Spotted fire, none for a lone SMC; C5.4: none when pinned; C5.2: none in the AFPh.
-        var rof = gun.RateOfFire ?? 0;
+        // A21.12 (W-A21.13): the penalty multiple lowers it one each; a shot recorded before the wiring was not lowered.
+        var rof = ScenarioA1OrdnanceCalculator.UnloweredRateOfFire(shot, gun);
         if (shot.Spotter is not null && rof > 0)
         {
             rof--;
         }
 
-        // C9.2, A21.13 (ruling RC9.4): a lone SMC loses the Multiple ROF; only one firer is accepted, so a leader or hero firer is a lone SMC.
-        var loneSmc = reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind is "asl:leader" or "asl:hero";
+        var conditional = ScenarioA1OrdnanceParticipationCalculator.ConditionalRof(shot, gun, reference, rof, legacyArea: true);
+        rof = conditional.Rof;
+        var conditionalNoRof = conditional.IntensiveFireCounter;
+
+        // C9.2, A21.13: actual participation decides lone status. An older shot still has its single primary crew only.
+        var loneSmc = ScenarioA1OrdnanceParticipationCalculator.SmcCount(reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind,
+            shot.Participation) == 1;
         if (pinned || ScenarioA1OrdnanceCalculator.AfphFire(shot) || !ScenarioA1MortarCalculator.MultipleRofKept(loneSmc))
         {
             rof = 0;
         }
-
-        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, malfunctioned, rof, dice[0]);
 
         FireResolution? normal = null, criticalHit = null;
         var levelHits = new List<FireResolution>();
@@ -283,6 +331,7 @@ internal static class ScenarioA1AreaCalculator
                 var criticalVehicles = picked.Where(item => item.Vehicle is { } vehicle && !Armored(shot, vehicle, reference)).Select(item => item.Vehicle!).ToArray();
                 if (criticalTargets.Length > 0 || criticalVehicles.Length > 0)
                 {
+                    ReadOwnEffects(rolls.CriticalHit?.Attack);
                     criticalHit = ScenarioA1FireCalculator.Resolve(LocationAttack(shot, gun, reference, true, picked[0].LocationId, criticalTargets, criticalVehicles, rolls.CriticalHit),
                         reference.Fire);
                     if (Pending(criticalHit, "critical-hit:") is { } pending)
@@ -294,6 +343,7 @@ internal static class ScenarioA1AreaCalculator
 
             // C3.33: every unit hit is attacked with a single Effects DR, so the normal hit reuses the Critical Hit's.
             var shared = criticalHit?.Arithmetic?.Dice ?? rolls.Hit?.Attack;
+            ReadOwnEffects(shared);
 
             // C1.55, C3.72, C9.1 (pass 60, ruling R60.10): each AFV hit is attacked on the IFT with the same DR, and its Vulnerable crew Collaterally
             // when the AFV is neither destroyed nor Shocked (C3.332 and its EX).
@@ -345,6 +395,7 @@ internal static class ScenarioA1AreaCalculator
                     };
                 }
 
+                ReadOwnEffects(hitRolls?.Attack);
                 var attack = ScenarioA1FireCalculator.Resolve(LocationAttack(shot, gun, reference, false, place, units, struck, hitRolls), reference.Fire);
                 if (Pending(attack, "hit:") is { } pending)
                 {
@@ -378,12 +429,22 @@ internal static class ScenarioA1AreaCalculator
 
         // C6.521, C6.57, C9.2 (referee, pass 9): the mortar acquires the target hex unless it malfunctions, concealed occupants or not, one step more
         // if already acquired.
-        var acquires = !malfunctioned;
+        var breakdown = breakdownOutcome?.Numbers.BNumber ?? ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
+        var failed = breakdownOutcome?.Failed ?? original >= breakdown;
+        var malfunctioned = breakdownOutcome is null ? failed : breakdownOutcome.Outcome == VehicleBreakdownOutcome.Malfunction;
+        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0], conditionalNoRof);
+        var acquires = !failed;
         var gained = !acquires ? 0 : Math.Max(acquisition - 1, -2);
-        var gunEffect = new OrdnanceGunEffect(ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference), malfunctioned, Math.Max(rof, 0), kept, counter, gained, acquires ? shot.TargetLocationId : null);
+        // A.11 (W-A21.13): under a penalty multiple the Original B# is the X#, and a DR at or above it eliminates the Gun.
+        var eliminated = breakdownOutcome is null ? ScenarioA1OrdnanceCalculator.Eliminated(shot, gun, original, failed) : null;
+        var gunEffect = new OrdnanceGunEffect(breakdown, malfunctioned && eliminated != true, Math.Max(rof, 0), kept, counter, gained, acquires ? shot.TargetLocationId : null)
+        {
+            VehicleBreakdown = breakdownOutcome,
+            Eliminated = eliminated,
+        };
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
-            CrewConcealmentLost = crew.Concealed == true && shot.CrewSeen != false ? true : null,
+            CrewConcealmentLost = ScenarioA1OrdnanceParticipationCalculator.Concealed(shot) && shot.CrewSeen != false ? true : null,
             Hit = normal,
             CriticalHit = criticalHit,
             CriticalTarget = criticalTarget,
@@ -457,6 +518,9 @@ internal static class ScenarioA1AreaCalculator
             Companions = others.Length > 0 ? [.. others, .. shot.Hit.Companions ?? []] : shot.Hit.Companions,
             AfvCover = locationId == shot.TargetLocationId ? attack.AfvCover : null,
             GunTarget = locationId == shot.TargetLocationId ? attack.GunTarget : null,
+
+            // B23.741 (the B23.74 claim): the hit's Factory TEM describes its own target Location; another Location (a rooftop, B23.81) keeps its key's.
+            FactoryTem = locationId == shot.TargetLocationId ? attack.FactoryTem : null,
         };
     }
 
@@ -511,10 +575,14 @@ internal static class ScenarioA1AreaCalculator
             drm.Add(new FireModifier("all-af-8-or-more", 1, "C1.55"));
         }
 
-        var terrain = Location(shot, vehicle.LocationId)?.TargetTerrain ?? shot.Hit!.TargetTerrain!;
-        if (!critical && terrain != "woods" && ScenarioA1FireReference.Tem.GetValueOrDefault(terrain) is var tem and not 0)
+        // B23.741 (the B23.74 claim, ruling RB23F.5): the hit's Factory TEM describes only its own target Location, named among the shot's Locations
+        // or read from the hit's terrain when the shot names none for the vehicle; another Location keeps its key's TEM.
+        var other = Location(shot, vehicle.LocationId);
+        var terrain = other?.TargetTerrain ?? shot.Hit!.TargetTerrain!;
+        var factoryTem = other is null || vehicle.LocationId == shot.TargetLocationId ? shot.Hit!.FactoryTem : null;
+        if (!critical && terrain != "woods" && (factoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(terrain)) is var tem and not 0)
         {
-            drm.Add(new FireModifier("tem:" + terrain, tem, "C3.331"));
+            drm.Add(new FireModifier("tem:" + (factoryTem is null ? terrain : "factory"), tem, "C3.331"));
         }
 
         var final = dice[0] + dice[1] + (int)drm.Sum(item => item.Value);

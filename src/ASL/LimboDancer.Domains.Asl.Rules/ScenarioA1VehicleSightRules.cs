@@ -44,13 +44,6 @@ public static class ScenarioA1VehicleSightRules
     public static bool HindersAtRange(bool mapHindranceAtRange, string? ownTerrain, int? month) => !mapHindranceAtRange || AddsToOwnHindrance(ownTerrain, month);
 
     /// <summary>
-    /// A24.2, A24.5, A24.8 (ruling R9.6): a Location's SMOKE counted at <see cref="ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance"/> a source
-    /// (the A24.5 claim, RA24.5): the same answer for every count, with no allocation.
-    /// </summary>
-    public static int SmokeDrm(int sources, bool firerThere, bool targetThere, Func<bool> crossed) =>
-        LocationSmoke(ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance * sources, firerThere, targetThere, crossed);
-
-    /// <summary>
     /// A24.2, A24.8 (the A24.5 claim, RA24.5): a Location's SMOKE, the sum of its sources' Hindrance (<see cref="ScenarioA1SmokeStrengthCalculator.Hindrance"/>)
     /// and at most +3, with +1 more for fire traced out of or within it; none when the LOS does not enter it, which is read only when neither end is there.
     /// </summary>
@@ -75,13 +68,6 @@ public static class ScenarioA1VehicleSightRules
         ArgumentNullException.ThrowIfNull(losEntersHexAcrossHexside);
         return !inBypass || losEntersHexAcrossHexside();
     }
-
-    /// <summary>
-    /// C5.5 (p. 172; pass 35, task 35.10): the Hindrance of a Gun's shot within its own hex, Case R: the hex's SMOKE as for fire within it (A24.2,
-    /// A24.8), and +1 for a wreck or AFV there that is neither firer nor target (D9.4).
-    /// </summary>
-    public static int OwnHexHindrance(int smokeSources, bool wreckOrAfv) =>
-        (smokeSources > 0 ? SmokeDrm(smokeSources, true, true, static () => false) : 0) + (wreckOrAfv ? 1 : 0);
 
     /// <summary>C5.5 Case R by value (the A24.5 claim, RA24.5): the hex's SMOKE sources' Hindrance as for fire within it, and +1 for a wreck or AFV.</summary>
     public static int OwnHexHindrance(IReadOnlyList<int> smokeHindrances, bool wreckOrAfv)

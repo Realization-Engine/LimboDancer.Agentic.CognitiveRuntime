@@ -20,6 +20,13 @@ internal static class ScenarioA1ArmorCalculator
         _ => 3 + hexspines - 1,
     };
 
+    /// <summary>The Case A To Hit DRM item (C5.1), doubled when the firer is in woods or a building (C5.11); the one copy every Gun path asks.</summary>
+    internal static FireModifier CaseADrm(string? maType, int hexspines, bool woodsOrBuilding) =>
+        new("case-a:" + hexspines.ToString(CultureInfo.InvariantCulture), CaseA(maType, hexspines) * (woodsOrBuilding ? 2 : 1), "C5.1");
+
+    /// <summary>The Case F To Hit DRM item for Intensive Fire (C5.61); the one copy every Gun path asks.</summary>
+    internal static FireModifier CaseFDrm() => new("case-f", 2, "C5.61");
+
     /// <summary>
     /// One item of a counter's special ammunition (C8.9, C8.91; ruling R55.4), written <c>&lt;type&gt;&lt;number&gt;[^&lt;year digit&gt;[m&lt;month&gt;][+][E]]</c>:
     /// the type (A for APCR, D for APDS, H for HEAT, HE, AP, C for Canister), its Depletion Number, the first year it holds in, the first month of
@@ -240,7 +247,7 @@ internal static class ScenarioA1ArmorCalculator
     {
         var target = shot.VehicleTarget!;
         // D3.2 (pass 50): a shot from inside the target's hex names no Target Facing, and one from outside it names the hull's, and the turret's too.
-        if (!reference.Armor.Vehicles.TryGetValue(target.DefinitionId!, out var armor) || armor.Nationality == gun.Nationality
+        if (!reference.Armor.Vehicles.TryGetValue(target.DefinitionId!, out var armor) || armor.Nationality == ScenarioA1OrdnanceCalculator.FriendlyNationality(shot, gun)
             || (shot.SameHex == true ? target.HullFacing is not null || target.TurretFacing is not null
                 : target.HullFacing is not ("front" or "side" or "rear") || (armor.Turreted && target.TurretFacing is not ("front" or "side" or "rear")))
             || shot.Hit!.Targets is { Count: > 0 })
@@ -306,7 +313,15 @@ internal static class ScenarioA1ArmorCalculator
         }
     }
 
-    public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference)
+    public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) => Run(shot, gun, reference, null);
+
+    /// <summary>
+    /// The Vehicle Target Type shot. With <see cref="OrdnanceShot.StunEncircledReading"/> null it keeps the answer it had before the D5.34 claim: no
+    /// Encircled +1 on the To Hit DR of an Encircled crew (A7.7, p. 57: "+1 DRM on the IFT (or To Hit DR if ordnance)"), a LATW's or a Gun's; set, it
+    /// adds <see cref="ScenarioA1EncirclementCalculator.FirerDrm"/> for <see cref="OrdnanceCrew.Encircled"/> ("encircled"; the claim's ruling RD5.16,
+    /// W-D5.34).
+    /// </summary>
+    public static OrdnanceResolution Run(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, VehicleBreakdownUseFacts? breakdownFacts)
     {
         var rolls = shot.Rolls!;
         var hit = shot.Hit!;
@@ -345,7 +360,7 @@ internal static class ScenarioA1ArmorCalculator
         var woods = shot.FirerInWoodsOrBuilding == true;
         if (shot.HexspinesToTurn is int turned && turned > 0)
         {
-            drm.Add(new FireModifier("case-a:" + turned.ToString(CultureInfo.InvariantCulture), CaseA(gun.MaType, turned) * (woods ? 2 : 1), "C5.1"));
+            drm.Add(CaseADrm(gun.MaType, turned, woods));
         }
         else if (shot.Vehicle?.Weapons?.MaintainedCaseA is > 0 and var maintained && shot.SameHex != true)
         {
@@ -376,12 +391,12 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-b", woods ? 3 : 2, "C5.2"));
         }
 
-        if (shot.Crew!.Pinned == true)
+        if (ScenarioA1OrdnanceParticipationCalculator.Pinned(shot))
         {
             drm.Add(new FireModifier("case-d", 2, "C5.4"));
         }
 
-        if (shot.Crew.Cx == true)
+        if (ScenarioA1OrdnanceParticipationCalculator.Cx(shot))
         {
             drm.Add(new FireModifier("cx", 1, "A4.51"));
         }
@@ -391,10 +406,16 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-i", 1, "C5.9"));
         }
 
-        // D5.34: an AFV under a "+1" counter after a Stun adds one to its To Hit DR.
-        if (shot.Vehicle?.StunRecovery == true)
+        // D5.34 (the D5.34 claim): an AFV under a "+1" counter after a Stun adds one to its To Hit DR.
+        if (ScenarioA1StunCalculator.Drm(StunDr.ToHit, shot.Vehicle?.StunRecovery == true) is > 0 and var stun)
         {
-            drm.Add(new FireModifier("stun", 1, "D5.34"));
+            drm.Add(new FireModifier("stun", stun, "D5.34"));
+        }
+
+        // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): an Encircled crew adds one to its To Hit DR, under the shot's StunEncircledReading.
+        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(ScenarioA1OrdnanceParticipationCalculator.Encircled(shot)) is > 0 and var encircled)
+        {
+            drm.Add(new FireModifier("encircled", encircled, "A7.7"));
         }
 
         drm.AddRange(ScenarioA1OrdnanceCalculator.PassEightFirerDrm(shot));
@@ -469,10 +490,11 @@ internal static class ScenarioA1ArmorCalculator
 
         // D2.38 (p. 198; pass 35, task 35.13 b): a vehicle in Bypass is in the Open Ground of its hex and takes no beneficial TEM of the woods or
         // building it Bypasses. A building Bypassed inside a woods hex (2I9, 3I1) is not told apart.
-        var tem = ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
+        // B23.741 (the B23.74 claim, ruling RB23F.5): the Factory TEM in place of the key's when the hit carries one.
+        var tem = hit.FactoryTem ?? ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
         if (tem != 0 && !(target.Bypass == true && tem > 0))
         {
-            drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
+            drm.Add(new FireModifier("case-q:" + (hit.FactoryTem is null ? hit.TargetTerrain : "factory"), tem, "C6.8"));
         }
 
         // D4.22, B10.31 (pp. 202, 125; pass 55): "The +1 Height Advantage TEM vs Direct Fire also applies to vehicles, but only if they are not HD
@@ -494,6 +516,10 @@ internal static class ScenarioA1ArmorCalculator
 
         var total = (int)drm.Sum(item => item.Value);
         var original = dice[0] + dice[1];
+        var breakdownOutcome = breakdownFacts is null ? null
+            : ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(breakdownFacts, VehicleBreakdownUse.OrdnanceToHit, original);
+        var breakdown = breakdownOutcome?.Numbers.BNumber ?? ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
+        var failed = breakdownOutcome?.Failed ?? original >= breakdown;
 
         // C5.35 (p. 172; pass 50): a Motion firer with no Gyrostabilizer doubles the lower dr of its TH DR; the lowest Final DR is then one more.
         var motion = ScenarioA1OrdnanceCalculator.MotionFirer(shot) ? Math.Min(dice[0], dice[1]) : 0;
@@ -550,7 +576,7 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         var toHit = new OrdnanceToHit(color, basic, modifications, modified, [.. dice], original, drm, final, improbable, subsequent, isHit, critical);
-        var malfunctioned = original >= ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
+        var malfunctioned = breakdownOutcome is null ? failed : breakdownOutcome.Outcome == VehicleBreakdownOutcome.Malfunction;
 
         // C13.36 (ruling R9.8): a PF never malfunctions, but an Original 12 misses and gives its firer Casualty Reduction; an 11 or 12 for
         // Inexperienced Infantry (A19.32; referee, pass 9).
@@ -573,14 +599,14 @@ internal static class ScenarioA1ArmorCalculator
         if (ShotDepletion(shot, gun) is { } depletion)
         {
             use = Use(original, depletion);
-            if (use == "none" && !malfunctioned)
+            if (use == "none" && !(breakdownOutcome?.CountsAsFiredOnDepletionFailure ?? failed))
             {
                 return Unused(shot, gun, toHit);
             }
 
             // A round that was not there hits nothing, though the Gun malfunctioned on the DR. An APCR or HEAT record made before pass 55 keeps
             // the To Hit result it shows; no To Kill DR follows it either way.
-            if (use == "none" && ammunition is not ("apcr" or "heat"))
+            if (use == "none" && (breakdownFacts is not null || ammunition is not ("apcr" or "heat")))
             {
                 isHit = critical = false;
                 toHit = toHit with
@@ -591,19 +617,19 @@ internal static class ScenarioA1ArmorCalculator
             }
         }
 
-        // A21.12 (pass 65, ruling R65.22): a Temporary crew's captured-weapon penalty lowers the Multiple ROF one each.
-        var rof = (gun.RateOfFire ?? 0) - (shot.CapturedPenalty ?? 0);
-        if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
-        {
-            rof--;
-        }
+        // A21.12 (pass 65, ruling R65.22; W-A21.13): the penalty multiple lowers the Multiple ROF one each (ScenarioA1OrdnanceCalculator.RateOfFire).
+        // C2.5 (p. 168): the one ConditionalRof the direct and Canister paths ask; a shot without Participation keeps the old one lower per turn.
+        var rof = ScenarioA1OrdnanceCalculator.RateOfFire(shot, gun);
+        var conditional = ScenarioA1OrdnanceParticipationCalculator.ConditionalRof(shot, gun, reference, rof);
+        rof = conditional.Rof;
 
-        if (shot.Crew.Pinned == true || shot.Phase == "AFPh" || latw)
+        if (ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) || shot.Phase == "AFPh" || latw
+            || ScenarioA1OrdnanceParticipationCalculator.HeroGunLimited(shot, gun, reference))
         {
             rof = 0;
         }
 
-        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, malfunctioned, rof, dice[0]);
+        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0], conditional.IntensiveFireCounter);
         OrdnanceKill? kill = null;
         if (isHit && use != "none")
         {
@@ -633,13 +659,19 @@ internal static class ScenarioA1ArmorCalculator
         // is acquired only when the shot costs it its "?" (the game decides that, R6.7).
         // C6.5 (the chart's G): a non-mortar SW acquires nothing; nor does a MG fired as ordnance, a vehicle's MA MG included (pass 60).
         // D10.1 (pass 65, ruling R65.23): a wreck is no unit to carry an Acquisition (C6.5: "Known enemy units"), and gives none.
-        var acquires = !malfunctioned && target.Concealed != true && !latw && !machineGun && target.Wreck != true;
+        var acquires = !failed && target.Concealed != true && !latw && !machineGun && target.Wreck != true;
         var acquisition = !acquires ? 0 : Math.Max((ScenarioA1OrdnanceCalculator.AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
-        var gunEffect = new OrdnanceGunEffect(ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference), malfunctioned, Math.Max(rof, 0), kept, counter, acquisition,
-            acquires ? shot.TargetLocationId : null);
+        // A.11 (W-A21.13): under a penalty multiple the Original B# is the X#, and a DR at or above it eliminates the Gun.
+        var eliminated = breakdownOutcome is null ? ScenarioA1OrdnanceCalculator.Eliminated(shot, gun, original, failed) : null;
+        var gunEffect = new OrdnanceGunEffect(breakdown, malfunctioned && eliminated != true, Math.Max(rof, 0), kept, counter, acquisition,
+            acquires ? shot.TargetLocationId : null)
+        {
+            Eliminated = eliminated,
+            VehicleBreakdown = breakdownOutcome
+        };
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
-            CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,
+            CrewConcealmentLost = ScenarioA1OrdnanceParticipationCalculator.Concealed(shot) && shot.CrewSeen != false ? true : null,
             Kill = kill,
             SpecificCollateral = collateral,
             AmmunitionUse = use,
@@ -700,9 +732,15 @@ internal static class ScenarioA1ArmorCalculator
                 return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:collateralCheck"]));
             }
 
-            // D5.342 (p. 204): a Carrier's crew stunned by this very hit is Recalled by a second Stun (D6.84).
-            var (check, crew) = ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true || (carrier && kill.Result == OrdnanceKill.Stun),
-                morale, target.CrewMorale);
+            // D5.342 (p. 204): a Carrier's crew stunned by this very hit is Recalled by a second Stun (D6.84). Under the shot's StunEncircledReading (the
+            // D5.34 claim, ruling RD5.4) a Carrier Stunned before the hit is Recalled too, and a merely Stunned crew's MC takes no +1; before it, the crew
+            // Stunned by this hit took the +1.
+            var (check, crew) = shot.StunEncircledReading == true
+                ? ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, ScenarioA1StunCalculator.Drm(StunDr.MoraleCheck, target.StunRecovery == true),
+                    ScenarioA1StunCalculator.SecondStun(target.Stunned == true || (carrier && kill.Result == OrdnanceKill.Stun), target.StunRecovery == true),
+                    morale, target.CrewMorale)
+                : ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true || (carrier && kill.Result == OrdnanceKill.Stun),
+                    morale, target.CrewMorale);
             effect = new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, drm, final, null, check, crew);
         }
 
@@ -793,7 +831,8 @@ internal static class ScenarioA1ArmorCalculator
 
         var dr = kill[0] + kill[1];
         OrdnanceKill Made(string result) => new(ammunition, location, facing, basicTk, modifiers, modifiedTk, af, finalTk, [.. kill], dr, result);
-        var plusOne = target.StunRecovery == true ? 1 : 0;
+        // D5.34 (the D5.34 claim): the Stun +1 on the crew's NTC and TC.
+        var plusOne = ScenarioA1StunCalculator.Drm(StunDr.TaskCheck, target.StunRecovery == true);
         IReadOnlyList<FireModifier> checkDrm = plusOne == 0 ? [] : [new FireModifier("stun", 1, "D5.34")];
 
         // C7.35: an Original 12 is a dud.
