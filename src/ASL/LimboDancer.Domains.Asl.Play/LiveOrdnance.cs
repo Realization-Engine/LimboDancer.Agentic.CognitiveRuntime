@@ -46,6 +46,24 @@ public static class LiveOrdnance
     /// <summary>A Gun's or MA's caliber in millimeters, its Gun Size (C2.2); null for a definition that is no ordnance.</summary>
     public static int? CaliberOf(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.Caliber;
 
+    /// <summary>The mortar identity read from the actual equipment definition.</summary>
+    public static bool IsMortar(EquipmentInstance weapon) => ScenarioA1MortarCalculator.IsMortar(weapon.Kind,
+        Reference.Value.Weapon(weapon.Definition?.Definition)?.GunType);
+
+    /// <summary>The selected mortar's effective mode, using the same admitted participant as its command.</summary>
+    public static bool FiresAsLight(GameState state, string gunId, string? secondFirer = null)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (state.Find(gunId) is not EquipmentInstance weapon || !IsMortar(weapon))
+        {
+            return false;
+        }
+        var primary = weapon.Holding is { } holding ? state.Unit(holding.Holder) : null;
+        var paired = secondFirer is not null && ParticipantRefusal(state, gunId, secondFirer) is null;
+        return ScenarioA1MortarCalculator.FiresAsLight(Reference.Value.Weapon(weapon.Definition?.Definition)?.Caliber,
+            ScenarioA1OrdnanceParticipationCalculator.Smc(primary?.Kind) && !paired);
+    }
+
     /// <summary>The code of a use of a crew-served Gun that <see cref="ScenarioA1NonQualifiedUseCalculator.Use"/> refuses (W-A21.13); its text follows.</summary>
     public const string UseRefusalPrefix = "play.ordnance-use: ";
 
@@ -57,10 +75,10 @@ public static class LiveOrdnance
     /// mortar identity and caliber from its definition; the phase; and whether the firer has fired a Gun over 82mm this Game Turn (A15.23: "If firing
     /// a Gun &gt; 82mm, it may fire only once per Game Turn", the hero), asked of the calculator for each Gun it fired.
     /// </summary>
-    internal static NonQualifiedUseFacts UseFacts(GameState state, EquipmentInstance gun, UnitInstance firer, string definition, string phase)
+    internal static NonQualifiedUseFacts UseFacts(GameState state, EquipmentInstance gun, UnitInstance firer, string definition, string phase, int smcCount = 1)
     {
         var weapon = Reference.Value.Weapon(definition);
-        return new NonQualifiedUseFacts(ScenarioA1NonQualifiedUseCalculator.User(firer.Kind, 1), gun.Side is not null && gun.Side != firer.Side,
+        return new NonQualifiedUseFacts(ScenarioA1NonQualifiedUseCalculator.User(firer.Kind, smcCount), gun.Side is not null && gun.Side != firer.Side,
             firer.Kind == "asl:hero" || Is(firer, Conditions.Heroic), weapon is null ? null : ScenarioA1MortarCalculator.IsMortar(gun.Kind, weapon.GunType), weapon?.Caliber)
         {
             Phase = phase,
@@ -105,10 +123,15 @@ public static class LiveOrdnance
     /// </summary>
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
         string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false, bool legacySpotterUse = false,
-        bool currentSpotterAssignment = true, bool legacyNonQualifiedUse = false, bool legacyVehicleBreakdown = false)
+        bool currentSpotterAssignment = true, bool legacyNonQualifiedUse = false, bool legacyVehicleBreakdown = false,
+        string? secondFirer = null, bool legacyParticipation = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
+        if (secondFirer is not null && ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal(state.Find(gunId)?.Kind) is { } weaponRefusal)
+        {
+            return (null, weaponRefusal);
+        }
         if (TurnWorkEffects.PackedGunBar(state.PackedGuns.Contains(gunId)) is { } packedBar)
         {
             return (null, packedBar);
@@ -210,6 +233,25 @@ public static class LiveOrdnance
         }
 
         var side = crew.Side;
+        var definition = gun is UnitInstance vehicleGun ? vehicleGun.Definition!.Definition : ((EquipmentInstance)gun).Definition!.Definition;
+        var weaponDefinition = Reference.Value.Weapon(definition);
+        OrdnanceParticipation? participation = null;
+        if (!legacyParticipation && ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal(gun.Kind) is null)
+        {
+            var primaryUse = ParticipantUse(state, gun.Id, crew.Id);
+            if (ScenarioA1OrdnanceParticipationCalculator.PrimaryUseRefusal(crew.Kind, primaryUse.UsedOtherWeapon,
+                primaryUse.DirectedFire, primaryUse.Spotted) is { } primaryRefusal)
+            {
+                return (null, primaryRefusal);
+            }
+            if (secondFirer is not null && ParticipantRefusal(state, gun.Id, secondFirer, director, spotter) is { } participantRefusal)
+            {
+                return (null, participantRefusal);
+            }
+
+            participation = new(ScenarioA1OrdnanceParticipationCalculator.CurrentVersion,
+                secondFirer is null ? null : ParticipantFacts(state, gun.Id, crew, secondFirer));
+        }
 
         // C8.4 (pass 55, ruling R55.9): Canister is fired at an aim, not at a Location's units; each Location it attacks is a fire attack of its own,
         // read with the planner's map facts. Named at a vehicle it is a Vehicle Target Type shot, which that Target Type refuses.
@@ -265,8 +307,14 @@ public static class LiveOrdnance
 
         // C3.31: a Vehicle Target Type shot attacks only the named vehicle. C3.33 (ruling R9.3): a mortar's Area Target Type shot attacks every unit
         // there, friendly ones too; C3.4: in the MPh only the moving units.
-        var mortar = gun.Kind == "asl:light-mortar";
-        var sw = mortar || gun.Kind is "asl:latw" or "asl:mg";
+        var mortar = legacyParticipation ? gun.Kind == "asl:light-mortar" : ScenarioA1MortarCalculator.IsMortar(gun.Kind, weaponDefinition?.GunType);
+        var smcCount = ScenarioA1OrdnanceParticipationCalculator.SmcCount(crew.Kind, participation);
+        var lightMode = mortar && (legacyParticipation || ScenarioA1MortarCalculator.FiresAsLight(weaponDefinition?.Caliber, smcCount == 1));
+        var sw = lightMode || gun.Kind is "asl:latw" or "asl:mg";
+        if (!legacyParticipation && ScenarioA1MortarCalculator.VehicleTargetRefusal(mortar, targetVehicle is not null) is { } targetRefusal)
+        {
+            return (null, targetRefusal);
+        }
 
         // D7.21 (pass 60, ruling R60.20): a SW or Gun under a CC counter makes no Non-CC Reaction Fire at the vehicle in its Location. Only weapons
         // marked since the pass carry the counter, so no shot recorded before it is refused here.
@@ -320,16 +368,15 @@ public static class LiveOrdnance
             TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
             Vehicles = vehicles.Length > 0 ? vehicles : null,
         };
-        var definition = gun is UnitInstance vehicleGun ? vehicleGun.Definition!.Definition : ((EquipmentInstance)gun).Definition!.Definition;
         var fired = gun is UnitInstance firingVehicle ? LiveFire.Fired(firingVehicle) : LiveFire.Fired((EquipmentInstance)gun);
         var depleted = state.DepletedAmmunition.Where(item => item.Gun == gun.Id).Select(item => item.Ammunition).Order(StringComparer.Ordinal).ToArray();
 
         // W-A21.13 (A21.11 to A21.13, A15.23): who may fire a crew-served Gun, and under what penalty multiple, is ScenarioA1NonQualifiedUseCalculator's;
         // a vehicle's weapon keeps A21.22's penalty. A shot verified on its recorded reading from before the wiring asks neither.
         int? useMultiple = null;
-        if (!legacyNonQualifiedUse && gun is EquipmentInstance { Kind: "asl:gun" } crewServed)
+        if (!legacyNonQualifiedUse && gun is EquipmentInstance crewServed && (crewServed.Kind == "asl:gun" || participation is not null))
         {
-            var use = ScenarioA1NonQualifiedUseCalculator.Use(UseFacts(state, crewServed, crew, definition, phase));
+            var use = ScenarioA1NonQualifiedUseCalculator.Use(UseFacts(state, crewServed, crew, definition, phase, smcCount));
             if (use.Refusal is { } useRefusal)
             {
                 return (null, UseRefusalPrefix + useRefusal);
@@ -358,6 +405,7 @@ public static class LiveOrdnance
                     () => state.GunCrewsFired.Contains(crew.Id, StringComparer.Ordinal), sw, crew.Kind == "asl:squad"))
             {
                 Cx = Is(crew, Conditions.Cx) ? true : null,
+                Encircled = participation is not null && state.Encircled(crew) ? true : null,
                 OpportunityFire = ScenarioA1OrdnanceEligibility.OpportunityFirer(state.Phase, !LiveFire.IsVehicle(crew), Is(crew, Conditions.BoundingFire)),
             },
             target.ToString(), null, null, null, null, acquisition, hit, null)
@@ -371,7 +419,7 @@ public static class LiveOrdnance
             AmmunitionShortage = ScenarioA1UnitSubstitution.AmmunitionShortage(state.SpecialRules, side) ? true : null,
 
             // A15.23 (pass 72, ruling R72.8): a hero's shot is recorded under the pass's rule; Rules says which weapons take his DRM (the reviews R1.6, R4.11).
-            HeroWeapons = crew.Kind == "asl:hero" ? true : null,
+            HeroWeapons = crew.Kind == "asl:hero" || participation is not null && Is(crew, Conditions.Heroic) ? true : null,
 
             // C13.48 (pass 60): a LATW at Personnel names its round, and a PSK's date is read from the year.
             ScenarioYear = ScenarioA1OrdnanceEligibility.RecordsYear(vehicleTarget is not null, ammunition is not null || gun.Kind == "asl:latw", state.Side(side)?.Nationality)
@@ -380,6 +428,7 @@ public static class LiveOrdnance
             // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified; the reading of a shot recorded before W-A21.13.
             NonQualified = useMultiple is null ? ScenarioA1OrdnanceEligibility.NonQualified(gun is EquipmentInstance, crew.Kind, sw) : null,
             UseMultiple = useMultiple,
+            Participation = participation,
             TargetType = mortar ? OrdnanceTargetTypes.Area : null,
             AreaAcquisition = areaAcquisition,
 
@@ -498,6 +547,59 @@ public static class LiveOrdnance
     }
 
     /// <summary>
+    /// The same participant refusal used by the command and the owner-visible candidate list.
+    /// </summary>
+    public static string? ParticipantRefusal(GameState state, string gunId, string secondId, string? director = null, string? spotter = null)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var gun = state.Find(gunId) as EquipmentInstance;
+        if (ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal(gun?.Kind) is { } weaponRefusal)
+        {
+            return weaponRefusal;
+        }
+
+        if (gun?.Holding is not { } holding || state.Unit(holding.Holder) is not { } primary)
+        {
+            return ScenarioA1OrdnanceEligibility.GunRefusal(gunId);
+        }
+
+        var second = state.Unit(secondId);
+        var refusal = ScenarioA1OrdnanceParticipationCalculator.CandidateRefusal(primary.Id, primary.Kind, second?.Kind,
+            ParticipantFacts(state, gunId, primary, secondId), director, spotter, ScenarioA1OrdnanceEligibility.FirePhase(state.Phase));
+        return refusal ?? ScenarioA1OrdnanceParticipationCalculator.CandidateRefusal(secondId, second?.Kind, primary.Kind,
+            ParticipantFacts(state, gunId, second!, primary.Id), director, spotter, ScenarioA1OrdnanceEligibility.FirePhase(state.Phase));
+    }
+
+    private static (bool UsedOtherWeapon, bool DirectedFire, bool Spotted) ParticipantUse(GameState state, string gunId, string unitId) =>
+        (state.SupportWeaponUses.Any(item => item.Unit == unitId && item.Weapon != gunId)
+            || state.PhaseFirers.Any(item => item.Unit == unitId && item.Weapon != gunId),
+            state.SupportWeaponDirectors.Any(item => item.Leader == unitId), state.SpottedThisPhase.Any(item => item.Spotter == unitId));
+
+    internal static OrdnanceAdditionalFirer ParticipantFacts(GameState state, string gunId, UnitInstance other, string unitId)
+    {
+        var unit = state.Unit(unitId);
+        var use = ParticipantUse(state, gunId, unitId);
+        var crew = unit is null ? null : new OrdnanceCrew(unit.Id, unit.Definition?.Definition,
+            Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk),
+            Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden),
+            ScenarioA1OrdnanceEligibility.CrewFiredInherent(true, () => LiveFire.Fired(unit) || Is(unit, Conditions.FirstFire),
+                () => state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal), state.Find(gunId)?.Kind == "asl:light-mortar", unit.Kind == "asl:squad"))
+        {
+            Cx = Is(unit, Conditions.Cx) ? true : null,
+            Encircled = state.Encircled(unit) ? true : null,
+            OpportunityFire = ScenarioA1OrdnanceEligibility.OpportunityFirer(state.Phase, true, Is(unit, Conditions.BoundingFire)),
+        };
+        return new(crew, unit is { Status: InstanceStatus.Active, Definition: not null }, unit?.Side == other.Side,
+            unit is { Position: MapPosition } && other.Position is MapPosition && state.Location(unitId)?.Location == state.Location(other.Id)?.Location,
+            unit is null ? null : Is(unit, Conditions.Melee), unit is null ? null : Is(unit, Conditions.Captured), unit is null ? null : Is(unit, "asl:ti"),
+            use.UsedOtherWeapon, use.DirectedFire, use.Spotted)
+        {
+            Heroic = unit is null ? null : unit.Kind == "asl:hero" || Is(unit, Conditions.Heroic),
+            OpportunityFireDeclared = unit is null ? null : Is(unit, Conditions.BoundingFire),
+        };
+    }
+
+    /// <summary>
     /// Whether a named vehicle may be fired at (C3.31): an active enemy vehicle, or a non-burning wreck of either side, attacked as its vehicle (D10.1; pass
     /// 65, ruling R65.23).
     /// </summary>
@@ -530,12 +632,31 @@ public static class LiveOrdnance
     }
 
     /// <summary>
-    /// A light mortar's Spotter and directing leader (C9.3, A7.531; rulings R9.2, R9.4): the Spotter is an active unit of the firer's side, the one
-    /// already spotting for the mortar while it is Good Order, unless it is the firer; the leader is an active leader in the firer's Location.
-    /// Adjacency and LOS are the planner's map reads.
+    /// The selected weapon's support candidates use the command's state facts and Rules refusals.
+    /// Before a target is selected, sharing is checked by Location only; target sharing and LOS remain pending.
     /// </summary>
+    public static string? SupportCandidateRefusal(GameState state, string gun, string? spotter, string? director, BoardLocation? target = null)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var firer = gun.EndsWith(":pf", StringComparison.Ordinal) ? state.Unit(gun[..^3])
+            : state.Find(gun) is EquipmentInstance { Holding: { } holding } ? state.Unit(holding.Holder) : null;
+        if (firer is not { Definition: not null })
+        {
+            return "play.ordnance-crew: select a manned weapon first";
+        }
+
+        var (support, reason) = MortarSupport(state, gun, firer, spotter, director, state.Phase, target);
+        if (reason is not null)
+        {
+            return reason;
+        }
+
+        return support?.Director is { } candidate ? ScenarioA1OrdnanceCalculator.DirectorRefusal(candidate, firer.Id,
+            Reference.Value.Fire.Definitions.GetValueOrDefault(firer.Definition!.Definition)?.Nationality, Reference.Value.Fire) : null;
+    }
+
     private static ((OrdnanceSpotter? Spotter, FireDirector? Director)? Support, string? Reason) MortarSupport(GameState state, string gun, UnitInstance firer, string? spotter,
-        string? director, string phase, BoardLocation target, bool legacySpotterUse = false, bool currentSpotterAssignment = true)
+        string? director, string phase, BoardLocation? target, bool legacySpotterUse = false, bool currentSpotterAssignment = true)
     {
         var assignment = state.MortarSpotters.FirstOrDefault(item => item.Gun == gun);
         var recordedLoss = currentSpotterAssignment
@@ -554,7 +675,7 @@ public static class LiveOrdnance
             () => DirectorFacts(state, gun, firer, director!), phase);
     }
 
-    private static OrdnanceSpotterFacts SpotterFacts(GameState state, string gun, UnitInstance firer, string spotter, BoardLocation target, bool legacySpotterUse)
+    private static OrdnanceSpotterFacts SpotterFacts(GameState state, string gun, UnitInstance firer, string spotter, BoardLocation? target, bool legacySpotterUse)
     {
         if (state.Unit(spotter) is not { Status: InstanceStatus.Active, Definition: not null } unit)
         {
@@ -566,6 +687,8 @@ public static class LiveOrdnance
         return new OrdnanceSpotterFacts(unit.Id, true, unit.Definition.Definition, unit.Side == firer.Side, Is(unit, Conditions.Captured), Is(unit, Conditions.Melee),
             Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), unit.Kind == "asl:squad", LiveFire.Fired(unit) || Is(unit, Conditions.FirstFire),
             legacySpotterUse ? state.SpottedThisPhase.Any(item => item.Spotter == unit.Id && item.Gun != gun)
+                : target is null ? ScenarioA1SpotterCalculator.SharesLocation(state.Location(gun)?.Location.ToString(),
+                    [.. state.MortarSpotterUses.Where(item => item.Spotter == unit.Id && item.Gun != gun).Select(item => item.Location?.ToString())]) == false
                 : !ScenarioA1SpotterCalculator.SharesWith([.. state.MortarSpotterUses.Where(item => item.Spotter == unit.Id)
                 .Select(item => new SpotterUse(item.Gun, item.Location?.ToString(), item.Target.ToString()))],
                 gun, state.Location(gun)?.Location.ToString(), target.ToString()), state.SpottedThisPhase.Any(item => item.Spotter == unit.Id),
@@ -901,10 +1024,16 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "Unknown crew-served use multiple.";
         }
 
+        if (recorded.Participation is { Version: not ScenarioA1OrdnanceParticipationCalculator.CurrentVersion })
+        {
+            return "Unknown ordnance participation version.";
+        }
+
         // C2.2401 (pass 55): a record that names itself a Gun Duel's first shot is read as one; the projector holds the fact to the answered choice.
         var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true,
             recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true, recorded.SpotterUseVersion is null,
-            fired.SpotterWiringVersion == 1, legacyNonQualifiedUse: recorded.UseMultiple is null, legacyVehicleBreakdown: recorded.VehicleBreakdown is null);
+            fired.SpotterWiringVersion == 1, legacyNonQualifiedUse: recorded.UseMultiple is null, legacyVehicleBreakdown: recorded.VehicleBreakdown is null,
+            secondFirer: recorded.Participation?.Second?.Crew?.UnitId, legacyParticipation: recorded.Participation is null);
         if (expected is null)
         {
             return reason;
@@ -918,7 +1047,7 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         // held to the state's.
         merged = merged with
         {
-            HeroWeapons = recorded.HeroWeapons == true ? merged.HeroWeapons : null,
+            HeroWeapons = recorded.Participation is not null || recorded.HeroWeapons == true ? merged.HeroWeapons : null,
         };
 
         // Pass 50 (ruling R45.4's rule for a new fact): a record made before the pass says nothing of the vehicle's other weapons, and is compared without.
