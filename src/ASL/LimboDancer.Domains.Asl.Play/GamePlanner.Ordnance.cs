@@ -972,7 +972,9 @@ public sealed partial class GamePlanner
                 gunResult.Acquisition, acquired, rollIds, JsonSerializer.SerializeToElement(ScenarioA1ArmorLeaders.Recorded(facts, resolution), LiveFire.Json),
                 JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
             {
-                SpotterWiringVersion = facts.Spotter is not null ? 1 : null
+                SpotterWiringVersion = facts.Spotter is not null ? 1 : null,
+                VehicleArmamentEvidence = facts.VehicleBreakdown is not null && state.Unit(facts.Gun.GunId!) is { } firingVehicle
+                    ? VehicleArmamentFacts.Evidence(state, firingVehicle) : null,
             },
             package, null));
 
@@ -1118,7 +1120,7 @@ public sealed partial class GamePlanner
         }
         if (gunResult.VehicleBreakdown?.Outcome == VehicleBreakdownOutcome.Disabled)
         {
-            var recalled = state.Unit(facts.Gun.GunId!) is { } disabledVehicle && LiveFire.VehicleRecalledAfterDisable(disabledVehicle, true);
+            var recalled = state.Unit(facts.Gun.GunId!) is { } disabledVehicle && LiveFire.VehicleRecalledAfterDisable(state, disabledVehicle, true);
             foreach (var change in ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma", recalled))
             {
                 gunConditions[ConditionName(change.Condition)] = change.Value ? ConditionState.True : ConditionState.False;

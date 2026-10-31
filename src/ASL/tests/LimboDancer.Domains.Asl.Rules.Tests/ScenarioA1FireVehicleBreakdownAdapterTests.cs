@@ -202,6 +202,24 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
         Assert.Equal(VehicleBreakdownOutcome.Disabled, result.OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
         Assert.Contains((UnitCondition.Disabled, true), ScenarioA1FireFollowUps.OverrunEffectConditions(result.OverrunEffect));
         Assert.False(result.OverrunEffect.Immobilized);
+        Assert.Equal(VehicleBreakdownOutcome.Malfunction,
+            Complete(attack, facts with
+            {
+                OverrunVersion = 1
+            }).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
+        var circled = Supplement(("ma", Facts(VehicleBreakdownWeapon.MainArmament, 11, circled: true)),
+            ("bmg", Facts(VehicleBreakdownWeapon.BowMg)), ("cmg", Facts(VehicleBreakdownWeapon.CoaxialMg)));
+        Assert.Equal(VehicleBreakdownOutcome.LowAmmo, Complete(attack, circled).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
+        Assert.False(JsonSerializer.SerializeToElement(circled).TryGetProperty(nameof(FireVehicleBreakdownFacts.OverrunVersion), out _));
+        Assert.Equal(VehicleBreakdownOutcome.Malfunction,
+            Complete(attack, circled with
+            {
+                OverrunVersion = 1
+            }).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
+        Assert.Equal(FireResolution.Abstained, Complete(attack, circled with
+        {
+            OverrunVersion = 2
+        }).Disposition);
     }
 
     [Theory]
@@ -306,5 +324,24 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
         var wrong = Supplement(("ma", Facts(VehicleBreakdownWeapon.BowMg)));
         Assert.Equal(FireResolution.Indeterminate, ScenarioA1FireCalculator.Resolve(Shot(), Reference, wrong).Disposition);
         Assert.Equal(FireResolution.Indeterminate, ScenarioA1FireCalculator.Resolve(Shot(), Reference, Supplement()).Disposition);
+    }
+
+    [Fact]
+    public void OverrunRejectsUnknownDisabledWeaponNamesBeforeDice()
+    {
+        var attack = Shot() with
+        {
+            Phase = "MPh",
+            FireKind = ScenarioA1FireCalculator.OverrunFire,
+            Firers = [],
+            VehicleFire = null,
+            FirerLocationId = At,
+            Range = 0,
+            Overrun = new FireOverrun("de-v", "attacker-tank", At, false, false, false, false, false) { DisabledWeapons = ["aamg"] },
+            Rolls = new FireRolls(null, null, null, null)
+        };
+        var result = ScenarioA1FireCalculator.Resolve(attack, Reference);
+        Assert.Equal(FireResolution.Abstained, result.Disposition);
+        Assert.Contains("asl.a1.fire.overrun-disabled-weapon-unknown", result.Reasons);
     }
 }

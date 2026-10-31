@@ -776,7 +776,7 @@ public static class ScenarioA1OrdnanceCalculator
     {
         ArgumentNullException.ThrowIfNull(shot);
         return shot.Phase == "AFPh" && shot.Vehicle is null && shot.Crew?.OpportunityFire == true
-            && (shot.Participation?.Second is null || shot.Participation.Second.Crew?.OpportunityFire == true);
+            && (shot.Participation?.Second is not { } second || ScenarioA1OrdnanceParticipationCalculator.OpportunityFire(second));
     }
 
     /// <summary>
@@ -957,8 +957,7 @@ public static class ScenarioA1OrdnanceCalculator
         {
             // C5.1, C5.11: a non-turreted Gun adds +3 for the first hexspine and +1 for each other, a turret less (ruling R7.10), doubled in
             // woods or a building.
-            var caseA = ScenarioA1ArmorCalculator.CaseA(gun.MaType, turned) * (woods ? 2 : 1);
-            drm.Add(new FireModifier("case-a:" + turned.ToString(System.Globalization.CultureInfo.InvariantCulture), caseA, "C5.1"));
+            drm.Add(ScenarioA1ArmorCalculator.CaseADrm(gun.MaType, turned, woods));
         }
         else if (shot.Vehicle?.Weapons?.MaintainedCaseA is > 0 and var maintained && shot.SameHex != true)
         {
@@ -1295,10 +1294,8 @@ public static class ScenarioA1OrdnanceCalculator
         // lowers it one each. W-A21.13: a shot that carries UseMultiple takes ScenarioA1NonQualifiedUseCalculator.MultipleRof of it; a shot recorded
         // before reads CapturedPenalty alone, with no floor, as then.
         var rof = RateOfFire(shot, gun);
-        if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
-        {
-            rof--;
-        }
+        var conditional = ScenarioA1OrdnanceParticipationCalculator.ConditionalRof(shot, gun, reference, rof);
+        rof = conditional.Rof;
 
         // C13.1 (pass 60): a LATW has no Multiple ROF.
         if (ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) || AfphFire(shot) || latw
@@ -1307,7 +1304,7 @@ public static class ScenarioA1OrdnanceCalculator
             rof = 0;
         }
 
-        var (kept, counter) = Counter(shot, failed, rof, dice[0]);
+        var (kept, counter) = Counter(shot, failed, rof, dice[0], conditional.IntensiveFireCounter);
 
         FireResolution? normal = null, criticalHit = null;
         string? criticalTarget = null;
@@ -1639,13 +1636,18 @@ public static class ScenarioA1OrdnanceCalculator
         - ScenarioA1NonQualifiedUseCalculator.BreakdownLowering(PenaltyMultiple(shot))
 
         // A19.32 (referee, pass 9b): the B# or X# of a SW Inexperienced Personnel use is one lower.
-        - (gun.GunType is "mortar" or "latw" or ScenarioA1MachineGunKill.GunType && gun.LatwType != "pf"
+        - (SwBreakdown(shot, gun, reference) && gun.LatwType != "pf"
             && reference.Fire.Definitions.GetValueOrDefault(shot.Crew?.DefinitionId ?? string.Empty)?.Class is "green" or "conscript" ? 1 : 0)
 
         // A19.131 (p. 86; pass 72, ruling R72.12): "all SW Original B#/X# [EXC: DC] ... are decreased by one during an Ammunition Shortage"; A21.11 (p. 88): "do
         // not apply to captured Gun/SW". A vehicle's or Gun's circled B# (D3.71) is pass 105's.
-        - (shot.AmmunitionShortage == true && shot.Vehicle is null && gun.GunType is "mortar" or "latw" or ScenarioA1MachineGunKill.GunType && gun.LatwType != "pf"
-            && ScenarioA1FireEligibility.CapturedBy(gun.Nationality, shot.FiringNationality) is null && shot.CapturedPenalty is not > 0 ? 1 : 0);
+        - (shot.AmmunitionShortage == true && shot.Vehicle is null && SwBreakdown(shot, gun, reference) && gun.LatwType != "pf"
+            && (shot.Participation?.UseHistory is { } use ? !use.Captured
+                : ScenarioA1FireEligibility.CapturedBy(gun.Nationality, shot.FiringNationality) is null && shot.CapturedPenalty is not > 0) ? 1 : 0);
+
+    private static bool SwBreakdown(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) =>
+        gun.GunType is "latw" or ScenarioA1MachineGunKill.GunType || (shot.Participation is null
+            ? gun.GunType == "mortar" : ScenarioA1OrdnanceParticipationCalculator.FiresAsLight(shot, gun, reference));
 
     /// <summary>
     /// Whether the shot keeps the Multiple ROF, and the fire counter it leaves otherwise (C2.24, A8.1, C5.6): Prep Fire in the PFPh and
@@ -1730,7 +1732,7 @@ public static class ScenarioA1OrdnanceCalculator
     {
         if (shot.IntensiveFire == true)
         {
-            yield return new FireModifier("case-f", 2, "C5.61");
+            yield return ScenarioA1ArmorCalculator.CaseFDrm();
         }
 
         if (shot.UseMultiple is { } multiple && shot.Vehicle is null)

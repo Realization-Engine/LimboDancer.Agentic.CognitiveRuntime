@@ -35,6 +35,20 @@ public sealed record GameState(
     IReadOnlyList<EquipmentInstance> Equipment,
     IReadOnlyList<EntityInstance> Entities)
 {
+    /// <summary>The already loaded catalog, retained only for this state's breakdown/repair fact reads.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public UnitCatalog? VehicleArmamentCatalog
+    {
+        get; init;
+    }
+
+    /// <summary>A verifier-local source snapshot. Never part of projected or serialized state.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public VehicleArmamentEvidence? VehicleArmamentEvidence
+    {
+        get; init;
+    }
+
     /// <summary>Player Turn ordinal since this journal began, independent of its initial Game Turn number.</summary>
     public int PlayerTurnOrdinal { get; init; } = 1;
 

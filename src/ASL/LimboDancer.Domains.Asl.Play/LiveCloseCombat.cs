@@ -308,7 +308,7 @@ public static class LiveCloseCombat
     }
 
     /// <summary>The Passengers who join a vehicle's attack (A11.62; ruling R70.31), as the package reads a CC unit.</summary>
-    private static IReadOnlyList<CloseCombatUnit>? PassengerUnits(GameState state, IReadOnlyList<string> ids) =>
+    internal static IReadOnlyList<CloseCombatUnit>? PassengerUnits(GameState state, IReadOnlyList<string> ids) =>
         ids.Select(state.Unit).OfType<UnitInstance>().Where(unit => unit.Definition is not null).ToArray() is { Length: > 0 } found
             ? [.. found.Select(unit => ScenarioA1CloseCombatFactBuilders.Unit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
                 Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted), Is(unit, Conditions.Berserk), Is(unit, Conditions.Fanatic), Is(unit, Conditions.Heroic),
@@ -472,6 +472,21 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             return "The CC record's facts are incomplete.";
         }
 
+        if (combat.VehicleArmamentEvidence is { } evidence)
+        {
+            if (recorded.VehicleBreakdown is null)
+            {
+                return "Vehicle armament evidence requires a vehicle breakdown reading.";
+            }
+            if (VehicleArmamentFacts.EvidenceRefusal(state, state.Unit(combat.Vehicle), evidence) is { } evidenceRefusal)
+            {
+                return evidenceRefusal;
+            }
+            state = state with
+            {
+                VehicleArmamentEvidence = evidence
+            };
+        }
         var (expected, reason) = LiveCloseCombat.VehicleFromState(state, combat.Location, combat.Vehicle, combat.Attackers, combat.Defenders, combat.ByVehicle, combat.Reaction,
             legacyVehicleBreakdown: recorded.Vehicle?.UnavailableWeapons is null);
         if (expected is null)

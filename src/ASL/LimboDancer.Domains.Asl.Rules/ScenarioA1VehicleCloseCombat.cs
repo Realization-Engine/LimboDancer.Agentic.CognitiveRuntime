@@ -488,9 +488,10 @@ public static class ScenarioA1VehicleCloseCombat
 
         if (vehicle.UnavailableWeapons is { } unavailable)
         {
-            return definition.BowMg is not null && !unavailable.Contains(definition.MainArmament == "bmg" ? "ma" : "bmg", StringComparer.Ordinal)
-                || definition.CoaxialMg is not null && !unavailable.Contains(definition.MainArmament == "cmg" ? "ma" : "cmg", StringComparer.Ordinal)
+            return definition.BowMg is not null && vehicle.BmgMalfunctioned != true && !unavailable.Contains(definition.MainArmament == "bmg" ? "ma" : "bmg", StringComparer.Ordinal)
+                || definition.CoaxialMg is not null && vehicle.CmgMalfunctioned != true && !unavailable.Contains(definition.MainArmament == "cmg" ? "ma" : "cmg", StringComparer.Ordinal)
                 || definition.AntiAircraftMg is not null && vehicle.CrewExposed == true
+                    && !(definition.MainArmament == "aamg" && vehicle.MainArmamentMalfunctioned == true)
                     && !unavailable.Contains(definition.MainArmament == "aamg" ? "ma" : "aamg", StringComparer.Ordinal);
         }
 
@@ -723,21 +724,7 @@ public static class ScenarioA1VehicleCloseCombat
     {
         var vehicle = facts.Vehicle!;
         var definition = reference.Definitions[vehicle.DefinitionId!];
-        decimal fp = 0;
-        foreach (var weapon in Weapons(vehicle, definition))
-        {
-            fp += weapon == "cmg" || weapon == "ma" && definition.MainArmament == "cmg" ? definition.CoaxialMg!.Value : definition.AntiAircraftMg!.Value;
-        }
-
-        // A11.62 (p. 76; pass 70, ruling R70.31): "CE Passengers in a halftrack" add their FP to its attack: a MMC its printed FP, a SMC one (A11.14),
-        // a pinned one half (A11.62); a broken or captured one none. The whole is then halved as the vehicle's own FP is.
-        foreach (var passenger in (facts.Passengers ?? []).Where(item => item.Broken != true && item.Captured != true))
-        {
-            var printed = reference.Definitions[passenger.DefinitionId!];
-            decimal share = IsSmc(printed) ? 1 : printed.Firepower ?? 0;
-            fp += passenger.Pinned == true ? share / 2 : share;
-        }
-
+        var fp = VehicleAttackFirepower(vehicle, definition, facts.Passengers ?? [], reference);
         var modifiers = new List<FireModifier>();
         if (vehicle.InMotion == true)
         {
@@ -751,6 +738,27 @@ public static class ScenarioA1VehicleCloseCombat
         }
 
         return (modifiers.Aggregate(fp, (total, item) => total * item.Value), modifiers);
+    }
+
+    private static decimal VehicleAttackFirepower(VehicleCloseCombatVehicle vehicle, FireDefinition definition,
+        IReadOnlyList<CloseCombatUnit> passengers, ScenarioA1CloseCombatReference reference)
+    {
+        decimal fp = 0;
+        foreach (var weapon in Weapons(vehicle, definition))
+        {
+            fp += weapon == "cmg" || weapon == "ma" && definition.MainArmament == "cmg" ? definition.CoaxialMg!.Value : definition.AntiAircraftMg!.Value;
+        }
+
+        // A11.62 (p. 76; pass 70, ruling R70.31): "CE Passengers in a halftrack" add their FP to its attack: a MMC its printed FP, a SMC one (A11.14),
+        // a pinned one half (A11.62); a broken or captured one none. The whole is then halved as the vehicle's own FP is.
+        foreach (var passenger in passengers.Where(item => item.Broken != true && item.Captured != true))
+        {
+            var printed = reference.Definitions[passenger.DefinitionId!];
+            decimal share = IsSmc(printed) ? 1 : printed.Firepower ?? 0;
+            fp += passenger.Pinned == true ? share / 2 : share;
+        }
+
+        return fp;
     }
 
     /// <summary>A11.62/D1.321/D1.322 (PDF pp. 76, 199): the functioning CMG and exposed AAMG actually taking part.</summary>
@@ -774,8 +782,10 @@ public static class ScenarioA1VehicleCloseCombat
     }
 
     /// <summary>A11.62: the same participating armament and crew facts used by the attack precheck, for turn order and choices.</summary>
-    public static bool CanAttack(VehicleCloseCombatVehicle vehicle, FireDefinition definition, bool captured) =>
-        !captured && vehicle.Stunned != true && vehicle.Shocked != true && vehicle.Abandoned != true && Weapons(vehicle, definition).Count > 0;
+    public static bool CanAttack(VehicleCloseCombatVehicle vehicle, FireDefinition definition, IReadOnlyList<CloseCombatUnit> passengers,
+        ScenarioA1CloseCombatReference reference, bool captured, bool recalled, bool unconfirmedKill) =>
+        !captured && !recalled && !unconfirmedKill && vehicle.Stunned != true && vehicle.Shocked != true && vehicle.Abandoned != true
+        && VehicleAttackFirepower(vehicle, definition, passengers, reference) > 0;
 
     private static VehicleCloseCombatResolution ByVehicle(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, IReadOnlyList<int> dice,
         CcvContext? context)

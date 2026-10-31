@@ -290,7 +290,7 @@ public sealed partial class GamePlanner
         {
             if (state.Location(wreck.Id)?.Location is { } at)
             {
-                Add(at, ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance);
+                Add(at, ScenarioA1BlazeSmokeCalculator.Hindrance(BlazeKind.WreckBlaze, WindForce.None)!.Value);
             }
         }
 

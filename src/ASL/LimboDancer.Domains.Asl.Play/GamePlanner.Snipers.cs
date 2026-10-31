@@ -109,6 +109,12 @@ public sealed partial class GamePlanner
         || resume.GetProperty("rest").EnumerateArray().Any(item => SniperSmokeVersion(item) is not (null or 1))
         ? "play.sniper-smoke-version: unknown SMOKE reading" : null;
 
+    // Geometry is immutable for this state and this planner's map context. Weak keys retain no discarded game history;
+    // concurrent first reads may compute the same public-fact refusal, and either result may be kept.
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameState, SniperSmokeCheck> sniperSmokeChecks = new();
+
+    private sealed record SniperSmokeCheck(string? Reason);
+
     /// <summary>Read public SMOKE/map facts before dice, including Locations newly exposed by a bailout or casualty result.</summary>
     private string? SniperSmokeBar(GameState state)
     {
@@ -129,10 +135,19 @@ public sealed partial class GamePlanner
         {
             return null;
         }
+        if (sniperSmokeChecks.TryGetValue(state, out var kept))
+        {
+            return kept.Reason;
+        }
+        return sniperSmokeChecks.GetValue(state, GatherSniperSmokeCheck).Reason;
+    }
+
+    private SniperSmokeCheck GatherSniperSmokeCheck(GameState state)
+    {
         var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
         if (snapshot.Unknown.Count > 0)
         {
-            return "play.sniper-smoke-facts: establish SMOKE source, chemical, and strength before a roll that may trigger a Sniper (A24.5)";
+            return new("play.sniper-smoke-facts: establish SMOKE source, chemical, and strength before a roll that may trigger a Sniper (A24.5)");
         }
         var visited = new HashSet<BoardLocation>();
         foreach (var (source, columns) in snapshot.Columns)
@@ -143,7 +158,7 @@ public sealed partial class GamePlanner
             }
             if (ReadLocation(state, source) is not { } read)
             {
-                return "play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)";
+                return new("play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)");
             }
             var locations = read.Hex.Locations.Select(level => new BoardLocation(source.Board, source.Hex, level.Level))
                 .Concat(read.Hex.Hexsides.Where(side => side.OnMap).Select(side => new BoardLocation(source.Board, source.Hex, 0, side.Side)));
@@ -151,11 +166,11 @@ public sealed partial class GamePlanner
             {
                 if (SmokeHindrancesAt(state, location).Reason is not null)
                 {
-                    return "play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)";
+                    return new("play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)");
                 }
             }
         }
-        return null;
+        return new(null);
     }
 
     /// <summary>The queue a pending Sniper choice's resume keeps; an item with no "check", as every one recorded before ruling R71.25, is an attack.</summary>
@@ -569,7 +584,8 @@ public sealed partial class GamePlanner
         // A14.21 (ruling R71.7): the target hex, or the closest hex holding an eligible target or the enemy Sniper counter; ties go to the lowest TEM with the
         // Location's SMOKE (Rules orders them), and the equidistant hexes still tied are the Sniper player's choice (ruling R71.12). New continuations ask
         // A24.4 which Locations the column occupies; legacy continuations retain their recorded exact-Location count.
-        var smoke = smokeVersion is null ? SmokeSources(state).GroupBy(place => place).ToDictionary(group => group.Key, group => group.Count()) : null;
+        var smoke = smokeVersion is null ? SmokeSources(state).GroupBy(place => place).ToDictionary(group => group.Key,
+            group => (IReadOnlyList<int>)[.. group.Select(_ => ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance)]) : null;
         var tems = new Dictionary<BoardLocation, int>();
         int Tem(BoardLocation location)
         {
@@ -578,7 +594,7 @@ public sealed partial class GamePlanner
                 return known;
             }
             var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
-            var tem = smoke is not null ? ScenarioA1Sniper.TargetTem(terrain, smoke.GetValueOrDefault(location))
+            var tem = smoke is not null ? ScenarioA1Sniper.TargetTem(terrain, smoke.GetValueOrDefault(location) ?? [])
                 : ScenarioA1Sniper.TargetTem(terrain, SmokeHindrancesAt(state, location).Hindrances
                     ?? throw new InvalidOperationException("Sniper SMOKE facts changed after preflight."));
             tems.Add(location, tem);

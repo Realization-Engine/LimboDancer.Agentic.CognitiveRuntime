@@ -109,10 +109,10 @@ internal static class ScenarioA1AreaCalculator
         // C6.521 (pass 60, rulings R60.3, R60.13): the Area Acquisition covers every Location of its hex in the firer's LOS.
         var acquisition = shot.AreaAcquisition ?? shot.Acquisition!.Value;
 
-        void AcquisitionDrm(List<FireModifier> list)
+        void AcquisitionDrm(List<FireModifier> list, string? locationId)
         {
             // C6.4 pp. 174-175: use Bore Sighting or Acquisition, never both. The older light-mortar path admitted no Bore Sighting.
-            if (shot.Participation is not null && shot.BoreSighted == true)
+            if (shot.Participation is not null && shot.BoreSighted == true && (locationId ?? shot.TargetLocationId) == shot.TargetLocationId)
             {
                 list.Add(new FireModifier("case-m", -2, "C6.4"));
             }
@@ -138,7 +138,7 @@ internal static class ScenarioA1AreaCalculator
                 list.Add(new FireModifier("case-k", 2, "C6.2"));
             }
 
-            AcquisitionDrm(list);
+            AcquisitionDrm(list, locationId);
 
             if (levels is not null && Location(shot, locationId)?.Los?.HindranceDrm is > 0 and var own)
             {
@@ -157,7 +157,7 @@ internal static class ScenarioA1AreaCalculator
                 list.Add(new FireModifier("case-k", 2, "C6.2"));
             }
 
-            AcquisitionDrm(list);
+            AcquisitionDrm(list, target.LocationId);
 
             if (enemy && shot.TargetOverstack is { } crowded && crowded > 0)
             {
@@ -267,12 +267,9 @@ internal static class ScenarioA1AreaCalculator
             rof--;
         }
 
-        var conditional = ScenarioA1OrdnanceParticipationCalculator.MortarConditionalRof(shot, gun, reference);
-        var conditionalNoRof = conditional && rof <= 0;
-        if (conditional)
-        {
-            rof = Math.Max(rof - 1, 0);
-        }
+        var conditional = ScenarioA1OrdnanceParticipationCalculator.ConditionalRof(shot, gun, reference, rof, legacyArea: true);
+        rof = conditional.Rof;
+        var conditionalNoRof = conditional.IntensiveFireCounter;
 
         // C9.2, A21.13: actual participation decides lone status. An older shot still has its single primary crew only.
         var loneSmc = ScenarioA1OrdnanceParticipationCalculator.SmcCount(reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind,

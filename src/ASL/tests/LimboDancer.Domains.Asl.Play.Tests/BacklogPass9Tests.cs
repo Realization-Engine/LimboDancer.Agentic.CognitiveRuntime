@@ -435,6 +435,7 @@ public sealed partial class BacklogPass9Tests : IDisposable
         }));
         var facts = LastFacts(before);
         Assert.Equal("g2", facts.Participation!.Second!.Crew!.UnitId);
+        Assert.Equal(new OrdnanceParticipationUseHistory(false, false), facts.Participation.UseHistory);
         Assert.Equal(0, facts.UseMultiple);
         Assert.True(LastShot(before).Gun!.RateOfFireKept);
         foreach (var id in new[] { "g1", "g2" })
@@ -466,6 +467,22 @@ public sealed partial class BacklogPass9Tests : IDisposable
             }
         } : item).ToArray();
         Assert.True(Planner().Replay(forged).HasErrors);
+        GameEvent[] WithHistory(OrdnanceParticipationUseHistory? history) => events.Select(item => item.Payload is OrdnanceFired fired ? item with
+        {
+            Payload = fired with
+            {
+                Facts = JsonSerializer.SerializeToElement(facts with
+                {
+                    Participation = facts.Participation with
+                    {
+                        UseHistory = history
+                    },
+                }, LiveFire.Json),
+            },
+        } : item).ToArray();
+        Assert.False(Planner().Replay(WithHistory(null)).HasErrors);
+        Assert.True(Planner().Replay(WithHistory(new(true, false))).HasErrors);
+        Assert.True(Planner().Replay(WithHistory(new(false, true))).HasErrors);
     }
 
     [Fact]
@@ -500,6 +517,65 @@ public sealed partial class BacklogPass9Tests : IDisposable
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task AMortarNamedAtAVehicleIsRefusedWithoutDiceOrEvents(bool heavy)
+    {
+        // C9.1 (p. 179), C1.55: a mortar never uses the To Kill Tables, so a Vehicle Target Type shot is refused; its hits on vehicles are IFT attacks.
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            heavy ? Gun("m1", "campaign-german-81mm-mortar", "bd01:B10:0", "west", "g1", "german") : Mortar("m1", "attacker-light-mortar", "g1", "german"),
+            Vehicle("ru-tank", "defender-tank", "bd01:B6:0", "russian", "east"));
+        await Advance();
+        var before = Revision;
+        Refused(await FireAt("m1", "bd01:B6:0", "ru-tank", null), "To Kill Tables");
+        Assert.Equal(before, Revision);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The81mmMortarBelowItsMinimumRangeIsRefusedWithoutDiceOrEvents(bool paired)
+    {
+        // C9.4 (p. 179): a mortar may not fire at a target nearer than its minimum range; the 81mm's is 3, and [B9] is one hex from [B10].
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Gun("m1", "campaign-german-81mm-mortar", "bd01:B10:0", "west", "g1", "german"), Squad("r1", "bd01:B9:0", "russian"));
+        await Advance();
+        var before = Revision;
+        var arguments = new Dictionary<string, object> { ["gunId"] = "m1", ["target"] = "bd01:B9:0" };
+        if (paired)
+        {
+            arguments["secondFirer"] = "g2";
+        }
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), arguments), "play.ordnance-out-of-range: A mortar may not fire at a target nearer than its minimum range of 3");
+        Assert.Equal(before, Revision);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ASecondFirerOnAnMgOrLatwIsRefusedWithoutDiceOrEvents(bool latw)
+    {
+        // A21.13 (p. 88), C9.2: a second participating SMC is for a Gun or a light mortar only.
+        await Setup("german", 7, 1944,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            latw ? Latw("w1", "attacker-psk", "g1", "german") : Weapon("w1", "attacker-lmg", "g1", "german"),
+            Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), new
+        {
+            gunId = "w1",
+            target = "bd01:B6:0",
+            secondFirer = "g2"
+        }), "requires a Gun or light mortar");
+        Assert.Equal(before, Revision);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task TwoSmcSecondFirerLosesConcealmentOnlyWhenSeenByGoodOrderEnemy(bool enemyGoodOrder)
     {
         await Setup("german", 7, 1942,
@@ -527,12 +603,17 @@ public sealed partial class BacklogPass9Tests : IDisposable
             Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german", Conditions.Concealed),
             Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german", Conditions.Concealed),
             Gun("m1", "campaign-german-81mm-mortar", "bd01:B10:0", "west", "g1", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
         var picks = new Dictionary<string, string> { ["firerId"] = "g1", ["secondId"] = "g2" };
         var owner = Planner().ContractFacts("c9-ordnance-participation", Current, picks, Perspective.Side("german"));
         Assert.Equal("g2", owner["secondId"]!.GetValue<string>());
         Assert.True(owner["sameLocation"]!.GetValue<bool>());
         Assert.False(owner["usedOther"]!.GetValue<bool>());
-        Assert.Empty(Planner().ContractFacts("c9-ordnance-participation", Current, picks, Perspective.Side("russian")));
+        Assert.Equal("PFPh", owner["phase"]!.GetValue<string>());
+        Assert.False(owner["opportunityFire"]!.GetValue<bool>());
+        var opponent = Planner().ContractFacts("c9-ordnance-participation", Current, picks, Perspective.Side("russian"));
+        Assert.Equal("phase", Assert.Single(opponent).Key);
+        Assert.Equal("PFPh", opponent["phase"]!.GetValue<string>());
         var mortar = Planner().ContractFacts("c9-mortar-shot", Current, picks, Perspective.Side("german"));
         Assert.Equal(81, mortar["caliber"]!.GetValue<int>());
         Assert.Equal(3, mortar["minimumRange"]!.GetValue<int>());
@@ -555,6 +636,84 @@ public sealed partial class BacklogPass9Tests : IDisposable
         Committed(await Shoot("m1", "bd01:B6:0", null, "g2", 2, 6));
         Assert.True(LastShot(before).Gun!.RateOfFireKept);
         Assert.Null(LiveOrdnance.SupportCandidateRefusal(Current, "m1", null, "g2"));
+    }
+
+    [Fact]
+    public async Task ParticipantOpportunityDeclarationAgreesBetweenWorkbenchAndPlay()
+    {
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Gun("m1", "campaign-german-81mm-mortar", "bd01:B10:0", "west", "g1", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        Committed(await Do(GameActions.OpportunityFire, NoRoll(), new
+        {
+            unitIds = G2
+        }));
+        var picks = new Dictionary<string, string> { ["firerId"] = "g1", ["secondId"] = "g2" };
+        var facts = Planner().ContractFacts("c9-ordnance-participation", Current, picks, Perspective.Side("german"));
+        Assert.True(facts["opportunityFire"]!.GetValue<bool>());
+        var contract = ScenarioA1RuleContracts.Find("c9-ordnance-participation")!;
+        Assert.Equal("refused", ScenarioA1RuleContracts.Evaluate(contract, new System.Text.Json.Nodes.JsonObject(facts)).Outcome);
+        var before = Revision;
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), new
+        {
+            gunId = "m1",
+            target = "bd01:B6:0",
+            secondFirer = "g2",
+        }), "play.ordnance-participant");
+        Assert.Equal(before, Revision);
+        Committed(await Do(GameActions.OpportunityFire, NoRoll(), new
+        {
+            unitIds = G1
+        }));
+        await Advance(3);
+        facts = Planner().ContractFacts("c9-ordnance-participation", Current, picks, Perspective.Side("german"));
+        Assert.Equal("AFPh", facts["phase"]!.GetValue<string>());
+        Assert.Equal("may-participate", ScenarioA1RuleContracts.Evaluate(contract, new System.Text.Json.Nodes.JsonObject(facts)).Outcome);
+        before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Once(1, 6, 6, 6), new
+        {
+            gunId = "m1",
+            target = "bd01:B6:0",
+            secondFirer = "g2",
+        }));
+        Assert.True(LastFacts(before).Participation!.Second!.OpportunityFireDeclared);
+        Assert.DoesNotContain(LastShot(before).ToHit!.Drm, item => item.Name == "case-b");
+        Assert.True(LastShot(before).Gun!.RateOfFireKept);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task TurningAnNtGunWithNoRofMarksItIntensiveFiredAndBarsAnotherShot()
+    {
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Gun("gun", "attacker-inf-gun", "bd01:B10:0", "west", "g1", "russian"), Squad("r1", "bd01:B8:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Once(2, 5), new
+        {
+            gunId = "gun",
+            target = "bd01:B8:0",
+            secondFirer = "g2",
+        }));
+        Assert.True(LastFacts(before).HexspinesToTurn > 0);
+        Assert.Equal(2, LastFacts(before).UseMultiple);
+        Assert.True(LastFacts(before).Participation!.UseHistory!.Captured);
+        Assert.Equal("intensive-fire", LastShot(before).Gun!.FireCounter);
+        Assert.True(Is(Current.Find("gun")!, Conditions.IntensiveFire));
+        before = Revision;
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), new
+        {
+            gunId = "gun",
+            target = "bd01:B8:0",
+            secondFirer = "g2",
+            intensive = true,
+        }), "asl.a1.ordnance.gun-already-fired");
+        Assert.Equal(before, Revision);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 
     [Fact]
@@ -616,8 +775,23 @@ public sealed partial class BacklogPass9Tests : IDisposable
         var facts = LastFacts(before);
         Assert.Equal(OrdnanceTargetTypes.Area, facts.TargetType);
         Assert.Equal(paired ? 1 : 0, facts.UseMultiple);
+        Assert.Equal(new OrdnanceParticipationUseHistory(false, false), facts.Participation!.UseHistory);
         Assert.Equal(paired, facts.HexspinesToTurn > 0);
         Assert.Equal(paired, LastShot(before).Gun!.RateOfFireKept);
+        if (paired)
+        {
+            var forged = store.Read(Scope)!.Events.Select(item => item.Payload is OrdnanceFired fired ? item with
+            {
+                Payload = fired with
+                {
+                    Facts = JsonSerializer.SerializeToElement(facts with
+                    {
+                        UseMultiple = 0
+                    }, LiveFire.Json)
+                },
+            } : item).ToArray();
+            Assert.True(Planner().Replay(forged).HasErrors);
+        }
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 

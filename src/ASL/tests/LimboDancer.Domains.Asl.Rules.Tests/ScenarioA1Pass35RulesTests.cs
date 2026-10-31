@@ -215,10 +215,10 @@ public sealed class ScenarioA1Pass35RulesTests
     {
         // C5.5 (p. 172; task 35.10) with A24.2, A24.8 and D9.4: one SMOKE source is +2 and +1 for fire within it, two are held to +3 and +1; a
         // wreck or AFV adds +1. Until pass 35 the shot's Hindrance was 0.
-        Assert.Equal(0, ScenarioA1VehicleSightRules.OwnHexHindrance(0, false));
-        Assert.Equal(1, ScenarioA1VehicleSightRules.OwnHexHindrance(0, true));
-        Assert.Equal(3, ScenarioA1VehicleSightRules.OwnHexHindrance(1, false));
-        Assert.Equal(5, ScenarioA1VehicleSightRules.OwnHexHindrance(2, true));
+        Assert.Equal(0, ScenarioA1VehicleSightRules.OwnHexHindrance([], false));
+        Assert.Equal(1, ScenarioA1VehicleSightRules.OwnHexHindrance([], true));
+        Assert.Equal(3, ScenarioA1VehicleSightRules.OwnHexHindrance([2], false));
+        Assert.Equal(5, ScenarioA1VehicleSightRules.OwnHexHindrance([2, 2], true));
     }
 
     [Fact]

@@ -1,7 +1,7 @@
 namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>
-/// The participation boundary shared by Gun and mortar firing (A21.13 p. 88, C9.2 p. 179, A9.12 p. 62). The primary crew's normal
+/// The participation boundary shared by Gun and mortar firing (A21.13 p. 88, C9.2-.3 p. 179, A7.35 p. 56). The primary crew's normal
 /// authorization still applies. An additional SMC is a firer, never an inferred director, and contributes its own use and condition facts.
 /// </summary>
 public static class ScenarioA1OrdnanceParticipationCalculator
@@ -16,10 +16,10 @@ public static class ScenarioA1OrdnanceParticipationCalculator
     /// <summary>A21.13's SMC classification, from the existing non-qualified-use calculator.</summary>
     public static bool Smc(string? kind) => ScenarioA1NonQualifiedUseCalculator.User(kind, 1) == CrewServedUser.LoneSmc;
 
-    /// <summary>A9.12 p. 62 and C9.3 p. 179: an SMC cannot change from participating in one weapon to firing another, directing or spotting.</summary>
+    /// <summary>A7.35 p. 56 and C9.3 p. 179: an SMC cannot change from participating in one weapon to firing another, directing or spotting.</summary>
     public static string? PrimaryUseRefusal(string? kind, bool? usedOtherWeapon, bool? directedFire, bool? spotted) =>
         Smc(kind) && (usedOtherWeapon != false || directedFire != false || spotted != false)
-            ? "play.ordnance-participant: a firer cannot also direct, spot, or use another weapon in this fire phase (A9.12, C9.3)" : null;
+            ? "play.ordnance-participant: a firer cannot also direct, spot, or use another weapon in this fire phase (A7.35, C9.3)" : null;
 
     /// <summary>The actual SMC count, after CandidateRefusal has admitted any second participant. A directing leader is never counted.</summary>
     public static int SmcCount(string? primaryKind, OrdnanceParticipation? participation) =>
@@ -53,6 +53,7 @@ public static class ScenarioA1OrdnanceParticipationCalculator
         if (Heroic(shot, reference))
         {
             yield return new FireModifier("hero:" + shot.Crew!.UnitId, -1, "A15.23");
+            yield break; // RC9P.1: A15.24's cumulative IFT DRM does not stack on this single weapon's To Hit DR.
         }
 
         if (shot.Participation?.Second is { Crew: { } crew } second
@@ -74,13 +75,12 @@ public static class ScenarioA1OrdnanceParticipationCalculator
         {
             if (shot.HexspinesToTurn is > 0 and var turned)
             {
-                yield return new FireModifier("case-a:" + turned.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    ScenarioA1ArmorCalculator.CaseA(gun.Mount360 ? "t" : gun.MaType, turned) * (shot.FirerInWoodsOrBuilding == true ? 2 : 1), "C5.1");
+                yield return ScenarioA1ArmorCalculator.CaseADrm(gun.Mount360 ? "t" : gun.MaType, turned, shot.FirerInWoodsOrBuilding == true);
             }
 
             if (shot.IntensiveFire == true)
             {
-                yield return new FireModifier("case-f", 2, "C5.61");
+                yield return ScenarioA1ArmorCalculator.CaseFDrm();
             }
         }
 
@@ -112,7 +112,31 @@ public static class ScenarioA1OrdnanceParticipationCalculator
             return refusal;
         }
 
-        var lone = SmcCount(primary?.Kind, participation) == 1;
+        var smcCount = SmcCount(primary?.Kind, participation);
+        var user = ScenarioA1NonQualifiedUseCalculator.User(primary?.Kind, smcCount);
+        NonQualifiedUseVerdict Use(bool captured) => ScenarioA1NonQualifiedUseCalculator.Use(new(user, captured,
+            Heroic(shot, reference), Mortar(shot, gun), gun.Caliber)
+        {
+            Phase = shot.Phase,
+            FiredThisGameTurn = participation.UseHistory?.FiredThisGameTurn ?? false,
+        });
+        var use = Use(participation.UseHistory?.Captured ?? false);
+        // RC9P.2: older participation records leave capture and prior Game Turn use to the state verifier. Even without that
+        // evidence, their multiple must be a possible calculator verdict for the actual participants, never a forged SMC count.
+        if (participation.UseHistory is null && (use.Refusal is not null || use.Multiple != shot.UseMultiple))
+        {
+            use = Use(true);
+        }
+        if (use.Refusal is not null)
+        {
+            return use.Refusal;
+        }
+        if (use.Multiple != shot.UseMultiple)
+        {
+            return "play.ordnance-participation-use: the recorded use multiple does not match the actual participants (A21.13, C9.2)";
+        }
+
+        var lone = smcCount == 1;
         if (Mortar(shot, gun) && ScenarioA1MortarCalculator.Shot(new(true, gun.Caliber, gun.RangeMinimum, shot.Range,
             shot.TargetType == OrdnanceTargetTypes.Area, shot.VehicleTarget is not null, lone, Heroic(shot, reference))).Refusal is { } mortarRefusal)
         {
@@ -126,13 +150,25 @@ public static class ScenarioA1OrdnanceParticipationCalculator
             : null;
     }
 
-    /// <summary>C2.5 p. 168: only a NT mortar outside 76-82mm loses one ROF for turning; a 360-degree mount is T (C2.3).</summary>
-    internal static bool MortarConditionalRof(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) =>
-        shot.Participation is not null && !FiresAsLight(shot, gun, reference) && !gun.Mount360 && gun.MaType is null or "nt"
-        && gun.Caliber is not (>= 76 and <= 82) && shot.HexspinesToTurn > 0;
+    /// <summary>C2.5 p. 168: a turning non-vehicular NT Gun loses one ROF, or receives an IF counter if none remains; 76-82mm mortars are exempt.</summary>
+    internal static (int Rof, bool IntensiveFireCounter) ConditionalRof(OrdnanceShot shot, GunDefinition gun,
+        ScenarioA1OrdnanceReference reference, int rof, bool legacyArea = false)
+    {
+        var turned = shot.Vehicle is null && shot.HexspinesToTurn > 0;
+        if (shot.Participation is null)
+        {
+            return (rof - (!legacyArea && turned ? 1 : 0), false);
+        }
+        var applies = turned && !gun.Mount360 && gun.MaType is null or "nt" && !FiresAsLight(shot, gun, reference)
+            && !(Mortar(shot, gun) && gun.Caliber is >= 76 and <= 82);
+        return applies ? (Math.Max(rof - 1, 0), rof <= 0) : (rof, false);
+    }
+
+    /// <summary>The declaration is authoritative; its absence keeps the earlier crew fact for recorded participants.</summary>
+    internal static bool OpportunityFire(OrdnanceAdditionalFirer second) => second.OpportunityFireDeclared ?? second.Crew?.OpportunityFire == true;
 
     /// <summary>
-    /// Why the named second SMC cannot participate. C9.2 and A21.13 require two actual SMC; A9.12 distinguishes use from direction.
+    /// Why the named second SMC cannot participate. C9.2 and A21.13 require two actual SMC; A7.35 and C9.3 govern weapon use and spotting.
     /// Existing Gun restrictions decide TI, Melee and captivity. Pinned Infantry may fire, with Case D and no ROF (A7.81 p. 58, C5.4 p. 172).
     /// </summary>
     public static string? CandidateRefusal(string primaryId, string? primaryKind, string? secondKind, OrdnanceAdditionalFirer second,
@@ -140,7 +176,7 @@ public static class ScenarioA1OrdnanceParticipationCalculator
     {
         ArgumentNullException.ThrowIfNull(second);
         var crew = second.Crew;
-        if (phase == "PFPh" && second.OpportunityFireDeclared == true)
+        if (phase == "PFPh" && OpportunityFire(second))
         {
             return "play.ordnance-participant: an Opportunity Firer cannot fire during the PFPh (A7.25)";
         }

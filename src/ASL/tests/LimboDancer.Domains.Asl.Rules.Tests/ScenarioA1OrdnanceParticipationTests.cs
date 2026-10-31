@@ -376,17 +376,22 @@ public sealed class ScenarioA1OrdnanceParticipationTests
         var facts = JsonNode.Parse("""
             {"firerId":"first","secondId":"second","primaryKind":"asl:leader","secondKind":"asl:leader",
              "active":true,"sameSide":true,"sameLocation":true,"broken":false,"berserk":false,"pinned":false,
-             "firedOther":false,"melee":false,"captured":false,"ti":false,"usedOther":false,"directed":false,"spotted":false}
+             "firedOther":false,"melee":false,"captured":false,"ti":false,"usedOther":false,"directed":false,"spotted":false,
+             "phase":"PFPh","opportunityFire":false}
             """)!.AsObject();
         Assert.Equal("may-participate", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
         foreach (var fact in contract.Facts)
         {
-            Assert.Equal(ContractDisclosure.Owner, fact.Disclosure);
-            Assert.Equal(fact.Name is "firerId" or "primaryKind" ? "firerId" : "secondId", fact.Concerns);
+            Assert.Equal(fact.Name == "phase" ? ContractDisclosure.All : ContractDisclosure.Owner, fact.Disclosure);
+            Assert.Equal(fact.Name == "phase" ? null : fact.Name is "firerId" or "primaryKind" ? "firerId" : "secondId", fact.Concerns);
             var unknown = facts.DeepClone().AsObject();
             unknown[fact.Name] = null;
             Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(contract, unknown).Outcome);
         }
+        facts["opportunityFire"] = true;
+        Assert.Equal("refused", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+        facts["phase"] = "AFPh";
+        Assert.Equal("may-participate", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
         facts["secondId"] = "first";
         Assert.Equal("refused", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
     }
@@ -434,6 +439,24 @@ public sealed class ScenarioA1OrdnanceParticipationTests
             }
         };
         Assert.False(ScenarioA1OrdnanceCalculator.OpportunityFire(opportunity));
+        Assert.True(ScenarioA1OrdnanceCalculator.OpportunityFire(opportunity with
+        {
+            Participation = new(1, second with
+            {
+                OpportunityFireDeclared = true
+            }),
+        }));
+        Assert.False(ScenarioA1OrdnanceCalculator.OpportunityFire(opportunity with
+        {
+            Participation = new(1, second with
+            {
+                OpportunityFireDeclared = false,
+                Crew = second.Crew! with
+                {
+                    OpportunityFire = true
+                },
+            }),
+        }));
         Assert.True(ScenarioA1OrdnanceCalculator.OpportunityFire(opportunity with
         {
             Participation = null
@@ -491,6 +514,335 @@ public sealed class ScenarioA1OrdnanceParticipationTests
         Assert.Null(unseen.CrewConcealmentLost);
     }
 
+    [Fact]
+    public void BoreSightingAppliesOnlyToTheSelectedLocationOfAnAreaShot()
+    {
+        const string upper = "bd01:G5:1";
+        var original = Shot(true, true);
+        var shot = original with
+        {
+            BoreSighted = true,
+            Acquisition = -1,
+            AreaLocations =
+            [
+                new(At) { TargetTerrain = "stone-building", Los = original.Hit!.Los, LevelsAbove = 1 },
+                new(upper) { TargetTerrain = "stone-building", Los = original.Hit.Los, LevelsAbove = 0 },
+            ],
+            Hit = original.Hit with
+            {
+                Targets = [original.Hit.Targets![0], original.Hit.Targets[0] with { UnitId = "upper", LocationId = upper }],
+            },
+        };
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, Reference);
+        Assert.Equal(OrdnanceResolution.Resolved, result.Disposition);
+        var ground = Assert.Single(result.AreaTargets!, target => target.UnitId == "target");
+        Assert.Contains(ground.Drm, item => item.Name == "case-m" && item.Value == -2);
+        Assert.DoesNotContain(ground.Drm, item => item.Name == "case-n");
+        var above = Assert.Single(result.AreaTargets!, target => target.UnitId == "upper");
+        Assert.DoesNotContain(above.Drm, item => item.Name == "case-m");
+        Assert.Contains(above.Drm, item => item.Name == "case-n" && item.Value == -1);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TwoSmcCannotForgeTheLoneSmcsZeroUseMultiple(bool history)
+    {
+        var shot = Shot(true, true);
+        shot = shot with
+        {
+            Participation = shot.Participation! with
+            {
+                UseHistory = history ? new(false, false) : null
+            }
+        };
+        var bad = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            UseMultiple = 0
+        }, Reference);
+        Assert.NotEqual(OrdnanceResolution.Resolved, bad.Disposition);
+        Assert.Contains(bad.Reasons, reason => reason.Contains("participation-use", StringComparison.Ordinal));
+        Assert.Equal(OrdnanceResolution.Resolved, ScenarioA1OrdnanceCalculator.Resolve(shot, Reference).Disposition);
+    }
+
+    [Fact]
+    public void RecordedCaptureAndPriorUseAreValidatedByTheUseCalculator()
+    {
+        var pair = Shot(true, true);
+        pair = pair with
+        {
+            Participation = pair.Participation! with
+            {
+                UseHistory = new(true, false)
+            }
+        };
+        Assert.NotEqual(OrdnanceResolution.Resolved, ScenarioA1OrdnanceCalculator.Resolve(pair, Reference).Disposition);
+        Assert.Equal(OrdnanceResolution.Resolved, ScenarioA1OrdnanceCalculator.Resolve(pair with
+        {
+            UseMultiple = 2
+        }, Reference).Disposition);
+        var solo = Shot(true, false);
+        solo = solo with
+        {
+            Phase = "DFPh",
+            FiringSide = "non-phasing",
+            HeroWeapons = true,
+            UseMultiple = 1,
+            Hit = solo.Hit! with
+            {
+                Phase = "DFPh",
+                FiringSide = "non-phasing"
+            },
+            Participation = solo.Participation! with
+            {
+                UseHistory = new(false, true)
+            },
+        };
+        var reference = Reference.WithGun(Reference.Guns[solo.Gun!.DefinitionId!] with
+        {
+            Caliber = 120
+        });
+        var bad = ScenarioA1OrdnanceCalculator.Resolve(solo, reference);
+        Assert.NotEqual(OrdnanceResolution.Resolved, bad.Disposition);
+        Assert.Contains(bad.Reasons, reason => reason.Contains("once per Game Turn", StringComparison.Ordinal));
+        Assert.DoesNotContain("UseHistory", JsonSerializer.Serialize(new OrdnanceParticipation(1, null)));
+    }
+
+    [Theory]
+    [InlineData("mtr")]
+    [InlineData("mortar")]
+    public void InexperiencedAndShortageSwPenaltiesUseTheEffectiveMortarMode(string gunType)
+    {
+        var green = Reference.Fire.Definitions.Values.First(item => item.Kind == "asl:squad" && item.Class == "green");
+        var original = Shot(true, false);
+        var shot = original with
+        {
+            Crew = original.Crew! with
+            {
+                DefinitionId = green.Id
+            },
+            UseMultiple = 1,
+            AmmunitionShortage = true,
+        };
+        var gun = Reference.Guns[shot.Gun!.DefinitionId!] with
+        {
+            GunType = gunType
+        };
+        var heavy = ScenarioA1OrdnanceCalculator.Resolve(shot, Reference.WithGun(gun));
+        Assert.Equal(OrdnanceResolution.Resolved, heavy.Disposition);
+        Assert.Equal(gun.Breakdown - 2, heavy.Gun!.BreakdownNumber);
+        var light = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            UseMultiple = 0
+        }, Reference.WithGun(gun with
+        {
+            Caliber = 50
+        }));
+        Assert.Equal(OrdnanceResolution.Resolved, light.Disposition);
+        Assert.Equal(gun.Breakdown - 2, light.Gun!.BreakdownNumber);
+        var captured = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Participation = shot.Participation! with
+            {
+                UseHistory = new(true, false)
+            },
+        }, Reference.WithGun(gun with
+        {
+            Caliber = 50
+        }));
+        Assert.Equal(OrdnanceResolution.Resolved, captured.Disposition);
+        Assert.Equal(gun.Breakdown - 3, captured.Gun!.BreakdownNumber);
+    }
+
+    [Theory]
+    [InlineData(3, 1, null)]
+    [InlineData(1, 0, "intensive-fire")]
+    public void NonExemptNtMortarLowersRofOrLeavesAnIntensiveFireCounter(int printedRof, int expectedRof, string? counter)
+    {
+        var shot = Shot(true, true) with
+        {
+            HexspinesToTurn = 1
+        };
+        var gun = Reference.Guns[shot.Gun!.DefinitionId!] with
+        {
+            Caliber = 120,
+            Mount360 = false,
+            RateOfFire = printedRof
+        };
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, Reference.WithGun(gun));
+        Assert.Equal(OrdnanceResolution.Resolved, result.Disposition);
+        Assert.Equal(expectedRof, result.Gun!.RateOfFire);
+        Assert.Equal(counter, result.Gun.FireCounter);
+    }
+
+    [Fact]
+    public void MortarMayTurnAgainInWoodsAndIntensiveFireUsesCaseF()
+    {
+        var original = Shot(true, true);
+        var shot = original with
+        {
+            FirerInWoodsOrBuilding = true,
+            HexspinesToTurn = 1,
+            Gun = original.Gun! with
+            {
+                ShotsThisPhase = 1,
+                RateOfFireKept = true,
+                FiredThisPlayerTurn = true
+            },
+        };
+        Assert.Equal(OrdnanceResolution.Resolved, ScenarioA1OrdnanceCalculator.Resolve(shot, Reference).Disposition);
+        var legacy = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Participation = null
+        }, Reference);
+        Assert.Contains("asl.a1.ordnance.gun-outside", legacy.Reasons);
+        var intensive = ScenarioA1OrdnanceCalculator.Resolve(original with
+        {
+            IntensiveFire = true,
+            Gun = original.Gun! with
+            {
+                ShotsThisPhase = 1,
+                FiredThisPlayerTurn = true
+            },
+        }, Reference);
+        Assert.Equal(OrdnanceResolution.Resolved, intensive.Disposition);
+        Assert.Contains(intensive.ToHit!.Drm, item => item.Name == "case-f" && item.Value == 2);
+    }
+
+    [Fact]
+    public void SecondaryEncirclementAndHeroApplyWithoutStackingTwoHeroToHitModifiers()
+    {
+        var shot = Shot(false, true);
+        var second = shot.Participation!.Second!;
+        shot = shot with
+        {
+            StunEncircledReading = true,
+            Participation = shot.Participation with
+            {
+                Second = second with
+                {
+                    Heroic = true,
+                    Crew = second.Crew! with
+                    {
+                        Encircled = true
+                    }
+                },
+            },
+        };
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, Reference);
+        Assert.Equal(OrdnanceResolution.Resolved, result.Disposition);
+        Assert.Contains(result.ToHit!.Drm, item => item.Name == "hero:second" && item.Value == -1);
+        Assert.Contains(result.ToHit.Drm, item => item.Name == "encircled" && item.Value == 1);
+        var both = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            HeroWeapons = true
+        }, Reference);
+        Assert.Equal(OrdnanceResolution.Resolved, both.Disposition);
+        Assert.Equal(-1, Assert.Single(both.ToHit!.Drm, item => item.Name.StartsWith("hero:", StringComparison.Ordinal)).Value);
+    }
+
+    [Theory]
+    [InlineData(false, false, 1, 0, "intensive-fire")]
+    [InlineData(true, false, 1, 0, "intensive-fire")]
+    [InlineData(false, true, 3, 2, null)]
+    [InlineData(true, true, 3, 2, null)]
+    public void DirectAndCanisterUseTheSameNtOnlyConditionalRof(bool canister, bool turreted, int printedRof, int expectedRof, string? counter)
+    {
+        var original = Shot(false, true);
+        var shot = original with
+        {
+            Gun = original.Gun! with
+            {
+                DefinitionId = "american-at-gun"
+            },
+            TargetType = null,
+            UseMultiple = 1,
+            HexspinesToTurn = 1,
+            Range = 2,
+            ScenarioYear = 1943,
+            Ammunition = canister ? "canister" : "he",
+            Canister = canister ? new OrdnanceCanister(4, "west",
+                [new("bd01:D4:0"), new("bd01:D5:0"), new("bd01:C5:0"), new("bd01:E5:0") { AdjacentHexes = 1 }]) : null,
+            Rolls = canister ? new OrdnanceRolls(null, null, null, null, null) { Canister = [1, 3] } : original.Rolls,
+            Hit = canister ? original.Hit! with
+            {
+                Targets = []
+            } : original.Hit,
+        };
+        var gun = Reference.Guns[shot.Gun.DefinitionId!] with
+        {
+            MaType = turreted ? "t" : null,
+            RateOfFire = printedRof,
+            SpecialAmmo = ["C12"]
+        };
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, Reference.WithGun(gun));
+        Assert.True(result.Disposition == OrdnanceResolution.Resolved, string.Join(", ", result.Reasons));
+        Assert.Equal(expectedRof, result.Gun!.RateOfFire);
+        Assert.Equal(counter, result.Gun.FireCounter);
+        if (turreted)
+        {
+            var legacy = ScenarioA1OrdnanceCalculator.Resolve(shot with
+            {
+                Participation = null
+            }, Reference.WithGun(gun));
+            Assert.Equal(OrdnanceResolution.Resolved, legacy.Disposition);
+            Assert.Equal(expectedRof - 1, legacy.Gun!.RateOfFire);
+        }
+    }
+
+    [Theory]
+    [InlineData(true, 3)]
+    [InlineData(false, 1)]
+    public void TheVehicleTargetPathUsesTheSameNtOnlyConditionalRof(bool turreted, int printedRof)
+    {
+        // C2.5 (p. 168): the armor path asks the one ConditionalRof the direct and Canister paths ask.
+        var original = Shot(false, true);
+        var shot = original with
+        {
+            Gun = original.Gun! with
+            {
+                DefinitionId = "defender-at-gun"
+            },
+            TargetType = null,
+            VehicleTarget = new OrdnanceVehicleTarget("tank", "defender-tank", "front", "front", false, false, false, false, true),
+            Ammunition = "ap",
+            ScenarioYear = 1942,
+            UseMultiple = 1,
+            HexspinesToTurn = 1,
+            Hit = original.Hit! with
+            {
+                Targets = []
+            },
+            Rolls = new OrdnanceRolls([3, 4], null, null, null, null) { ToKill = [6, 6], CollateralCheck = [6, 5], CrewSurvival = [6, 6] }
+        };
+        var gun = Reference.Guns[shot.Gun.DefinitionId!] with
+        {
+            MaType = turreted ? "t" : null,
+            RateOfFire = printedRof
+        };
+        var reference = Reference.WithGun(gun);
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, reference);
+        Assert.True(result.Disposition == OrdnanceResolution.Resolved, string.Join(", ", result.Reasons));
+        var legacy = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Participation = null
+        }, reference);
+        Assert.True(legacy.Disposition == OrdnanceResolution.Resolved, string.Join(", ", legacy.Reasons));
+        if (turreted)
+        {
+            // A turret's CA change costs no ROF under Participation; the record before it keeps the old one lower.
+            Assert.Equal(legacy.Gun!.RateOfFire + 1, result.Gun!.RateOfFire);
+            Assert.NotEqual("intensive-fire", result.Gun.FireCounter);
+        }
+        else
+        {
+            // An NT Gun with no Multiple ROF left after the CA change takes the Intensive Fire counter; the record before it does not.
+            Assert.Equal(0, result.Gun!.RateOfFire);
+            Assert.Equal("intensive-fire", result.Gun.FireCounter);
+            Assert.NotEqual("intensive-fire", legacy.Gun!.FireCounter);
+        }
+    }
+
     private static OrdnanceShot Shot(bool heavy, bool pair)
     {
         var second = Second with
@@ -509,7 +861,10 @@ public sealed class ScenarioA1OrdnanceParticipationTests
         {
             TargetType = OrdnanceTargetTypes.Area,
             UseMultiple = heavy && pair ? 1 : 0,
-            Participation = new(1, pair ? second : null),
+            Participation = new(1, pair ? second : null)
+            {
+                UseHistory = new(false, false)
+            },
         };
     }
 }

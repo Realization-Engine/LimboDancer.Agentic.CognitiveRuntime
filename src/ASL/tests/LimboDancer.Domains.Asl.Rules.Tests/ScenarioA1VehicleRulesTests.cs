@@ -180,10 +180,10 @@ public sealed class ScenarioA1VehicleRulesTests
     [Fact]
     public void SmokeIsTwoPerSourceAtMostThreeWithOneMoreForTheFirersLocation()
     {
-        Assert.Equal(3, ScenarioA1VehicleSightRules.SmokeDrm(1, true, false, Never("crossed")));
-        Assert.Equal(4, ScenarioA1VehicleSightRules.SmokeDrm(2, true, false, Never("crossed")));
-        Assert.Equal(3, ScenarioA1VehicleSightRules.SmokeDrm(2, false, true, Never("crossed")));
-        Assert.Equal(2, ScenarioA1VehicleSightRules.SmokeDrm(1, false, false, () => true));
-        Assert.Equal(0, ScenarioA1VehicleSightRules.SmokeDrm(1, false, false, () => false));
+        Assert.Equal(3, ScenarioA1VehicleSightRules.SmokeDrm([2], true, false, Never("crossed")));
+        Assert.Equal(4, ScenarioA1VehicleSightRules.SmokeDrm([2, 2], true, false, Never("crossed")));
+        Assert.Equal(3, ScenarioA1VehicleSightRules.SmokeDrm([2, 2], false, true, Never("crossed")));
+        Assert.Equal(2, ScenarioA1VehicleSightRules.SmokeDrm([2], false, false, () => true));
+        Assert.Equal(0, ScenarioA1VehicleSightRules.SmokeDrm([2], false, false, () => false));
     }
 }
