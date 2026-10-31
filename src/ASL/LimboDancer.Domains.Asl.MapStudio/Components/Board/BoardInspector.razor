@@ -1,7 +1,7 @@
 @using LimboDancer.Domains.Asl.Units.State
 @using LimboDancer.Domains.Asl.MapStudio.Components.Layout
 @* Pass 29 (plan section 5): the board inspector beside a map, moved out of the board viewer: Selection (the picked unit, the units in the picked
-   hex, and the hex's facts), LOS, and Evidence (the pixel clicked, the hex's grid samples, and the board's provenance), with any tabs the host adds
+   hex, and the hex's facts), LOS, and Evidence within Selection (the pixel clicked, the hex's grid samples, and the board's provenance), with any tabs the host adds
    before them. It shows only what it is given: the units come already read for the view, and the host keeps the selection, the LOS check, and
    the open tab. *@
 <InspectorTabs Tabs="@TabList" Selected="@TopSelected" SelectedChanged="@SelectTop" Label="@Label" IdPrefix="@IdPrefix" Header="@Header">
@@ -39,19 +39,6 @@
             case "los":
             case "range":
                 @LosOrRange
-                break;
-            case "evidence":
-                @if (Sample is not null)
-                {
-                    <h3>Pixel clicked</h3>
-                    <p id="viewer-sample">@Sample</p>
-                }
-                @if ((Selected ?? hovered) is { } sampled)
-                {
-                    <p class="muted">Hex @sampled.Hex:</p>
-                    <HexGridSamples Rows="@HexInspector.SampleRows(sampled, Board.Render.Grid, Board.Catalog)" />
-                }
-                <BoardProvenancePanel Board="@Board" StyledModel="@StyledModel" />
                 break;
             default:
                 @if (SelectedUnit is { } unit)
@@ -93,6 +80,28 @@
                     <p class="muted">Hover or click a hex to inspect its derived facts; its grid samples are under Evidence.</p>
                 }
 
+                <section class="selection-evidence">
+                    <button type="button" class="link selection-evidence-toggle" id="@($"{IdPrefix}-evidence-toggle")" aria-expanded="@(evidenceOpen ? "true" : "false")"
+                            aria-controls="@($"{IdPrefix}-selection-evidence")" @onclick="() => evidenceOpen = !evidenceOpen">
+                        <IconLabel Icon="evidence" Label="" Size="24" />Evidence
+                    </button>
+                    <div id="@($"{IdPrefix}-selection-evidence")" hidden="@(!evidenceOpen)">
+                        @if (evidenceOpen)
+                        {
+                            @if (Sample is not null)
+                            {
+                                <h3>Pixel clicked</h3>
+                                <p id="viewer-sample">@Sample</p>
+                            }
+                            @if ((Selected ?? hovered) is { } sampled)
+                            {
+                                <p class="muted">Hex @sampled.Hex:</p>
+                                <HexGridSamples Rows="@HexInspector.SampleRows(sampled, Board.Render.Grid, Board.Catalog)" />
+                            }
+                            <BoardProvenancePanel Board="@Board" StyledModel="@StyledModel" />
+                        }
+                    </div>
+                </section>
                 break;
         }
     }
@@ -105,7 +114,8 @@
     /// </summary>
     public sealed record ExtraTab(InspectorTabs.Tab Tab, RenderFragment Content, bool Last = false, bool KeepMounted = false);
 
-    private static readonly IReadOnlyList<InspectorTabs.Tab> BuiltIn = [new("selection", "Selection", Icon: "selection"), new("los", "LOS", Icon: "los"), new("range", "Range", Icon: "range"), new("evidence", "Evidence", Icon: "evidence")];
+    private bool evidenceOpen;
+    private static readonly IReadOnlyList<InspectorTabs.Tab> BuiltIn = [new("selection", "Selection", Icon: "selection"), new("los", "LOS", Icon: "los"), new("range", "Range", Icon: "range")];
 
     // The hex under the pointer while none is kept. The workspace sets it here, so a hover redraws the inspector alone (pass 29).
     private HexFacts? hovered;
@@ -113,7 +123,7 @@
     [Parameter, EditorRequired]
     public StudioBoard Board { get; set; } = null!;
 
-    /// <summary>The open tab: "selection", "los", "evidence", or an extra tab's id.</summary>
+    /// <summary>The open tab: "selection", "los", "range", or an extra tab's id.</summary>
     [Parameter]
     public string Panel { get; set; } = "selection";
 
@@ -126,7 +136,7 @@
     [Parameter]
     public string IdPrefix { get; set; } = "viewer";
 
-    /// <summary>Tabs the host shows before Selection, LOS, and Evidence.</summary>
+    /// <summary>Tabs the host shows before Selection, LOS, and Range.</summary>
     [Parameter]
     public IReadOnlyList<ExtraTab> Extras { get; set; } = [];
 
@@ -176,7 +186,7 @@
     [Parameter]
     public Func<HexFacts, IReadOnlyList<string>>? HexNotes { get; set; }
 
-    /// <summary>The pixel last clicked, described for the Evidence tab.</summary>
+    /// <summary>The pixel last clicked, described in Selection's Evidence section.</summary>
     [Parameter]
     public string? Sample { get; set; }
 
@@ -240,7 +250,7 @@
     private const string PlannerTab = "planner";
 
     // With a planner, the top strip holds the Unit Planner in place of LOS and Range, which move to its own strip (ruling Q11).
-    private static readonly IReadOnlyList<InspectorTabs.Tab> PlannerBuiltIn = [new(PlannerTab, "Unit Planner", Icon: "planner"), new("selection", "Selection", Icon: "selection"), new("evidence", "Evidence", Icon: "evidence")];
+    private static readonly IReadOnlyList<InspectorTabs.Tab> PlannerBuiltIn = [new(PlannerTab, "Unit Planner", Icon: "planner"), new("selection", "Selection", Icon: "selection")];
 
     private static readonly IReadOnlyList<InspectorTabs.Tab> PlannerTabs = [new("los", "LOS", Icon: "los"), new("range", "Range", Icon: "range"), new(MovementPlanPanel, "Movement Plan", Icon: "movement-plan")];
 

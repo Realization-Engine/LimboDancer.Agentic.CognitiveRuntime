@@ -54,13 +54,17 @@ public sealed class IconLabTests(StudioFactory factory) : IClassFixture<StudioFa
             Assert.Contains($"<span class=\"visually-hidden\">{label}</span>", button, StringComparison.Ordinal);
         }
 
-        foreach (var (key, label) in new[] { ("selection", "Selection"), ("los", "LOS"), ("range", "Range"), ("evidence", "Evidence") })
+        foreach (var (key, label) in new[] { ("selection", "Selection"), ("los", "LOS"), ("range", "Range") })
         {
             var tab = Element(html, $"id=\"viewer-tab-{key}\"");
             Assert.Contains("icon-tab", tab, StringComparison.Ordinal);
             Assert.Contains($"title=\"{label}\"", tab, StringComparison.Ordinal);
             Assert.Contains($"<span class=\"visually-hidden\">{label}</span>", tab, StringComparison.Ordinal);
         }
+        Assert.DoesNotContain("id=\"viewer-tab-evidence\"", html, StringComparison.Ordinal);
+        var evidence = Element(html, "id=\"viewer-evidence-toggle\"");
+        Assert.Contains("<svg", evidence, StringComparison.Ordinal);
+        Assert.Contains("Evidence", evidence, StringComparison.Ordinal);
     }
 
     [Fact]
