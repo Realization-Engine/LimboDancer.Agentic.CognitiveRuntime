@@ -87,7 +87,8 @@
 {
     <label class="rout-each"><input type="checkbox" id="rout-each" checked="@EachUnit" @onchange="@(args => EachUnit = args.Value is true)" /> Show each unit's own routes</label>
 }
-<div class="toolbar">
+<div class="action-form">
+<ActionFormGroup Legend="Unit and assistance">
     <label>
         Broken unit
         <select id="rout-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -123,13 +124,18 @@
             </label>
         }
     }
+</ActionFormGroup>
+<ActionFormGroup Legend="Route">
     <LocationField Id="rout-route" Label="Route (hexes in order)" Name="the rout route" Many="true" Placeholder="E6, E7" Size="24" Value="@Route" OnChange="@OnRoute" />
     <label><input id="rout-low-crawl" type="checkbox" checked="@LowCrawl" @onchange="@(args => OnLowCrawl.InvokeAsync(args.Value is true))" /> Low Crawl</label>
+</ActionFormGroup>
+<ActionProposalArea>
     <button id="propose-rout" disabled="@(!Units.Any(unit => unit.Id == Unit) || Route.Trim().Length == 0)" aria-describedby="propose-rout-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rout</button>
     @if (!Units.Any(unit => unit.Id == Unit) || Route.Trim().Length == 0)
     {
         <span id="propose-rout-ready" class="toolbar-note">Choose the unit that routs and give its route.</span>
     }
+</ActionProposalArea>
 </div>
 }
 </ActionSection>

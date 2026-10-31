@@ -4051,3 +4051,28 @@ button[data-working]::after {
     .turn-layout { grid-template-columns:1fr; }
     .turn-layout aside { border-right:0; border-bottom:1px solid var(--line); max-height:40vh; }
 }
+
+/* Action entry: scoped to the forms, never the global toolbar. */
+.action-form { min-width: 0; }
+.action-form-group { border: 0; border-top: 1px solid #ddd6c8; margin: 1rem 0 0; padding: .65rem 0 .25rem; min-width: 0; }
+.action-form-group > legend { font-weight: 700; padding: 0 .5rem 0 0; font-size: .95rem; }
+.action-fields { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .75rem 1rem; min-width: 0; }
+.action-fields > label:has(select), .action-fields > label:has(input:not([type=checkbox])) { display: flex; flex-direction: column; align-items: flex-start; gap: .3rem; }
+.action-form select, .action-form input { max-width: 100%; min-width: 0; }
+.action-fields > *, .action-location-choice { min-width: 0; max-width: 100%; }
+.action-location-choice { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; width: 100%; }
+.action-location-choice > label, .action-location-choice > div { flex-basis: 100%; }
+.action-location-choice > select { flex: 1 1 12rem; }
+.action-proposal { border-top: 1px solid #ddd6c8; padding-top: .75rem; margin-top: 1rem; }
+.action-buttons { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; }
+.action-feedback { margin: 0 0 .5rem; font-size: .9rem; }
+.action-form .pick-on-map { font-weight: 600; }
+.action-form .location-field { max-width: 100%; }
+.action-form .toolbar { align-items: flex-start; }
+.action-form [hidden] { display: none !important; }
+
+.action-form .toolbar > label:has(select), .action-form .toolbar > label:has(input:not([type=checkbox])) { display: flex; flex-direction: column; gap: .3rem; max-width: 100%; }
+.action-form .toolbar > .location-field, .action-form .toolbar > fieldset { flex-basis: 100%; }
+.action-form .toolbar > button[id^="propose-"] { margin-top: .5rem; }
+.action-form .rule-help { margin: .5rem 0; }
+.action-form .fire-range { width: 100%; }

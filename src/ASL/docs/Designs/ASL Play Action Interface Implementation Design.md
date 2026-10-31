@@ -1,0 +1,158 @@
+# ASL Play Action Interface Implementation Design
+
+Status: approved for implementation. The user subsequently withdrew merge authorization on 2026-10-31 and requires a Studio demo before explicitly approving any merge to main.
+
+Date: 2026-10-31. Baseline: `96fcf297`.
+
+Basis: [Play Action Interface Analysis](<../ASL Play Action Interface Analysis.md>). This design organizes existing action controls and corrects ambiguous location-entry state. It does not change ASL decisions, event contracts, replay, or action confirmation policy.
+
+## 1. Intended result
+
+Each action has an intelligible reading order: participants, location if applicable, additional choices, and proposal. Related fields flow within groups; groups stack within a narrow inspector. The player sees one effective target, a clearly associated map-picking button, active optional choices, and feedback explaining missing inputs. Short actions remain short. Multi-stage actions retain their separate commands.
+
+No new wizard, global toolbar restyling, custom combobox, rule evaluator, or replacement proposal-review system is needed. Existing phase guidance remains available in its tab. Compact inline instruction and an expandable Rules explanation remain with each action.
+
+## 2. Presentation structure
+
+Add these presentation components under `LimboDancer.Domains.Asl.MapStudio/Components/Play/`:
+
+| Component | Contract |
+|---|---|
+| `ActionFormGroup.razor` | Stable `Id`, `Legend`, optional help fragment, and child content. Renders a semantic fieldset with a visually light legend. No eligibility or draft state. |
+| `ActionProposalArea.razor` | Optional draft-summary and feedback fragments plus a child slot for existing buttons. Does not calculate readiness, submit a form, or own confirmation. Multiple commands remain possible. |
+| `ActionLocationChoice.razor` | A single-location editor with host-owned value, choices, disabled-choice information, free-entry policy, purpose label, and change callback. Owns entry mode and transient text only. Details in section 3. |
+
+Use scoped `.action-form`, `.action-form-group`, `.action-fields`, `.action-field`, and `.action-proposal` styles in `wwwroot/site.css`. Do not change `.toolbar` globally. Fields have `min-width: 0`, bounded controls, wrapping labels, and visible focus. Use wrapping grid/flex within each group, with a full-width proposal area in normal flow. Do not introduce a sticky footer that reduces map or inspector space.
+
+Retain existing control IDs wherever controls survive. Rename or remove an ID only after finding its tests and consumers. Preserve native labels, tab order, and existing unit names with their locations. Group fieldsets must not be nested inside labels. Hide empty groups completely.
+
+## 3. One-value location contract
+
+### 3.1 Policies and controls
+
+The host supplies the effective `Value`, `ValueChanged`, existing location choices, a disabled/reason projection for choices, and whether arbitrary entry is currently allowed. Use the host's actual types or a small presentation adapter; do not add a new domain model. Choice order and viewer disclosure remain host-owned.
+
+For a restricted-choice field, render a native select and a map-picking action that can select only an enabled supplied choice. Do not show free text. If a picked hex has several enabled levels, offer those levels explicitly instead of choosing the first. If none match, retain the current selection and show a local explanation. Disabled options remain disabled through every entry method.
+
+While a new pick is awaiting a level choice, mark that editor pending and block its action proposal. Retaining the previous value internally must not allow it to be submitted while the interface is asking the player to finish the new selection. Explicit cancellation restores the previous selection and clears this pending state.
+
+For a free-entry field, render a suggested-location select, an explicit Enter another location mode, and a prominent Pick target on map button inside the same group. The modes share one effective value. A free-entered location outside the suggestions remains visibly represented as the current location. Selecting a suggestion replaces it and exits manual editing. Entering manual mode alone preserves the visible current value. Once the user edits the text, that new text owns the draft and prevents submission of the previous location.
+
+Do not convert disabled suggestions into a new blacklist for arbitrary entry. Keep those suggestions disabled in the select and suggested Use actions, but retain the existing free-entry command path and its normal proposal checks. The restricted-field policy does not apply to that path.
+
+Use `DisplayText.ReadPlace` and `BoardLocation` parsing for syntax, not legality. Preserve supported location formats, board names, and level handling. For ambiguous multi-board text, ask for board qualification in the field's feedback. Do not infer a board. A syntactically valid location remains subject to the normal action proposal checks.
+
+Do not turn `LocationField.Many` routes into this single-location component. Keep route ordering, repeated steps, Remove last, and Clear route. Improve their labels and grouping through the existing `LocationField`.
+
+### 3.2 Draft state and transitions
+
+`Play.razor` remains the authoritative owner of submitted action drafts. The component may retain `EntryMode`, `RawText`, and an editing/parse status, scoped to its stable field ID and current action context. It reports an editing/invalid status to the host so proposal readiness can include it. A pending edit must never leave an enabled proposal that submits the previous location.
+
+| Event | Required result |
+|---|---|
+| Select a location | Replace effective value, discard obsolete raw text/error, run existing dependent-choice invalidation |
+| Start typing | Mark the edit pending; prevent stale-value submission immediately, before blur |
+| Apply text on change or Enter | Normalize; commit valid syntax, or keep raw text visible and mark invalid. No hidden fallback |
+| Pick a map location | Replace draft using the configured policy; clear stale text/error after an accepted pick |
+| Clear action | Clear effective value and local draft/picking state through an explicit reset token |
+| Remove optional location | Clear its submitted values, reset its editor, cancel its picking ownership |
+| Host resets context | Reset local state using a context/reset token even when the effective string happens to be unchanged |
+
+Do not rely solely on comparing the incoming `Value`: a reset to the same value must still discard an unfinished edit. Programmatic updates and accepted user updates must be distinguishable enough that a rerender does not erase in-progress text.
+
+Include edit status in the proposal handler's entry guard as well as the button's disabled state. Apply the pending status before any awaited operation. Enter followed by blur must not send the same value change twice. This protects against event ordering and keyboard submission, not only the appearance of a disabled button.
+
+### 3.3 Fire migration
+
+Replace `fireTarget`/`fireFreeTarget` precedence with one authoritative target draft and one target-change path. Remove the redundant effective-target fallback only after updating all reads, callbacks, clear/reset/prune paths, vehicle-choice derivation, range inputs, and `ProposeFire`. Preserve their existing invalidation behavior. A valid free target must not be dropped merely because it is absent from the suggested-target list; an invalidated list choice must follow the existing context policy.
+
+Retain host-owned provenance alongside the single value, Suggested or Free, for this pruning distinction. It is metadata, not a second target. Selecting a suggestion sets Suggested; typing or a free-policy map pick sets Free. Clear/context reset clears both. Confirm the migration against every current `PruneFire` call and preserve dependent vehicle-choice handling. Do not infer provenance just by testing whether the current value happens to appear in the latest list.
+
+`SmallArmsFirePanel` receives the effective target and editing status instead of two competing strings. Its current selected-firer and existing guard checks remain in force. New shared components may check missing input and parse state; they may not reproduce ASL legality checks. Existing component-level rule checks are not moved or duplicated as part of this presentation refactor.
+
+## 4. Map picking and visibility
+
+Reuse the page-local `LocationPicking` owner and serial mechanism. Extend the presentation API with purpose-specific button text and a clear cancel action; retain defaults for unmigrated callers. No second picker service or global cache.
+
+An accepted single-location pick disarms. A route remains armed until cancelled, as today. Ground-level picks expose the existing level choices rather than claiming the building level was determined by the click. Already-picked Use actions remain secondary and must obey the same restricted-choice policy. `PickedOption` currently has no disabled-choice contract, so either extend it with a backward-compatible filter or have the new editor supply only enabled matches.
+
+Cancellation must be scoped to the field or section that owns the armed picker. Closing an unrelated section must not cancel a picker elsewhere. A hidden editor preserves unfinished text and its pending status; visibility cancellation only stops map input. Clear or an explicit context reset clears the text and pending status too.
+
+Add explicit visibility notification from the Play inspector/tab owner and `ActionSection` to active editors. Closing a section or leaving the Play tab cancels its picker even though children remain mounted. Removing an optional group also cancels it. Continue cancelling on game/view/context reset. Cancellation must clear the map instruction and field pressed state together. Disposal remains a fallback, not the primary visibility contract.
+
+Escape cancels an armed picker when focus is in its editor or the map. Scope keyboard handling to those surfaces; do not intercept unrelated dialog keys. Retain focus on cancellation where possible; if the editor is hidden, its disclosure/tab control is the fallback. Announce accepted picks and errors through one local polite status region. Do not steal focus from the map after every click, especially for routes.
+
+## 5. Optional choices, help, and proposal
+
+Unused optional controls appear behind named Add controls only when the existing host offers them. For Fire, Add spraying fire reveals its location editor. Once configured, a collapsed editor still exposes its active-value summary and Remove button. Remove clears submitted values and dependent local state. Closing an editor preserves the option. If a host change makes it unavailable, use the existing pruning policy, then show no stale active summary. Where there is currently no policy, resolve that specific case against the existing command contract before implementation; do not invent a rule in the UI.
+
+Move the current long explanation inside the local Rules disclosure and show one short task instruction above the fields. Retain rule links and explanation content. Do not remove the separate phase-guide tab or duplicate its entire contents in every form.
+
+The proposal area presents, in order, a short description of selected inputs, a missing-input/parse/busy/refusal message when applicable, and existing buttons. Reuse existing host reasons verbatim where appropriate. A blank or disabled control needs an associated explanation, but absence of a refusal does not mean legal. Preserve action labels and the current routine-action versus confirmation paths. Phase ending remains outside individual action forms in its current location and still requires confirmation.
+
+## 6. Rollout and file boundaries
+
+The full rollout covers Play action-entry surfaces. It does not redesign Setup, Replay, recorded outcomes, the map renderer, or rules calculators. Those are separate interfaces, not unfinished portions of this action-form change.
+
+All paths below are under `LimboDancer.Domains.Asl.MapStudio/` unless stated otherwise.
+
+| Stage | Files/families | Completion evidence |
+|---|---|---|
+| 1: shared pattern and Fire | New components; `Components/Pages/Play.razor`; `SmallArmsFirePanel`, `LocationField`, `PickedOption`, `ActionSection`; `Services/LocationPicking.cs`; `wwwroot/site.css` | Empty and populated Fire forms, target replacement, levels, optional spray, hidden-picker cancellation |
+| 2: prove different shapes | `RallyActionPanel`, `InfantryMovementAction`, `MovementRoutePanel`, `MovementPlanPanel`, `AdvanceActionPanel`, `RoutActionPanel` | Compact form, ordered route, restricted destination, shared and per-unit obligations |
+| 3: fire and vehicle variations | `OrdnanceFirePanel`, `OrdnanceTargetFields`, `BoundingFireAction`, `ReactionFireAction`, `MovementWindowActions`, vehicle movement/step/towing/scrounge and crew-exposure controls | Alternate aim, weapon/ammunition choices, reaction commands, vehicle-specific grouping |
+| 4: remaining contextual actions | Repair, deploy, recombine, support weapons, smoke, starshell, spotter, charges, search, mopping up, opportunity fire, prisoners, pending choices/surrender, and CloseCombat families | Each active form gets appropriate grouping; declarations and resolution commands retain order |
+
+Before editing, build a complete inventory from the current `Play.razor` action tree, its child components, and callbacks. Record every action-entry component as migrate, already-conforming, or not-applicable, with a reason and Studio scenario where applicable. The family table is a rollout map, not a claim of an exhaustive component audit. Include inline actions in `Play.razor`, not just files with Panel in their names. Treat CloseCombat subcomponents and conditional vehicle controls as separate entries where they contain inputs.
+
+A stage can be reviewed separately, but Stage 1 is not completion of the approved full design. Any subsequently agreed deferral must be recorded in the existing backlog and identified in the implementation report. No backlog or rule-claim changes are needed for this document-only proposal.
+
+## 7. Verification, with Studio first
+
+No build or tests are needed to write these documents. After implementation approval, refresh main and review concurrent changes before beginning. Use Codex's worktree and Studio on port 6680, allowing the build time it needs. Do not replace another agent's Studio or mutate the user's ongoing game for verification. Use suitable existing test games or dedicated copies.
+
+Studio checks, first:
+
+1. Fire at a narrow and a wide inspector width: no horizontal overflow, stable semantic ordering, long unit names, no empty groups, visible proposal feedback.
+2. Select a suggested target, enter a different target, then select another suggestion. The displayed, summarized, and proposed targets agree. Repeat with an unfinished/invalid edit and Clear.
+3. Pick a primary target, choose a level, pick a spray location, cancel, remove spray, close the section, and change tabs. Hidden fields never consume subsequent picks. Repeat view/context reset with a pending edit.
+4. Multi-board input and multi-level candidates, including a disabled destination. No first-board/first-level guess and no bypass of disabled choices.
+5. Keyboard-only list/manual entry, focus order, Escape cancellation, visible focus, associated feedback, and screen-reader names/status. Check browser zoom as well as viewport width.
+6. One compact action, a movement route, rout obligations, alternate ordnance targeting, and staged close combat. Preserve required answers and distinct proposal/resolution actions.
+
+Then run only affected existing test methods and targeted behavioral tests for the risky transitions: canonical target replacement, pending-edit stale submission, reset with unchanged value, restricted-choice map selection, hidden-picker cancellation, and optional removal. Locate the existing Studio test project and reuse its fixtures; do not add a project or broad per-component snapshot suites. Styling changes alone do not justify new tests. Search changed IDs and contracts to identify existing assertions that need updates.
+
+The existing project is `src/ASL/tests/LimboDancer.Domains.Asl.MapStudio.Tests`. Start discovery with `PlayComponentTests.cs`, `PlayPageFireTests.cs`, `PlayWorkspaceComponentTests.cs`, and `LocationWordsTests.cs`; these are search locations, not instructions to run entire classes.
+
+Before merge, follow the repository's applicable merge checks and green CI requirement. Do not run a full local suite merely because a form changed. If implementation expands into planner/event behavior, stop treating it as presentation-only and apply the appropriate gate and design review. User authorization is required for that expansion and for merging the eventual PR.
+
+## 8. Memory and performance checklist
+
+| Checklist question | Design answer and evidence |
+|---|---|
+| Work per state/unit/hex/step | Layout wraps the existing action inputs. Location matching scans the already supplied choices after a relevant interaction; no new map traversal, LOS computation, route search, or planner call. See analysis evidence and `LocationPicking`/`PickedOption`. |
+| Ownership, keys, lifetime, bounds, concurrency | Effective drafts remain page-owned. Editors retain only current field text/mode/status and reset identity. Existing page-local picking owns one armed field. No shared cache, asynchronous fill, unbounded history, or new background task. |
+| Disclosure, snapshots, pinned versions, seams | Reuse host-provided viewer-scoped choices and labels. No event, state, rule-version, rout-settlement, or rules API changes. Do not derive labels through privileged state. |
+| Counter fragments and layers | No map-renderer or counter-layer changes. A field edit may cause the existing page render, but must not add whole-layer construction/transmission. |
+| Regression checks and measurements | In Studio compare baseline and changed typing, selection, and picking responsiveness on the same scenario. Check for duplicate handler calls and unexpected map/planner work. Record observations and limitations; do not claim a performance gain without measurements. |
+| Test input costs | Reuse existing small fixtures once per test run where supported; no repeated full game/map builds for layout assertions, no new test project or CI share. |
+| Benefit versus noise | Intended benefit is clearer interaction, not faster rules processing. Repeated stalls or extra engine calls block completion until explained and corrected. |
+| Outputs and cleanup | Before any builder, set `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex`. Put task build/test outputs under its `action-form-design` folder, register them per repository practice, and remove only verified task-owned disposable outputs after checks. Keep a running Studio only when needed for review and record its location. No repository `bin`/`obj` output. |
+
+Authority: [Memory and Performance Guidelines](<../Memory-And-Performance/ASL Memory and Performance Guidelines.md>) and [Standing Rules](<../Prompts/Pass Standing Rules and Harness Lessons.md>), as amended by repository `AGENTS.md` for Codex.
+
+## 9. Traceability and review
+
+| Analysis requirement | Design coverage |
+|---|---|
+| Section 4: grouping and free flow | Sections 1, 2, 6; Studio checks 1 and 6 |
+| A1: one value | Section 3, especially Fire migration; Studio check 2 |
+| A2-A3: ownership and picking mode | Section 4; Studio checks 3 and 5 |
+| A4: board and level | Sections 3 and 4; Studio check 4 |
+| A5: different policies | Section 3.1; disabled-choice handling in section 4 |
+| A6: lifecycle | Sections 3.2, 4, 5; Studio check 3 |
+| A7: disclosure | Sections 3.1 and 8 |
+| Section 6: options and feedback | Section 5; Studio checks 1-3 |
+| Section 7: phase-specific adaptation | Section 6 inventory and all rollout stages |
+
+Self-review: checked for accuracy, correctness, internal consistency, and coverage of the revised analysis. The review distinguishes proposed APIs from current code. No implementation or Studio success is claimed. Detailed findings and their disposition are recorded in the [review](<../Reviews/ASL Play Action Interface Document Review.md>).

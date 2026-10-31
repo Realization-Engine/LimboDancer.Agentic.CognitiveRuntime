@@ -6,7 +6,8 @@
     not Stunned or Recalled, may repair its AAMG: a dr of 1 repairs it, a 6 disables it (D3.7).
     The reviewed Rally package resolves the attempt only when every outcome the dice can reach is decided.
 </RuleHelp>
-<div class="toolbar">
+<div class="action-form">
+<ActionFormGroup Legend="Unit and assistance">
     <label>
         Broken unit
         <select id="rally-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -21,6 +22,8 @@
             <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
         </select>
     </label>
+</ActionFormGroup>
+<ActionProposalArea>
     <button id="propose-rally" disabled="@(!Units.Any(unit => unit.Id == Unit) || Barred is not null)" aria-describedby="propose-rally-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
     @if (!Units.Any(unit => unit.Id == Unit))
     {
@@ -31,6 +34,7 @@
         @* The Play streamlining plan, S4: an attempt the gate would refuse is not offered; the reason is the gate's own. *@
         <span id="propose-rally-ready" class="toolbar-note">@barred</span>
     }
+</ActionProposalArea>
 </div>
 
 @code {

@@ -7,7 +7,8 @@
     A squad waiting off board may attempt to Deploy from its entry turn's RPh with a leader waiting to enter along the same edge (A2.52; ruling R25.4).
     A Guard of prisoners and an Unarmed unit need no leader: leave the leader unchosen. HS Recombine at the start of the RPh, before their side's other RPh actions (A1.32).
 </RuleHelp>
-<div class="toolbar">
+<div class="action-form">
+<ActionFormGroup Legend="Squad and leader">
     <label>
         Squad
         <select id="deploy-squad" value="@Squad" @onchange="@(args => OnSquad.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -44,11 +45,14 @@
         </label>
         <span class="toolbar-note">The chosen half-squad retains spotting if Deployment succeeds. Other Spotter rules remain pending.</span>
     }
+</ActionFormGroup>
+<ActionProposalArea>
     <button id="propose-deploy" disabled="@(!Squads.Any(squad => squad.Id == Squad) || (SpotterChoiceRequired && SpotterHalf.Length == 0))" aria-describedby="propose-deploy-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: deploy</button>
     @if (!Squads.Any(squad => squad.Id == Squad))
     {
         <span id="propose-deploy-ready" class="toolbar-note">Choose the squad that Deploys.</span>
     }
+</ActionProposalArea>
 </div>
 
 @code {

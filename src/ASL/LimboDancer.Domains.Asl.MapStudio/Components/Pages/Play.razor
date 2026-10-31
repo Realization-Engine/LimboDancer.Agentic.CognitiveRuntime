@@ -1136,10 +1136,10 @@ else if (state is not null)
                         MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@byRange.Targets" Target="@fireTarget"
                         VehicleChoices="@(fireMol.Length > 0 || FireWeapons.Any(weapon => weapon.Kind == "asl:ft" && fireWeapons.Contains(weapon.Id)) ? NamedVehicleChoices(firing, FireTarget) : [])"
                         Vehicle="@fireVehicle" OnVehicle="@(id => fireVehicle = id)"
-                        FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" LanesOffered="@FireLanesOffered(firing)" Partners="@FirePartners(firing)"
+                        TargetEditing="@fireTargetEditing" ResetToken="@fireResetToken" OnTargetEditing="@(pending => fireTargetEditing = pending)" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" LanesOffered="@FireLanesOffered(firing)" Partners="@FirePartners(firing)"
                         Partner="@firePartner" OnFrom="@(at => { fireFrom = at; fireAlso.Clear(); PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
                         OnWeapon="@(pick => Toggle(fireWeapons, pick.Id, pick.On))" OnAlone="@(pick => Toggle(fireAlone, pick.Id, pick.On))" OnDirector="@(id => fireDirector = id)"
-                        OnMol="@(id => fireMol = id)" OnTarget="@(at => fireTarget = at)" OnFreeTarget="@(at => fireFreeTarget = at)" OnSnapShot="@(on => fireSnapShot = on)"
+                        OnMol="@(id => fireMol = id)" OnTarget="@(at => SetFireTarget(at, false))" OnFreeTarget="@(at => SetFireTarget(at, true))" OnSnapShot="@(on => fireSnapShot = on)"
                         OnSpray="@(at => fireSpray = at)" OnLaneWeapon="@(id => fireLaneWeapon = id)" OnLaneTo="@(at => fireLaneTo = at)" OnPartner="@(id => firePartner = id)"
                         OnPropose="@ProposeFire" OnClear="@ClearFire" />
                     }
@@ -2729,6 +2729,7 @@ else if (state is not null)
     /// <summary>The map's keys during setup: Esc ends a move or a swap; [ and ] step the map through the setup plans and the list.</summary>
     private void MapKey(string key)
     {
+        if (key == "Escape" && Picking.Armed is not null) { Picking.Arm(null, null); return; }
         if (!SetupMode)
         {
             return;
@@ -4044,7 +4045,15 @@ else if (state is not null)
     private readonly HashSet<string> fireFirers = new(StringComparer.Ordinal);
     private string fireDirector = string.Empty;
     private string fireTarget = string.Empty;
-    private string fireFreeTarget = string.Empty;
+    private bool fireTargetFree;
+    private bool fireTargetEditing;
+    private int fireResetToken;
+    private void SetFireTarget(string value, bool free)
+    {
+        fireTarget = value;
+        fireTargetFree = free;
+        fireVehicle = string.Empty;
+    }
     private readonly HashSet<string> fireWeapons = new(StringComparer.Ordinal);
     private readonly HashSet<string> fireAlone = new(StringComparer.Ordinal);
     private string rallyUnit = string.Empty;
@@ -6024,7 +6033,7 @@ else if (state is not null)
             && LiveFire.CapturedBy(weapon.Definition?.Definition, holder) == true));
 
     /// <summary>The target: any Location typed in, or else the one chosen from the Locations the firing side knows to hold an enemy.</summary>
-    private string FireTarget => fireFreeTarget.Trim() is { Length: > 0 } typed ? typed : fireTarget;
+    private string FireTarget => fireTarget;
 
     /// <summary>The vehicle each Passenger of the chosen group rides (D6.1; pass 65, ruling R65.10), said beside it in the firer list.</summary>
     private IReadOnlyDictionary<string, string> FireAboard(string side) => state is null ? new Dictionary<string, string>()
@@ -6238,7 +6247,8 @@ else if (state is not null)
         fireAlone.Clear();
         fireDirector = string.Empty;
         fireTarget = string.Empty;
-        fireFreeTarget = string.Empty;
+        fireTargetFree = fireTargetEditing = false;
+        fireResetToken++;
         fireSnapShot = false;
         fireSpray = string.Empty;
         fireLaneWeapon = string.Empty;
@@ -7110,6 +7120,7 @@ else if (state is not null)
 
     private Task ProposeFire()
     {
+        if (fireTargetEditing) return Task.CompletedTask;
         var arguments = new Dictionary<string, object>
         {
             ["gameId"] = gameId,
@@ -7325,7 +7336,7 @@ else if (state is not null)
             fireAlso.RemoveAll(at => !FireLocations(side).Contains(at, StringComparer.Ordinal));
         }
 
-        if (fireTarget.Length > 0 && !FireTargets(side).Contains(fireTarget, StringComparer.Ordinal))
+        if (!fireTargetFree && fireTarget.Length > 0 && !FireTargets(side).Contains(fireTarget, StringComparer.Ordinal))
         {
             fireTarget = string.Empty;
         }
@@ -7771,6 +7782,7 @@ else if (state is not null)
     private bool turnGuideOpen;
     private void SelectInspectorTab(string tab)
     {
+        if (tab != PlayTab) Picking.Arm(null, null);
         inspectorTab = tab;
         if (tab == "phase-guide")
         {

@@ -1,6 +1,7 @@
 @* Plan A06 (pass 28b): a malfunctioned SW, or a vehicle's AAMG, repaired in the RPh (A9.72, D3.7). The page gives the weapons the view sees with
    their holder or vehicle in the label (ruling R23.1); the planner decides who repairs. *@
-<div class="toolbar">
+<div class="action-form">
+<ActionFormGroup Legend="Weapon and participant">
     <label>
         Malfunctioned SW or vehicle weapon
         <select id="repair-weapon" value="@Weapon" @onchange="@(args => OnWeapon.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -18,6 +19,8 @@
             </select>
         </label>
     }
+</ActionFormGroup>
+<ActionProposalArea>
     <button id="propose-repair" disabled="@(!Ready || !Weapons.Any(weapon => weapon.Id == Weapon))" aria-describedby="propose-repair-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: repair</button>
     @if (!Weapons.Any(weapon => weapon.Id == Weapon))
     {
@@ -27,6 +30,7 @@
     {
         <span id="propose-repair-ready" class="toolbar-note">Choose an eligible repair participant.</span>
     }
+</ActionProposalArea>
 </div>
 
 @code {
