@@ -3697,6 +3697,32 @@
       ]
     },
     {
+      "name": "AslDice",
+      "path": "Components/Shared/AslDice.razor",
+      "pages": [
+        "/lab/dice"
+      ],
+      "usedBy": [
+        "DiceLab"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Roll @(mode == 1 ? \u0022die\u0022 : \u0022dice\u0022)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "AslDice"
+        },
+        {
+          "kind": "button",
+          "label": "Show 4 \u002B 2, modifier \u002B1",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "AslDice"
+        }
+      ]
+    },
+    {
       "name": "RevisionNavigator",
       "path": "Components/Shared/RevisionNavigator.razor",
       "pages": [
