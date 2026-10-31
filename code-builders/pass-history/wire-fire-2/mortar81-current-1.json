@@ -1,0 +1,257 @@
+{
+  "sourceCommit": "850782ab",
+  "startedUtc": "2026-10-31T13:01:29.730906+00:00",
+  "build": "Debug",
+  "runtime": "10.0.14",
+  "serverGc": false,
+  "processorCount": 16,
+  "supportsPair": true,
+  "playVersion": "1.0.0\u002B850782ab227675d76332ee5cd4e0d93724acd23b",
+  "playAssemblySha256": "515D78BEC2BB0D5C0F61992335087DCA846F8FAF3ABF7237D4940CED19EE1156",
+  "inputs": [
+    {
+      "workload": "mortar81-solo",
+      "game": "wire-c9-pair-review",
+      "revision": 7,
+      "Map": {
+        "Reference": "bd03",
+        "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+        "Boards": [
+          {
+            "Board": {
+              "Kind": 0,
+              "Value": "bd03",
+              "VaslBoardName": "03"
+            },
+            "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+            "Slot": null
+          }
+        ],
+        "IsPlaced": false
+      },
+      "secondFirer": null,
+      "sha256": "3D5A1598B033FFA5F351A54E8A06AFE7853BA3E929401C325F4E3A3ADB7E9BA6"
+    },
+    {
+      "workload": "mortar81-pair",
+      "game": "wire-c9-pair-review",
+      "revision": 7,
+      "Map": {
+        "Reference": "bd03",
+        "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+        "Boards": [
+          {
+            "Board": {
+              "Kind": 0,
+              "Value": "bd03",
+              "VaslBoardName": "03"
+            },
+            "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+            "Slot": null
+          }
+        ],
+        "IsPlaced": false
+      },
+      "secondFirer": "g-second",
+      "sha256": "3D5A1598B033FFA5F351A54E8A06AFE7853BA3E929401C325F4E3A3ADB7E9BA6"
+    }
+  ],
+  "results": [
+    {
+      "workload": "mortar81-solo",
+      "game": "wire-c9-pair-review",
+      "operation": "target-advice",
+      "cold": false,
+      "answer": "range 4, fires as a light mortar with no CA",
+      "iterations": 400,
+      "bytes": 728,
+      "medianUs": 3.5965,
+      "p90Us": 6.4185,
+      "samples": [
+        {
+          "Bytes": 728,
+          "Microseconds": 3.2064999999999997
+        },
+        {
+          "Bytes": 728,
+          "Microseconds": 3.57125
+        },
+        {
+          "Bytes": 728,
+          "Microseconds": 6.4185
+        },
+        {
+          "Bytes": 728,
+          "Microseconds": 3.91175
+        },
+        {
+          "Bytes": 728,
+          "Microseconds": 3.5322500000000003
+        },
+        {
+          "Bytes": 728,
+          "Microseconds": 3.47625
+        },
+        {
+          "Bytes": 728,
+          "Microseconds": 3.5965
+        },
+        {
+          "Bytes": 728,
+          "Microseconds": 5.13125
+        },
+        {
+          "Bytes": 728,
+          "Microseconds": 4.8865
+        }
+      ]
+    },
+    {
+      "workload": "mortar81-solo",
+      "game": "wire-c9-pair-review",
+      "operation": "target-advice",
+      "cold": true,
+      "answer": "range 4, fires as a light mortar with no CA",
+      "iterations": 40,
+      "bytes": 17954.6,
+      "medianUs": 21.7225,
+      "p90Us": 31.777499999999996,
+      "samples": [
+        {
+          "Bytes": 17954.6,
+          "Microseconds": 23.942500000000003
+        },
+        {
+          "Bytes": 17954.6,
+          "Microseconds": 18.235
+        },
+        {
+          "Bytes": 17954.6,
+          "Microseconds": 22.2575
+        },
+        {
+          "Bytes": 17954.6,
+          "Microseconds": 19.71
+        },
+        {
+          "Bytes": 17954.6,
+          "Microseconds": 21.7225
+        },
+        {
+          "Bytes": 17954.6,
+          "Microseconds": 31.777499999999996
+        },
+        {
+          "Bytes": 17954.6,
+          "Microseconds": 28.630000000000003
+        },
+        {
+          "Bytes": 17954.6,
+          "Microseconds": 16.009999999999998
+        },
+        {
+          "Bytes": 17954.6,
+          "Microseconds": 20.490000000000002
+        }
+      ]
+    },
+    {
+      "workload": "mortar81-pair",
+      "game": "wire-c9-pair-review",
+      "operation": "target-advice",
+      "cold": false,
+      "answer": "range 4, turn 1 hexspine(s) (Case A)",
+      "iterations": 400,
+      "bytes": 4328,
+      "medianUs": 15.124,
+      "p90Us": 19.319000000000003,
+      "samples": [
+        {
+          "Bytes": 4328,
+          "Microseconds": 19.319000000000003
+        },
+        {
+          "Bytes": 4328,
+          "Microseconds": 16.68375
+        },
+        {
+          "Bytes": 4328,
+          "Microseconds": 15.07325
+        },
+        {
+          "Bytes": 4328,
+          "Microseconds": 14.558250000000001
+        },
+        {
+          "Bytes": 4328,
+          "Microseconds": 16.661749999999998
+        },
+        {
+          "Bytes": 4328,
+          "Microseconds": 15.124
+        },
+        {
+          "Bytes": 4328,
+          "Microseconds": 14.615499999999999
+        },
+        {
+          "Bytes": 4328,
+          "Microseconds": 14.644749999999998
+        },
+        {
+          "Bytes": 4328,
+          "Microseconds": 15.47
+        }
+      ]
+    },
+    {
+      "workload": "mortar81-pair",
+      "game": "wire-c9-pair-review",
+      "operation": "target-advice",
+      "cold": true,
+      "answer": "range 4, turn 1 hexspine(s) (Case A)",
+      "iterations": 40,
+      "bytes": 21554.6,
+      "medianUs": 33.525,
+      "p90Us": 49.2625,
+      "samples": [
+        {
+          "Bytes": 21554.6,
+          "Microseconds": 33.2
+        },
+        {
+          "Bytes": 21554.6,
+          "Microseconds": 30.817500000000003
+        },
+        {
+          "Bytes": 21554.6,
+          "Microseconds": 28.3975
+        },
+        {
+          "Bytes": 21554.6,
+          "Microseconds": 34.675
+        },
+        {
+          "Bytes": 21554.6,
+          "Microseconds": 33.525
+        },
+        {
+          "Bytes": 21554.6,
+          "Microseconds": 43.86
+        },
+        {
+          "Bytes": 21554.6,
+          "Microseconds": 49.2625
+        },
+        {
+          "Bytes": 21554.6,
+          "Microseconds": 31.044999999999998
+        },
+        {
+          "Bytes": 21554.6,
+          "Microseconds": 36.345
+        }
+      ]
+    }
+  ]
+}

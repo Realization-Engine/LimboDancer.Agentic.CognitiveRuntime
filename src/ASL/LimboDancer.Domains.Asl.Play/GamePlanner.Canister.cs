@@ -117,6 +117,7 @@ public sealed partial class GamePlanner
         }
 
         var intensive = arguments.TryGetProperty("intensive", out var intensiveArgument) && intensiveArgument.ValueKind == JsonValueKind.True;
+        string? secondFirer = Text(arguments, "secondFirer", out var secondId) ? secondId : null;
         if (CanisterFirer(state, gunId) is not { } firer)
         {
             return Refused(scope, label, expected, state.Find(gunId) is null ? ScenarioA1OrdnanceEligibility.GunRefusal(gunId)
@@ -125,7 +126,7 @@ public sealed partial class GamePlanner
 
         // The state's part first, with the Gun's own Location standing in for a target: it says whether the Gun may fire at all.
         var (from, current) = firer;
-        var (able, reason) = LiveOrdnance.FromState(state, gunId, from, null, ScenarioA1CanisterCalculator.Ammunition, intensive);
+        var (able, reason) = LiveOrdnance.FromState(state, gunId, from, null, ScenarioA1CanisterCalculator.Ammunition, intensive, secondFirer: secondFirer);
         if (able is null)
         {
             return Refused(scope, label, expected, reason!);
@@ -205,7 +206,7 @@ public sealed partial class GamePlanner
 
         // The record names the first Location attacked as its target; the shot's own facts follow the state's.
         var nominal = BoardLocation.Parse(attacked[0].Location.LocationId!);
-        var (stated, statedReason) = LiveOrdnance.FromState(state, gunId, nominal, null, ScenarioA1CanisterCalculator.Ammunition, intensive);
+        var (stated, statedReason) = LiveOrdnance.FromState(state, gunId, nominal, null, ScenarioA1CanisterCalculator.Ammunition, intensive, secondFirer: secondFirer);
         if (stated is null)
         {
             return Refused(scope, label, expected, statedReason!);

@@ -1206,6 +1206,7 @@ else if (state is not null)
                             _ => false,
                         };
                         <OrdnanceFirePanel Guns="@OrdnanceChoices(firing)" Gun="@ordnanceGun" Spotters="@OrdnanceSpotters(firing)" Spotter="@ordnanceSpotter"
+                            SecondFirers="@OrdnanceSecondFirers(firing)" SecondFirer="@ordnanceSecondFirer" OnSecondFirer="@ChooseOrdnanceSecondFirer"
                             Directors="@OrdnanceDirectors(firing)" Director="@ordnanceDirector" IntensiveAllowed="@OrdnanceIntensiveAllowed" Intensive="@ordnanceIntensive"
                             PanzerfaustUsage="@(PanzerfaustFirers(firing).Any() ? $"PF shots taken {state.PanzerfaustShots.GetValueOrDefault(firing)} of {LiveOrdnance.PanzerfaustAllowance(state, firing)} (C13.31)" : null)"
                             Ready="@(ordnanceGun.Length > 0 && !mgAwaitsAfv && (canisterAims is not null ? canisterAims.Any(aim => aim.Id == ordnanceCanisterAim) : ordnanceTarget.Length > 0))"
@@ -1222,10 +1223,10 @@ else if (state is not null)
                                     OnCanisterAim="@(aim => ordnanceCanisterAim = aim)" OnCanisterFacing="@(facing => { ordnanceCanisterFacing = facing; ordnanceCanisterAim = string.Empty; })" />
                             </Target>
                         </OrdnanceFirePanel>
-                        @if (state.Phase != "mph" && state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:gun" } chosenGun)
+                        @if (state.Phase != "mph" && state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:gun" } chosenGun && (!OrdnanceMortar || !OrdnanceLightMode))
                         {
                             <GunArcAction Facing="@ordnanceTurn" OnFacing="@(facing => ordnanceTurn = facing)" OnPropose="@ProposeTurnGun"
-                                Arc="@([.. FireTargets(firing).Select(at => new GunArcAction.ArcReading(at, LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation.TryParse(at, out var reading) ? Live.Planner.GunTargetStatus(state, chosenGun.Id, reading) ?? "not read" : "not read"))])" />
+                                Arc="@([.. FireTargets(firing).Select(at => new GunArcAction.ArcReading(at, LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation.TryParse(at, out var reading) ? Live.Planner.GunTargetStatus(state, chosenGun.Id, reading, ordnanceSecondFirer.Length == 0 ? null : ordnanceSecondFirer) ?? "not read" : "not read"))])" />
                         }
                     }
                 }
@@ -5867,6 +5868,7 @@ else if (state is not null)
 
     private string ordnanceSpotter = string.Empty;
     private string ordnanceDirector = string.Empty;
+    private string ordnanceSecondFirer = string.Empty;
 
     /// <summary>The German Infantry that may make a PF Check from October 1943 (C13.3, C13.31); the Ordnance package decides the rest.</summary>
     private IEnumerable<UnitInstance> PanzerfaustFirers(string side) => state is null || state.Side(side)?.Nationality != "german"
@@ -5963,6 +5965,10 @@ else if (state is not null)
             {
                 canister["intensive"] = true;
             }
+            if (ordnanceSecondFirer.Length > 0)
+            {
+                canister["secondFirer"] = ordnanceSecondFirer;
+            }
 
             return Propose(GameActions.FireOrdnance, JsonSerializer.SerializeToElement(canister));
         }
@@ -5983,6 +5989,10 @@ else if (state is not null)
         if (ordnanceDirector.Length > 0)
         {
             arguments["director"] = ordnanceDirector;
+        }
+        if (ordnanceSecondFirer.Length > 0)
+        {
+            arguments["secondFirer"] = ordnanceSecondFirer;
         }
         if (ordnanceVehicle.Length > 0 && OrdnanceAmmunitionKind != OrdnanceTargetFields.AmmunitionKind.None)
         {
@@ -7437,7 +7447,7 @@ else if (state is not null)
         shockVehicle = string.Empty;
         starshellUnit = starshellAt = string.Empty;
         starshellMethod = StarshellActionPanel.OwnHex;
-        ordnanceSpotter = ordnanceDirector = string.Empty;
+        ordnanceSpotter = ordnanceDirector = ordnanceSecondFirer = string.Empty;
         ordnanceIntensive = false;
         ordnanceAmmunition = "ap";
         ordnanceInfantryAmmunition = "he";
@@ -7461,6 +7471,7 @@ else if (state is not null)
         state = history?.Current ?? (history is { States.Count: > 0 } ? history.States[^1] : null);
         if (state?.Revision != previousRevision)
         {
+            ordnanceSecondFirer = string.Empty;
             spotterDeclarationGun = spotterDeclarationUnit = string.Empty;
             spotterDeclarationCache = default;
         }
@@ -8188,6 +8199,7 @@ else if (state is not null)
         ordnanceSpotter = string.Empty;
         ordnanceDirector = string.Empty;
         ordnanceVehicle = string.Empty;
+        ordnanceSecondFirer = string.Empty;
         ordnanceIntensive = false;
         ordnanceTurn = "east";
         ordnanceCanisterAim = string.Empty;
@@ -8277,22 +8289,69 @@ else if (state is not null)
         .. SeenOnly(PanzerfaustFirers(side)).Select(faust => new PlayChoice(faust.Id + ":pf", $"{faust.Id}: Panzerfaust (PF Check first; C13.31)")),
     ];
 
-    /// <summary>The units that may spot for the chosen light mortar, as the C9.3 calculator says (ruling RC93.3), or null for any other weapon.</summary>
-    private IReadOnlyList<PlayChoice>? OrdnanceSpotters(string side) => state is not null && state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" } mortar
-        ? [.. ActingUnits.Where(unit => ScenarioA1SpotterCalculator.CandidateRefusal(new SpotterCandidateFacts(unit.Status == InstanceStatus.Active, unit.Side == side,
-                ScenarioA1SpotterCalculator.Personnel(unit.Kind), GameState.GoodOrder(unit, Library.Vocabulary) == ConditionState.True,
-                GameState.Condition(unit, Conditions.Captured) == ConditionState.True, GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
-                unit.Id == mortar.Holding?.Holder)) is null).OrderBy(unit => unit.Id, StringComparer.Ordinal)
-            .Select(unit => new PlayChoice(unit.Id, $"{unit.Id} ({state.Location(unit.Id)?.Location})"))]
+    private void ChooseOrdnanceSecondFirer(string id)
+    {
+        ordnanceSecondFirer = id;
+        ordnanceDirector = ordnanceSpotter = ordnanceVehicle = string.Empty;
+        ordnanceIntensive = false;
+    }
+
+    private IReadOnlyList<PlayChoice>? OrdnanceSecondFirers(string side) => state is not null
+        && (Viewer.IsAdjudicator || Viewer.Name == side)
+        && state.Find(ordnanceGun) is EquipmentInstance { Holding: { } holding } gun
+        && ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal(gun.Kind) is null
+        && ScenarioA1OrdnanceParticipationCalculator.Smc(state.Unit(holding.Holder)?.Kind)
+        ? [.. ActingUnits.Where(unit => unit.Side == side && LiveOrdnance.ParticipantRefusal(state, gun.Id, unit.Id,
+                ordnanceDirector.Length == 0 ? null : ordnanceDirector, ordnanceSpotter.Length == 0 ? null : ordnanceSpotter) is null)
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => new PlayChoice(unit.Id, $"{unit.Id} ({state.Location(unit.Id)?.Location})"))]
         : null;
 
+    private bool OrdnanceMortar => state?.Find(ordnanceGun) is EquipmentInstance gun && LiveOrdnance.IsMortar(gun);
+
+    // The light-mode reading asks ParticipantRefusal; it is read once per state, weapon, and second firer, not at each use in a render.
+    private (GameState? State, string Gun, string Second, bool Light) ordnanceLightModeRead;
+
+    private bool OrdnanceLightMode
+    {
+        get
+        {
+            if (state is null)
+            {
+                return false;
+            }
+            var read = ordnanceLightModeRead;
+            if (!ReferenceEquals(read.State, state) || read.Gun != ordnanceGun || read.Second != ordnanceSecondFirer)
+            {
+                read = (state, ordnanceGun, ordnanceSecondFirer,
+                    LiveOrdnance.FiresAsLight(state, ordnanceGun, ordnanceSecondFirer.Length == 0 ? null : ordnanceSecondFirer));
+                ordnanceLightModeRead = read;
+            }
+            return read.Light;
+        }
+    }
+
+    /// <summary>The units that may spot for the chosen mortar, as the C9.3 calculator says, or null for another weapon.</summary>
+    private IReadOnlyList<PlayChoice>? OrdnanceSpotters(string side)
+    {
+        if (state is null || !OrdnanceMortar)
+        {
+            return null;
+        }
+        BoardLocation.TryParse(ordnanceTarget, out var target);
+        return [.. ActingUnits.Where(unit => unit.Side == side && unit.Id != ordnanceSecondFirer
+                && LiveOrdnance.SupportCandidateRefusal(state, ordnanceGun, unit.Id, null, target) is null)
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal)
+            .Select(unit => new PlayChoice(unit.Id, $"{unit.Id} ({state.Location(unit.Id)?.Location})"))];
+    }
+
     /// <summary>The leaders who may direct a light mortar, a LATW, or a Panzerfaust (A7.531), or null for a Gun or MA.</summary>
-    private IReadOnlyList<PlayChoice>? OrdnanceDirectors(string side) => state is not null && (state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" or "asl:latw" } || OrdnancePanzerfaust)
-        ? [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Kind == "asl:leader").OrderBy(unit => unit.Id, StringComparer.Ordinal)
+    private IReadOnlyList<PlayChoice>? OrdnanceDirectors(string side) => state is not null && (OrdnanceLightMode || state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:latw" } || OrdnancePanzerfaust)
+        ? [.. ActingUnits.Where(unit => unit.Side == side && unit.Id != ordnanceSecondFirer
+                && LiveOrdnance.SupportCandidateRefusal(state, ordnanceGun, null, unit.Id) is null).OrderBy(unit => unit.Id, StringComparer.Ordinal)
             .Select(leader => new PlayChoice(leader.Id, $"{leader.Id} ({state.Location(leader.Id)?.Location})"))]
         : null;
 
-    private bool OrdnanceIntensiveAllowed => state?.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:light-mortar" or "asl:latw" } && !OrdnancePanzerfaust && !OrdnanceMachineGun;
+    private bool OrdnanceIntensiveAllowed => !OrdnanceLightMode && state?.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:latw" } && !OrdnancePanzerfaust && !OrdnanceMachineGun;
 
     /// <summary>Whether the chosen weapon is a MG, a SW one or a vehicle's MA, which makes a To Kill attack at an AFV (A9.61, D3.54; pass 60).</summary>
     private bool OrdnanceMachineGun => state?.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:mg" } || (state?.Find(ordnanceGun) is UnitInstance { Definition: { } vehicle }
@@ -8300,7 +8359,7 @@ else if (state is not null)
 
     private OrdnanceTargetFields.AmmunitionKind OrdnanceAmmunitionKind =>
         OrdnancePanzerfaust || OrdnanceMachineGun || state?.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:latw" } ? OrdnanceTargetFields.AmmunitionKind.Fixed
-        : state?.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" } ? OrdnanceTargetFields.AmmunitionKind.None
+        : OrdnanceMortar ? OrdnanceTargetFields.AmmunitionKind.None
         : OrdnanceTargetFields.AmmunitionKind.Selectable;
 
     private string OrdnanceFixedAmmunition => OrdnanceMachineGun ? "a MG To Kill attack at the AFV named, on the AP To Kill Table (A9.61)"
