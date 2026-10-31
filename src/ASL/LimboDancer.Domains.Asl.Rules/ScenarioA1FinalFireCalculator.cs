@@ -59,8 +59,11 @@ public static class ScenarioA1FinalFireCalculator
     public static bool InReach(int? range) => range is >= 0 and <= 1;
 
     /// <summary>The vehicle MA MG's own counter and crew facts for A8.4 and A9.3 (pp. 61, 63).</summary>
-    public static FinalFireFacts VehicleFacts(FireAttack attack, FireVehicleFire vehicle) =>
-        new(FinalFireWeapon.Mg, vehicle.FinalFireMarker ?? FireMarker.None, attack.Range, false, true, true, false, false,
+    public static FinalFireFacts VehicleFacts(FireAttack attack, FireVehicleFire vehicle) => VehicleFacts(vehicle, attack.Range);
+
+    /// <summary>The same own-counter facts before a target is chosen; a missing range does not decide whether the weapon is spent.</summary>
+    public static FinalFireFacts VehicleFacts(FireVehicleFire vehicle, int? range = null) =>
+        new(FinalFireWeapon.Mg, vehicle.FinalFireMarker ?? FireMarker.None, range, false, true, true, false, false,
             vehicle.Pinned != true && vehicle.Stunned != true);
 
     /// <summary>A8.41/A9.3 (pp. 61, 63): the MA's own recorded counter takes precedence over the vehicle's other weapons. Null uses the earlier unit counter.</summary>

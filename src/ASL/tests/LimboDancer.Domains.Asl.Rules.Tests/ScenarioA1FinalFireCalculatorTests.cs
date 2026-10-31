@@ -10,6 +10,26 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 public sealed class ScenarioA1FinalFireCalculatorTests
 {
     [Fact]
+    public void AnAvailableMaFinalFireKeepsTheVehicleInTheFirePicker()
+    {
+        var spent = new FireSpentFacts("dfph", true, false, true, () => false, () => false, () => false)
+        {
+            VehicleMgUnfired = () => false,
+        };
+        var ma = new FinalFireFacts(FinalFireWeapon.Mg, FireMarker.FirstFire, null, false, true, true, false, false, true);
+        Assert.True(ScenarioA1FireEligibility.FireSpent(spent));
+        Assert.False(ScenarioA1FireEligibility.FireSpent(spent, ma));
+        Assert.True(ScenarioA1FireEligibility.FireSpent(spent, ma with
+        {
+            Marker = FireMarker.FinalFire
+        }));
+        Assert.True(ScenarioA1FireEligibility.FireSpent(spent with
+        {
+            Phase = "pfph"
+        }, ma));
+    }
+
+    [Fact]
     public void VehicleMaKeepsItsOwnCounterWhenAnotherWeaponChangesTheUnitCounter()
     {
         Assert.Equal(FireMarker.FirstFire, ScenarioA1FinalFireCalculator.VehicleMarker("first-fire", true, false, true, false));
