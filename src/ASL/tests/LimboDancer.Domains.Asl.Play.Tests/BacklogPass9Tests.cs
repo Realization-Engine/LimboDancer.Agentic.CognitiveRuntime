@@ -634,7 +634,7 @@ public sealed partial class BacklogPass9Tests : IDisposable
         var facts = LastFacts(before);
         var shot = LastShot(before);
         var fired = Since(before).Select(item => item.Payload).OfType<OrdnanceFired>().Single();
-        Assert.Equal(1, fired.SmokeWiringVersion);
+        Assert.Equal(2, fired.SmokeWiringVersion);
         Assert.Equal("Unknown SMOKE wiring version.", OrdnanceRecordVerifier.Shared.Verify(Current,
             fired with
             {
@@ -1233,7 +1233,7 @@ public sealed partial class BacklogPass9Tests : IDisposable
         var before = Revision;
         Committed(await Fire(R1, "bd01:B8:0", 6, 6));
         var record = LastFire(before);
-        Assert.Equal(1, record.SmokeWiringVersion);
+        Assert.Equal(2, record.SmokeWiringVersion);
         Assert.Equal("Unknown SMOKE wiring version.", FireRecordVerifier.Shared.Verify(Current,
             record with
             {
@@ -1343,6 +1343,158 @@ public sealed partial class BacklogPass9Tests : IDisposable
             VerifiedSmokeGrenades = []
         };
         Assert.Contains("play.smoke-facts", Planner().SmokeHindrancesAt(unknown, at).Reason!);
+    }
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(3, true)]
+    [InlineData(4, false)]
+    [InlineData(-1, false)]
+    public async Task WreckBlazeUsesItsFourLevelColumnAndPreservesTheVersionOneReading(int level, bool occupied)
+    {
+        await Setup("german", 7, 1942, Vehicle("de-v", "attacker-truck", "bd01:B8:0", "german"), Squad("r1", "bd01:B10:0", "russian"));
+        var source = BoardLocation.Parse("bd01:B8:0");
+        var state = Current with
+        {
+            Units = [.. Current.Units.Select(unit => unit.Id == "de-v" ? unit with { Status = InstanceStatus.Wrecked } : unit)],
+            Entities = [new EntityInstance(GamePlanner.BlazeId("de-v"), "asl:blaze", "german", new MapPosition(source),
+                new Dictionary<string, ConditionState>(), InstanceStatus.Active)],
+        };
+        var target = new BoardLocation(source.Board, source.Hex, level);
+        los.Elevations = new(new(level, 0, level == -1, false, false, 0), new(level, 0, level == -1, false, false, 0));
+        var planner = Planner();
+        var current = planner.SmokeHindrancesAt(state, target, 2);
+        Assert.Null(current.Reason);
+        if (occupied)
+        {
+            Assert.Equal(2, Assert.Single(current.Hindrances!));
+        }
+        else
+        {
+            Assert.Empty(current.Hindrances!);
+        }
+        los.Elevations = null;
+        var prior = planner.SmokeHindrancesAt(state, target, 1);
+        Assert.Null(prior.Reason);
+        if (level == 0)
+        {
+            Assert.Equal(2, Assert.Single(prior.Hindrances!));
+        }
+        else
+        {
+            Assert.Empty(prior.Hindrances!);
+        }
+    }
+
+    [Fact]
+    public async Task FireLaneReadsANewWreckWithoutLettingSameRangeGrainSuppressIt()
+    {
+        await Setup("german", 7, 1942, Squad("g1", "bd01:A6:0", "german"), Squad("r1", "bd01:B10:0", "russian"),
+            Weapon("r-mg", "defender-lmg", "r1", "russian"), Vehicle("de-v", "attacker-truck", "bd01:B8:0", "german"));
+        await Advance(2);
+        Committed(await Move(G1, "bd01:B6:0"));
+        var target = BoardLocation.Parse("bd01:B6:0");
+        var source = BoardLocation.Parse("bd01:B8:0");
+        var entry = new FireLaneEntry(target, 2, 1);
+        var lane = new FireLane("earlier-fire", "r-mg", "r1", [entry]);
+        var before = Current with
+        {
+            FireLanes = [lane]
+        };
+        los.Crossed[("B10", "B6")] = [Crossing("B8", 2), Crossing("A8", 2)];
+        los.Hindrances[("B10", "B6")] = [new LosHindrance(2, 1) { Terrains = ["Grain"] }];
+        var planner = Planner();
+        Assert.Empty(planner.FireLaneFacts(before, target, lane, entry)!.FireLaneWrecks!.Candidates);
+        var state = before with
+        {
+            Units = [.. before.Units.Select(unit => unit.Id == "de-v" ? unit with { Status = InstanceStatus.Wrecked } : unit)],
+            Entities = [new EntityInstance(GamePlanner.BlazeId("de-v"), "asl:blaze", "german", new MapPosition(source),
+                new Dictionary<string, ConditionState>(), InstanceStatus.Active)],
+        };
+        var facts = planner.FireLaneFacts(state, target, lane, entry)!;
+        Assert.NotNull(facts);
+        Assert.Equal(1, ScenarioA1FireFollowUps.FireLaneWreckHindrance(facts.FireLaneWrecks));
+        var resolution = ScenarioA1FireCalculator.Resolve(facts with
+        {
+            Rolls = new FireRolls([6, 5], null, null, null)
+        }, new ScenarioA1FirePackage().Reference);
+        Assert.True(resolution.Disposition == FireResolution.Resolved, string.Join(", ", resolution.Reasons));
+        Assert.Contains(resolution.Arithmetic!.Drm, item => item.Name == "wreck-hindrance" && item.Value == 1);
+        Assert.DoesNotContain(resolution.Arithmetic.Drm, item => item.Name is "los-hindrance" or "ffmo");
+
+        var record = new FireResolved([], null, facts.FirerLocationId ?? target.ToString(), target.ToString(),
+            new Dictionary<string, string> { ["attack"] = "lane-roll" }, JsonSerializer.SerializeToElement(facts, LiveFire.Json),
+            JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
+        {
+            SmokeWiringVersion = 2,
+            MovementStep = state.Movement!.Step
+        };
+        var rolls = new Dictionary<string, DiceRolled> { ["lane-roll"] = new("lane-roll", "attack", 2, 6, [6, 5], "scripted", "player") };
+        Assert.Null(FireRecordVerifier.Shared.Verify(state, record, rolls));
+        var otherLane = lane with
+        {
+            Weapon = "another-mg",
+            Operator = "g1"
+        };
+        var overlapping = state with
+        {
+            FireLanes = [lane, otherLane]
+        };
+        var forged = facts with
+        {
+            FireLaneWrecks = facts.FireLaneWrecks! with
+            {
+                LaneWeaponId = otherLane.Weapon
+            }
+        };
+        Assert.Contains("identify the active lane", FireRecordVerifier.Shared.Verify(overlapping,
+            record with
+            {
+                Facts = JsonSerializer.SerializeToElement(forged, LiveFire.Json)
+            }, rolls)!);
+        var candidate = Assert.Single(facts.FireLaneWrecks!.Candidates);
+        forged = facts with
+        {
+            FireLaneWrecks = facts.FireLaneWrecks with
+            {
+                Candidates = [candidate with { Standing = !candidate.Standing }]
+            }
+        };
+        Assert.Contains("disagree with a wreck", FireRecordVerifier.Shared.Verify(state,
+            record with
+            {
+                Facts = JsonSerializer.SerializeToElement(forged, LiveFire.Json)
+            }, rolls)!);
+        los.Blocked.Add(source);
+        Assert.Equal(0, ScenarioA1FireFollowUps.FireLaneWreckHindrance(planner.FireLaneFacts(state, target, lane, entry)!.FireLaneWrecks));
+    }
+
+    [Fact]
+    public async Task AMainArmamentMgFinalFiresWithItsOwnCounterAndReplays()
+    {
+        var halftrack = Vehicle("de-v", "attacker-halftrack", "bd01:B10:0", "german", "north-east");
+        halftrack["conditions"] = new Dictionary<string, bool> { [Conditions.ButtonedUp] = false };
+        await Setup("russian", 7, 1942, halftrack, Squad("r1", "bd01:A8:0", "russian"), Squad("r2", "bd01:B9:0", "russian"));
+        await Advance(2);
+        Committed(await Move(R1, "bd01:B8:0"));
+        Committed(await Fire(["de-v"], "bd01:B8:0", 5, 6));
+        Assert.Equal("first-fire", Assert.Single(Current.VehicleWeaponShots).FireCounter);
+        await Pass();
+        await EndMove();
+        await Advance();
+        Assert.Equal("dfph", Current.Phase);
+        Assert.False(LiveFire.FireSpent(Current, Current.Unit("de-v")!));
+        Assert.NotNull(LiveFire.FinalFireRefusal(Current, "de-v", null, BoardLocation.Parse("bd01:B8:0"), 2));
+        Assert.Null(LiveFire.FinalFireRefusal(Current, "de-v", null, BoardLocation.Parse("bd01:B9:0"), 1));
+        Refused(await Fire(["de-v"], "bd01:B8:0", 4, 5), "final-fire");
+        var before = Revision;
+        Committed(await Fire(["de-v"], "bd01:B9:0", 4, 5));
+        var effect = Assert.Single(LastFire(before).Resolution.Deserialize<FireResolution>(LiveFire.Json)!.WeaponEffects!);
+        Assert.True(effect.SustainedFire);
+        Assert.False(effect.RateOfFireRetained);
+        Assert.Equal("final-fire", Current.VehicleWeaponShots[^1].FireCounter);
+        Assert.True(LiveFire.FireSpent(Current, Current.Unit("de-v")!));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 
     [Fact]

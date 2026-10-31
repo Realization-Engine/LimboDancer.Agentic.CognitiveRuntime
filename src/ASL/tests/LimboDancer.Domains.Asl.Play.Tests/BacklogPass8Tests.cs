@@ -413,6 +413,26 @@ public sealed class BacklogPass8Tests : IDisposable
     }
 
     [Fact]
+    public async Task AFirstFireGunFinalFiresOnlyAdjacentAndReplaysItsRecordedReading()
+    {
+        await Setup("german", 7, 1942, Squad("g1", "bd01:A8:0", "german"), Squad("g2", "bd01:B9:0", "german"),
+            Crew("ru-crew", "bd01:B10:0", "russian"), Gun("ru-gun", "defender-at-gun", "bd01:B10:0", "north-east", "ru-crew", "russian"));
+        await Advance(2);
+        Committed(await Move(["g1"], "bd01:B8:0"));
+        Committed(await FireAt("ru-gun", "bd01:B8:0", null, null, 6, 5, 6, 6));
+        await Pass();
+        await EndMove();
+        await Advance();
+        Assert.Equal("dfph", Current.Phase);
+        Refused(await FireAt("ru-gun", "bd01:B8:0", null, null, true, 4, 5), "final-fire");
+        var before = Revision;
+        Committed(await FireAt("ru-gun", "bd01:B9:0", null, null, true, 4, 5));
+        Assert.Equal(1, LastFacts(before).FinalFireVersion);
+        Assert.True(Is(Current.Find("ru-gun")!, Conditions.IntensiveFire));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task AGunFiringAtACrewPushingItsGunTakesCaseOAndNoCaseJ()
     {
         // C6.6, A4.62 (p. 175; pass 35, task 35.10): the German crew pushes its Gun into Open Ground B8; the Russian 45mm in B10 takes Case O, -2,

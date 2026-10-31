@@ -2001,7 +2001,7 @@ public sealed class BacklogPass71Tests : IDisposable
             firers = R1,
             target = L("E2"),
         }));
-        Assert.Equal(1, Current.Choice!.Resume.GetProperty("smokeVersion").GetInt32());
+        Assert.Equal(2, Current.Choice!.Resume.GetProperty("smokeVersion").GetInt32());
         if (legacy)
         {
             RewritePendingSmokeVersion(null);
@@ -2022,7 +2022,7 @@ public sealed class BacklogPass71Tests : IDisposable
 
     [Theory]
     [InlineData(-1)]
-    [InlineData(2)]
+    [InlineData(3)]
     public async Task UnknownSniperSmokeVersionIsRefusedBeforeDice(int version)
     {
         await Setup(null);

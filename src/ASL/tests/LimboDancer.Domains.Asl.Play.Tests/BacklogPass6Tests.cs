@@ -63,12 +63,18 @@ public sealed class BacklogPass6Tests : IDisposable
 
         public Dictionary<(string From, string To), LosHindrance[]> Hindrances { get; } = [];
 
+        public LosElevations? Elevations
+        {
+            get; set;
+        }
+
         public LosResult? Read(GameState state, BoardLocation from, BoardLocation target) => Blocked.Contains(target) || Blocked.Contains(from)
             ? new(LosStatus.Blocked, true, Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty)
             : new(LosStatus.Clear, false, Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty)
             {
                 Crossed = Crossed.GetValueOrDefault((from.Hex.ToString(), target.Hex.ToString())) ?? [],
                 Hindrances = Hindrances.GetValueOrDefault((from.Hex.ToString(), target.Hex.ToString())) ?? [],
+                Elevations = Elevations,
             };
     }
 
@@ -359,8 +365,8 @@ public sealed class BacklogPass6Tests : IDisposable
         // 1+2 = 3, at most half the Kill Number 7: a burning wreck with a Blaze (B25.14; R6.3).
         los.Crossed[("B10", "B6")] =
         [
-            Crossing("B9", 1), Crossing("B8", 2),
-            Crossing("B7", 3),
+            Crossing("B9", 1) with { RangeToTarget = 3 }, Crossing("B8", 2) with { RangeToTarget = 2 },
+            Crossing("B7", 3) with { RangeToTarget = 1 },
         ];
         await Setup("russian", 7, Squad("r1", "bd01:B10:0", "russian"), Squad("r2", "bd01:B10:0", "russian"), Squad("r3", "bd01:B10:0", "russian"),
             Vehicle("de-t", "attacker-truck", "bd01:B8:0", "german"), Squad("g1", "bd01:B6:0", "german"));
@@ -371,6 +377,7 @@ public sealed class BacklogPass6Tests : IDisposable
         Assert.Null(GamePlanner.CoverAt(Current, At("bd01:B8:0"), "german"));
 
         // Its smoke is +2 for fire traced through its Location (B25.2, A24.2): r3 at g1 in B6.
+        los.Elevations = new(new(0, 0, false, false, false, 0), new(0, 0, false, false, false, 0));
         var before = Revision;
         Committed(await Fire(R3, "bd01:B6:0", 6, 5));
         Assert.True(HasDrm(LastFire(before), "los-hindrance", 2m), Drm(LastFire(before)).ToString());

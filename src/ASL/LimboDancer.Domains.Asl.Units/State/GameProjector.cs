@@ -2174,10 +2174,17 @@ public static partial class GameProjector
             else if (fire.Facts.TryGetProperty("vehicleFire", out vehicleFire) && vehicleFire.ValueKind == JsonValueKind.Object
                 && vehicleFire.TryGetProperty("vehicleId", out vehicleId) && vehicleId.GetString() is { } vehicle)
             {
-                weaponShots = [.. weaponShots, new VehicleWeaponShot(vehicle, "ma",
-                    Rules.ScenarioA1FireEligibility.FirePhase(state.Phase, state.Unit(vehicle)?.Side == state.PhasingSide), 0, false)];
                 // Rules decides the kept ROF and the count (pass 32.c).
                 var effects = fire.Resolution.TryGetProperty("weaponEffects", out var weaponEffects) && weaponEffects.ValueKind == JsonValueKind.Array ? weaponEffects : (JsonElement?)null;
+                weaponShots = [.. weaponShots, new VehicleWeaponShot(vehicle, "ma",
+                    Rules.ScenarioA1FireEligibility.FirePhase(state.Phase, state.Unit(vehicle)?.Side == state.PhasingSide), 0, false)
+                {
+                    FireCounter = fire.Facts.TryGetProperty("finalFireVersion", out var finalFireVersion) && finalFireVersion.ValueKind == JsonValueKind.Number
+                        && finalFireVersion.GetInt32() == 1
+                        ? effects is { } counters && counters.GetArrayLength() == 1 && counters[0].TryGetProperty("fireCounter", out var counter)
+                            ? counter.GetString() ?? "none" : "none"
+                        : null,
+                }];
                 var kept = Rules.ScenarioA1FireFollowUps.VehicleShotKeepsRof(effects?.GetArrayLength() ?? 0,
                     effects is { } list && list.GetArrayLength() == 1 && list[0].TryGetProperty("rateOfFireRetained", out var retained) ? retained.GetBoolean() : null);
                 var previous = shots.FirstOrDefault(item => item.Gun == vehicle);

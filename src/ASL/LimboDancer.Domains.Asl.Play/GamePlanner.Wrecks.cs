@@ -54,7 +54,7 @@ public sealed partial class GamePlanner
     /// Whether an AFV or wreck gives cover and Hindrance now (D2.41, D9.3, D9.4; ruling R6.1): not in Motion, and not, in the MPh, DFPh, or
     /// AFPh, one that spent MP in this Player Turn's MPh (the Case J clause).
     /// </summary>
-    private static bool Standing(GameState state, UnitInstance vehicle) =>
+    internal static bool Standing(GameState state, UnitInstance vehicle) =>
         ScenarioA1VehicleSightRules.Standing(Is(vehicle, Conditions.Motion), state.Phase, state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal));
 
     /// <summary>
@@ -82,10 +82,12 @@ public sealed partial class GamePlanner
     /// and +2 for each burning wreck's Location it is traced into or through, +3 out of or within (B25.2, A24.2, A24.8). Null with a reason
     /// when an LOS to a vehicle's hex cannot be read.
     /// </summary>
-    private (int Drm, string? Reason) VehicleHindrance(GameState state, BoardLocation from, BoardLocation target, LosResult los, bool sameLevel,
-        HashSet<int> mapRanges)
+    private (int Drm, string? Reason) VehicleWreckHindrance(GameState state, BoardLocation from, BoardLocation target, LosResult los, bool sameLevel,
+        HashSet<int> mapRanges, bool fireLaneBlazes = false)
     {
         var ranges = new HashSet<int>();
+        var blaze = ScenarioA1BlazeSmokeCalculator.WreckBlazeLos(fireLaneBlazes,
+            ScenarioA1BlazeSmokeCalculator.WindFelt(WindForce.None, false))!;
         var fromElevation = ReadLocation(state, from) is { } fromRead ? fromRead.Hex.BaseLevel + fromRead.Level.Level : (int?)null;
         foreach (var crossed in los.Crossed)
         {
@@ -94,8 +96,8 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            var hindering = state.Units.Where(unit => (unit.Status == InstanceStatus.Active ? IsAfv(unit)
-                    : unit.Status == InstanceStatus.Wrecked && !IsBurning(state, unit))
+            var hindering = state.Units.Where(unit => (unit.Status == InstanceStatus.Active ? !fireLaneBlazes && IsAfv(unit)
+                    : unit.Status == InstanceStatus.Wrecked && (IsBurning(state, unit) ? blaze.WreckHindrance : !fireLaneBlazes))
                 && state.Location(unit.Id)?.Location is { } at && at.Board == board && at.Hex == hex && Standing(state, unit)
                 && ScenarioA1VehicleSightRules.BypassHinders(unit.Straddling is not null, () => unit.Straddling is { } lane
                     && (los.Crossed.Any(item => item.Board == lane.Board && item.Hex == lane.Hex) || (from.Board == lane.Board && from.Hex == lane.Hex)
@@ -126,6 +128,55 @@ public sealed partial class GamePlanner
             }
         }
 
+        return (ranges.Count, null);
+    }
+
+    private (FireLaneWreckFacts? Facts, string? Reason) FireLaneWrecks(GameState state, FireLane lane, BoardLocation target)
+    {
+        if (state.Location(lane.Operator)?.Location is not { } from || ReadLocation(state, from) is not { } sourceRead
+            || ReadLocation(state, target) is not { } targetRead || Los(state, from, target) is not { IsBlocked: false } los)
+        {
+            return (null, "play.fire-lane-wreck-los: the Fire Lane's source, target, or LOS cannot be established");
+        }
+        var elevation = sourceRead.Hex.BaseLevel + sourceRead.Level.Level;
+        var candidates = new List<FireLaneWreckCandidate>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var burning = state.Units.Where(unit => unit.Status == InstanceStatus.Wrecked && IsBurning(state, unit)).ToArray();
+        foreach (var crossed in los.Crossed)
+        {
+            if (crossed.Board is not { } board || crossed.Hex is not { } hex)
+            {
+                continue;
+            }
+            foreach (var wreck in burning)
+            {
+                if (state.Location(wreck.Id)?.Location is not { } at || at.Board != board || at.Hex != hex || !seen.Add(wreck.Id))
+                {
+                    continue;
+                }
+                if (ReadLocation(state, at) is not { } atRead || Los(state, from, at)?.IsBlocked is not { } fromBlocked
+                    || Los(state, target, at)?.IsBlocked is not { } targetBlocked)
+                {
+                    return (null, "play.fire-lane-wreck-los: a crossed wreck's elevation or endpoint LOS cannot be established");
+                }
+                var across = wreck.Straddling;
+                var crossesOther = across is not null && (los.Crossed.Any(item => item.Board == across.Board && item.Hex == across.Hex)
+                    || from.Board == across.Board && from.Hex == across.Hex || target.Board == across.Board && target.Hex == across.Hex);
+                candidates.Add(new(wreck.Id, at.ToString(), crossed.Range, atRead.Hex.BaseLevel + atRead.Level.Level == elevation,
+                    Standing(state, wreck), across?.ToString() ?? string.Empty, crossesOther, !fromBlocked, !targetBlocked));
+            }
+        }
+        return (new(lane.Weapon, from.ToString(), elevation == targetRead.Hex.BaseLevel + targetRead.Level.Level, candidates), null);
+    }
+
+    private (int Drm, string? Reason) VehicleHindrance(GameState state, BoardLocation from, BoardLocation target, LosResult los, bool sameLevel,
+        HashSet<int> mapRanges)
+    {
+        var vehicles = VehicleWreckHindrance(state, from, target, los, sameLevel, mapRanges);
+        if (vehicles.Reason is not null)
+        {
+            return vehicles;
+        }
         var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
         var smoke = 0;
         bool InHex(BoardLocation at, BoardLocation end) => at.Board == end.Board && at.Hex == end.Hex;
@@ -153,7 +204,7 @@ public sealed partial class GamePlanner
                 SmokeLosVerdict? intersection;
                 if (column.Height is null)
                 {
-                    // W-B25.2 owns changing the existing wreck-Blaze reading.
+                    // A source with no height retains its recorded reading.
                     intersection = new(true, sourceHex, targetHex);
                 }
                 else if (ScenarioA1SmokeHeightCalculator.ExactLocation(from == at, target == at, sourceHex, targetHex) is { } exact)
@@ -190,7 +241,7 @@ public sealed partial class GamePlanner
             smoke += ScenarioA1VehicleSightRules.SmokeDrm(values, sourceWithin, targetWithin, () => values.Count > 0);
         }
 
-        return (ranges.Count + smoke, null);
+        return (vehicles.Drm + smoke, null);
     }
 
     /// <summary>The Locations of every SMOKE source (A24.2; rulings R6.3, R9.5): a burning wreck's Blaze and each SMOKE grenade counter.</summary>
@@ -201,7 +252,9 @@ public sealed partial class GamePlanner
 
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameState, SmokeSnapshot> SmokeSnapshots = new();
 
-    private sealed record SmokeColumn(int Hindrance, int? Height);
+    private sealed record SmokeColumn(int Hindrance, int? Height, bool Blaze = false);
+
+    private static int? SmokeHeight(SmokeColumn column, int version) => column.Blaze && version == 1 ? null : column.Height;
 
     private sealed record SmokeSnapshot(IReadOnlyDictionary<BoardLocation, IReadOnlyList<int>> Values, IReadOnlySet<BoardLocation> Unknown,
         IReadOnlyDictionary<BoardLocation, IReadOnlyList<SmokeColumn>> Columns);
@@ -216,7 +269,7 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>SMOKE occupying a complete Location, including a column from another level of its hex. Rules decides the vertical extent.</summary>
-    internal (IReadOnlyList<int>? Hindrances, string? Reason) SmokeHindrancesAt(GameState state, BoardLocation at)
+    internal (IReadOnlyList<int>? Hindrances, string? Reason) SmokeHindrancesAt(GameState state, BoardLocation at, int smokeVersion = 2)
     {
         var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
         bool SameHex(BoardLocation source) => source.Board == at.Board && source.Hex == at.Hex;
@@ -239,9 +292,9 @@ public sealed partial class GamePlanner
                     (values ??= []).Add(column.Hindrance);
                     continue;
                 }
-                if (column.Height is null)
+                if (SmokeHeight(column, smokeVersion) is not { } height)
                 {
-                    // W-B25.2 owns changing the existing wreck-Blaze reading.
+                    // V1's wreck Blaze occupied only its exact Location in this reader.
                     continue;
                 }
                 elevations ??= Los(state, at, at)?.Elevations;
@@ -253,7 +306,7 @@ public sealed partial class GamePlanner
                 var end = new SmokeLosEnd(endpoint.Elevation, (decimal)endpoint.RooftopAdjustment, endpoint.Cellar,
                     endpoint.Hillock, endpoint.Upslope, (decimal)endpoint.EmbankmentAdjustment);
                 var intersection = ScenarioA1SmokeHeightCalculator.Intersect(new(place.Hex.BaseLevel + place.Level.Level, place.Hex.BaseLevel,
-                    column.Height.Value, end, end, 0, 0, false, true, true));
+                    height, end, end, 0, 0, false, true, true));
                 if (intersection is null)
                 {
                     return (null, "play.smoke-height: SMOKE's vertical extent at the Location cannot be established (A24.4)");
@@ -274,7 +327,7 @@ public sealed partial class GamePlanner
         var columns = new Dictionary<BoardLocation, List<SmokeColumn>>();
         var unknown = new HashSet<BoardLocation>();
         var grenades = state.VerifiedSmokeGrenades.ToHashSet(StringComparer.Ordinal);
-        void Add(BoardLocation at, int value, int? height = null)
+        void Add(BoardLocation at, int value, int? height = null, bool blaze = false)
         {
             if (!values.TryGetValue(at, out var location))
             {
@@ -283,14 +336,17 @@ public sealed partial class GamePlanner
                 columns.Add(at, []);
             }
             location.Add(value);
-            columns[at].Add(new(value, height));
+            columns[at].Add(new(value, height, blaze));
         }
 
         foreach (var wreck in state.Units.Where(unit => unit.Status == InstanceStatus.Wrecked && IsBurning(state, unit)))
         {
             if (state.Location(wreck.Id)?.Location is { } at)
             {
-                Add(at, ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance);
+                // Wind and terrain-Blaze state are not represented yet; the supported scenario reading is No Wind.
+                var wind = ScenarioA1BlazeSmokeCalculator.WindFelt(WindForce.None, false);
+                Add(at, ScenarioA1BlazeSmokeCalculator.Hindrance(BlazeKind.WreckBlaze, wind)!.Value,
+                    ScenarioA1BlazeSmokeCalculator.Height(BlazeKind.WreckBlaze, wind), true);
             }
         }
 

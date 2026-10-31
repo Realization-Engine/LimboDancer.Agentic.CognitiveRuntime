@@ -640,7 +640,7 @@ public sealed partial class GamePlanner
         if (lanes.Length > 0)
         {
             if (Replay([.. existing, .. Stepped([.. pool.Select(_ => 6)], null)]).Current is not { } laneState
-                || lanes.Any(item => FireLaneFacts(laneState, landed, item.Entry) is not { } laneFacts || ScenarioA1FireCalculator.Precheck(laneFacts, FireReference.Value).Count != 0))
+                || lanes.Any(item => FireLaneFacts(laneState, landed, item.Lane, item.Entry) is not { } laneFacts || ScenarioA1FireCalculator.Precheck(laneFacts, FireReference.Value).Count != 0))
             {
                 return Refused(scope, label, expected, ScenarioA1MovementCalculator.FireLaneUndecided);
             }

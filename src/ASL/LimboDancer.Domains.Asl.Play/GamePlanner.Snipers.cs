@@ -85,7 +85,7 @@ public sealed partial class GamePlanner
     /// What is still to resolve after a Sniper attack (A14.1, A14.3, A14.4): the attack its <see cref="Roll"/> calls for, or, with <see cref="Check"/>, the
     /// Sniper Check the attack that roll called offers in that Location, owed once the attacks its own LLMC DRs called are resolved (pass 71, ruling R71.25).
     /// </summary>
-    private readonly record struct SniperQueued(string Roll, string Sniper, BoardLocation? Check = null, int? SmokeVersion = 1);
+    private readonly record struct SniperQueued(string Roll, string Sniper, BoardLocation? Check = null, int? SmokeVersion = 2);
 
     /// <summary>A queue as a pending Sniper choice's resume keeps it, "rest": each item its roll and Sniper, and an owed Sniper Check its Location.</summary>
     private static JsonArray QueueJson(IEnumerable<SniperQueued> queue) => new([.. queue.Select(item =>
@@ -105,21 +105,26 @@ public sealed partial class GamePlanner
     private static int? SniperSmokeVersion(JsonElement resume) => resume.TryGetProperty("smokeVersion", out var version)
         && version.ValueKind != JsonValueKind.Null ? version.ValueKind == JsonValueKind.Number && version.TryGetInt32(out var value) ? value : -1 : null;
 
-    private static string? SniperSmokeVersionBar(JsonElement resume) => SniperSmokeVersion(resume) is not (null or 1)
-        || resume.GetProperty("rest").EnumerateArray().Any(item => SniperSmokeVersion(item) is not (null or 1))
+    private static string? SniperSmokeVersionBar(JsonElement resume) => SniperSmokeVersion(resume) is not (null or 1 or 2)
+        || resume.GetProperty("rest").EnumerateArray().Any(item => SniperSmokeVersion(item) is not (null or 1 or 2))
         ? "play.sniper-smoke-version: unknown SMOKE reading" : null;
 
     /// <summary>Read public SMOKE/map facts before dice, including Locations newly exposed by a bailout or casualty result.</summary>
     private string? SniperSmokeBar(GameState state)
     {
+        var version1 = false;
+        var version2 = true;
         if (state.Choice is { Kind: ChoicePending.Sniper or ChoicePending.SniperCheck } pending)
         {
             if (SniperSmokeVersionBar(pending.Resume) is { } versionBar)
             {
                 return versionBar;
             }
-            if (SniperSmokeVersion(pending.Resume) is null
-                && pending.Resume.GetProperty("rest").EnumerateArray().All(item => SniperSmokeVersion(item) is null))
+            version1 = SniperSmokeVersion(pending.Resume) == 1
+                || pending.Resume.GetProperty("rest").EnumerateArray().Any(item => SniperSmokeVersion(item) == 1);
+            version2 = SniperSmokeVersion(pending.Resume) == 2
+                || pending.Resume.GetProperty("rest").EnumerateArray().Any(item => SniperSmokeVersion(item) == 2);
+            if (!version1 && !version2)
             {
                 return null;
             }
@@ -137,7 +142,8 @@ public sealed partial class GamePlanner
         var visited = new HashSet<BoardLocation>();
         foreach (var (source, columns) in snapshot.Columns)
         {
-            if (columns.All(column => column.Height is null) || !visited.Add(source.AtGroundLevel()))
+            if (!columns.Any(column => version1 && SmokeHeight(column, 1) is not null || version2 && SmokeHeight(column, 2) is not null)
+                || !visited.Add(source.AtGroundLevel()))
             {
                 continue;
             }
@@ -149,7 +155,8 @@ public sealed partial class GamePlanner
                 .Concat(read.Hex.Hexsides.Where(side => side.OnMap).Select(side => new BoardLocation(source.Board, source.Hex, 0, side.Side)));
             foreach (var location in locations)
             {
-                if (SmokeHindrancesAt(state, location).Reason is not null)
+                if (version1 && SmokeHindrancesAt(state, location, 1).Reason is not null
+                    || version2 && SmokeHindrancesAt(state, location, 2).Reason is not null)
                 {
                     return "play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)";
                 }
@@ -406,7 +413,7 @@ public sealed partial class GamePlanner
     /// <paramref name="rest"/> (ruling R71.25).
     /// </summary>
     private bool Snipe(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
-        Func<RollRequest, RollResult> draw, string sniperId, string trigger, List<SniperQueued> rest, SniperResume? resumed = null, int? smokeVersion = 1)
+        Func<RollRequest, RollResult> draw, string sniperId, string trigger, List<SniperQueued> rest, SniperResume? resumed = null, int? smokeVersion = 2)
     {
         if (resumed is not null)
         {
@@ -579,7 +586,7 @@ public sealed partial class GamePlanner
             }
             var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
             var tem = smoke is not null ? ScenarioA1Sniper.TargetTem(terrain, smoke.GetValueOrDefault(location))
-                : ScenarioA1Sniper.TargetTem(terrain, SmokeHindrancesAt(state, location).Hindrances
+                : ScenarioA1Sniper.TargetTem(terrain, SmokeHindrancesAt(state, location, smokeVersion ?? 2).Hindrances
                     ?? throw new InvalidOperationException("Sniper SMOKE facts changed after preflight."));
             tems.Add(location, tem);
             return tem;

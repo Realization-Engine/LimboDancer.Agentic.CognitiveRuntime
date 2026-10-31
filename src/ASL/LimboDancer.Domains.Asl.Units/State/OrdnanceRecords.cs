@@ -13,7 +13,7 @@ namespace LimboDancer.Domains.Asl.Units.State;
 public sealed record OrdnanceFired(string Gun, string Crew, BoardLocation Target, UnitFacing? Facing, bool RateOfFireKept, int Acquisition,
     BoardLocation? Acquired, IReadOnlyDictionary<string, string> Rolls, JsonElement Facts, JsonElement Resolution) : EventPayload
 {
-    /// <summary>Version 1 gathers SMOKE strengths from verified sources. Absent keeps the recorded count reading.</summary>
+    /// <summary>Version 1 gathers verified SMOKE strengths; version 2 also reads the wreck Blaze's bounded height. Absent keeps the recorded count reading.</summary>
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public int? SmokeWiringVersion
     {
@@ -47,6 +47,13 @@ public sealed record TurretFacing(string Vehicle, UnitFacing Facing);
 /// </summary>
 public sealed record VehicleWeaponShot(string Vehicle, string Weapon, string FirePhase, int Turn, bool Doubled)
 {
+    /// <summary>The weapon's recorded counter under Final Fire version 1; "none" records no counter. Null retains the earlier unit-counter reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? FireCounter
+    {
+        get; init;
+    }
+
     /// <summary>The movement step a shot of the phasing side's MPh followed (C5.3; pass 50): its MA fires again only after another MP expenditure. Null outside it.</summary>
     public int? Step
     {

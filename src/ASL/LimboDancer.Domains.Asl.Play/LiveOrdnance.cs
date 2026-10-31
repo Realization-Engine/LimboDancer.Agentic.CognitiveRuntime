@@ -17,6 +17,29 @@ public static class LiveOrdnance
 {
     private static readonly Lazy<ScenarioA1OrdnanceReference> Reference = new(() => new ScenarioA1OrdnancePackage().Reference);
 
+    /// <summary>The Intensive Fire control reads the listing and actual participants through the command's crew-state calculator.</summary>
+    public static bool IntensiveFireCrewAllowed(GameState state, string gunId, string? secondFirer = null)
+    {
+        var gun = state.Find(gunId);
+        var crew = gun as UnitInstance ?? (gun is EquipmentInstance { Holding: { } holding } ? state.Unit(holding.Holder) : null);
+        var second = secondFirer is null ? null : state.Unit(secondFirer);
+        var definitionId = gun switch
+        {
+            UnitInstance { Definition: { } named } => named.Definition,
+            EquipmentInstance { Definition: { } named } => named.Definition,
+            _ => null,
+        };
+        if (definitionId is null || Reference.Value.Weapon(definitionId) is not { } definition
+            || crew is not { Status: InstanceStatus.Active } || secondFirer is not null && second is not { Status: InstanceStatus.Active })
+        {
+            return false;
+        }
+        return ScenarioA1FinalFireCalculator.MayIntensiveFire(definition.NoIntensiveFire,
+            ScenarioA1FinalFireCalculator.IntensiveFireCrewFit(Is(crew, Conditions.Pinned) || second is not null && Is(second, Conditions.Pinned),
+                Is(crew, Conditions.Broken) || second is not null && Is(second, Conditions.Broken),
+                Is(crew, Conditions.Shocked), Is(crew, Conditions.Stunned)));
+    }
+
     /// <summary>
     /// The ammunition a Gun or MA of this definition may carry (C8.1): AP and HE unless its listing denies them, APCR and HEAT where it lists a
     /// Depletion Number. The year and depletion still decide each shot.
@@ -124,7 +147,7 @@ public static class LiveOrdnance
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
         string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false, bool legacySpotterUse = false,
         bool currentSpotterAssignment = true, bool legacyNonQualifiedUse = false, bool legacyVehicleBreakdown = false,
-        string? secondFirer = null, bool legacyParticipation = false)
+        string? secondFirer = null, bool legacyParticipation = false, bool legacyFinalFire = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
@@ -429,6 +452,7 @@ public static class LiveOrdnance
             NonQualified = useMultiple is null ? ScenarioA1OrdnanceEligibility.NonQualified(gun is EquipmentInstance, crew.Kind, sw) : null,
             UseMultiple = useMultiple,
             Participation = participation,
+            FinalFireVersion = legacyFinalFire ? null : 1,
             TargetType = mortar ? OrdnanceTargetTypes.Area : null,
             AreaAcquisition = areaAcquisition,
 
@@ -990,7 +1014,7 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(fired);
         ArgumentNullException.ThrowIfNull(rolls);
-        if (fired.SmokeWiringVersion is not null and not 1)
+        if (fired.SmokeWiringVersion is not (null or 1 or 2))
         {
             return "Unknown SMOKE wiring version.";
         }
@@ -1028,12 +1052,17 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         {
             return "Unknown ordnance participation version.";
         }
+        if (recorded.FinalFireVersion is not (null or 1))
+        {
+            return "Unknown Final Fire version.";
+        }
 
         // C2.2401 (pass 55): a record that names itself a Gun Duel's first shot is read as one; the projector holds the fact to the answered choice.
         var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true,
             recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true, recorded.SpotterUseVersion is null,
             fired.SpotterWiringVersion == 1, legacyNonQualifiedUse: recorded.UseMultiple is null, legacyVehicleBreakdown: recorded.VehicleBreakdown is null,
-            secondFirer: recorded.Participation?.Second?.Crew?.UnitId, legacyParticipation: recorded.Participation is null);
+            secondFirer: recorded.Participation?.Second?.Crew?.UnitId, legacyParticipation: recorded.Participation is null,
+            legacyFinalFire: recorded.FinalFireVersion is null);
         if (expected is null)
         {
             return reason;

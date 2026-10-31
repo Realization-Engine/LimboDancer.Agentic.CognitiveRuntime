@@ -155,14 +155,15 @@ public sealed partial class GamePlanner
     /// A Fire Lane's attack on the moving stack in one of its Locations (A9.22, A9.222; ruling R12.7): Residual FP, never reduced, with no CX, leader, or
     /// hero DRM and no Cowering, taking the Hindrance of the LOS from its MG; null when it cannot be read.
     /// </summary>
-    private FireAttack? FireLaneFacts(GameState state, BoardLocation at, FireLaneEntry entry)
+    internal FireAttack? FireLaneFacts(GameState state, BoardLocation at, FireLane lane, FireLaneEntry entry)
     {
         if (LiveFire.ResidualFromState(state, at, entry.Fp) is not ({ } attack, null) || FireMapFacts(state, attack, at) is not ({ } map, null))
         {
             return null;
         }
 
-        return ScenarioA1FireFollowUps.FireLaneAttack(HeatOfBattleFacts(state, map), entry.HindranceDrm);
+        var (wrecks, reason) = FireLaneWrecks(state, lane, at);
+        return reason is not null ? null : ScenarioA1FireFollowUps.FireLaneAttack(HeatOfBattleFacts(state, map), entry.HindranceDrm, wrecks);
     }
 
     /// <summary>
@@ -176,7 +177,7 @@ public sealed partial class GamePlanner
         if (events.Any(item => item.Payload is ChoicePending) || Replay([.. existing, .. events]).Current is not { } state
             || !ScenarioA1FireFollowUps.FireLaneAttacks(state.FireLanes.Any(item => item.Weapon == lane.Weapon), state.Movement is { } movement && movement.Location == at,
                 state.Movement?.Movers.Count ?? 0)
-            || FireLaneFacts(state, at, entry) is not { } facts || ScenarioA1FireCalculator.Precheck(facts, FireReference.Value).Count != 0)
+            || FireLaneFacts(state, at, lane, entry) is not { } facts || ScenarioA1FireCalculator.Precheck(facts, FireReference.Value).Count != 0)
         {
             return;
         }

@@ -2294,8 +2294,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         IReadOnlyList<string>? visibility, IReadOnlyList<string>? causes = null) =>
         new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload switch
         {
-            FireResolved fire => fire with { SmokeWiringVersion = 1 },
-            OrdnanceFired shot => shot with { SmokeWiringVersion = 1 },
+            FireResolved fire => fire with { SmokeWiringVersion = 2 },
+            OrdnanceFired shot => shot with { SmokeWiringVersion = 2 },
             _ => payload,
         }, rulePackage, causes ?? [], visibility);
 

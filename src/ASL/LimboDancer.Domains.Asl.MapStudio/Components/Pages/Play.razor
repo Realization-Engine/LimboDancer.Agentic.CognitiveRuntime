@@ -6115,8 +6115,7 @@ else if (state is not null)
                 && FireRange.Band(definition, range, same, level, GameState.Condition(unit, Conditions.Wounded) == ConditionState.True) is { } own)
             {
                 var kind = !fireKinds ? null
-                    : state.Phase == "dfph" && GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True && range > 1
-                        ? "a First Fire unit fires again only at an ADJACENT or same-hex target (A8.4)"
+                    : state.Phase == "dfph" ? LiveFire.FinalFireRefusal(state, unit.Id, null, to, range)
                     : state.Phase == "mph" && GameState.Condition(unit, Conditions.FinalFire) == ConditionState.True && range > 1
                         ? "Final Protective Fire is only at an ADJACENT or same-hex target (A8.31)"
                     : state.Phase == "mph" && GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True && range > own.NormalRange
@@ -6130,9 +6129,10 @@ else if (state is not null)
                 // C2.6 (pass 55): at another level a vehicle's MG fires only at a range of at least the elevation difference.
                 var mg = FireRange.Band(range, same, 8, level);
                 var elevation = same ? null : FireRange.VehicleElevationWords(range, level);
+                var finalFire = fireKinds ? LiveFire.FinalFireRefusal(state, unit.Id, null, to, range) : null;
                 rows.Add(new RangeRow(unit.Id, $"the {(definition.MainArmament == "mg" ? "MA MG" : "AAMG")} of {Words(unit.Id)}", at.ToString(), mg.NormalRange, mg.Limit,
-                    elevation ?? (mg.Band == FireRangeBand.SameHexOtherLevel ? "no attack at another level of its hex" : FireRange.Words(mg)), mg.Band,
-                    elevation is not null || mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel or FireRangeBand.SameHexFartherLevel));
+                    finalFire ?? elevation ?? (mg.Band == FireRangeBand.SameHexOtherLevel ? "no attack at another level of its hex" : FireRange.Words(mg)), mg.Band,
+                    finalFire is not null || elevation is not null || mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel or FireRangeBand.SameHexFartherLevel));
             }
 
             foreach (var weapon in weapons.Where(item => item.Holding?.Holder == unit.Id))
@@ -6140,8 +6140,10 @@ else if (state is not null)
                 if (weapon.Definition is { } weaponNamed && definitions.GetValueOrDefault(weaponNamed.Definition) is { } weaponDefinition
                     && (weaponDefinition.IsMg || weaponDefinition.IsFt || weaponDefinition.IsAtr) && FireRange.Band(weaponDefinition, range, same, level) is { } reading)
                 {
-                    rows.Add(new RangeRow(weapon.Id, $"{Words(weapon.Id)} of {Words(unit.Id)}", at.ToString(), reading.NormalRange, reading.Limit, FireRange.Words(reading), reading.Band,
-                        reading.Band is FireRangeBand.Out or FireRangeBand.SameHexFartherLevel));
+                    var finalFire = fireKinds ? LiveFire.FinalFireRefusal(state, unit.Id, weapon.Id, to, range,
+                        unit.Kind == "asl:leader" && !string.IsNullOrWhiteSpace(firePartner) ? firePartner.Trim() : null) : null;
+                    rows.Add(new RangeRow(weapon.Id, $"{Words(weapon.Id)} of {Words(unit.Id)}", at.ToString(), reading.NormalRange, reading.Limit, finalFire ?? FireRange.Words(reading), reading.Band,
+                        finalFire is not null || reading.Band is FireRangeBand.Out or FireRangeBand.SameHexFartherLevel));
                 }
             }
         }
@@ -8332,7 +8334,9 @@ else if (state is not null)
             .Select(leader => new PlayChoice(leader.Id, $"{leader.Id} ({state.Location(leader.Id)?.Location})"))]
         : null;
 
-    private bool OrdnanceIntensiveAllowed => !OrdnanceLightMode && state?.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:latw" } && !OrdnancePanzerfaust && !OrdnanceMachineGun;
+    private bool OrdnanceIntensiveAllowed => state is not null && !OrdnanceLightMode && state.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:latw" }
+        && !OrdnancePanzerfaust && !OrdnanceMachineGun
+        && LiveOrdnance.IntensiveFireCrewAllowed(state, ordnanceGun, ordnanceSecondFirer.Length == 0 ? null : ordnanceSecondFirer);
 
     /// <summary>Whether the chosen weapon is a MG, a SW one or a vehicle's MA, which makes a To Kill attack at an AFV (A9.61, D3.54; pass 60).</summary>
     private bool OrdnanceMachineGun => state?.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:mg" } || (state?.Find(ordnanceGun) is UnitInstance { Definition: { } vehicle }

@@ -218,7 +218,7 @@ public static class LiveFire
     public static (FireAttack? Attack, string? Reason) FromState(GameState state, IReadOnlyList<string> firerIds, IReadOnlyList<string> directorIds,
         BoardLocation target, IReadOnlyDictionary<string, IReadOnlyList<string>>? weapons = null, IReadOnlyCollection<string>? withoutInherent = null,
         IReadOnlyDictionary<string, string>? partners = null, string? molUser = null, bool embarking = true, bool wrecks = true,
-        bool legacyVehicleBreakdown = false)
+        bool legacyVehicleBreakdown = false, bool legacyFinalFire = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(firerIds);
@@ -460,10 +460,11 @@ public static class LiveFire
                 Is(unit, Conditions.Captured), unit.Custodian, state.Encircled(unit))))],
             targetSide is null ? null : state.Side(targetSide)?.Elr, kind, AssaultOf(state), () => state.Side(side)?.Elr, friendlyTargets,
             [.. selection.Vehicles.Select(id => Vehicle(UnitAt(id), target)), .. wrecked.Select(wreck => Vehicle(wreck, target))], vehicleFirers.Length > 0
-                ? VehicleFire(state, vehicleFirers[0], firers[0].At, weapons?.GetValueOrDefault(vehicleFirers[0].Id)) : null,
+                ? VehicleFire(state, vehicleFirers[0], firers[0].At, weapons?.GetValueOrDefault(vehicleFirers[0].Id), !legacyFinalFire) : null,
             targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.NoQuarter.Contains(side, StringComparer.Ordinal),
             Allies(state, side), [.. selection.Companions.Select(id => Target(state, UnitAt(id), target))])) with
         {
+            FinalFireVersion = legacyFinalFire ? null : 1,
             MgBoreSighted = boreSighted ? true : null,
             Embarking = boarding,
             GunCrews = GunCrews(state, selection.Targets),
@@ -745,9 +746,44 @@ public static class LiveFire
     /// A vehicle's MA MG attack (ruling R25.7): its crew's state, Motion (D2.42), a pin (A7.82), its MG's malfunction (D3.7), whether it
     /// fired this Player Turn, and whether its last shot this phase kept its Multiple ROF (C2.24), which the state records.
     /// </summary>
-    private static FireVehicleFire VehicleFire(GameState state, UnitInstance vehicle, BoardLocation at, IReadOnlyList<string>? named = null)
+    /// <summary>The picker uses the command's gathered actor facts and the same Final Fire refusal for one inherent or weapon row.</summary>
+    public static string? FinalFireRefusal(GameState state, string unit, string? weapon, BoardLocation target, int range, string? partner = null)
+    {
+        if (state.Phase != "dfph")
+        {
+            return null;
+        }
+        var (attack, reason) = FromState(state, [unit], [], target,
+            new Dictionary<string, IReadOnlyList<string>> { [unit] = weapon is null ? [] : [weapon] },
+            weapon is null ? [] : [unit], partner is null ? null : new Dictionary<string, string> { [unit] = partner });
+        if (attack is null)
+        {
+            return reason;
+        }
+        attack = attack with
+        {
+            Range = range
+        };
+        var facts = attack.VehicleFire is { } vehicle
+            ? ScenarioA1FinalFireCalculator.VehicleFacts(attack, vehicle)
+            : ScenarioA1FinalFireCalculator.InfantryFacts(attack, attack.Firers![0],
+                weapon is null ? null : attack.Firers[0].Weapons?.FirstOrDefault(item => item.EquipmentId == weapon), CatalogReference.Value);
+        return ScenarioA1FinalFireCalculator.FinalFireRefusal(facts);
+    }
+
+    private static FireVehicleFire VehicleFire(GameState state, UnitInstance vehicle, BoardLocation at, IReadOnlyList<string>? named = null, bool currentFinalFire = false)
     {
         var fire = MainArmamentFire(state, vehicle, at);
+        if (currentFinalFire)
+        {
+            var own = state.VehicleWeaponShots.LastOrDefault(item => item.Vehicle == vehicle.Id && item.Weapon == "ma");
+            fire = fire with
+            {
+                FinalFireMarker = ScenarioA1FinalFireCalculator.VehicleMarker(own?.FireCounter, own is not null,
+                    Is(vehicle, Conditions.FirstFire), Is(vehicle, Conditions.FinalFire),
+                    state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept)),
+            };
+        }
 
         // D3.5, D3.51, D3.7 (pass 50): the BMG and CMG the attack names, against the vehicle's shots of this Player Turn.
         return named is not { Count: > 0 } ? fire : ScenarioA1FireEligibility.WithVehicleWeapons(fire, new VehicleWeaponsFacts(named,
@@ -1156,6 +1192,10 @@ public static class LiveFire
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
+        var mainArmament = state.Phase == "dfph" && unit.Definition is { } named
+            && CatalogReference.Value.Definitions.GetValueOrDefault(named.Definition) is { IsVehicle: true } definition
+            && (definition.AntiAircraftMg is not null || definition.MainArmament == "mg") && state.Location(unit.Id)?.Location is { } at
+            ? ScenarioA1FinalFireCalculator.VehicleFacts(VehicleFire(state, unit, at, currentFinalFire: true)) : null;
         // Rules decides it (pass 32.c); the three state reads are made where the old body made them.
         return ScenarioA1FireEligibility.FireSpent(new FireSpentFacts(state.Phase, Fired(unit), Is(unit, Conditions.FirstFire), IsVehicle(unit),
             // C2.24, D3.5: a vehicle's MG fires again this phase only on the Multiple ROF its last shot kept.
@@ -1168,7 +1208,7 @@ public static class LiveFire
                 && !Fired(item) && !Is(item, Conditions.Malfunctioned)))
         {
             VehicleMgUnfired = () => VehicleMgs(state, unit).Any(item => item.Bar is null),
-        });
+        }, mainArmament);
     }
 }
 
@@ -1298,7 +1338,7 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(fire);
         ArgumentNullException.ThrowIfNull(rolls);
-        if (fire.SmokeWiringVersion is not null and not 1)
+        if (fire.SmokeWiringVersion is not (null or 1 or 2))
         {
             return "Unknown SMOKE wiring version.";
         }
@@ -1318,6 +1358,37 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         }
 
         FireAttack? expected;
+        if (recorded.FinalFireVersion is not (null or 1))
+        {
+            return "Unknown Final Fire version.";
+        }
+        FireLaneWreckFacts? verifiedWrecks = null;
+        if (recorded.FireLaneWrecks is { } wrecks)
+        {
+            if (recorded.FireLane != true || recorded.FireKind != ScenarioA1FireCalculator.ResidualFire
+                || ScenarioA1FireFollowUps.FireLaneWreckHindrance(wrecks) is null)
+            {
+                return "The Fire Lane wreck facts are malformed or attached to another kind of attack.";
+            }
+            var lanes = state.FireLanes.Where(lane => lane.Weapon == wrecks.LaneWeaponId).ToArray();
+            if (lanes.Length != 1 || state.Location(lanes[0].Operator)?.Location.ToString() != wrecks.SourceLocation
+                || !lanes[0].Entries.Any(entry => entry.Location == target && entry.Fp == recorded.ResidualFp))
+            {
+                return "The Fire Lane wreck facts do not identify the active lane, its source, and its target entry.";
+            }
+            foreach (var candidate in wrecks.Candidates)
+            {
+                if (state.Unit(candidate.WreckId) is not { Status: InstanceStatus.Wrecked } wreck || !GamePlanner.IsBurning(state, wreck)
+                    || state.Location(wreck.Id)?.Location.ToString() != candidate.Location
+                    || GamePlanner.Standing(state, wreck) != candidate.Standing
+                    || (wreck.Straddling?.ToString() ?? string.Empty) != candidate.BypassOtherHex)
+                {
+                    return "The Fire Lane wreck facts disagree with a wreck's current identity, Location, burning state, or movement facts.";
+                }
+            }
+            // As with the other map facts, geometry is recorded. Identity and every state-owned fact above are verified.
+            verifiedWrecks = wrecks;
+        }
         string? reason;
         if (recorded.FireKind == ScenarioA1FireCalculator.ResidualFire)
         {
@@ -1373,7 +1444,8 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             // Pass 65 (ruling R65.14): the (un)loaders are targets only of an attack whose record names them; an older one is read as it was made. So is a
             // wreck (ruling R65.23).
             (expected, reason) = LiveFire.FromState(state, fire.Firers, directors, target, weapons, alone, partners is { Count: > 0 } ? partners : null, mol,
-                recorded.Embarking is not null, recorded.Vehicles?.Any(item => item.Wreck == true) == true, recorded.VehicleBreakdown is null);
+                recorded.Embarking is not null, recorded.Vehicles?.Any(item => item.Wreck == true) == true, recorded.VehicleBreakdown is null,
+                recorded.FinalFireVersion is null);
         }
 
         if (expected is null)
@@ -1527,6 +1599,7 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             SprayShare = recorded.SprayShare,
             FireLane = recorded.FireLane == true && state.FireLanes.Any(lane => lane.Entries.Any(entry => entry.Location == target && entry.Fp == recorded.ResidualFp))
                 ? true : null,
+            FireLaneWrecks = verifiedWrecks,
         };
         merged = merged with
         {
