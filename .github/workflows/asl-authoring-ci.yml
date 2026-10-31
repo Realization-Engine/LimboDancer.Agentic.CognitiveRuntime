@@ -65,11 +65,12 @@ jobs:
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           BRANCH: ${{ github.head_ref }}
+          PR_BASE: ${{ github.base_ref }}
         run: |
           python3 code-builders/documents/pass_rules_status.py --check
           python3 code-builders/documents/minigames_column.py --check
           if [ -n "$BRANCH" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-            python3 code-builders/documents/claim_check.py --base "$BASE" --branch "$BRANCH"
+            python3 code-builders/documents/claim_check.py --base "$BASE" --branch "$BRANCH" --pr-base "$PR_BASE"
           else
             python3 code-builders/documents/claim_check.py
           fi

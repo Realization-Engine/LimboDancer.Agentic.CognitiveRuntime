@@ -3,6 +3,30 @@ using System.Text.Json.Serialization;
 namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>
+/// A9.222/D9.4: one identified lane's burning wrecks, with recorded geometry and state facts checked by its verifier. <see cref="TargetRange"/> is the
+/// range from the lane's MG to the attacked Location: a Hindrance counts only between firer and target (A6.7, p. 54; D9.4, p. 210), so a wreck's
+/// range must lie strictly between 0 and it.
+/// </summary>
+public sealed record FireLaneWreckFacts(
+    [property: JsonRequired] string LaneWeaponId,
+    [property: JsonRequired] string SourceLocation,
+    [property: JsonRequired] bool SameLevel,
+    [property: JsonRequired] IReadOnlyList<FireLaneWreckCandidate> Candidates,
+    [property: JsonRequired] int TargetRange);
+
+/// <summary>The crossed wreck's identity and Location bind its recorded geometry to the state. Other hard terrain remains outside this bounded reading.</summary>
+public sealed record FireLaneWreckCandidate(
+    [property: JsonRequired] string WreckId,
+    [property: JsonRequired] string Location,
+    [property: JsonRequired] int Range,
+    [property: JsonRequired] bool AtLosElevation,
+    [property: JsonRequired] bool Standing,
+    [property: JsonRequired] string BypassOtherHex,
+    [property: JsonRequired] bool CrossesBypassOtherHex,
+    [property: JsonRequired] bool VisibleFromSource,
+    [property: JsonRequired] bool VisibleFromTarget);
+
+/// <summary>
 /// A declared fire attack for the Fire package (unit step 17). Every fact is supplied by the caller; the package never
 /// reads a game. Nullable members are required: a missing one leaves the attack undecided.
 /// </summary>
@@ -23,6 +47,20 @@ public sealed record FireAttack(
     int? TargetSideElr,
     FireRolls? Rolls)
 {
+    /// <summary>A8.41 (p. 61): version 1 reads each weapon's own Final Fire counter. Null retains the recorded earlier reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? FinalFireVersion
+    {
+        get; init;
+    }
+
+    /// <summary>D3.7 facts for the actual participating vehicle weapons. Null preserves the previously recorded reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireVehicleBreakdownFacts? VehicleBreakdown
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The kind of Defensive fire in the MPh (unit step 22): <c>first-fire</c> (A8.1), <c>subsequent-first-fire</c> (A8.3),
     /// <c>final-protective-fire</c> (A8.31), or <c>residual-fp</c> (A8.2); null for the fire phases.
@@ -435,6 +473,13 @@ public sealed record FireAttack(
         get; init;
     }
 
+    /// <summary>A9.222/B25.2: null retains the earlier Fire Lane reading; an explicit empty candidate list selects current hard-wreck Hindrance.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireLaneWreckFacts? FireLaneWrecks
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The nationalities of the firing side, when it holds Allied Troops (A10.7; backlog pass 15, ruling R15.8): its units of any of them may fire
     /// together, and a leader directing or aiding one of another nationality does so one worse. Null is the first firer's nationality alone.
@@ -459,6 +504,37 @@ public sealed record FireAttack(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceVehicleTarget? TargetVehicle
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The target Location's Factory TEM (B23.741 and B23.743, pp. 139 and 140; the B23.74 claim, ruling RB23F.5): the TEM
+    /// <see cref="ScenarioA1FactoryCalculator.Tem"/> gives when its verdict's <c>FactoryTem</c> is true (+1), read in place of the terrain key's TEM.
+    /// Null is the terrain key's TEM, as in every record made before the claim, and is what an attack carries when that verdict gives the building's TEM.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? FactoryTem
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The reading switch of a Vulnerable crew's check under Stun (D5.34, D5.342, p. 203 and 204; the D5.34 claim, ruling RD5.16): when true, a merely
+    /// Stunned crew's MC takes no +1 and a second Stun is a Recall. Null is the reading before the claim, as in every record made before it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StunReading
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The reading switch of a Final KIA on a prisoner or Unarmed unit (A7.301, p. 55; A20.54, p. 87; the A20.54 claim, ruling RA20.9): when true, such a
+    /// survivor is Casualty Reduced, not broken. Null is the reading before the claim, as in every record made before it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? KiaUnarmedReduction
     {
         get; init;
     }
@@ -507,6 +583,13 @@ public sealed record FireOverrun(
     bool? BmgMalfunctioned,
     bool? CmgMalfunctioned)
 {
+    /// <summary>D3.7: Disabled armament cannot contribute to this OVR. Null preserves the earlier recorded reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? DisabledWeapons
+    {
+        get; init;
+    }
+
     /// <summary>Whether the vehicle is under a Stun "+1" counter (D5.34, p. 203; pass 35, task 35.13 d): one more on its OVR DR; null is false.</summary>
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public bool? StunRecovery
@@ -564,7 +647,15 @@ public sealed record FireOverrunEffect(string VehicleId, IReadOnlyList<string> M
 }
 
 /// <summary>Opt-in D3.7 facts for exactly the mounted weapons participating in a vehicle IFT attack, keyed by ma, bmg or cmg.</summary>
-public sealed record FireVehicleBreakdownFacts(IReadOnlyDictionary<string, VehicleBreakdownUseFacts> Weapons);
+public sealed record FireVehicleBreakdownFacts([property: JsonRequired] IReadOnlyDictionary<string, VehicleBreakdownUseFacts> Weapons)
+{
+    /// <summary>D7.17: version 1 malfunctions at B#/X#. Null preserves the earlier recorded Low Ammo/Disabled reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? OverrunVersion
+    {
+        get; init;
+    }
+}
 
 /// <summary>The wall (+2) or hedge (+1) TEM a target claims (B9.3), after any reduction for a higher firer (B9.33).</summary>
 public sealed record FireHexsideTem(string? Terrain, int? Tem);
@@ -732,6 +823,13 @@ public sealed record FireVehicleFire(
     bool? FiredThisPlayerTurn,
     bool? RateOfFireShot)
 {
+    /// <summary>The MA MG's own fire counter for the opt-in A8.41 reading. Null is the reading before that wiring.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireMarker? FinalFireMarker
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The BMG and CMG this attack fires (D1.81, D1.82, D3.5, pp. 195 and 200; pass 50), each once a Player Turn, added together for one attack
     /// or fired apart. Null for an attack by the vehicle's MA MG, which is every record made before pass 50.
@@ -886,6 +984,16 @@ public sealed record FireCanister(string? GunId, int? Firepower)
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? CaseA
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the Canister's crew is Encircled (A7.7, p. 57; the D5.34 claim): +1 on the IFT DR, with no other firer term. Null is false, as in every
+    /// record made before the claim.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Encircled
     {
         get; init;
     }

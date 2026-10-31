@@ -217,6 +217,7 @@ public sealed class ScenarioA1OrdnanceReference
                 Number("rate-of-fire"), breakdown, Number("range-maximum"), Trait("asl:no-he") || latw, Trait("asl:mount-360"))
             {
                 NoAp = Trait("asl:no-ap") || latwType == "psk",
+                NoIntensiveFire = Trait("asl:no-intensive-fire"),
                 SpecialAmmo = Ammo(),
                 MaType = vehicle ? Text("ma-type") : null,
                 TargetSize = vehicle ? null : Text("target-size"),
@@ -242,8 +243,8 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "1be3111c1ca49ecad397d47c4fc404729066200dcfedf27c808cbca09ea2b74c";
-    public const string MatrixSha256 = "f3fab12687af3057aecd33c0a2fe2593826cda2859fe8d5c938bafe802af5a38";
+    public const string ManifestSha256 = "9dd0f389d5071db6ade27c3f05e60858c20dbd80a0b993f7de29e2a49adba60a";
+    public const string MatrixSha256 = "0e38a549a6202e99444bf28bd8b71038e2a0c9073016be347c09f716c1aaaf93";
     /// <summary>
     /// The package as revised at backlog pass 15 (catalog 1.10.0), before its backlog pass 16 revision (the weather cushion and Extreme Winter B#).
     /// Earlier: backlog pass 9b, 120b1df9; backlog pass 9, 58030546.

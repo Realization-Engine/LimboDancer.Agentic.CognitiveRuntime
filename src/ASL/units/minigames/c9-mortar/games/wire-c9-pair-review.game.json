@@ -1,0 +1,438 @@
+{
+  "schemaVersion": 1,
+  "tenant": "5a7d1f00-0000-4000-8000-0000000057d0",
+  "game": "wire-c9-pair-review",
+  "label": "PR 85: two stacked SMC with 81mm Gun mortar",
+  "synthetic": false,
+  "minigame": "c9-mortar",
+  "events": [
+    {
+      "eventId": "wire-c9-pair-review-setup-1",
+      "revision": 1,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "game-started",
+      "visibility": "all",
+      "payload": {
+        "sides": [
+          {
+            "id": "german",
+            "nationality": "german",
+            "elr": 3,
+            "san": 0,
+            "friendlyEdge": "left"
+          },
+          {
+            "id": "russian",
+            "nationality": "russian",
+            "elr": 2,
+            "san": 0,
+            "friendlyEdge": "right"
+          }
+        ],
+        "map": {
+          "reference": "bd03",
+          "version": "ba2920ce55cd954a62394dc81f35833e24054093",
+          "boards": [
+            {
+              "board": "bd03",
+              "version": "ba2920ce55cd954a62394dc81f35833e24054093"
+            }
+          ]
+        },
+        "catalog": "asl-scenario-a1@1.19.0",
+        "turn": 1,
+        "phase": "rph",
+        "phasingSide": "german",
+        "synthetic": false,
+        "scenarioMonth": 7,
+        "scenarioYear": 1942
+      }
+    },
+    {
+      "eventId": "wire-c9-pair-review-setup-2",
+      "revision": 2,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "g-leader",
+          "kind": "asl:leader",
+          "definition": "attacker-leader-8-0",
+          "side": "german",
+          "position": {
+            "at": "bd03:B10:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "wire-c9-pair-review-setup-3",
+      "revision": 3,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "g-second",
+          "kind": "asl:leader",
+          "definition": "attacker-leader-8-0",
+          "side": "german",
+          "position": {
+            "at": "bd03:B10:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "wire-c9-pair-review-setup-4",
+      "revision": 4,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "mortar",
+          "kind": "asl:gun",
+          "definition": "campaign-german-81mm-mortar",
+          "side": "german",
+          "position": {
+            "at": "bd03:B10:0",
+            "facing": "west"
+          },
+          "holding": {
+            "holder": "g-leader",
+            "role": "manned"
+          },
+          "conditions": {
+            "asl:malfunctioned": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "wire-c9-pair-review-setup-5",
+      "revision": 5,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "target",
+          "kind": "asl:squad",
+          "definition": "defender-squad",
+          "side": "russian",
+          "position": {
+            "at": "bd03:B6:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "wire-c9-pair-review-setup-6",
+      "revision": 6,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "rph",
+        "phasingSide": "german"
+      }
+    },
+    {
+      "eventId": "wire-c9-pair-review-setup-7",
+      "revision": 7,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "pfph",
+        "phasingSide": "german"
+      }
+    },
+    {
+      "eventId": "gun-24a69986ffb7-1",
+      "revision": 8,
+      "time": "2026-10-31T06:07:01.3179979Z",
+      "source": "map-studio",
+      "type": "dice-rolled",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-ordnance, Version = sha256:9dd0f389d5071db6ade27c3f05e60858c20dbd80a0b993f7de29e2a49adba60a }",
+      "visibility": "all",
+      "payload": {
+        "roll": "gun-24a69986ffb7-roll-1",
+        "purpose": "ordnance-to-hit",
+        "count": 2,
+        "sides": 6,
+        "values": [
+          4,
+          4
+        ],
+        "source": "system",
+        "actor": "studio-user"
+      }
+    },
+    {
+      "eventId": "gun-24a69986ffb7-2",
+      "revision": 9,
+      "time": "2026-10-31T06:07:01.4200402Z",
+      "source": "map-studio",
+      "type": "ordnance-fired",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-ordnance, Version = sha256:9dd0f389d5071db6ade27c3f05e60858c20dbd80a0b993f7de29e2a49adba60a }",
+      "visibility": "all",
+      "payload": {
+        "smokeWiringVersion": 1,
+        "gun": "mortar",
+        "crew": "g-leader",
+        "target": "bd03:B6:0",
+        "facing": "north-west",
+        "rateOfFireKept": false,
+        "acquisition": -1,
+        "acquired": "bd03:B6:0",
+        "rolls": {
+          "toHit": "gun-24a69986ffb7-roll-1"
+        },
+        "facts": {
+          "phase": "PFPh",
+          "firingSide": "phasing",
+          "firingNationality": "german",
+          "gun": {
+            "gunId": "mortar",
+            "definitionId": "campaign-german-81mm-mortar",
+            "malfunctioned": false,
+            "shotsThisPhase": 0,
+            "rateOfFireKept": false,
+            "firedThisPlayerTurn": false
+          },
+          "crew": {
+            "unitId": "g-leader",
+            "definitionId": "attacker-leader-8-0",
+            "broken": false,
+            "pinned": false,
+            "berserk": false,
+            "concealed": false,
+            "firedInherentFp": false
+          },
+          "targetLocationId": "bd03:B6:0",
+          "range": 4,
+          "hexspinesToTurn": 1,
+          "firerInWoodsOrBuilding": false,
+          "elevationAllowed": true,
+          "acquisition": 0,
+          "hit": {
+            "phase": "PFPh",
+            "firingSide": "phasing",
+            "fireGroupComplete": null,
+            "firerLocationId": null,
+            "targetLocationId": "bd03:B6:0",
+            "firers": [],
+            "director": null,
+            "range": null,
+            "sameLevel": true,
+            "los": {
+              "blocked": false,
+              "hindranceDrm": 0,
+              "hindranceAttributed": true,
+              "grainInLos": false
+            },
+            "scenarioMonth": 7,
+            "targetTerrain": "woods",
+            "targets": [
+              {
+                "unitId": "target",
+                "definitionId": "defender-squad",
+                "locationId": "bd03:B6:0",
+                "broken": false,
+                "pinned": false,
+                "concealed": false,
+                "hidden": false,
+                "dummy": false,
+                "wounded": false,
+                "disrupted": false,
+                "knownEnemyInLos": true,
+                "captors": []
+              }
+            ],
+            "targetSideElr": 2,
+            "rolls": null,
+            "randomDestruction": true,
+            "choices": {}
+          },
+          "rolls": null,
+          "participation": {
+            "version": 1,
+            "second": {
+              "crew": {
+                "unitId": "g-second",
+                "definitionId": "attacker-leader-8-0",
+                "broken": false,
+                "pinned": false,
+                "berserk": false,
+                "concealed": false,
+                "firedInherentFp": false
+              },
+              "activeWithDefinition": true,
+              "sameSide": true,
+              "atFirer": true,
+              "melee": false,
+              "captured": false,
+              "ti": false,
+              "usedOtherWeapon": false,
+              "directedFire": false,
+              "spotted": false,
+              "heroic": false,
+              "opportunityFireDeclared": false
+            },
+            "useHistory": {
+              "captured": false,
+              "firedThisGameTurn": false
+            }
+          },
+          "useMultiple": 1,
+          "targetType": "area"
+        },
+        "resolution": {
+          "disposition": "resolved",
+          "reasons": [],
+          "toHit": {
+            "color": "red",
+            "basicToHit": 7,
+            "modifications": [],
+            "modifiedToHit": 7,
+            "dice": [
+              4,
+              4
+            ],
+            "originalDr": 8,
+            "drm": [
+              {
+                "name": "case-a:1",
+                "value": 1,
+                "rule": "C5.1"
+              },
+              {
+                "name": "case-h",
+                "value": 2,
+                "rule": "C5.8"
+              }
+            ],
+            "finalDr": 11,
+            "improbable": false,
+            "subsequentDr": null,
+            "hit": false,
+            "criticalHit": false
+          },
+          "gun": {
+            "breakdownNumber": 10,
+            "malfunctioned": false,
+            "rateOfFire": 1,
+            "rateOfFireKept": false,
+            "fireCounter": "prep-fire",
+            "acquisition": -1,
+            "acquiredLocationId": "bd03:B6:0"
+          },
+          "areaTargets": [
+            {
+              "unitId": "target",
+              "drm": [],
+              "finalDr": 11,
+              "hit": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "eventId": "gun-24a69986ffb7-3",
+      "revision": 10,
+      "time": "2026-10-31T06:07:01.4220017Z",
+      "source": "map-studio",
+      "type": "conditions-changed",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-ordnance, Version = sha256:9dd0f389d5071db6ade27c3f05e60858c20dbd80a0b993f7de29e2a49adba60a }",
+      "causes": [
+        "gun-24a69986ffb7-2"
+      ],
+      "visibility": "all",
+      "payload": {
+        "id": "mortar",
+        "conditions": {
+          "asl:prep-fire": true
+        }
+      }
+    },
+    {
+      "eventId": "gun-24a69986ffb7-4",
+      "revision": 11,
+      "time": "2026-10-31T06:07:01.4220570Z",
+      "source": "map-studio",
+      "type": "conditions-changed",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-ordnance, Version = sha256:9dd0f389d5071db6ade27c3f05e60858c20dbd80a0b993f7de29e2a49adba60a }",
+      "causes": [
+        "gun-24a69986ffb7-2"
+      ],
+      "visibility": "all",
+      "payload": {
+        "id": "g-leader",
+        "conditions": {
+          "asl:prep-fire": true
+        }
+      }
+    },
+    {
+      "eventId": "gun-24a69986ffb7-5",
+      "revision": 12,
+      "time": "2026-10-31T06:07:01.4220586Z",
+      "source": "map-studio",
+      "type": "conditions-changed",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-ordnance, Version = sha256:9dd0f389d5071db6ade27c3f05e60858c20dbd80a0b993f7de29e2a49adba60a }",
+      "causes": [
+        "gun-24a69986ffb7-2"
+      ],
+      "visibility": "all",
+      "payload": {
+        "id": "g-second",
+        "conditions": {
+          "asl:prep-fire": true
+        }
+      }
+    }
+  ]
+}

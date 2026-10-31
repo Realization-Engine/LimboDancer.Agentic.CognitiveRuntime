@@ -11,34 +11,12 @@ public sealed class TurnWhiteSmokeRulesTests
         TurnSmokeChemical.Conventional, TurnSmokeSize.FiveEighthsInch, TurnSmokeColor.White, TurnSmokeStrength.Full, Origin, true);
 
     [Theory]
-    [InlineData(TurnSmokeChemical.Conventional, true, true, TurnSmokeStrength.Full, 3)]
-    [InlineData(TurnSmokeChemical.WhitePhosphorus, true, true, TurnSmokeStrength.Full, 2)]
-    [InlineData(TurnSmokeChemical.Conventional, false, true, TurnSmokeStrength.Dispersed, 2)]
-    [InlineData(TurnSmokeChemical.WhitePhosphorus, false, true, TurnSmokeStrength.Dispersed, 1)]
-    [InlineData(TurnSmokeChemical.Conventional, true, false, TurnSmokeStrength.Dispersed, 2)]
-    [InlineData(TurnSmokeChemical.Conventional, true, null, TurnSmokeStrength.Unknown, null)]
-    public void InitialStrengthIsNotPlacementPermission(TurnSmokeChemical chemical, bool ownPrep, bool? early,
-        TurnSmokeStrength strength, int? hindrance)
-    {
-        foreach (var source in new[] { TurnSmokeSource.Ordnance, TurnSmokeSource.OffboardArtillery })
-        {
-            var result = TurnWhiteSmokeRules.InitialStrength(source, chemical, ownPrep, early);
-            Assert.Equal(strength, result.Strength);
-            Assert.Equal(hindrance, result.Hindrance);
-        }
-    }
-
-    [Theory]
     [InlineData(TurnSmokeSource.SmokeDischarger)]
     [InlineData(TurnSmokeSource.SmokeMortar)]
     [InlineData(TurnSmokeSource.SmokePots)]
     [InlineData(TurnSmokeSource.CloseDefenseWeapon)]
     public void DispensersAlwaysUseDispersedConventionalSmoke(TurnSmokeSource source)
     {
-        var result = TurnWhiteSmokeRules.InitialStrength(source, TurnSmokeChemical.Conventional, true, null);
-        Assert.Equal(TurnSmokeStrength.Dispersed, result.Strength);
-        Assert.Equal(2, result.Hindrance);
-        Assert.Equal(TurnSmokeStrength.Unknown, TurnWhiteSmokeRules.InitialStrength(source, TurnSmokeChemical.WhitePhosphorus, false, true).Strength);
         Assert.Equal(TurnWhiteSmokeEffect.NotEvaluated, TurnWhiteSmokeRules.Evaluate(Full with
         {
             Source = source,
@@ -115,7 +93,6 @@ public sealed class TurnWhiteSmokeRulesTests
         {
             Source = source
         }, Opening).Effect);
-        Assert.Equal(TurnSmokeStrength.Unknown, TurnWhiteSmokeRules.InitialStrength(source, TurnSmokeChemical.Conventional, true, true).Strength);
     }
 
     [Fact]
@@ -127,7 +104,6 @@ public sealed class TurnWhiteSmokeRulesTests
         {
             Assert.Equal(TurnWhiteSmokeEffect.NotEvaluated, TurnWhiteSmokeRules.Evaluate(missing, Opening).Effect);
         }
-        Assert.Equal(TurnSmokeStrength.Unknown, TurnWhiteSmokeRules.InitialStrength(TurnSmokeSource.Ordnance, TurnSmokeChemical.Unknown, true, true).Strength);
         Assert.Throws<ArgumentException>(() => TurnWhiteSmokeRules.Evaluate(Full with { Origin = Opening with { PlayerTurn = 4 } }, Opening));
         Assert.Throws<ArgumentException>(() => TurnWhiteSmokeRules.Evaluate(Full with { Origin = Opening with { GameTurn = 3 } }, Opening));
         Assert.Throws<ArgumentException>(() => TurnWhiteSmokeRules.Evaluate(Full with { Origin = Opening with { PhasingSide = "b" } }, Opening));
@@ -139,8 +115,6 @@ public sealed class TurnWhiteSmokeRulesTests
         Assert.Throws<ArgumentException>(() => TurnWhiteSmokeRules.Evaluate(Full with { Size = (TurnSmokeSize)99 }, Opening));
         Assert.Throws<ArgumentException>(() => TurnWhiteSmokeRules.Evaluate(Full with { Color = (TurnSmokeColor)99 }, Opening));
         Assert.Throws<ArgumentException>(() => TurnWhiteSmokeRules.Evaluate(Full with { Strength = (TurnSmokeStrength)99 }, Opening));
-        Assert.Throws<ArgumentException>(() => TurnWhiteSmokeRules.InitialStrength((TurnSmokeSource)99, TurnSmokeChemical.Conventional, true, true));
-        Assert.Throws<ArgumentException>(() => TurnWhiteSmokeRules.InitialStrength(TurnSmokeSource.Ordnance, (TurnSmokeChemical)99, true, true));
         Assert.Throws<ArgumentNullException>(() => TurnWhiteSmokeRules.Evaluate(null!, Opening));
         Assert.Throws<ArgumentNullException>(() => TurnWhiteSmokeRules.Opening(null!, Opening));
         Assert.Throws<ArgumentException>(() => TurnWhiteSmokeRules.Opening([Full, Full], Opening));

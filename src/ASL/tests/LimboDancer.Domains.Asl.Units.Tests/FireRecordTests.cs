@@ -88,10 +88,19 @@ public sealed class FireRecordTests
         Assert.False(Project(elsewhere, new Verifier(null)).HasErrors);
     }
 
-    [Fact]
-    public void TheFireRecordAndTheMonthRoundTrip()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(1)]
+    public void TheFireRecordAndTheMonthRoundTrip(int? smokeVersion)
     {
         var events = With(Roll("x-roll-1"), Fire("f1", "x-roll-1"));
+        events[^1] = events[^1] with
+        {
+            Payload = ((FireResolved)events[^1].Payload) with
+            {
+                SmokeWiringVersion = smokeVersion
+            },
+        };
         var started = (GameStarted)events[0].Payload;
         events[0] = events[0] with
         {
@@ -105,6 +114,9 @@ public sealed class FireRecordTests
         Assert.False(read.HasErrors, string.Join(" ", read.Diagnostics));
         Assert.Equal(7, ((GameStarted)read.Record!.Events[0].Payload).ScenarioMonth);
         var fire = Assert.IsType<FireResolved>(read.Record.Events[^1].Payload);
+        Assert.Equal(smokeVersion, fire.SmokeWiringVersion);
+        Assert.Equal(smokeVersion.HasValue, JsonSerializer.SerializeToElement(fire).TryGetProperty(nameof(FireResolved.SmokeWiringVersion), out _));
+        Assert.Equal(smokeVersion.HasValue, text.Contains("smokeWiringVersion", StringComparison.Ordinal));
         Assert.Equal(("bd01:D4:0", "bd01:E4:0", "x-roll-1"), (fire.FirerLocation, fire.TargetLocation, fire.Rolls["attack"]));
         Assert.Equal("PFPh", fire.Facts.GetProperty("phase").GetString());
         Assert.Equal(text, GameEventWriter.Write(events[0].Scope, read.Record));

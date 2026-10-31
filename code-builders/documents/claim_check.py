@@ -5,6 +5,11 @@
     python claim_check.py --base <commit> --branch <name>      the ledger, and the branch's changes from <base> to HEAD
     python claim_check.py --branch <name> --files a.cs,b.cs    the ledger, and the named Rules files as if the branch changed them
     python claim_check.py --touched [--base <commit>]          the ledger, and the files each holding claim's branch changes (default base origin/main)
+    ... --pr-base <name>                                       with --branch: the pull request's base branch, which must be main
+
+No stacking (AGENTS.md, step 3; the user, 2026-10-31): a pull request's base is main (--pr-base), and with --base a branch carries no commit of
+another claim's branch that is not merged into main (by that branch's commits as this checkout sees them). A wiring claim opened on or after
+2026-10-31 owns only rows whose rule claims' branches are merged into main. The chain of 2026-10-30 (CHAIN_OF_2026_10_30) is exempt.
 
 The ledger:
 - each claim has a unique id, an agent (Claude or Codex), a reviewer that is the other agent or "sub-agent", a branch, and a state of
@@ -181,7 +186,8 @@ def check_wiring(lines, claims, faults):
                 faults.append(f"wiring claim {claim}: held file {entry!r} must read 'path' or 'path (shared)'")
             elif m:
                 held[m.group(1)] = bool(m.group(2))
-        wiring[claim] = {"agent": agent, "branch": branch, "state": state, "files": held, "rows": [], "capability": capability}
+        wiring[claim] = {"agent": agent, "branch": branch, "state": state, "files": held, "rows": [], "capability": capability,
+                         "opened": opened, "rules": []}
     seen = set()
     for row, rule_claim, capability, sites, old, changes, owner, state in table(lines, WIRING_HEADER, 8, faults, "wiring"):
         if row in seen:
@@ -216,6 +222,8 @@ def check_wiring(lines, claims, faults):
         if rule is not None and rule["state"] not in BUILT_OR_LATER:
             faults.append(f"wiring row {row} is taken while its rule claim {rule_claim} is {rule['state']}, not built")
         holder["rows"].append(row)
+        if rule is not None:
+            holder["rules"].append((row, rule_claim, rule["branch"]))
     for name, claim in claims.items():
         # Rules review precedes wiring; only a wiring claim's review implies completed wiring.
         if claim["state"] in {"wired", "accepted"}:
@@ -252,6 +260,65 @@ LAST_BATCH = re.compile(r"^\*\*Last batch gate:\*\* `([0-9a-f]{7,40})`")
 MERGE = re.compile(r"^Merge pull request #\d+ from [^/\s]+/(\S+)$")
 BATCH_SIZE = 5
 
+# No stacking (AGENTS.md, step 3; the user, 2026-10-31). The chain that formed on 2026-10-30 is unwound bottom first under that day's ruling;
+# remove a branch from this set once it has merged.
+CHAIN_OF_2026_10_30 = {"codex/rules-wiring003-adapters", "codex/rules-wiring003-stealth-adapters", "codex/rules-wiring003-ground-adapters",
+                       "codex/wire-movement-1", "codex/wire-close-combat-1", "codex/wire-fire-5"}
+NO_STACKING_FROM = "2026-10-31"
+
+
+def main_ref():
+    return "origin/main" if git("rev-parse", "--verify", "--quiet", "origin/main").returncode == 0 else "HEAD"
+
+
+def merged_into_main():
+    """The branches whose pull requests main records as merged, by its merge commits' subjects."""
+    out = git("log", "--merges", "--first-parent", "--format=%s", main_ref())
+    return {b.group(1) for subject in out.stdout.splitlines() if (b := MERGE.match(subject))} if out.returncode == 0 else None
+
+
+def check_pr_base(branch, pr_base, faults):
+    if pr_base and pr_base != "main" and branch not in CHAIN_OF_2026_10_30:
+        faults.append(f"the pull request of {branch} targets {pr_base}, not main: every pull request targets main (AGENTS.md, step 3)")
+
+
+def check_carried(claims, wiring, branch, base, faults):
+    """A branch carries no commit of another claim's branch that main lacks: it is cut from main, not from waiting work."""
+    if branch in CHAIN_OF_2026_10_30:
+        return
+    mine = git("rev-list", f"{base}..HEAD")
+    if mine.returncode != 0:
+        return
+    ours = set(mine.stdout.split())
+    head = git("rev-parse", "HEAD").stdout.strip()
+    for other in sorted({claim["branch"] for claim in [*claims.values(), *wiring.values()]} - {branch}):
+        ref = branch_ref(other)
+        if ref is None:
+            continue
+        theirs = set(git("rev-list", f"{base}..{ref}").stdout.split())
+        if head in theirs:
+            continue  # the other branch is built on this one; that one is its fault, not this branch's
+        carried = ours & theirs
+        if carried:
+            faults.append(f"{branch} carries {len(carried)} commit(s) of {other}, which main lacks: cut the branch from main, and wait for "
+                          f"{other} to merge before building on it (AGENTS.md, step 3)")
+
+
+def check_wiring_rules_merged(wiring, faults):
+    """A wiring claim opened since the ruling owns only rows whose rule claims are merged into main."""
+    merged = None
+    for name, claim in wiring.items():
+        if claim["opened"] < NO_STACKING_FROM or claim["branch"] in CHAIN_OF_2026_10_30:
+            continue
+        merged = merged_into_main() if merged is None else merged
+        if merged is None:
+            print(f"NOTE: main's merges are not in this checkout; wiring claim {name}'s rule claims are not checked")
+            return
+        for row, rule_claim, rule_branch in claim["rules"]:
+            if rule_branch not in merged:
+                faults.append(f"wiring claim {name} owns {row}, whose rule claim {rule_claim} ({rule_branch}) is not merged into main "
+                              "(AGENTS.md, wiring claims: built is no longer enough)")
+
 
 def batch_gate(lines, claims, branch, faults):
     """The rule claims merged into main since the last batch gate (the plan's section 4.3). At five, the next rule claim waits for one."""
@@ -264,9 +331,13 @@ def batch_gate(lines, claims, branch, faults):
     if out.returncode != 0:
         print(f"NOTE: the last batch gate {m.group(1)} is not in this checkout's history; merges since it are not counted")
         return
+    # The board counts rule claims, not pull requests: one branch may carry several claims (claim/audit-five-b carried five), so each merged
+    # branch counts every claim whose row names it. A branch merged twice counts its claims once.
     branches = {claim["branch"] for claim in claims.values()}
-    merged = [b.group(1) for subject in out.stdout.splitlines() if (b := MERGE.match(subject)) and b.group(1) in branches]
-    print(f"rule claims merged since the last batch gate {m.group(1)}: {len(merged)} of {BATCH_SIZE}" + (f" ({', '.join(merged)})" if merged else ""))
+    merged_branches = list(dict.fromkeys(b.group(1) for subject in out.stdout.splitlines() if (b := MERGE.match(subject)) and b.group(1) in branches))
+    merged = [name for name, claim in claims.items() if claim["branch"] in merged_branches]
+    print(f"rule claims merged since the last batch gate {m.group(1)}: {len(merged)} of {BATCH_SIZE}"
+          + (f" ({', '.join(merged)}; branches {', '.join(merged_branches)})" if merged else ""))
     if len(merged) >= BATCH_SIZE:
         message = (f"{len(merged)} rule claims merged since the last batch gate {m.group(1)}: run it on main "
                    f"(gate.sh rules-batch {m.group(1)} ...) and record the new commit in the inventory's section 6")
@@ -363,7 +434,12 @@ def main():
     lines, _ = inventory_table.read_lines()
     claims = check_ledger(lines, faults)
     wiring = check_wiring(lines, claims, faults)
+    check_wiring_rules_merged(wiring, faults)
     branch = value("--branch")
+    if value("--pr-base") is not None:
+        if not branch:
+            sys.exit("--pr-base needs --branch")
+        check_pr_base(branch, value("--pr-base"), faults)
     wiring_branch = any(claim["branch"] == branch for claim in wiring.values())
     files = None
     if value("--files") is not None:
@@ -383,6 +459,8 @@ def main():
     elif value("--base") is not None:
         for warning in overlaps(claims, branch, value("--base")):
             print("WARNING:", warning)
+        if branch:
+            check_carried(claims, wiring, branch, value("--base"), faults)
         if any(claim["branch"] == branch for claim in claims.values()):
             # A rule claim merges without a gate of its own only because it stays in its scope (the plan's section 4.3, 2026-10-29).
             for path in out_of_scope(changed_files(value("--base")) or []):

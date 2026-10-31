@@ -1,0 +1,117 @@
+@using LimboDancer.Dice
+
+<HeadContent>
+    <link rel="stylesheet" href="dice-lab.css" />
+</HeadContent>
+
+<section class="asl-dice" aria-label="ASL dice roller">
+    <div class="asl-dice-controls">
+        <label>Roll type
+            <select @bind="mode" @bind:after="ClearResult">
+                <option value="1">Single die (dr)</option>
+                <option value="2">White and colored dice (DR)</option>
+                <option value="3">DR plus subsequent dr</option>
+            </select>
+        </label>
+        <label>Modifier (@(mode == 1 ? "drm" : "DRM"))
+            <input type="text" @bind="modifierText" @bind:event="oninput" aria-invalid="@(!Modifier.HasValue ? "true" : "false")" />
+            @if (!Modifier.HasValue)
+            {
+                <span>Enter a whole number, such as -2, 0, or +1.</span>
+            }
+        </label>
+        <button type="button" @onclick="Roll" disabled="@(!Modifier.HasValue)">Roll @(mode == 1 ? "die" : "dice")</button>
+        <button type="button" @onclick="LoadExample">Show 4 + 2, modifier +1</button>
+    </div>
+
+    <div class="asl-dice-tray">
+        @for (var index = 0; index < mode; index++)
+        {
+            var die = index;
+            var value = values is null ? 0 : values[die];
+            var label = die == 0 ? "White" : die == 1 ? "Colored" : "Subsequent";
+            <figure class="asl-dice-figure @(die == 2 ? "asl-dice-subsequent" : "")">
+                <svg @key="(rollNumber, die)" class="asl-dice-face asl-dice-face-@die @(values is null ? "" : "asl-dice-rolled")"
+                     viewBox="0 0 100 100" role="img" aria-label="@(value == 0 ? $"{label}: not rolled" : $"{label}: {value}")">
+                    <rect x="3" y="3" width="94" height="94" rx="16" />
+                    @if (value == 0)
+                    {
+                        <path d="M36 36 Q36 20 50 20 Q68 20 68 36 Q68 46 50 53 L50 62 M50 72 L50 78" class="asl-dice-question" />
+                    }
+                    else
+                    {
+                        @foreach (var pip in Pips[value - 1])
+                        {
+                            <circle cx="@pip.X" cy="@pip.Y" r="8" />
+                        }
+                    }
+                </svg>
+                <figcaption>@label <strong>@(value == 0 ? "Not rolled" : value.ToString(System.Globalization.CultureInfo.InvariantCulture))</strong></figcaption>
+            </figure>
+        }
+    </div>
+
+    <div class="asl-dice-result" role="status" aria-live="polite" aria-atomic="true">
+        @if (values is null)
+        {
+            <p>Choose a roll type, then roll.</p>
+        }
+        else
+        {
+            var original = values[0] + (mode > 1 ? values[1] : 0);
+            var modifier = Modifier;
+            var final = modifier is { } entered ? ((long)original + entered).ToString(System.Globalization.CultureInfo.InvariantCulture) : "Enter a modifier";
+            <dl>
+                <div><dt>Original @(mode == 1 ? "dr" : "DR")</dt><dd>@original</dd></div>
+                <div><dt>Modifier</dt><dd>@(modifier?.ToString("+0;-0;0", System.Globalization.CultureInfo.InvariantCulture) ?? "Incomplete")</dd></div>
+                <div><dt>Final @(mode == 1 ? "dr" : "DR")</dt><dd>@final</dd></div>
+            </dl>
+            @if (mode > 1)
+            {
+                <p>Colored dr: <strong>@values[1]</strong>. Colored die is @(values[1] < values[0] ? "less than" : values[1] > values[0] ? "greater than" : "equal to") the white die.</p>
+            }
+            @if (mode == 3)
+            {
+                <p>Subsequent dr: <strong>@values[2]</strong>. This separate result is excluded from the DR and its modifier.</p>
+            }
+        }
+    </div>
+    <p class="asl-dice-note">Original is before modifiers. Final includes the modifier entered above. These rolls are for the lab.</p>
+</section>
+
+@code {
+    private static readonly (int X, int Y)[][] Pips =
+    [
+        [(50, 50)],
+        [(25, 25), (75, 75)],
+        [(25, 25), (50, 50), (75, 75)],
+        [(25, 25), (75, 25), (25, 75), (75, 75)],
+        [(25, 25), (75, 25), (50, 50), (25, 75), (75, 75)],
+        [(25, 25), (75, 25), (25, 50), (75, 50), (25, 75), (75, 75)],
+    ];
+
+    private readonly DiceRoller roller = new();
+    private int mode = 2;
+    private string modifierText = "0";
+    private long rollNumber;
+    private IReadOnlyList<int>? values;
+
+    private int? Modifier => int.TryParse(modifierText, System.Globalization.NumberStyles.Integer,
+        System.Globalization.CultureInfo.InvariantCulture, out var value) ? value : null;
+
+    private void Roll()
+    {
+        values = roller.Roll(new RollRequest(mode, 6)).Values;
+        rollNumber++;
+    }
+
+    private void ClearResult() => values = null;
+
+    private void LoadExample()
+    {
+        mode = 2;
+        modifierText = "1";
+        values = new[] { 4, 2 };
+        rollNumber++;
+    }
+}

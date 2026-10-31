@@ -77,6 +77,9 @@ public static partial class GameProjector
         private readonly HashSet<string> eventIds = new(StringComparer.Ordinal);
         private readonly Dictionary<string, DiceRolled> rolls = new(StringComparer.Ordinal);
         private readonly Dictionary<string, (FireResolved Fire, bool Withheld, bool Reported)> fires = new(StringComparer.Ordinal);
+        private (string Id, string Command, MoraleCheckResolved Record)? lastMoraleCheck;
+        private readonly HashSet<string> consumedMoraleSubjects = new(StringComparer.Ordinal);
+        private string commandKey = string.Empty;
         private UnitCatalog? catalog;
         private MapLayout? layout;
         private string path = string.Empty;
@@ -90,7 +93,7 @@ public static partial class GameProjector
 
         /// <summary>
         /// A replay that carries what this one carries and writes to its own diagnostics (pass 31d, design D1): what it applies leaves this one as
-        /// it is. Everything carried between events is one of these six fields.
+        /// it is. The carried collections and verified check evidence are copied below.
         /// </summary>
         public Replay Copy(List<UnitDiagnostic> ownDiagnostics)
         {
@@ -99,8 +102,10 @@ public static partial class GameProjector
                 catalog = catalog,
                 layout = layout,
                 path = path,
+                lastMoraleCheck = lastMoraleCheck,
             };
             copy.eventIds.UnionWith(eventIds);
+            copy.consumedMoraleSubjects.UnionWith(consumedMoraleSubjects);
             foreach (var roll in rolls)
             {
                 copy.rolls[roll.Key] = roll.Value;
@@ -119,6 +124,7 @@ public static partial class GameProjector
             spotterCommandTypes = commandTypes;
             path = $"revision {gameEvent.Revision} ({gameEvent.EventId})";
             eventId = gameEvent.EventId;
+            commandKey = SpotterCommandIdentity(gameEvent).Key;
             if (!CheckEnvelope(gameEvent, previous))
             {
                 return null;
@@ -558,6 +564,7 @@ public static partial class GameProjector
             var state = new GameState(gameEvent.Scope, gameEvent.Revision, gameEvent.Time, started.Synthetic, started.Sides, started.Map,
                 catalog.Identity, started.Turn, started.Phase, started.PhasingSide, [], [], [])
             {
+                VehicleArmamentCatalog = catalog,
                 SpecialRules = started.SpecialRules,
                 // E1.1, E3.51, E3.71 (backlog pass 16, rulings R16.1, R16.9): the SSRs' Base NVR and precipitation at the start.
                 Nvr = GameState.NightRule(started.SpecialRules),
@@ -735,6 +742,7 @@ public static partial class GameProjector
                     // A12.153 (ruling R24.2): a building is Mopped Up once per Player Turn.
                     MoppedUpThisPlayerTurn = newPlayerTurn ? [] : state.MoppedUpThisPlayerTurn,
                     StarshellAttempts = [],
+                    VerifiedSmokeGrenades = Rules.ScenarioA1SequenceProjection.RemovesSmokeGrenades(state.Phase) ? [] : state.VerifiedSmokeGrenades,
                     // E1.923 (ruling R16.8): Starshells are removed at the end of each CCPh.
                     // A14.31 (pass 71, ruling R71.6): a pinned Sniper counter's pin is removed with the others at the end of the CCPh.
                     Entities = UnpinSnipers(Rules.ScenarioA1SequenceProjection.RemovesSmokeGrenades(state.Phase) ? RemoveSmokeGrenades(state.Entities)
@@ -1185,6 +1193,16 @@ public static partial class GameProjector
                 return Fail<GameState>(verifier.Code, verifier.Text);
             }
 
+            if (combat.Resolution.TryGetProperty("vehicleBreakdowns", out var breakdowns)
+                && breakdowns.EnumerateObject().Any(item => item.Value.TryGetProperty("lowAmmoGained", out var gained) && gained.ValueKind == JsonValueKind.True)
+                && !state.LowAmmoVehicles.Contains(combat.Vehicle, StringComparer.Ordinal))
+            {
+                state = state with
+                {
+                    LowAmmoVehicles = [.. state.LowAmmoVehicles, combat.Vehicle]
+                };
+            }
+
             if (Rules.ScenarioA1CloseCombatProjection.ReactionLeavesState(combat.Reaction))
             {
                 // A9.223, D7.21 (pass 60, rulings R60.3, R60.20): a MG's Fire Lane is cancelled when its manning Infantry makes CC Reaction Fire, by a
@@ -1377,6 +1395,24 @@ public static partial class GameProjector
                 return Fail<GameState>("UNIT-STATE-033", reason);
             }
 
+            var participation = fired.Facts.TryGetProperty("participation", out var participantFacts)
+                ? participantFacts.Deserialize<Rules.OrdnanceParticipation>(JsonSerializerOptions.Web) : null;
+            var secondFirer = participation?.Second?.Crew?.UnitId;
+            var currentMortar = false;
+            var noCoveredArc = mortar;
+            if (participation is not null && firer is EquipmentInstance { Definition: { } gunReference } gunCounter)
+            {
+                var definition = catalogs.FirstOrDefault(item => item.Identity == gunReference.Catalog)?.Definition(gunReference.Definition);
+                var type = definition?.Printed("front", "asl:gun-type")?.Value?.Text;
+                var caliber = definition?.Printed("front", "asl:caliber")?.Value?.Number;
+                currentMortar = Rules.ScenarioA1MortarCalculator.IsMortar(gunCounter.Kind, type);
+                if (currentMortar)
+                {
+                    noCoveredArc = !Rules.ScenarioA1MortarCalculator.HasCoveredArc(Rules.ScenarioA1MortarCalculator.FiresAsLight(caliber,
+                        Rules.ScenarioA1OrdnanceParticipationCalculator.SmcCount(shooter.Kind, participation) == 1));
+                }
+            }
+
             if (Choices(state, fired.Facts.TryGetProperty("hit", out var hitFacts) && hitFacts.ValueKind == JsonValueKind.Object ? hitFacts : fired.Facts) is { } choiceReason)
             {
                 return Fail<GameState>("UNIT-STATE-035", choiceReason);
@@ -1409,7 +1445,17 @@ public static partial class GameProjector
 
             // C8.9: unless the Gun malfunctioned, or reached its X# (A.11, W-A21.13), when the shot counts as fired.
             var eliminatedGun = gunResult.ValueKind == JsonValueKind.Object && gunResult.TryGetProperty("eliminated", out var gone) && gone.ValueKind == JsonValueKind.True;
-            if (Rules.ScenarioA1OrdnanceProjection.NeverFired(use, malfunctioned, eliminatedGun))
+            var breakdown = gunResult.ValueKind == JsonValueKind.Object && gunResult.TryGetProperty("vehicleBreakdown", out var breakdownJson)
+                && breakdownJson.ValueKind == JsonValueKind.Object
+                ? breakdownJson.Deserialize<Rules.VehicleBreakdownResolved>(JsonSerializerOptions.Web) : null;
+            if (breakdown?.LowAmmoGained == true && !state.LowAmmoVehicles.Contains(fired.Gun, StringComparer.Ordinal))
+            {
+                state = state with
+                {
+                    LowAmmoVehicles = [.. state.LowAmmoVehicles, fired.Gun]
+                };
+            }
+            if (Rules.ScenarioA1VehicleBreakdownResolutionCalculator.NeverFired(use, malfunctioned, eliminatedGun, breakdown))
             {
                 return state;
             }
@@ -1424,7 +1470,7 @@ public static partial class GameProjector
                     }
                     : state;
             }
-            else if (!panzerfaust && !mortar)
+            else if (!panzerfaust && !noCoveredArc)
             {
                 var gun = (EquipmentInstance)firer!;
                 var turned = fired.Facing is { } facing && gun.Position is MapPosition map
@@ -1458,7 +1504,26 @@ public static partial class GameProjector
                 GunShotsThisGameTurn = state.Find(fired.Gun) is EquipmentInstance { Kind: "asl:gun" } firedGun
                     ? [.. state.GunShotsThisGameTurn, new GunShotThisGameTurn(fired.Crew, firedGun.Definition?.Definition)] : state.GunShotsThisGameTurn,
             };
-            state = SupportWeapons(state, fired, shooter, mortar, panzerfaust);
+            if (participation is not null && Rules.ScenarioA1OrdnanceParticipationCalculator.SmcCount(shooter.Kind, participation) > 0)
+            {
+                state = state with
+                {
+                    PhaseFirers = [.. state.PhaseFirers.Where(item => item.Unit != shooter.Id && item.Unit != secondFirer),
+                        new SupportWeaponUse(shooter.Id, fired.Gun),
+                        .. secondFirer is null ? Array.Empty<SupportWeaponUse>() : [new SupportWeaponUse(secondFirer, fired.Gun)]],
+                };
+                if (secondFirer is not null)
+                {
+                    state = state with
+                    {
+                        GunCrewsFired = Rules.ScenarioA1OrdnanceProjection.CrewLosesInherentFp(false, false, state.GunCrewsFired.Contains(secondFirer))
+                            ? [.. state.GunCrewsFired, secondFirer] : state.GunCrewsFired,
+                        GunShotsThisGameTurn = firer is EquipmentInstance { Kind: "asl:gun" } secondGun
+                            ? [.. state.GunShotsThisGameTurn, new GunShotThisGameTurn(secondFirer, secondGun.Definition?.Definition)] : state.GunShotsThisGameTurn,
+                    };
+                }
+            }
+            state = SupportWeapons(state, fired, shooter, mortar || currentMortar, panzerfaust);
             return state with
             {
                 // D3.5, D3.51 (pass 50): a tank's MA shot is one of its weapons' shots of the fire phase, with the turn its turret made.
@@ -1999,7 +2064,13 @@ public static partial class GameProjector
                 return Fail<GameState>("UNIT-STATE-023", $"The morale check record's roll '{missing}' is not recorded before it.");
             }
 
-            return fireVerifier.VerifyMoraleCheck(state, check, rolls) is { } reason ? Fail<GameState>("UNIT-STATE-024", reason) : state;
+            if (fireVerifier.VerifyMoraleCheck(state, check, rolls) is { } reason)
+            {
+                return Fail<GameState>("UNIT-STATE-024", reason);
+            }
+            lastMoraleCheck = (eventId, commandKey, check);
+            consumedMoraleSubjects.Clear();
+            return state;
         }
 
         private GameState? Fire(GameState state, FireResolved fire, GameEvent gameEvent)
@@ -2052,7 +2123,36 @@ public static partial class GameProjector
             };
             fires[eventId] = (fire, gameEvent.Visibility is not null, false);
 
+            if (fire.Resolution.TryGetProperty("weaponEffects", out var breakdownEffects) && breakdownEffects.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var effect in breakdownEffects.EnumerateArray())
+                {
+                    if (effect.TryGetProperty("vehicleBreakdown", out var breakdown) && breakdown.ValueKind == JsonValueKind.Object
+                        && breakdown.TryGetProperty("lowAmmoGained", out var lowAmmo) && lowAmmo.ValueKind == JsonValueKind.True
+                        && effect.TryGetProperty("equipmentId", out var equipment) && equipment.GetString() is { } id
+                        && !state.LowAmmoVehicles.Contains(id, StringComparer.Ordinal))
+                    {
+                        state = state with
+                        {
+                            LowAmmoVehicles = [.. state.LowAmmoVehicles, id]
+                        };
+                    }
+                }
+            }
+
             // C2.24, D3.5 (unit step 25): a vehicle's MG shot keeps its Multiple ROF for this phase when its record says so, as a Gun's does.
+            if (fire.Resolution.TryGetProperty("overrunEffect", out var overrunEffect) && overrunEffect.ValueKind == JsonValueKind.Object
+                && overrunEffect.TryGetProperty("vehicleBreakdowns", out var breakdowns) && breakdowns.ValueKind == JsonValueKind.Object
+                && breakdowns.EnumerateObject().Any(item => item.Value.TryGetProperty("lowAmmoGained", out var gained) && gained.ValueKind == JsonValueKind.True)
+                && overrunEffect.TryGetProperty("vehicleId", out var overrunVehicle) && overrunVehicle.GetString() is { } overrunId
+                && !state.LowAmmoVehicles.Contains(overrunId, StringComparer.Ordinal))
+            {
+                state = state with
+                {
+                    LowAmmoVehicles = [.. state.LowAmmoVehicles, overrunId]
+                };
+            }
+
             var shots = state.OrdnanceShots;
             var weaponShots = state.VehicleWeaponShots;
             var turrets = state.TurretFacings;
@@ -2325,6 +2425,53 @@ public static partial class GameProjector
 
         private GameState? Repair(GameState state, RepairAttempted repair)
         {
+            var repairState = state;
+            if (repair.VehicleArmamentEvidence is { } evidence)
+            {
+                if (repair.VehicleRepairVersion != 1)
+                {
+                    return Fail<GameState>("UNIT-STATE-028", "Vehicle armament evidence requires the current repair reading.");
+                }
+                if (VehicleArmamentFacts.EvidenceRefusal(state, state.Unit(repair.Unit), evidence) is { } evidenceRefusal)
+                {
+                    return Fail<GameState>("UNIT-STATE-028", evidenceRefusal);
+                }
+                repairState = state with
+                {
+                    VehicleArmamentEvidence = evidence
+                };
+            }
+            if (repair.VehicleRepairVersion is not null)
+            {
+                if (repair.VehicleRepairVersion != 1 || repair.Unit != repair.Equipment
+                    || Active(state, repair.Unit) is not UnitInstance currentVehicle || currentVehicle.Kind != "asl:vehicle"
+                    || VehicleArmamentFacts.Definition(repairState, currentVehicle) is not { } currentDefinition
+                    || VehicleArmamentFacts.Weapons(currentDefinition).FirstOrDefault(item => item.Id == repair.Weapon) is not { } currentWeapon)
+                {
+                    return Fail<GameState>("UNIT-STATE-028", "The vehicle repair version, vehicle or listed weapon is invalid.");
+                }
+                var currentFacts = VehicleArmamentFacts.Repair(repairState, currentVehicle, currentDefinition, currentWeapon, repair.Hero);
+                var currentRefusal = Rules.ScenarioA1RallyRules.VehicleRepairPhaseBar(state.Phase, currentVehicle.Status == InstanceStatus.Active)
+                    ?? VehicleArmamentFacts.RecallFactsRefusal(currentDefinition)
+                    ?? Rules.ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(currentFacts);
+                if (currentRefusal is not null)
+                {
+                    return Fail<GameState>("UNIT-STATE-028", currentRefusal);
+                }
+                if (!rolls.TryGetValue(repair.Roll, out var currentRoll) || currentRoll.Count != 1 || currentRoll.Sides != 6
+                    || repair.RepairNumber != 1 || repair.Result != RepairResult(Rules.ScenarioA1VehicleBreakdownCalculator.RepairResult(currentRoll.Values[0])))
+                {
+                    return Fail<GameState>("UNIT-STATE-028", "The vehicle repair result does not match its recorded die.");
+                }
+                return state with
+                {
+                    RepairsThisPhase = [.. state.RepairsThisPhase, currentVehicle.Id + ":" + currentWeapon.Id]
+                };
+            }
+            if (repair.Hero is not null)
+            {
+                return Fail<GameState>("UNIT-STATE-028", "A Hero repair participant requires the current vehicle repair reading.");
+            }
             // D3.7 (ruling R6.10): a vehicle's malfunctioned MG, repaired by its CE crew that is not Stunned or Recalled, on a dr of 1; a 6
             // disables it.
             if (repair.Unit == repair.Equipment && Active(state, repair.Unit) is UnitInstance vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle"))
@@ -2884,7 +3031,25 @@ public static partial class GameProjector
             var broken = GameState.Condition(unit, Conditions.Broken) == ConditionState.True;
             // Pass 70 (ruling R70.9): a record that carries the NMC's DRM is checked with it and its ELR, and (ruling R70.47) an Unarmed unit's failure as its
             // Casualty Reduction; an older record as before.
-            if (bailed.Drm is { } drm ? !Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result, drm, bailed.Elr,
+            if (bailed.MoraleCheck is { } reference)
+            {
+                var heroic = unit.Kind == "asl:hero" || GameState.Condition(unit, Conditions.Heroic) == ConditionState.True;
+                var verified = lastMoraleCheck is { } prior && prior.Id == reference && prior.Command == commandKey
+                    && !consumedMoraleSubjects.Contains(unit.Id) ? prior.Record : null;
+                var effect = verified?.Resolution.Deserialize<Rules.FireResolution>(JsonSerializerOptions.Web)?.Effects.FirstOrDefault(item => item.UnitId == unit.Id);
+                var check = effect?.Checks.FirstOrDefault(item => item.Kind == "MC");
+                var subject = verified?.Facts.Deserialize<Rules.MoraleCheckFacts>(JsonSerializerOptions.Web)?.Subjects?.FirstOrDefault(item => item.UnitId == unit.Id);
+                if (!heroic || verified?.Cause != "rider-bail-out" || verified.Location != bailed.At.ToString()
+                    || subject?.Aboard is not { Role: Rules.FirePrc.Rider } rider || rider.VehicleId != bailed.Vehicle
+                    || verified.Rolls.GetValueOrDefault("checks:" + unit.Id) != bailed.Roll || check is null
+                    || bailed.Morale != check.MoraleLevel || bailed.Drm != (int)check.Drm.Sum(item => item.Value)
+                    || bailed.Result != Rules.ScenarioA1MoraleCheck.BailOutResult(check, broken, false, false, true))
+                {
+                    return Fail<GameState>(refused.Code, refused.Text);
+                }
+                consumedMoraleSubjects.Add(unit.Id);
+            }
+            else if (bailed.Drm is { } drm ? !Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result, drm, bailed.Elr,
                     GameState.Condition(unit, Conditions.Unarmed) == ConditionState.True)
                 : !Rules.ScenarioA1RiderRules.CheckAgrees(roll.Values[0], roll.Values[1], bailed.Morale, broken, bailed.Result))
             {
@@ -4770,7 +4935,8 @@ public static partial class GameProjector
             {
                 state = state with
                 {
-                    SmokePending = null
+                    SmokePending = null,
+                    VerifiedSmokeGrenades = [.. state.VerifiedSmokeGrenades, instance.Id],
                 };
             }
             UnitInstance? creator = null;

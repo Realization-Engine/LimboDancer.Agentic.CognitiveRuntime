@@ -115,9 +115,10 @@ public static class ScenarioA1GunDuels
         {
             // C5: Case A (a CA change, and the one a turret keeps, D3.51), B (AFPh), C, C1, C2 (Bounding Fire), C3 (a LATW), D (pinned), E (within
             // the hex), F (Intensive Fire), H (non-qualified), I (BU); CX, Stun, Spotted Fire, the firer's overstacking, Leadership, and an Armor
-            // Leader's or an Inexperienced Crew's line (D3.44, D3.45); a hero's SW lines (A15.23; pass 72, ruling R72.8), which a hero applies as a leader would.
+            // Leader's or an Inexperienced Crew's line (D3.44, D3.45); a hero's SW lines (A15.23; pass 72, ruling R72.8), which a hero applies as a leader would;
+            // an Encircled firer's +1 (A7.7; the D5.34 claim, ruling RD5.13), which no shot carries before the claim's reading switch.
             "case-a" or "case-b" or "case-c" or "case-c1" or "case-c2" or "case-c3" or "case-d" or "case-e" or "case-f" or "case-h" or "case-i"
-                or "cx" or "stun" or "spotted" or "overstack-firer" or "leadership" or "hero" or "hero-two-man"
+                or "cx" or "stun" or "encircled" or "spotted" or "overstack-firer" or "leadership" or "hero" or "hero-two-man"
                 or ScenarioA1ArmorLeaders.LeaderModifier or ScenarioA1ArmorLeaders.InexperiencedModifier => ToHitDrmClass.FirerBased,
             "case-n" => ToHitDrmClass.Acquisition,
 

@@ -22,7 +22,7 @@ internal static class ScenarioA1VehicleBreakdownResolutionContract
 
     [RuleContract]
     private static RuleContract BreakdownUse() => new("d3.7-vehicle-breakdown-use", "Vehicle weapon breakdown for this use",
-        [new("D3.7", 201), new("D3.71", 202), new("A.11", 43), new("A19.131", 86), new("E3.741", 231)],
+        [new("D3.7", 201), new("D3.71", 201), new("A.11", 43), new("A19.131", 86), new("E3.741", 231)],
         [
             new("vehicleId", ContractFactType.Unit, false, ContractDisclosure.Owner, "The vehicle that fires") { Concerns = "vehicleId" },
             Flag("numbersKnown", "Its printed numbers have been inspected; omitted numbers mean none printed only when this is true"),

@@ -34,25 +34,8 @@ public static class ScenarioA1Geometry
 
     /// <summary>
     /// Whether LOS entries Encircle a hex (A7.7; ruling R12.11): two opposite hexspines, two opposite hexsides (exactly three vertices between them both
-    /// ways), or three hexsides no two of which are adjacent.
+    /// ways), or three hexsides no two of which are adjacent. Decided by <see cref="ScenarioA1EncirclementCalculator.Encircles"/> (the D5.34 claim,
+    /// ruling RD5.7), to which it forwards with the same answer.
     /// </summary>
-    public static bool Encircles(IReadOnlyCollection<int> positions)
-    {
-        ArgumentNullException.ThrowIfNull(positions);
-        var set = positions.ToHashSet();
-
-        // A7.7 (pass 45): a LOF from both the Location directly above (12) and the one directly below (13).
-        if (set.Contains(12) && set.Contains(13))
-        {
-            return true;
-        }
-
-        if (set.Any(position => position < 12 && set.Contains((position + 6) % 12)))
-        {
-            return true;
-        }
-
-        var sides = set.Where(position => position < 12 && position % 2 == 1).Select(position => (position - 1) / 2).ToHashSet();
-        return sides.Any(side => sides.Contains((side + 2) % 6) && sides.Contains((side + 4) % 6));
-    }
+    public static bool Encircles(IReadOnlyCollection<int> positions) => ScenarioA1EncirclementCalculator.Encircles(positions);
 }

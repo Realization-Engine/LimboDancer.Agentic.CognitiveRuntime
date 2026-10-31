@@ -67,3 +67,21 @@ A sub-agent read the first draft against pp. 91 to 93, 143, 144, and 210 (B25.14
 ## 11. Review of the build
 
 A sub-agent read the build read-only (2026-10-29): every member answers rightly for every kind and wind, the contract throws nothing uncaught, and the documents follow the design. Six minor findings, taken: main merged before the pull request, with the W-B25.2 line numbers checked against Codex's wire-fire-3; the calculator's summary says callers pass `WindFelt`'s answer; RB25.4's wording; the weather test line; the missing test rows (a Flame in each wind, Unknown for each kind, `WindFelt` with Unknown, Rain in the contract); the inventory row's note.
+
+## 12. Codex rule review, 2026-10-30
+
+Read-only review found no blocking calculator or disclosure defect in the approved reading. B25.2 (PDF p. 143) supplies the separate wreck and terrain strengths, Flame exclusion, four/two/no-level heights, and the Fire Lane and Heavy Winds exceptions. The calculator leaves D9.4's own eligibility to its owner and combines sources through A24.2's by-value total. The contract uses public map/weather facts, rejects an impossible terrain-Blaze Fire Lane question, and does not expose a unit's private state. Unknown wind remains unevaluated. The approved indoor-wind and weather composition remain as documented above.
+
+This review accepts the Rules implementation only. Caller integration, smoke-column intersection geometry, and the Fire Lane's actual D9.4 test remain the wiring claims' work. No code or test was changed by this review.
+
+## 13. Fire Lane wiring prerequisite, 2026-10-30
+
+The approved Fire Lane exception needs a bounded A9.222 adapter: the earlier arithmetic excludes every `Los.HindranceDrm` from a Fire Lane attack. Adding a wreck to that total would cancel FFMO but still apply no hard DRM. A9.222 (PDF p. 63), D9.4 (p. 210), and B25.2 (p. 143) were reread. The A9.222 claim holds the shared Fire model, calculator, and follow-up adapter on `codex/rules-wiring003-adapters`.
+
+`FireAttack.FireLaneWrecks` is nullable and omitted when null. Null preserves the earlier reading; an explicit empty candidate list selects the current reading. The new object identifies the lane weapon and source Location. Each required candidate carries its wreck ID, Location, range, LOS elevation, standing fact, bypass geometry, and visibility from both endpoints. `ScenarioA1FireFollowUps.FireLaneWreckHindrance` asks the Blaze exception and D9.4's bypass member, then counts distinct eligible ranges. Arithmetic applies the separate hard modifier and cancels FFMO. Missing required fields, duplicate IDs, negative ranges, and attaching these facts to a non-Fire-Lane attack are refused.
+
+Play gathers candidates at attack time. Its verifier binds the weapon to exactly one active lane and checks the source and target entry, including residual FP. It checks each wreck's identity, Location, wrecked/burning status, standing eligibility, and bypass state against the actual state. Geometry remains a recorded map fact, as for other fire records; this does not prove that every geometrically crossed wreck was supplied. Overlapping equal-FP lanes cannot substitute for one another. Soft terrain at the same range does not suppress the hard wreck modifier. Other hard terrain, bridge/hexside combinations, and Impulse movement remain in the existing A9.222 inventory/backlog.
+
+Focused evidence: `FireLane-Wreck-Arithmetic-1.log`, `Fire5-Ma-Picker-And-Wreck-Rules-2.log`, and `FireLane-Wreck-Provenance-2.log` under the Codex gate folder. The last covers a newly appearing wreck, same-range grain, blocked endpoint LOS, a valid verifier roundtrip, an overlapping-lane forgery, a changed standing fact, and the existing lane replay path. A read-only sub-agent reviewed the final adapter and found no remaining blocker. No full local test suite was run.
+
+Memory and performance: the caller gathers burning wrecks once per lane read and records only crossed candidates; it retains no mutable cache or global history. The facts are bounded by that ray's crossed wrecks. Old records allocate no new candidate collection. Broader performance and replay evidence belong to the wiring gate, which is still pending at this checkpoint.

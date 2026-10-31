@@ -76,6 +76,13 @@ public sealed record CloseCombatResolved(BoardLocation Location, string Round, I
 public sealed record VehicleCloseCombatResolved(BoardLocation Location, string Vehicle, IReadOnlyList<string> Attackers, IReadOnlyList<string> Defenders, bool ByVehicle,
     bool Reaction, IReadOnlyDictionary<string, string> Rolls, JsonElement Facts, JsonElement Resolution) : EventPayload
 {
+    /// <summary>Versioned vehicle breakdown source values; null keeps the earlier catalog read.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public VehicleArmamentEvidence? VehicleArmamentEvidence
+    {
+        get; init;
+    }
+
     public string? Next
     {
         get; init;

@@ -96,9 +96,8 @@ public static class ScenarioA1ResultTables
         switch (effect.CrewResult)
         {
             case FireVehicleEffect.Stunned:
-                changes.Add((VehicleCondition.Stunned, true));
-                changes.Add((VehicleCondition.ButtonedUp, true));
-                changes.Add((VehicleCondition.Motion, false));
+                // D5.34 (the D5.34 claim): Stunned, BU, and Stopped.
+                changes.AddRange(ScenarioA1StunCalculator.StunnedConditions());
                 break;
             case FireVehicleEffect.Recalled:
                 // A Recall is a Stun that removes the vehicle at the end of the Player Turn (D5.341); every check reads either.
