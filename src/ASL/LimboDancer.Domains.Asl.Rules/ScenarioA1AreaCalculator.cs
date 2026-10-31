@@ -48,19 +48,20 @@ internal static class ScenarioA1AreaCalculator
 
         // C3.331: Cases C1 to C4, E, G, L, and Q do not apply; a SW has no Case A (no CA) and no Case F.
         var drm = new List<FireModifier>();
+        drm.AddRange(ScenarioA1OrdnanceParticipationCalculator.MortarDrm(shot, gun, reference));
         if (ScenarioA1OrdnanceCalculator.AfphFire(shot))
         {
             drm.Add(new FireModifier("case-b", shot.FirerInWoodsOrBuilding == true ? 3 : 2, "C5.2"));
         }
 
         // C5.4, C9.3: a pinned firer, or a pinned Spotter, which in effect pins the mortar's firer.
-        var pinned = crew.Pinned == true || shot.Spotter?.Pinned == true;
+        var pinned = ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) || shot.Spotter?.Pinned == true;
         if (pinned)
         {
             drm.Add(new FireModifier("case-d", 2, "C5.4"));
         }
 
-        if (crew.Cx == true)
+        if (ScenarioA1OrdnanceParticipationCalculator.Cx(shot))
         {
             drm.Add(new FireModifier("cx", 1, "A4.51"));
         }
@@ -73,7 +74,7 @@ internal static class ScenarioA1AreaCalculator
         }
 
         // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): an Encircled crew adds one to its To Hit DR, under the shot's StunEncircledReading.
-        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(crew.Encircled == true) is > 0 and var encircled)
+        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(ScenarioA1OrdnanceParticipationCalculator.Encircled(shot)) is > 0 and var encircled)
         {
             drm.Add(new FireModifier("encircled", encircled, "A7.7"));
         }
@@ -108,6 +109,19 @@ internal static class ScenarioA1AreaCalculator
         // C6.521 (pass 60, rulings R60.3, R60.13): the Area Acquisition covers every Location of its hex in the firer's LOS.
         var acquisition = shot.AreaAcquisition ?? shot.Acquisition!.Value;
 
+        void AcquisitionDrm(List<FireModifier> list)
+        {
+            // C6.4 pp. 174-175: use Bore Sighting or Acquisition, never both. The older light-mortar path admitted no Bore Sighting.
+            if (shot.Participation is not null && shot.BoreSighted == true)
+            {
+                list.Add(new FireModifier("case-m", -2, "C6.4"));
+            }
+            else if (acquisition < 0)
+            {
+                list.Add(new FireModifier("case-n", acquisition, "C6.521"));
+            }
+        }
+
         // C3.331 (ruling R9.3): each unit's own DRM: Case K for a concealed enemy unit, the Area Target Acquisition for every unit, concealed or
         // not (C6.521, C6.57; referee, pass 9), and the -1 per squad equivalent its side overstacks the Location (A5.131).
         // B23.32, C3.4 (pass 60, ruling R60.11): each Location of the hex in the firer's LOS adds its own Case R. C3.33 (p. 169; ruling R60.24): one out
@@ -124,10 +138,7 @@ internal static class ScenarioA1AreaCalculator
                 list.Add(new FireModifier("case-k", 2, "C6.2"));
             }
 
-            if (acquisition < 0)
-            {
-                list.Add(new FireModifier("case-n", acquisition, "C6.521"));
-            }
+            AcquisitionDrm(list);
 
             if (levels is not null && Location(shot, locationId)?.Los?.HindranceDrm is > 0 and var own)
             {
@@ -146,10 +157,7 @@ internal static class ScenarioA1AreaCalculator
                 list.Add(new FireModifier("case-k", 2, "C6.2"));
             }
 
-            if (acquisition < 0)
-            {
-                list.Add(new FireModifier("case-n", acquisition, "C6.521"));
-            }
+            AcquisitionDrm(list);
 
             if (enemy && shot.TargetOverstack is { } crowded && crowded > 0)
             {
@@ -259,8 +267,16 @@ internal static class ScenarioA1AreaCalculator
             rof--;
         }
 
-        // C9.2, A21.13 (ruling RC9.4): a lone SMC loses the Multiple ROF; only one firer is accepted, so a leader or hero firer is a lone SMC.
-        var loneSmc = reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind is "asl:leader" or "asl:hero";
+        var conditional = ScenarioA1OrdnanceParticipationCalculator.MortarConditionalRof(shot, gun, reference);
+        var conditionalNoRof = conditional && rof <= 0;
+        if (conditional)
+        {
+            rof = Math.Max(rof - 1, 0);
+        }
+
+        // C9.2, A21.13: actual participation decides lone status. An older shot still has its single primary crew only.
+        var loneSmc = ScenarioA1OrdnanceParticipationCalculator.SmcCount(reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind,
+            shot.Participation) == 1;
         if (pinned || ScenarioA1OrdnanceCalculator.AfphFire(shot) || !ScenarioA1MortarCalculator.MultipleRofKept(loneSmc))
         {
             rof = 0;
@@ -419,7 +435,7 @@ internal static class ScenarioA1AreaCalculator
         var breakdown = breakdownOutcome?.Numbers.BNumber ?? ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference);
         var failed = breakdownOutcome?.Failed ?? original >= breakdown;
         var malfunctioned = breakdownOutcome is null ? failed : breakdownOutcome.Outcome == VehicleBreakdownOutcome.Malfunction;
-        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0]);
+        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0], conditionalNoRof);
         var acquires = !failed;
         var gained = !acquires ? 0 : Math.Max(acquisition - 1, -2);
         // A.11 (W-A21.13): under a penalty multiple the Original B# is the X#, and a DR at or above it eliminates the Gun.
@@ -431,7 +447,7 @@ internal static class ScenarioA1AreaCalculator
         };
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
-            CrewConcealmentLost = crew.Concealed == true && shot.CrewSeen != false ? true : null,
+            CrewConcealmentLost = ScenarioA1OrdnanceParticipationCalculator.Concealed(shot) && shot.CrewSeen != false ? true : null,
             Hit = normal,
             CriticalHit = criticalHit,
             CriticalTarget = criticalTarget,

@@ -384,12 +384,12 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-b", woods ? 3 : 2, "C5.2"));
         }
 
-        if (shot.Crew!.Pinned == true)
+        if (ScenarioA1OrdnanceParticipationCalculator.Pinned(shot))
         {
             drm.Add(new FireModifier("case-d", 2, "C5.4"));
         }
 
-        if (shot.Crew.Cx == true)
+        if (ScenarioA1OrdnanceParticipationCalculator.Cx(shot))
         {
             drm.Add(new FireModifier("cx", 1, "A4.51"));
         }
@@ -406,7 +406,7 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         // A7.7 (p. 57; the D5.34 claim, ruling RD5.16): an Encircled crew adds one to its To Hit DR, under the shot's StunEncircledReading.
-        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(shot.Crew.Encircled == true) is > 0 and var encircled)
+        if (shot.StunEncircledReading == true && ScenarioA1EncirclementCalculator.FirerDrm(ScenarioA1OrdnanceParticipationCalculator.Encircled(shot)) is > 0 and var encircled)
         {
             drm.Add(new FireModifier("encircled", encircled, "A7.7"));
         }
@@ -617,7 +617,8 @@ internal static class ScenarioA1ArmorCalculator
             rof--;
         }
 
-        if (shot.Crew.Pinned == true || shot.Phase == "AFPh" || latw)
+        if (ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) || shot.Phase == "AFPh" || latw
+            || ScenarioA1OrdnanceParticipationCalculator.HeroGunLimited(shot, gun, reference))
         {
             rof = 0;
         }
@@ -664,7 +665,7 @@ internal static class ScenarioA1ArmorCalculator
         };
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
         {
-            CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,
+            CrewConcealmentLost = ScenarioA1OrdnanceParticipationCalculator.Concealed(shot) && shot.CrewSeen != false ? true : null,
             Kill = kill,
             SpecificCollateral = collateral,
             AmmunitionUse = use,
