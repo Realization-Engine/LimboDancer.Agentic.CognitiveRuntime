@@ -10,7 +10,7 @@
             <button type="button" id="move-route-end" class="link" disabled="@Busy" @onclick="OnEnd">End the move here</button>
         </div>
     }
-    else
+    else if (HasMovers)
     {
         <div class="toolbar">
             <button type="button" id="move-route-plot" aria-pressed="@(Plotting ? "true" : "false")" disabled="@(!Ready)" @onclick="OnToggle">
@@ -23,7 +23,7 @@
         </div>
         @if (Plotting)
         {
-            <p class="toolbar-note" id="move-route-help">Click the shaded hexes in turn; each shows its MF. The route is checked as it is plotted.</p>
+            <p class="toolbar-note" id="move-route-help" role="status">Click the shaded hexes in turn to add route steps; each shows its MF. Stop plotting or press Escape on the map to cancel this draft route.</p>
             @if (Steps.Count > 0)
             {
                 <ol id="move-route-steps">
@@ -51,6 +51,15 @@
 </div>
 
 @code {
+    [CascadingParameter(Name = "ActionSectionVisible")] public bool SectionVisible { get; set; } = true;
+    [Parameter] public EventCallback OnCancel { get; set; }
+    protected override Task OnParametersSetAsync() => Plotting && (!SectionVisible || !HasMovers || !Ready)
+        ? OnCancel.InvokeAsync() : Task.CompletedTask;
+
+    /// <summary>Whether the view offers infantry movers. A paused route remains available even when the list is empty.</summary>
+    [Parameter]
+    public bool HasMovers { get; set; } = true;
+
     /// <summary>Whether a stack is chosen, so a route may be plotted for it.</summary>
     [Parameter]
     public bool Ready { get; set; }

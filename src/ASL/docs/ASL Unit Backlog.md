@@ -1696,3 +1696,11 @@ Written on 2026-10-31 for the approved [shared action-outcome design](<Designs/A
 |---|---|---|---|---|
 | Unrolled dice in Turn Guide and Rule Workbench requests | Approved dice/outcome design | Presentation only | Explicit count, sides, grouping, roles, and subject metadata in the request contracts | Existing required-roll prose remains. The UI does not infer pending faces or roll roles from prose. |
 | Subject labels for older independent roll collections | Approved neutral-fallback contract | Presentation only | A disclosed, ordered subject list associated with the recorded roll ID | Disclosed `RandomSelection.Subjects` supplies historical names when present. Other collections retain numbered dice. No hidden event or positional guess supplies a subject. |
+
+## 91. Phase-by-phase action workflow review
+
+Written on 2026-10-31 during the user's review of `codex/action-form-design`.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Apply the map-based acting-unit and destination workflow to Rout | The user's request to resume the phase-by-phase review and address Rout when reached | Presentation only; retain the existing Rout decisions and restrictions | Review the current Rout workflow with a suitable Studio position | Movement gains explicit movers from the inspected hex and exclusive map-input modes. Rout retains its existing workflow until its phase is reviewed. |

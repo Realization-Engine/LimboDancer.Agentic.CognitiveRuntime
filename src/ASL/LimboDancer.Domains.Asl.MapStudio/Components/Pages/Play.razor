@@ -768,8 +768,9 @@ else if (state is not null)
                         }
                         else
                         {
+                        var movementRows = MoveRows;
                         <div class="toolbar">
-                            <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id" CarryMen="@CarryMen" Carriers="@Carriers"
+                            <InfantryMovementAction Movers="@movementRows" Locations="@(movementRows.ToDictionary(row => row.Id, row => state.Location(row.Id)?.Location.ToString(), StringComparer.Ordinal))" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id" CarryMen="@CarryMen" Carriers="@Carriers"
                                 OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" OnOverrunNtc="@ProposeOverrunNtc">
                                 <Route>
                                     @* The Play streamlining plan, S3 and S6: the route plotted on the map and made step by step; a plan that waits for the
@@ -784,9 +785,9 @@ else if (state is not null)
                                         {
                                             <p class="toolbar-note" id="move-route-last">@lastPlan</p>
                                         }
-                                        <MovementRoutePanel Ready="@(moveUnits.Count > 0)" Plotting="@plotOn" Steps="@PlotSteps" Stop="@PlotStop" Note="@plotNote" CanMove="@PlotCanMove" Busy="@busy"
+                                        <MovementRoutePanel HasMovers="@(movementRows.Count > 0)" Ready="@(moveUnits.Count > 0)" Plotting="@(plotOn && planPlotting is null)" Steps="@PlotSteps" Stop="@PlotStop" Note="@plotNote" CanMove="@PlotCanMove" Busy="@busy"
                                             Paused="@PlanNow?.Paused" Remaining="@(PlanNow is { } paused ? paused.Route.Count - paused.Next : 0)"
-                                            OnToggle="@TogglePlot" OnUndo="@UndoPlot" OnClear="@ClearPlot" OnMove="@MoveAlongRoute" OnContinue="@PlanContinue" OnChange="@PlanChange" OnEnd="@PlanEnd" />
+                                            OnToggle="@TogglePlot" OnCancel="@CancelPlot" OnUndo="@UndoPlot" OnClear="@ClearPlot" OnMove="@MoveAlongRoute" OnContinue="@PlanContinue" OnChange="@PlanChange" OnEnd="@PlanEnd" />
                                     }
                                 </Route>
                             </InfantryMovementAction>
@@ -2730,6 +2731,7 @@ else if (state is not null)
     /// <summary>The map's keys during setup: Esc ends a move or a swap; [ and ] step the map through the setup plans and the list.</summary>
     private void MapKey(string key)
     {
+        if (key == "Escape" && plotOn) { CancelPlot(); return; }
         if (key == "Escape" && Picking.Armed is not null) { Picking.Arm(null, null); return; }
         if (!SetupMode)
         {
@@ -7364,6 +7366,8 @@ else if (state is not null)
     /// </summary>
     private void ResetDrafts(bool keepCloseCombat)
     {
+        planPlotting = null;
+        CancelPlot();
         (Picking.Armed, Picking.ArmedLabel) = (null, null);
         vehicleTurret = string.Empty;
         boundingVehicle = string.Empty;
@@ -7773,7 +7777,11 @@ else if (state is not null)
     private bool turnGuideOpen;
     private void SelectInspectorTab(string tab)
     {
-        if (tab != PlayTab) Picking.Arm(null, null);
+        if (tab != inspectorTab)
+        {
+            Picking.Arm(null, null);
+            CancelPlot();
+        }
         inspectorTab = tab;
         if (tab == "phase-guide")
         {
@@ -8998,11 +9006,26 @@ else if (state is not null)
 
     private void TogglePlot()
     {
+        Picking.Arm(null, null);
         plotOn = !plotOn;
         planNote = null;
         plotRoute.Clear();
         (plotVersion, plotNote) = (plotVersion + 1, null);
         RefreshPlot();
+    }
+
+    private void CancelPlot()
+    {
+        if (!plotOn) return;
+        if (planPlotting is not null)
+        {
+            // The planner's existing stop operation keeps its checked steps in the queue.
+            PlanPlot(null);
+            return;
+        }
+        (plotOn, plot, plotMarks, plotNote) = (false, null, null, null);
+        plotRoute.Clear();
+        plotVersion++;
     }
 
     private void UndoPlot()
@@ -9063,6 +9086,7 @@ else if (state is not null)
 
     private void PlanChange()
     {
+        Picking.Arm(null, null);
         Live.Plans.Drop(gameId);
         plotOn = true;
         plotRoute.Clear();
@@ -9222,6 +9246,7 @@ else if (state is not null)
     /// <summary>Starts plotting a stack's route on the map, or, with null, keeps the route plotted and stops.</summary>
     private void PlanPlot(string? key)
     {
+        Picking.Arm(null, null);
         if (planPlotting is { } current && PlanStacks.FirstOrDefault(stack => stack.Key == current) is { } plotted)
         {
             plotted.Route.Clear();
@@ -10227,6 +10252,7 @@ else if (state is not null)
         Levels = location => MapLayers?.Board is { } board && BoardLocation.TryParse(location, out var at) ? LevelsAt(board, at) : [0],
         Arm = (id, label) =>
         {
+            if (id is not null) CancelPlot();
             (picking!.Armed, picking.ArmedLabel) = (id, label);
             StateHasChanged();
         },

@@ -43,6 +43,18 @@ Active demo binary: `action-form-design/studio-final`, process 63132 when starte
 
 Limitations: this is not a claim of a visual audit of every phase, conditional option, board, or viewport. Rare contextual forms retain their existing action organization with shared alignment improvements. The dedicated route planner retains its existing lifecycle and is separate from `LocationPicking`. Further changes found necessary during the user's demo remain on this branch.
 
-## Outputs
+## Movement review follow-up, 2026-10-31
+
+The user approved the map-to-mover workflow after the Prep Fire review. An inspected hex now offers its eligible mover locations, with each board and level distinct. Opening a location exposes explicit unit checkboxes and does not select or submit automatically. The normal unit list remains available. Destination entry is visible, with additional movement choices in a disclosure. Empty infantry lists omit idle movement controls while active route status and continuation remain available.
+
+Field picking and route plotting exclude each other. Escape on the map, inspector changes, and closing the Movement action cancel the applicable input mode. The Unit Planner retains its existing stop-and-save behavior for queued routes. Existing eligibility and command logic are unchanged.
+
+Studio evidence: `build-codex-studio.log` reports zero warnings/errors for `action-form-design/studio-map-movement`. In `ui-movement-demo-01`, checked origin selection, both directions of picker/plot switching, a plotted [B2] step leaving the manual destination empty, destination picking ending plotting and filling only that field, Escape, and inspector changes. No movement was committed in these checks. The demo was copied from the setup prefix of `p72-ammo-shortage-replacement`, then advanced normally through the phase proposal and confirmation. Source games and Tractor Works were not modified by this setup.
+
+The active demo is `http://localhost:6680/games/play?game=ui-movement-demo-01`, using `action-form-design/studio-map-movement` (process 18412 when started). Both focused methods passed: `MovementComponentTests.MapOriginsKeepBoardsLevelsAndUnitSelectionDistinct` and `PlayPagePass31cTests.ARouteIsPlottedOnTheMapAndMadeStepByStep`. Evidence: `action-form-design/movement-workflow-checks.log` and `action-form-design/results/movement-workflow.trx`. The initial test build stopped on dictionary formatting in the new test; the scoped formatter corrected it before rerunning the same two methods. No broader test suite ran.
+
+The user wants to resume the phase-by-phase workflow review after this correction. Defensive Fire is next. When the review reaches Rout, apply the same map-to-unit selection, clear destination/route entry, and single map-input ownership while preserving Rout's required decisions. Rout has not yet received that follow-up implementation. No merge is authorized.
+
+## Current outputs
 
 `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex`. Task builds and checks are registered under `action-form-design`. The active demo stays on port 6680 for review; other Studio ports are untouched. Keep logs/results as verification evidence, and clean superseded task-owned binaries after the active demo build is established.

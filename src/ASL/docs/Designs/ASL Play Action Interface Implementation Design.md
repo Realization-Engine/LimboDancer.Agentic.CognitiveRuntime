@@ -156,3 +156,15 @@ Authority: [Memory and Performance Guidelines](<../Memory-And-Performance/ASL Me
 | Section 7: phase-specific adaptation | Section 6 inventory and all rollout stages |
 
 Self-review: checked for accuracy, correctness, internal consistency, and coverage of the revised analysis. The review distinguishes proposed APIs from current code. No implementation or Studio success is claimed. Detailed findings and their disposition are recorded in the [review](<../Reviews/ASL Play Action Interface Document Review.md>).
+
+## 10. Approved Movement workflow follow-up
+
+The user approved the follow-up analysis on 2026-10-31: connect the selected map hex to the offered movers, keep destination entry visible, and give map input one active owner. This extends the original layout scope. A separate demo and explicit approval are still required before merge.
+
+- An inspected hex offers `Move units from [hex]` for each complete location represented in the host's existing mover rows. Each level is separate, and another board's identically named hex does not match. The button exposes those rows for explicit checkbox selection; neither inspection nor opening the group selects units. The original full list and its selected-unit summary remain available and synchronized through the same callbacks.
+- Route plotting and single-step destination entry remain visible. Additional movement choices use a disclosure which opens for configured choices. With no offered infantry movers, show a clear empty state and omit idle movement inputs, while retaining an active route's status or continuation controls.
+- Starting field picking stops route plotting. Starting route plotting disarms field picking. Escape on the map and changing inspector tabs stop the active map input. Closing the Movement section stops its direct route picker. Existing Unit Planner stop behavior preserves checked queued steps; cancelling a direct, unsubmitted route clears that draft. View or phase changes discard the old input mode.
+- The host passes locations only for its existing view-scoped mover rows. This adds linear presentation work over those rows and no new eligibility decision, map search, event, shared cache, or whole-layer rendering. The planner and existing proposal path remain authoritative.
+- Studio checks cover an empty mover list, a populated origin, selection without auto-submission, destination picking, switching both directions between picking and plotting, Escape, and inspector changes. A small component regression covers board and level distinction. No full suite is required for these presentation changes.
+
+External Studio outputs for this follow-up are `action-form-design/studio-movement` and `action-form-design/studio-map-movement` beneath the Codex gate folder. The builder registers each; superseded binaries are removed after the replacement demo is established. The latest active demo stays available for the user's review.

@@ -82,6 +82,39 @@ public sealed class MovementComponentTests : IDisposable
 
     // A13: the step's options come back as one draft; the push shows only for a crew with a Gun.
     [Fact]
+    public void MapOriginsKeepBoardsLevelsAndUnitSelectionDistinct()
+    {
+        UnitSelectionList.Toggle? toggled = null;
+        var selected = new HashSet<string>();
+        var move = context.Render<InfantryMovementAction>(parameters => parameters
+            .AddCascadingValue("PickedLocation", "bd01:A1:0")
+            .Add(item => item.Movers, [new("ground", "ground squad"), new("upper", "upper squad"), new("other", "other board squad")])
+            .Add(item => item.Locations, new Dictionary<string, string?>
+            {
+                ["ground"] = "bd01:A1:0",
+                ["upper"] = "bd01:A1:1",
+                ["other"] = "bd02:A1:0",
+            })
+            .Add(item => item.Selected, selected).Add(item => item.OnToggle, value => toggled = value));
+        var origins = move.FindAll("button").Where(button => button.TextContent.StartsWith("Move units from", StringComparison.Ordinal)).ToArray();
+        Assert.Equal(2, origins.Length);
+        origins.Single(button => button.TextContent.Contains("level 1", StringComparison.Ordinal)).Click();
+        Assert.Null(toggled);
+        Assert.Empty(selected);
+        var offered = Assert.Single(move.FindAll(".picked-move-unit"));
+        Assert.Equal("upper", offered.GetAttribute("data-unit"));
+        offered.Change(true);
+        Assert.Equal(new UnitSelectionList.Toggle("upper", true), toggled);
+        Assert.NotNull(move.Find("#move-to"));
+        Assert.False(move.Find("#move-options").HasAttribute("open"));
+
+        move.Render(parameters => parameters.Add(item => item.Movers, []));
+        Assert.NotNull(move.Find("#move-empty"));
+        Assert.Empty(move.FindAll("#move-to, .picked-move-unit"));
+    }
+
+    // A13: the step's options come back as one draft; the push shows only for a crew with a Gun.
+    [Fact]
     public void TheMoveRaisesItsDraft()
     {
         InfantryMovementAction.MoveDraft? draft = null;
