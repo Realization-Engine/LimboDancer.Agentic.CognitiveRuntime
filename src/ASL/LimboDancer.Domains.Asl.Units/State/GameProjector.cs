@@ -1503,7 +1503,7 @@ public static partial class GameProjector
                 GunShotsThisGameTurn = state.Find(fired.Gun) is EquipmentInstance { Kind: "asl:gun" } firedGun
                     ? [.. state.GunShotsThisGameTurn, new GunShotThisGameTurn(fired.Crew, firedGun.Definition?.Definition)] : state.GunShotsThisGameTurn,
             };
-            if (participation is not null)
+            if (participation is not null && Rules.ScenarioA1OrdnanceParticipationCalculator.SmcCount(shooter.Kind, participation) > 0)
             {
                 state = state with
                 {

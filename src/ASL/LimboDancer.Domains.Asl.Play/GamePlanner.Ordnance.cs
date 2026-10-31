@@ -525,7 +525,7 @@ public sealed partial class GamePlanner
         if (shot.Participation is not null && ScenarioA1MortarCalculator.MinimumRangeRefusal(
             ScenarioA1MortarCalculator.IsMortar(null, definition?.GunType), ranged.Range, definition?.RangeMinimum) is { } minimumRefusal)
         {
-            return (null, minimumRefusal);
+            return (null, $"play.ordnance-out-of-range: {minimumRefusal}");
         }
         var targetAbove = ReadLocation(state, target) is { } targetRead ? targetRead.Hex.BaseLevel + targetRead.Level.Level - (firerRead.Hex.BaseLevel + firerRead.Level.Level) : 0;
         if (ScenarioA1OrdnanceMapRules.CliffRefusal(CliffBetween(state, from, target), ranged.Range, targetAbove, mapGunType, definition?.LatwType,
