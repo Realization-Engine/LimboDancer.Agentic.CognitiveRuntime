@@ -3,7 +3,8 @@
   "title": "B25.2 Blaze SMOKE",
   "card": "b25-blaze-smoke",
   "rules": [
-    "B25.2"
+    "B25.2",
+    "A9.222"
   ],
   "contracts": [
     "b25.2-blaze-smoke"
