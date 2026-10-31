@@ -151,14 +151,23 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
         Assert.Contains((UnitCondition.Disabled, true), ScenarioA1FireFollowUps.OverrunEffectConditions(result.OverrunEffect));
         Assert.False(result.OverrunEffect.Immobilized);
         Assert.Equal(VehicleBreakdownOutcome.Malfunction,
-            Complete(attack, facts with { OverrunVersion = 1 }).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
+            Complete(attack, facts with
+            {
+                OverrunVersion = 1
+            }).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
         var circled = Supplement(("ma", Facts(VehicleBreakdownWeapon.MainArmament, 11, circled: true)),
             ("bmg", Facts(VehicleBreakdownWeapon.BowMg)), ("cmg", Facts(VehicleBreakdownWeapon.CoaxialMg)));
         Assert.Equal(VehicleBreakdownOutcome.LowAmmo, Complete(attack, circled).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
         Assert.False(JsonSerializer.SerializeToElement(circled).TryGetProperty(nameof(FireVehicleBreakdownFacts.OverrunVersion), out _));
         Assert.Equal(VehicleBreakdownOutcome.Malfunction,
-            Complete(attack, circled with { OverrunVersion = 1 }).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
-        Assert.Equal(FireResolution.Abstained, Complete(attack, circled with { OverrunVersion = 2 }).Disposition);
+            Complete(attack, circled with
+            {
+                OverrunVersion = 1
+            }).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
+        Assert.Equal(FireResolution.Abstained, Complete(attack, circled with
+        {
+            OverrunVersion = 2
+        }).Disposition);
     }
 
     [Theory]

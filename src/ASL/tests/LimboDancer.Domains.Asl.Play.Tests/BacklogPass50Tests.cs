@@ -403,7 +403,7 @@ public sealed class BacklogPass50Tests : IDisposable
         var before = Revision;
         Refused(await Repair("ma", 1), "play.repair-unit");
         Assert.Equal(before, Revision);
-        Assert.Equal("hero", Assert.Single(Planner().VehicleRepairHeroes(Current, Current.Unit("de-tank")!, "ma")).Id);
+        Assert.Equal("hero", Assert.Single(GamePlanner.VehicleRepairHeroes(Current, Current.Unit("de-tank")!, "ma")).Id);
         Committed(await Do(GameActions.Repair, Once(1), new
         {
             unitId = "de-tank",
@@ -464,11 +464,21 @@ public sealed class BacklogPass50Tests : IDisposable
         Assert.True(source.Remove("version"));
         Assert.True(GameEventReader.Read(System.Text.Encoding.UTF8.GetBytes(malformed.ToJsonString())).HasErrors);
         var withoutEvidence = events.Select(item => item.Payload is RepairAttempted
-            ? item with { Payload = repair with { VehicleArmamentEvidence = null } } : item).ToArray();
+            ? item with
+            {
+                Payload = repair with
+                {
+                    VehicleArmamentEvidence = null
+                }
+            } : item).ToArray();
         Assert.DoesNotContain("vehicleArmamentEvidence", GameEventWriter.Write(Scope, new GameRecord("legacy evidence", true, withoutEvidence)), StringComparison.Ordinal);
         var revised = Catalog with
         {
-            Identity = Catalog.Identity with { Version = "999.0.0", Hash = new string('a', 64) },
+            Identity = Catalog.Identity with
+            {
+                Version = "999.0.0",
+                Hash = new string('a', 64)
+            },
             Definitions = [.. Catalog.Definitions.Select(definition => definition.Id != "attacker-tank" ? definition : definition with
             {
                 Values = [.. definition.Values.Select(value => value.Name == "asl:bmg"
@@ -482,9 +492,15 @@ public sealed class BacklogPass50Tests : IDisposable
         Assert.False(Is(replay.Current.Unit("de-tank")!, Conditions.BmgMalfunctioned));
         Assert.Null(replay.Current.VehicleArmamentEvidence);
         var current = updated.Replay(events.Take((int)before).ToArray()).Current!;
-        Assert.DoesNotContain("bmg", updated.VehicleRepairWeapons(current, current.Unit("de-tank")!));
+        Assert.DoesNotContain("bmg", GamePlanner.VehicleRepairWeapons(current, current.Unit("de-tank")!));
         Assert.True(updated.Replay(events.Select(item => item.Payload is RepairAttempted
-            ? item with { Payload = repair with { VehicleArmamentEvidence = null } } : item).ToArray()).HasErrors);
+            ? item with
+            {
+                Payload = repair with
+                {
+                    VehicleArmamentEvidence = null
+                }
+            } : item).ToArray()).HasErrors);
 
         foreach (var forged in new[]
         {
@@ -495,7 +511,13 @@ public sealed class BacklogPass50Tests : IDisposable
         })
         {
             Assert.True(Planner().Replay(events.Select(item => item.Payload is RepairAttempted
-                ? item with { Payload = repair with { VehicleArmamentEvidence = forged } } : item).ToArray()).HasErrors);
+                ? item with
+                {
+                    Payload = repair with
+                    {
+                        VehicleArmamentEvidence = forged
+                    }
+                } : item).ToArray()).HasErrors);
         }
     }
 
@@ -529,7 +551,7 @@ public sealed class BacklogPass50Tests : IDisposable
         Assert.False(legacy.HasErrors);
         Assert.Contains("de-tank", legacy.Current!.RepairsThisPhase);
         Assert.NotNull(GamePlanner.VehicleRepairRefusal(legacy.Current, legacy.Current.Unit("de-tank")!, "ma"));
-        Assert.Empty(Planner().VehicleRepairWeapons(legacy.Current, legacy.Current.Unit("de-tank")!));
+        Assert.Empty(GamePlanner.VehicleRepairWeapons(legacy.Current, legacy.Current.Unit("de-tank")!));
     }
 
     [Fact]

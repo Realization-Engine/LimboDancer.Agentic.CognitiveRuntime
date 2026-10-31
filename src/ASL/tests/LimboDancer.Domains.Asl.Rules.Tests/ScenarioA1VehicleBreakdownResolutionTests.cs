@@ -127,7 +127,12 @@ public sealed class ScenarioA1VehicleBreakdownResolutionTests
     {
         Assert.Equal(VehicleBreakdownOutcome.Malfunction,
             ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(Circled, VehicleBreakdownUse.Overrun, 11).Outcome);
-        var shortage = Circled with { PrintedB = null, Circled = false, AmmunitionShortage = true };
+        var shortage = Circled with
+        {
+            PrintedB = null,
+            Circled = false,
+            AmmunitionShortage = true
+        };
         Assert.Equal(VehicleBreakdownOutcome.Malfunction,
             ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(shortage, VehicleBreakdownUse.Overrun, 11).Outcome);
         Assert.Equal(VehicleBreakdownOutcome.None,
@@ -244,7 +249,8 @@ public sealed class ScenarioA1VehicleBreakdownResolutionTests
         }, true, true))!, StringComparison.Ordinal);
         Assert.Contains("MA-1's SA 'sa-1'", ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(new(sa with
         {
-            VehicleId = "MA-1", Disabled = true
+            VehicleId = "MA-1",
+            Disabled = true
         }, true, true))!, StringComparison.Ordinal);
         // The original entry point still accepts its recorded Boolean HeroRider fact.
         Assert.Null(ScenarioA1VehicleBreakdownCalculator.RepairRefusal(weapon));

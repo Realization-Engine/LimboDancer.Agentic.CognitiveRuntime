@@ -891,7 +891,11 @@ public sealed class BacklogPass11Tests : IDisposable
         await Setup("russian", Vehicle("de-ht", "attacker-halftrack", L(Ne("E5")), "german"),
             Squad("r1", L("E5"), "russian"), Squad("g1", L("J9"), "german"));
         await Advance(4);
-        Committed(await Do(GameActions.Advance, Once(3, 4), new { unitIds = R1, to = L(Ne("E5")) }));
+        Committed(await Do(GameActions.Advance, Once(3, 4), new
+        {
+            unitIds = R1,
+            to = L(Ne("E5"))
+        }));
         await Advance();
         Committed(await VehicleCc(L(Ne("E5")), Once(5, 6), vehicle: "de-ht", attackers: ["r1"]));
         var state = Current;

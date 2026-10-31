@@ -73,10 +73,31 @@ public sealed class ScenarioA1SmokeHeightCalculatorTests
     public void UnsupportedTopEndpointGeometryStaysUnknown()
     {
         var facts = new SmokeLosFacts(0, 0, 2, End(2), End(0), 1, 2, true, false, false);
-        Assert.Null(ScenarioA1SmokeHeightCalculator.Intersect(facts with { Source = End(2) with { Hillock = true } }));
-        Assert.Null(ScenarioA1SmokeHeightCalculator.Intersect(facts with { Source = End(2) with { Upslope = true } }));
-        Assert.Null(ScenarioA1SmokeHeightCalculator.Intersect(facts with { Source = End(2) with { EmbankmentAdjustment = 1 } }));
-        Assert.Equal(new SmokeLosVerdict(false, false, false), ScenarioA1SmokeHeightCalculator.Intersect(facts with { Height = 0 }));
+        Assert.Null(ScenarioA1SmokeHeightCalculator.Intersect(facts with
+        {
+            Source = End(2) with
+            {
+                Hillock = true
+            }
+        }));
+        Assert.Null(ScenarioA1SmokeHeightCalculator.Intersect(facts with
+        {
+            Source = End(2) with
+            {
+                Upslope = true
+            }
+        }));
+        Assert.Null(ScenarioA1SmokeHeightCalculator.Intersect(facts with
+        {
+            Source = End(2) with
+            {
+                EmbankmentAdjustment = 1
+            }
+        }));
+        Assert.Equal(new SmokeLosVerdict(false, false, false), ScenarioA1SmokeHeightCalculator.Intersect(facts with
+        {
+            Height = 0
+        }));
     }
 
     [Fact]

@@ -434,11 +434,11 @@ public sealed partial class GamePlanner
                 ?? ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(VehicleArmamentFacts.Repair(state, vehicle, definition, weapon, hero));
     }
 
-    public IReadOnlyList<string> VehicleRepairWeapons(GameState state, UnitInstance vehicle) => VehicleRepairDefinition(state, vehicle) is { } definition
+    public static IReadOnlyList<string> VehicleRepairWeapons(GameState state, UnitInstance vehicle) => VehicleRepairDefinition(state, vehicle) is { } definition
         ? [.. VehicleArmamentFacts.Weapons(definition).Where(weapon => VehicleRepairRefusal(state, vehicle, weapon.Id) is null
             || VehicleRepairHeroes(state, vehicle, weapon.Id).Count > 0).Select(weapon => weapon.Id)] : [];
 
-    public IReadOnlyList<UnitInstance> VehicleRepairHeroes(GameState state, UnitInstance vehicle, string weapon) =>
+    public static IReadOnlyList<UnitInstance> VehicleRepairHeroes(GameState state, UnitInstance vehicle, string weapon) =>
         [.. state.Units.Where(unit => unit.Side == vehicle.Side && unit.Position is ContainedPosition { Role: ContainmentRole.Rider } rider
             && rider.Container == vehicle.Id && VehicleRepairRefusal(state, vehicle, weapon, unit.Id) is null)];
 
