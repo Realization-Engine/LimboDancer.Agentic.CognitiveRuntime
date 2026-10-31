@@ -1,0 +1,70 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "a20-prisoners",
+  "title": "Minigame: A20.54 Prisoners",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Manufactured under R0.3 as the minigame of the A20.54 claim (the Rules-first plan, section 7): prisoners under two Guards in a building, their facts entered by hand.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "A minimal card (ruling R22.3): which prisoner may attack its Guard to escape and after what NTC, what a #KIA does to a prisoner it does not eliminate, and what CVP the captor scores for a prisoner, asked on the Rule Workbench.",
+      "The Hungarian HS's national borders are the card's fact (A25.82), entered by hand in the checks that read it."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 0
+  },
+  "introduction": "A20.55's example in a building: a German squad guards a Russian HS; a broken Russian squad guards a Hungarian HS and an Italian HS.",
+  "boards": [
+    {
+      "board": "bd02",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "",
+        "basis": "none",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "a20-prisoners"
+}

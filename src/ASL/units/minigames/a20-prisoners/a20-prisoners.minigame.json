@@ -1,0 +1,223 @@
+{
+  "id": "a20-prisoners",
+  "title": "A20.54 Prisoners",
+  "card": "a20-prisoners",
+  "rules": [
+    "A20.54",
+    "A20.55",
+    "A26.222",
+    "A7.301"
+  ],
+  "contracts": [
+    "a20.55-prisoner-escape",
+    "a7.301-kia-survivor",
+    "a26.222-prisoner-cvp"
+  ],
+  "checks": [
+    {
+      "name": "With its Guard broken and no Melee, the Russian HS may attack the Guard after a NTC",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a20.55-prisoner-escape",
+      "facts": {
+        "prisonerId": "r-hs",
+        "nationality": "russian",
+        "captorNationality": "german",
+        "infantry": true,
+        "axisMinorAtHome": false,
+        "guardBroken": true,
+        "meleeInLocation": false
+      },
+      "expect": {
+        "outcome": "escape-after-ntc",
+        "reasons": [
+          "NTC"
+        ]
+      }
+    },
+    {
+      "name": "With its Guard in Good Order and a Melee in the Location, the Russian HS attacks the Guard with no NTC",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a20.55-prisoner-escape",
+      "facts": {
+        "prisonerId": "r-hs",
+        "nationality": "russian",
+        "captorNationality": "german",
+        "infantry": true,
+        "axisMinorAtHome": false,
+        "guardBroken": false,
+        "meleeInLocation": true
+      },
+      "expect": {
+        "outcome": "escape-no-ntc"
+      }
+    },
+    {
+      "name": "With its Guard in Good Order and no Melee, the Russian HS may not attack the Guard",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a20.55-prisoner-escape",
+      "facts": {
+        "prisonerId": "r-hs",
+        "nationality": "russian",
+        "captorNationality": "german",
+        "infantry": true,
+        "axisMinorAtHome": false,
+        "guardBroken": false,
+        "meleeInLocation": false
+      },
+      "expect": {
+        "outcome": "refused-guard"
+      }
+    },
+    {
+      "name": "The Italian HS does not attempt escape (A25.63)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a20.55-prisoner-escape",
+      "facts": {
+        "prisonerId": "i-hs",
+        "nationality": "italian",
+        "captorNationality": "russian",
+        "infantry": true,
+        "axisMinorAtHome": false,
+        "guardBroken": true,
+        "meleeInLocation": false
+      },
+      "expect": {
+        "outcome": "refused-nationality",
+        "reasons": [
+          "Italian"
+        ]
+      }
+    },
+    {
+      "name": "The Hungarian HS outside its own borders does not attempt escape (A25.82)",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a20.55-prisoner-escape",
+      "facts": {
+        "prisonerId": "h-hs",
+        "nationality": "hungarian",
+        "captorNationality": "russian",
+        "infantry": true,
+        "axisMinorAtHome": false,
+        "guardBroken": true,
+        "meleeInLocation": false
+      },
+      "expect": {
+        "outcome": "refused-nationality",
+        "reasons": [
+          "Axis Minor"
+        ]
+      }
+    },
+    {
+      "name": "Within its own borders against its Russian Guard, the Hungarian HS may attack after a NTC (A25.82)",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a20.55-prisoner-escape",
+      "facts": {
+        "prisonerId": "h-hs",
+        "nationality": "hungarian",
+        "captorNationality": "russian",
+        "infantry": true,
+        "axisMinorAtHome": true,
+        "guardBroken": true,
+        "meleeInLocation": false
+      },
+      "expect": {
+        "outcome": "escape-after-ntc"
+      }
+    },
+    {
+      "name": "A prisoner the #KIA does not eliminate is Casualty Reduced, not broken",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a7.301-kia-survivor",
+      "facts": {
+        "broken": false,
+        "heroic": false,
+        "berserk": false,
+        "unarmed": true
+      },
+      "expect": {
+        "outcome": "casualty-reduction"
+      }
+    },
+    {
+      "name": "The armed German squad the #KIA does not eliminate breaks",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a7.301-kia-survivor",
+      "facts": {
+        "broken": false,
+        "heroic": false,
+        "berserk": false,
+        "unarmed": false
+      },
+      "expect": {
+        "outcome": "broken"
+      }
+    },
+    {
+      "name": "The Russian HS eliminated by Russian fire scores the German 2 CVP at once",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a26.222-prisoner-cvp",
+      "facts": {
+        "vp": 1,
+        "status": "eliminated-by-own-side",
+        "ended": false
+      },
+      "expect": {
+        "outcome": "double",
+        "reasons": [
+          "2 CVP"
+        ]
+      }
+    },
+    {
+      "name": "The Russian HS eliminated by its Guard in an escape attempt scores the German 1 CVP",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a26.222-prisoner-cvp",
+      "facts": {
+        "vp": 1,
+        "status": "eliminated-otherwise",
+        "ended": false
+      },
+      "expect": {
+        "outcome": "normal",
+        "reasons": [
+          "1 CVP"
+        ]
+      }
+    },
+    {
+      "name": "The Russian HS still held at the end scores the German 2 CVP",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a26.222-prisoner-cvp",
+      "facts": {
+        "vp": 1,
+        "status": "held",
+        "ended": true
+      },
+      "expect": {
+        "outcome": "double",
+        "reasons": [
+          "2 CVP"
+        ]
+      }
+    }
+  ],
+  "units": {
+    "g-467": "german",
+    "r-hs": "russian",
+    "r-guard": "russian",
+    "h-hs": "german",
+    "i-hs": "german"
+  }
+}

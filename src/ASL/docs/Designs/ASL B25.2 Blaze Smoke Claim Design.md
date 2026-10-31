@@ -67,3 +67,9 @@ A sub-agent read the first draft against pp. 91 to 93, 143, 144, and 210 (B25.14
 ## 11. Review of the build
 
 A sub-agent read the build read-only (2026-10-29): every member answers rightly for every kind and wind, the contract throws nothing uncaught, and the documents follow the design. Six minor findings, taken: main merged before the pull request, with the W-B25.2 line numbers checked against Codex's wire-fire-3; the calculator's summary says callers pass `WindFelt`'s answer; RB25.4's wording; the weather test line; the missing test rows (a Flame in each wind, Unknown for each kind, `WindFelt` with Unknown, Rain in the contract); the inventory row's note.
+
+## 12. Codex rule review, 2026-10-30
+
+Read-only review found no blocking calculator or disclosure defect in the approved reading. B25.2 (PDF p. 143) supplies the separate wreck and terrain strengths, Flame exclusion, four/two/no-level heights, and the Fire Lane and Heavy Winds exceptions. The calculator leaves D9.4's own eligibility to its owner and combines sources through A24.2's by-value total. The contract uses public map/weather facts, rejects an impossible terrain-Blaze Fire Lane question, and does not expose a unit's private state. Unknown wind remains unevaluated. The approved indoor-wind and weather composition remain as documented above.
+
+This review accepts the Rules implementation only. Caller integration, smoke-column intersection geometry, and the Fire Lane's actual D9.4 test remain the wiring claims' work. No code or test was changed by this review.

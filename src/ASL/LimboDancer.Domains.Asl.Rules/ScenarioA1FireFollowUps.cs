@@ -800,12 +800,11 @@ public static class ScenarioA1FireFollowUps
             ? (new RecordRefusal("UNIT-STATE-040", "An Encirclement is placed by a fire record of a fire phase at a Location holding units of the Encircled side (A7.7)."), false)
             : (null, !exists);
 
-    /// <summary>A7.7 (ruling R12.11): an Encirclement stands while an active, uncaptured, non-Dummy unit it Encircles is left in its Location.</summary>
-    public static bool EncirclementStands(IEnumerable<EncircledLocationUnitFacts> unitsThere)
-    {
-        ArgumentNullException.ThrowIfNull(unitsThere);
-        return unitsThere.Any(unit => unit.Active && !unit.Dummy && !unit.Captured && unit.Encircled);
-    }
+    /// <summary>
+    /// A7.7 (ruling R12.11): an Encirclement stands while an active, uncaptured, non-Dummy unit it Encircles is left in its Location. Decided by
+    /// <see cref="ScenarioA1EncirclementCalculator.Stands"/> (the D5.34 claim, ruling RD5.16), to which it forwards with the same answer.
+    /// </summary>
+    public static bool EncirclementStands(IEnumerable<EncircledLocationUnitFacts> unitsThere) => ScenarioA1EncirclementCalculator.Stands(unitsThere);
 
     /// <summary>A Fire Lane (A9.22; ruling R12.7): placed in the MPh by its MG's fire record, for an active MG and operator, every entry with FP, one per MG.</summary>
     public static RecordRefusal? VerifyFireLane(string? phase, bool recordKnown, bool weaponActive, bool operatorActive, IEnumerable<int> entryFps, bool laneExists)

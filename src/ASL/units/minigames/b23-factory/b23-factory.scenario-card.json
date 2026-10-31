@@ -1,0 +1,82 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "b23-factory",
+  "title": "Minigame: B23.74 Factory",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Manufactured under R0.3 as the minigame of the B23.74 claim (the Rules-first plan, section 7): board 1's nine-hex stone building X3, the Tractor Works' Factory, made a Factory by this card's SSR, its facts entered by hand.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "A minimal card (ruling R22.3): what TEM and Factory Hindrance fire into the Factory meets, and what a step in it costs, asked on the Rule Workbench."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 0
+  },
+  "introduction": "B23.741's example on board 1: a German squad inside the Factory X3 fires at a Russian squad in it, another fires from outside, and a mortar fires into it.",
+  "boards": [
+    {
+      "board": "bd01",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "russian",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "",
+        "basis": "none",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    }
+  ],
+  "specialRules": [
+    {
+      "number": 1,
+      "text": "Building X3 is a Factory (B23.74).",
+      "status": "token",
+      "tokens": [
+        "factory:X3"
+      ],
+      "rules": [
+        "B23.74"
+      ],
+      "note": null
+    }
+  ],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "b23-factory"
+}

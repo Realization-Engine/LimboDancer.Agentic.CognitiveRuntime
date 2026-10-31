@@ -722,10 +722,10 @@ public static class ScenarioA1VehicleCloseCombat
                 own.Add(new FireModifier("vs-cx", -1m, "A4.51"));
             }
 
-            // D5.34 (p. 203; pass 35, task 35.13 d): a vehicle under a Stun "+1" counter adds one to its CC DR.
-            if (facts.Vehicle!.StunRecovery == true)
+            // D5.34 (p. 203; pass 35, task 35.13 d; the D5.34 claim): a vehicle under a Stun "+1" counter adds one to its CC DR.
+            if (ScenarioA1StunCalculator.Drm(StunDr.CloseCombat, facts.Vehicle!.StunRecovery == true) is > 0 and var stun)
             {
-                own.Add(new FireModifier("stun-recovery", 1m, "D5.34"));
+                own.Add(new FireModifier("stun-recovery", stun, "D5.34"));
             }
 
             // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the vehicle's Armor Leader modifies its CC DR; an Inexperienced Crew adds one.

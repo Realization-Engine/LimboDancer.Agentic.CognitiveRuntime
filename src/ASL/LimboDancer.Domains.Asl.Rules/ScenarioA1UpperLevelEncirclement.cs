@@ -26,7 +26,11 @@ public interface IUpperLevelPathReader
 /// Upper-level Encirclement (A7.72, p. 58; pass 45, task 45.1b): "Encirclement also applies to any non-heroic/non-berserk unit in an upper level
 /// building Location that cannot trace a path free of an unbroken, armed, unconcealed enemy unit/Blaze to ground level through ... Locations it
 /// could legally traverse if so inclined. This type of Encirclement is broken the instant such a path can be traced." It is a condition of the map
-/// and the units, read when asked; no counter marks it. A terrain Blaze is not built, and Scaling (B23.424) is not: both are left out.
+/// and the units, read when asked; no counter marks it. A terrain Blaze is not built, and Scaling (B23.424) is not: both are left out (the D5.34
+/// claim, ruling RD5.12: the row's "Left", until B25's terrain Blaze and B23.424 exist, when <see cref="IUpperLevelPathReader"/> gains a Blaze read).
+/// This search is A7.72's part of the A7.7 calculator, <see cref="ScenarioA1EncirclementCalculator"/>: a unit it finds Encircled suffers the same
+/// effects as one under the counter (<see cref="ScenarioA1EncirclementCalculator.MoraleDrop"/>, <see cref="ScenarioA1EncirclementCalculator.FirerDrm"/>,
+/// <see cref="ScenarioA1EncirclementCalculator.EntryMultiplier"/>), and the a7.7-encircled contract reads its verdict as the fact "upperLevelCutOff".
 /// </summary>
 public static class ScenarioA1UpperLevelEncirclement
 {
