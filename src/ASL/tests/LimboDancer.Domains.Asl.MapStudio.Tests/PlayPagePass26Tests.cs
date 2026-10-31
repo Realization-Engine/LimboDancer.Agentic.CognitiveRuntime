@@ -129,6 +129,6 @@ public sealed class PlayPagePass26Tests : IDisposable
         page.WaitForAssertion(() => Assert.DoesNotContain("aboard SPW 251/1 G1", page.Find("#play-units tr[data-unit='gs']").TextContent, StringComparison.Ordinal));
 
         // Pass 65 (ruling R65.15): the record names who got off, not "moves to" (D6.5).
-        Assert.Contains("4-6-7 squad G1 unloads from SPW 251/1 G1 (D6.5)", page.Find("#play-latest").TextContent, StringComparison.Ordinal);
+        Assert.Contains("4-6-7 squad G1 unloads from SPW 251/1 G1 (D6.5)", page.Find("#play-latest-panel").TextContent, StringComparison.Ordinal);
     }
 }

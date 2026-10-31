@@ -370,7 +370,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         Assert.False(shots[1].Facts.TryGetProperty("gunDuel", out _));
         Assert.Null(history.Current!.GunDuel);
         page.ViewAs(Perspective.AdjudicatorName);
-        var records = page.FindAll("#play-ordnance .ordnance-record").Select(item => item.TextContent).ToArray();
+        var records = page.OutcomeRecords(".ordnance-record").Select(item => item.TextContent).ToArray();
         Assert.Contains(records, record => record.Contains(", first in a Gun Duel (C2.2401)", StringComparison.Ordinal));
         Assert.Contains(records, record => record.Contains("which may fire its MA first in a Gun Duel (C2.2401)", StringComparison.Ordinal));
     }

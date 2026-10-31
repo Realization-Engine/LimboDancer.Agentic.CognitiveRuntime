@@ -1,0 +1,20 @@
+@foreach (var outcome in Outcomes.Take(shown))
+{
+    <ActionOutcomeCard @key="outcome.Key" Outcome="@outcome" Replay="@Replay" />
+}
+@if (shown < Outcomes.Count)
+{
+    <button type="button" class="action-outcome-more" @onclick="@(() => shown += 25)">Show more actions</button>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<ActionOutcomeView> Outcomes { get; set; } = [];
+    [Parameter] public Func<string, string?>? Replay { get; set; }
+    [Parameter] public string ViewKey { get; set; } = "";
+    private string? previousView;
+    private int shown = 25;
+    protected override void OnParametersSet()
+    {
+        if (previousView != ViewKey) { shown = 25; previousView = ViewKey; }
+    }
+}

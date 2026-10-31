@@ -11,7 +11,10 @@
                     <tr><th scope="row">Attackers</th><td>@attack.Side, @attack.AttackFirepower: @string.Join(", ", attack.Attackers)</td></tr>
                     <tr><th scope="row">Defenders</th><td>@attack.DefenseFirepower: @string.Join(", ", attack.Defenders)</td></tr>
                     <tr><th scope="row">Odds, Kill Number</th><td>@attack.Odds, @attack.KillNumber</td></tr>
-                    <tr><th scope="row">Dice</th><td>@attack.Dice</td></tr>
+                    <tr><th scope="row">Dice</th><td>
+                        @if (attack.DisplayDice is { } dice) { <AslDice Roll="@dice" /> }
+                        else { @attack.Dice }
+                    </td></tr>
                     <tr><th scope="row">Attack DRM</th><td>@(attack.Drm.Count == 0 ? "none" : string.Join("; ", attack.Drm))</td></tr>
                     <tr><th scope="row">Modified DR</th><td>@Number(attack.ModifiedDr)</td></tr>
                     @if (attack.SharedDrm.Count > 0)
@@ -20,7 +23,9 @@
                     }
                     @if (attack.LeaderCreation is { } created)
                     {
-                        <tr><th scope="row">Leader Creation</th><td>@created</td></tr>
+                        <tr><th scope="row">Leader Creation</th><td>@created
+                            @if (attack.LeaderDice is { } leaderDice) { <AslDice Roll="@leaderDice" /> }
+                        </td></tr>
                     }
                 </tbody>
             </table>

@@ -330,7 +330,7 @@ else
     RenderFragment reviewBlock = @<div class="play-review-body">
         @if (pending is { } proposal)
         {
-            <ProposalReviewPanel Title="@proposal.Action.Name" Accepted="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay)"
+            <ProposalReviewPanel Presentation="@ProposalOutcomeView.From(proposal.Result.Outcome)" Title="@proposal.Action.Name" Accepted="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay)"
                                  Outcome="@(ConsequencesOf(proposal).Count > 0 ? ConsequencesOutcome : OutcomeText(proposal.Result.Outcome, Withheld(proposal)))"
                                  Reasons="@([.. ReviewReasons(proposal).Where(reason => GamePlanner.ConsequenceOf(reason) is null || proposal.Result.Outcome != PlayOutcome.NeedsConfirmation)])"
                                  Consequences="@([.. ConsequencesOf(proposal).Select(item => item.Text.EndsWith('.') ? item.Text : item.Text + ".")])" ConfirmLabel="@ConfirmLabel(ConsequencesOf(proposal))"
@@ -427,20 +427,15 @@ else if (state is not null)
                 {
                     <p class="muted" id="play-records-none">No dice rolled and no actions recorded yet.</p>
                 }
-                <DiceRollHistory Rolls="@RollRows" Scripted="@(Scripted is not null)" />
-                @* Pass 31b: each record leads to its step on the Replay page, read in the view shown here. *@
-                <ActionRecordList Heading="Ordnance" ListId="play-ordnance" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(OrdnanceRecords, "ordnance")' />
-                <FireHistory Records="@FireRecords" When="@WhenOf" Replay="@ReplayFrom" />
-                <ActionRecordList Heading="Close Combat" ListId="play-close-combats" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(CloseCombatRecords, "cc")' />
-                <ActionRecordList Heading="Night and weather" ListId="play-night" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(NightRecords, "night")' />
+                @if (Records is { } actionRecords)
+                {
+                    <ActionOutcomeHistory @key="(gameId, viewAs)" Outcomes="@actionRecords.Outcomes" Replay="@ReplayFrom" ViewKey="@(gameId + ":" + viewAs)" />
+                }
+                <details><summary>Recent raw rolls</summary><DiceRollHistory Rolls="@RollRows" Scripted="@(Scripted is not null)" /></details>
                 @if (SniperMissing is { } sniperMissing)
                 {
-                    @* Pass 71 (A14.01; ruling R71.11): a game whose play started without a side's Sniper counter is never given one. *@
                     <p class="muted" id="play-sniper-missing">@sniperMissing</p>
                 }
-                <ActionRecordList Heading="Snipers" ListId="play-snipers" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(SniperRecords, "sniper")' />
-                <ActionRecordList Heading="Rally, Rout, and other actions" ListId="play-rallies" When="@WhenOf" Replay="@ReplayFrom"
-                                  Records="@([.. RallyAndRepairRecords.Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />
             </text>;
             RenderFragment unitsBlock = @<text>
                 <h3 class="@PlayHeadingClass">Units</h3>
@@ -1379,45 +1374,34 @@ else if (state is not null)
                 </ul>
             </section>
         }
-        <section id="play-panel-activity" class="play-pane play-activity" @attributes="@Pane("activity", "Activity")">
+        <section id="play-panel-activity" class="@(outcomePanelCollapsed ? "play-pane play-activity outcome-collapsed" : "play-pane play-activity")" @attributes="@Pane("activity", "Activity")">
+            <div class="play-outcome-bar">
+                <button type="button" id="play-outcome-panel-toggle" class="link" aria-expanded="@(outcomePanelCollapsed ? "false" : "true")" aria-controls="play-outcome-panel-content"
+                        @onclick="@(() => outcomePanelCollapsed = !outcomePanelCollapsed)">@(outcomePanelCollapsed ? "Show latest outcome" : "Hide latest outcome")</button>
+                @if (Records?.LatestOutcome is { } barOutcome)
+                {
+                    <span class="play-outcome-summary" title="@barOutcome.Summary">@(barOutcome.Summary.Length > 75 ? barOutcome.Summary[..72] + "..." : barOutcome.Summary)</span>
+                }
+            </div>
+            <div id="play-outcome-panel-content" hidden="@outcomePanelCollapsed">
             @* The user, 2026-10-21: a CC round reads as its table, in a box that scrolls within the strip's height; the attempt's other lines as text.
                The panel collapses to one line per item (the latest text, or each attack's outcome), and stays as the player left it. *@
-            <div id="play-latest-panel" class="@(latestCollapsed ? "play-latest-panel collapsed" : "play-latest-panel")">
-                <button type="button" id="play-latest-toggle" class="link play-latest-toggle" aria-expanded="@(latestCollapsed ? "false" : "true")" aria-controls="play-latest-panel"
-                        title="@(latestCollapsed ? "Show the latest record in full" : "Show only its outcome")" @onclick="@(() => latestCollapsed = !latestCollapsed)">@(latestCollapsed ? "▸" : "▾")</button>
-                @if (Records is { } latestRecords && latestRecords.LatestTables.Count > 0)
+            <div id="play-latest-panel" class="play-latest-panel">
+                @if (Records?.LatestOutcome is { } latestOutcome)
                 {
-                    <p id="play-latest">Latest: @latestRecords.LatestWhen:@(latestRecords.LatestOthers.Count > 0 ? $" {string.Join(" ", latestRecords.LatestOthers)}" : string.Empty)</p>
-                    <div id="play-latest-tables">
-                        @foreach (var table in latestRecords.LatestTables)
-                        {
-                            <CloseCombatResultTable Table="@table" />
-                        }
-                        @* The user, 2026-10-21: a fire reads as its line and, below it, the card the Records tab shows, in the same box that scrolls. *@
-                        @foreach (var (view, line) in latestRecords.LatestFires)
-                        {
-                            <p class="cc-result-summary fire-latest-line">@line</p>
-                            <div class="cc-result-scroll fire-latest-card" tabindex="0" role="region" aria-label="The fire attack's arithmetic and effects">
-                                <FireResolutionCard Record="@view" />
-                            </div>
-                        }
-                    </div>
+                    <ActionOutcomeCard @key="(gameId, viewAs, latestOutcome.Key)" Outcome="@latestOutcome" Expanded="@(!latestCollapsed)" ExpandedChanged="@(expanded => latestCollapsed = !expanded)" Replay="@ReplayFrom">
+                        <LiveResponse>
+                            @if (state?.Choice is { } outcomeChoice && ChoiceShown(outcomeChoice))
+                            {
+                                <p>@Said(GamePlanner.DescribeChoice(outcomeChoice))</p>
+                                <button type="button" class="action-outcome-response" @onclick="@(() => ShowActions())">Review required response</button>
+                            }
+                        </LiveResponse>
+                    </ActionOutcomeCard>
                 }
                 else
                 {
-                    <p id="play-latest">@(LatestRecord ?? "No record yet.")</p>
-                    @* The user, 2026-10-21: a fire's line stays as it reads, and its card (the Records tab's) follows in a box that scrolls. *@
-                    @if (Records?.LatestFires is { Count: > 0 } latestFires)
-                    {
-                        <div id="play-latest-tables">
-                            @foreach (var (view, _) in latestFires)
-                            {
-                                <div class="cc-result-scroll fire-latest-card" tabindex="0" role="region" aria-label="The fire attack's arithmetic and effects">
-                                    <FireResolutionCard Record="@view" />
-                                </div>
-                            }
-                        </div>
-                    }
+                    <p id="play-latest">No record yet.</p>
                 }
             </div>
             @* Pass 31c (designs D15 and D17): the records, the units, the scripted dice, and the audit open over the strip, each with its own
@@ -1433,17 +1417,10 @@ else if (state is not null)
             {
                 <div id="play-since-panel" class="play-activity-panel" role="region" aria-label="Since you last looked" hidden="@(activityTab != "since")">
                     <h3>Since you last looked</h3>
-                    <ol id="play-since">
-                        @{
-                            string? under = null;
-                        }
-                        @foreach (var line in SinceLooked)
-                        {
-                            var when = WhenOf(line.EventId);
-                            <li data-event="@line.EventId">@(when != under ? $"{when}: " : string.Empty)@DisplayText.Sentence(line.Text)</li>
-                            under = when;
-                        }
-                    </ol>
+                    @if (Records is { } sinceRecords && sinceLooked is { } afterRevision)
+                    {
+                        <ActionOutcomeHistory @key="(gameId, viewAs, afterRevision)" Outcomes="@sinceRecords.OutcomesIn(afterRevision + 1, sinceThrough)" Replay="@ReplayFrom" ViewKey="@(gameId + ":" + viewAs)" />
+                    }
                 </div>
             }
             @* With the map, from 1024px, the records, the units, and the scripted dice are the inspector's last tabs; otherwise they open over
@@ -1469,6 +1446,7 @@ else if (state is not null)
                     <AdjudicatorAuditPanel Lines="@Live.Audit.Tail(12).ToArray()" />
                 </div>
             }
+            </div>
         </section>
     </div>
 }
@@ -1480,6 +1458,8 @@ else if (state is not null)
 </HandOverScreen>
 
 @code {
+    private bool outcomePanelCollapsed;
+
     private string? scriptedInput;
     private string? scriptedProblem;
 
@@ -9478,8 +9458,7 @@ else if (state is not null)
     }
 
     /// <summary>Whether the records have nothing to list yet: no roll and no record of any kind, so the Records tab says so.</summary>
-    private bool NoRecords => RollRows.Count == 0 && OrdnanceRecords.Count == 0 && FireRecords.Count == 0 && CloseCombatRecords.Count == 0
-        && NightRecords.Count == 0 && SniperRecords.Count == 0 && RallyAndRepairRecords.Count == 0;
+    private bool NoRecords => Records is null || Records.Outcomes.Count == 0;
 
     /// <summary>A panel of the inspector with the id and name it had in the activity strip.</summary>
     private static RenderFragment Region(string id, string label, RenderFragment content) => @<div id="@id" role="region" aria-label="@label">@content</div>;

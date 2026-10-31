@@ -10,12 +10,24 @@
             so games played now are test data.
         </p>
     }
-    <ul id="play-rolls">
+    <ul id="play-rolls" class="dice-history">
         @foreach (var roll in Rolls)
         {
             <li @key="roll.Roll" data-roll="@roll.Roll">
-                @roll.Text
-                <span class="muted">(@roll.Drawn)</span>
+                @if (roll.Display is { } display)
+                {
+                    <div class="dice-history-purpose">@(roll.Purpose ?? roll.Text)</div>
+                    <AslDice Roll="@display" />
+                }
+                else
+                {
+                    <div>@roll.Text</div>
+                }
+                <div class="muted dice-history-source">@roll.Drawn</div>
+                @if (roll.Display is not null)
+                {
+                    <details class="dice-history-details"><summary>Recorded details</summary><p>@roll.Text</p></details>
+                }
             </li>
         }
     </ul>

@@ -24,7 +24,18 @@ public sealed record CloseCombatTableAttack(
     IReadOnlyList<string> SharedDrm,
     IReadOnlyList<CloseCombatTableRow> Rows,
     string Outcome,
-    string? LeaderCreation);
+    string? LeaderCreation)
+{
+    public AslRollView? DisplayDice
+    {
+        get; init;
+    }
+
+    public AslRollView? LeaderDice
+    {
+        get; init;
+    }
+}
 
 /// <summary>A defender's line: its name, its own DRM (those not shared by every defender), its Final DR, and its result.</summary>
 public sealed record CloseCombatTableRow(string Unit, IReadOnlyList<string> Drm, int FinalDr, string Result, bool Eliminated);

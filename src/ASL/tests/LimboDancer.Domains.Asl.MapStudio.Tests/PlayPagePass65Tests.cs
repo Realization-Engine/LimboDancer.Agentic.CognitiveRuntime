@@ -320,7 +320,7 @@ public sealed class PlayPagePass65Tests : IDisposable
         var unload = Last<VehicleStepped>();
         Assert.Equal(VehicleStepped.Unload, unload.Kind);
         Assert.EndsWith("-uk-bren-crew", Assert.Single(unload.Units!), StringComparison.Ordinal);
-        Assert.Contains("is Abandoned (D6.83)", page.Find("#play-latest").TextContent, StringComparison.Ordinal);
+        Assert.Contains("is Abandoned (D6.83)", page.Find("#play-latest-panel").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#vehicle-unload-crew"));
     }
 
@@ -344,8 +344,8 @@ public sealed class PlayPagePass65Tests : IDisposable
         Assert.Contains("[", beneath.TextContent, StringComparison.Ordinal);
         Commit(page, ".rout-beneath[data-unit='de-s']");
         Assert.Equal("de-s", Last<RoutStepped>().Unit);
-        Assert.Contains("routs beneath", page.Find("#play-latest").TextContent, StringComparison.Ordinal);
-        Assert.DoesNotContain("routs from", page.Find("#play-latest").TextContent, StringComparison.Ordinal);
+        Assert.Contains("routs beneath", page.Find("#play-latest-panel").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("routs from", page.Find("#play-latest-panel").TextContent, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -413,7 +413,7 @@ public sealed class PlayPagePass65Tests : IDisposable
         Commit(page, Here(".propose-vehicle-cc-capture"));
         var combat = Last<VehicleCloseCombatResolved>();
         Assert.Equal(("de-tank", "ru-s", true), (combat.Vehicle, Assert.Single(combat.Attackers), combat.Facts.GetProperty("capture").GetBoolean()));
-        var latest = page.Find("#play-latest").TextContent;
+        var latest = page.Find("#play-latest-panel").TextContent;
         Assert.Contains("to capture it: Kill Number", latest, StringComparison.Ordinal);
         Assert.Contains("= 4: it is captured (A11.5, A21.2)", latest, StringComparison.Ordinal);
     }

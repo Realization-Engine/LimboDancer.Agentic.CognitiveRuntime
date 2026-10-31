@@ -306,7 +306,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         Commit(page, "#propose-starshell");
         var state = live.History("village")!.Current!;
         Assert.Single(state.Entities, entity => entity.Kind == "asl:starshell");
-        Assert.Contains("fires a Starshell", page.Find("#play-night").TextContent, StringComparison.Ordinal);
+        Assert.Contains("fires a Starshell", page.OutcomeRecord(".night-record").TextContent, StringComparison.Ordinal);
         Assert.False(live.History("village")!.HasErrors);
     }
 }

@@ -8,6 +8,18 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 /// </summary>
 internal static class PlayViews
 {
+    /// <summary>Read disclosed history by expanding its cards, as a user does. Small page fixtures fit in the initial history page.</summary>
+    public static IReadOnlyList<AngleSharp.Dom.IElement> OutcomeRecords(this IRenderedComponent<PlayPage> page, string selector)
+    {
+        foreach (var toggle in page.FindAll("#play-history .action-outcome-toggle[aria-expanded='false']").ToArray())
+        {
+            toggle.Click();
+        }
+        return page.FindAll("#play-history .action-outcome-resolution > " + selector).ToArray();
+    }
+
+    public static AngleSharp.Dom.IElement OutcomeRecord(this IRenderedComponent<PlayPage> page, string selector) => page.OutcomeRecords(selector)[0];
+
     public static void ViewAs(this IRenderedComponent<PlayPage> page, string view)
     {
         page.Find("#play-perspective").Change(view);
@@ -19,7 +31,8 @@ internal static class PlayViews
 
     /// <summary>A record's own text, without the link to its step on the Replay page that follows it (pass 31b).</summary>
     public static string RecordText(this AngleSharp.Dom.IElement record) =>
-        string.Concat(record.ChildNodes.Where(node => node is not AngleSharp.Dom.IElement { ClassName: "record-replay" }).Select(node => node.TextContent)).Trim();
+        record.QuerySelector(".record-text")?.TextContent.Trim()
+            ?? string.Concat(record.ChildNodes.Where(node => node is not AngleSharp.Dom.IElement { ClassName: "record-replay" }).Select(node => node.TextContent)).Trim();
 
     /// <summary>Opens a game from the picker; a game opened waits behind the hand-over (pass 28c), which its first viewer confirms here.</summary>
     public static void OpenGame(this IRenderedComponent<PlayPage> page, string game)

@@ -127,8 +127,9 @@ public sealed class PlayPageStepsTests : IDisposable
         Commit(page, "#propose-rally");
         Assert.Empty(dice);
         Assert.DoesNotContain("broken", Row(page, "r1"), StringComparison.Ordinal);
-        Assert.Contains(page.FindAll("#play-rolls li"), item => item.TextContent.StartsWith("Rally DR: 1, 2", StringComparison.Ordinal));
-        var rallied = page.Find("#play-rallies .rally-record").RecordText();
+        var roll = Assert.Single(page.FindAll("#play-rolls li"), item => item.QuerySelector(".dice-history-purpose")?.TextContent == "Rally DR");
+        Assert.Equal(["Colored: 1", "White: 2"], roll.QuerySelectorAll(".asl-die-label").Select(label => label.TextContent));
+        var rallied = page.OutcomeRecord(".rally-record").RecordText();
         Assert.StartsWith($"8-0 leader R1 rallies 4-4-7 squad R1 in {DisplayText.Place(1, hexes.From)}: DR 1, 2 = 3", rallied, StringComparison.Ordinal);
         Assert.Contains("against", rallied, StringComparison.Ordinal);
         Assert.EndsWith(": rallied", rallied, StringComparison.Ordinal);
@@ -147,7 +148,7 @@ public sealed class PlayPageStepsTests : IDisposable
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Empty(dice);
-        var group = page.Find("#play-fires .fire-group").TextContent.Trim();
+        var group = page.OutcomeRecord(".fire-record .fire-group").TextContent.Trim();
         Assert.Equal($"4-4-7 squad R2 with its LMG in {DisplayText.Place(1, hexes.From)} fires at {DisplayText.Place(1, hexes.Open)}", group);
         page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("eliminated", Row(page, "gd"), StringComparison.Ordinal);
@@ -208,7 +209,7 @@ public sealed class PlayPageStepsTests : IDisposable
         Roll(6, 5);
         Commit(page, "#propose-move");
         Assert.Empty(dice);
-        Assert.Equal($"8 Residual FP fires at {DisplayText.Place(1, hexes.Building)}", page.Find("#play-fires .fire-group").TextContent.Trim());
+        Assert.Equal($"8 Residual FP fires at {DisplayText.Place(1, hexes.Building)}", page.OutcomeRecord(".fire-record .fire-group").TextContent.Trim());
         Commit(page, "#propose-pass");
         Commit(page, "#propose-end-move");
 

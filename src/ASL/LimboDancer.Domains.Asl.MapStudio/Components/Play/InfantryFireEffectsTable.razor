@@ -9,7 +9,24 @@
             <tr data-unit="@effect.UnitId">
                 <td title="@(UnitNames.IsUnnamed(Say(effect.UnitId)) ? null : effect.UnitId)">@Say(effect.UnitId)@(effect.FinalDefinitionId != effect.DefinitionId ? Say($", now {effect.FinalDefinitionId}") : "")</td>
                 <td class="fire-effect">@Say(FireText.EffectText(effect, BrokenBefore.Contains(effect.UnitId), PinnedBefore.Contains(effect.UnitId)))</td>
-                <td>@Say(string.Join("; ", effect.Checks.Select(FireText.CheckText)))</td>
+                <td>
+                    @foreach (var (check, index) in effect.Checks.Select((check, index) => (check, index)))
+                    {
+                        <div><FireCheckDisplay Check="@check" Key="@(effect.UnitId + ":" + index)" Say="@Say" /></div>
+                    }
+                    @if (effect.RandomSelectionDr is { } selection)
+                    {
+                        <AslDice Roll="@AslRollView.Values("selection", "Random Selection", [selection])" />
+                    }
+                    @if (effect.HeatOfBattle is { } battle)
+                    {
+                        <AslDice Roll="@AslRollView.Values("hob", "Heat of Battle", battle.Dice, coloredFirst: true)" />
+                    }
+                    @if (effect.SecondHeatOfBattle is { } second)
+                    {
+                        <AslDice Roll="@AslRollView.Values("hob2", "Second Heat of Battle", second.Dice, coloredFirst: true)" />
+                    }
+                </td>
             </tr>
         }
     </tbody>

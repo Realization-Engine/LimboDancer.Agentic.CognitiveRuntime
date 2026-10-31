@@ -137,7 +137,7 @@ public sealed class PlayPagePass28bTests : IDisposable
         Assert.Equal(string.Empty, page.Find("#deploy-squad").GetAttribute("value"));
 
         // Table player, pass 28b: the record says which HS took which SW. Pass 31c: each HS by its name and tag, each SW by its counter.
-        var deployed = page.Find("#play-rallies .lineage-record").RecordText();
+        var deployed = page.OutcomeRecord(".lineage-record").RecordText();
         Assert.Equal($"4-6-7 squad G1 in {DisplayText.Place(1, hexes.One)} becomes the HS 2-4-7 half-squad G1a and 2-4-7 half-squad G1b (A1.31); 2-4-7 half-squad G1a takes the LMG; 2-4-7 half-squad G1b takes the MMG, the LMG",
             deployed);
         Assert.DoesNotContain(halves[0], deployed, StringComparison.Ordinal);
@@ -160,20 +160,20 @@ public sealed class PlayPagePass28bTests : IDisposable
         page.Find("#sw-unit").Change("g2");
         Commit(page, "#propose-transfer");
         // Pass 31c: a record names each unit and says its hex; the SW reads by its counter.
-        var transfer = page.Find("#play-rallies .transfer-record").RecordText();
+        var transfer = page.OutcomeRecord(".transfer-record").RecordText();
         Assert.Equal($"4-6-7 squad G1 passes the LMG to 4-6-7 squad G2 in {DisplayText.Place(1, hexes.One)} (A4.431)", transfer);
 
         // A10.62: the transfer leaves the broken r1 ADJACENT to g1 and g2, so it comes under DM; its owner keeps it as the RPh ends (the EXC), which is
         // recorded as kept, not gained (referee, pass 28b).
         // Read in the German view: the Russian squad by its hex, said once (the user's ruling of 2026-10-22).
         var gained = $"4-4-7 squad in {DisplayText.Place(1, hexes.Two)} comes under DM (A10.62)";
-        Assert.Equal(gained, page.Find("#play-rallies .dm-record").RecordText());
+        Assert.Equal(gained, page.OutcomeRecord(".dm-record").RecordText());
         // Pass 31 (ruling R31.6): r1's owner keeps its DM, from its own view, and either side ends the RPh.
         page.ViewAs("russian");
         page.Find(".retain-dm[data-unit='r1']").Change(true);
         page.EndPhase(Commit);
         page.ViewAs("german");
-        var kept = page.Find("#play-rallies li").RecordText();
+        var kept = page.OutcomeRecord(".dm-record").RecordText();
         Assert.Equal($"4-4-7 squad in {DisplayText.Place(1, hexes.Two)} keeps DM as the RPh ends (A10.62)", kept);
         for (var phase = 0; phase < 4; phase++)
         {
@@ -181,13 +181,13 @@ public sealed class PlayPagePass28bTests : IDisposable
         }
 
         Assert.Equal("rtph", Current.Phase);
-        Assert.Contains(page.FindAll("#play-rallies .dm-record"), item => item.RecordText() == gained);
+        Assert.Contains(page.OutcomeRecords(".dm-record"), item => item.RecordText() == gained);
 
         // Each side reads the records too: none of these units is concealed.
         // The Russian view names its own squad by its tag.
         page.ViewAs("russian");
-        Assert.Single(page.FindAll("#play-rallies .transfer-record"));
-        Assert.Contains(page.FindAll("#play-rallies .dm-record"), item => item.RecordText() == $"4-4-7 squad R1 in {DisplayText.Place(1, hexes.Two)} comes under DM (A10.62)");
+        Assert.Single(page.OutcomeRecords(".transfer-record"));
+        Assert.Contains(page.OutcomeRecords(".dm-record"), item => item.RecordText() == $"4-4-7 squad R1 in {DisplayText.Place(1, hexes.Two)} comes under DM (A10.62)");
     }
 
     // Backlog section 23 (A10.5): a broken unit ADJACENT to an enemy tank must rout, and with no captor that could take it (A20.21) it is eliminated
@@ -214,13 +214,13 @@ public sealed class PlayPagePass28bTests : IDisposable
         // view reads r1's obligation and ends the phase without routing it.
         page.ViewAs("russian");
         Assert.Contains("must rout", page.Find(".rout-obligation[data-unit='r1']").TextContent, StringComparison.Ordinal);
-        Assert.Empty(page.FindAll("#play-rallies .failure-to-rout-record"));
+        Assert.Empty(page.OutcomeRecords(".failure-to-rout-record"));
         page.EndPhase(Commit);
         Assert.Equal(InstanceStatus.Eliminated, Current.Unit("r1")!.Status);
-        var failure = page.Find("#play-rallies .failure-to-rout-record").RecordText();
+        var failure = page.OutcomeRecord(".failure-to-rout-record").RecordText();
         Assert.Equal($"4-4-7 squad R1 in {DisplayText.Place(1, hexes.Two)} is eliminated for Failure to Rout as the RtPh ends (A10.5)", failure);
         page.ViewAs("russian");
-        Assert.Single(page.FindAll("#play-rallies .failure-to-rout-record"));
+        Assert.Single(page.OutcomeRecords(".failure-to-rout-record"));
     }
 
     // Section 15.3: another view clears the Rout, SW, and Rally choices, so a panel never shows one unit and proposes another.

@@ -757,7 +757,7 @@ public sealed partial class PlayRecords
     /// </summary>
     private string RollText(DiceRolled roll)
     {
-        var check = events.Select(item => item.Payload).OfType<TaskCheck>().FirstOrDefault(item => item.Roll == roll.Roll);
+        var check = events.Where(item => item.IsVisibleTo(viewer)).Select(item => item.Payload).OfType<TaskCheck>().FirstOrDefault(item => item.Roll == roll.Roll);
         if (check is null)
         {
             return $"{DisplayText.RollPurpose(roll.Purpose)}: {string.Join(", ", roll.Values)}";
@@ -770,7 +770,12 @@ public sealed partial class PlayRecords
 
     private IReadOnlyList<RollRow> RowsOf(IEnumerable<(DiceRolled Roll, IReadOnlyList<string>? Subjects)> rolls, Func<DiceRolled, string> RollText) => [.. rolls.Select(item => new RollRow(item.Roll.Roll,
         SayRoll(item.Roll.Roll, RollText(item.Roll) + (item.Subjects is null ? "" : $" for {string.Join(", ", item.Subjects)}")),
-        $"{item.Roll.Count} d{item.Roll.Sides}, drawn by the {item.Roll.Source} for {item.Roll.Actor}"))];
+        $"{item.Roll.Count} d{item.Roll.Sides}, drawn by the {item.Roll.Source} for {item.Roll.Actor}")
+        {
+            Purpose = DisplayText.RollPurpose(item.Roll.Purpose),
+            Display = AslRollView.Recorded(item.Roll.Roll, item.Roll.Purpose, item.Roll.Values, item.Roll.Sides,
+                item.Subjects?.Select(subject => SayRoll(item.Roll.Roll, subject)).ToArray())
+        })];
 
     /// <summary>
     /// The ordnance records the viewer may see, latest first, in words: the Basic and Modified TH# (C3.3, C4), the To Hit DR with its colored die
@@ -1672,7 +1677,11 @@ public sealed partial class PlayRecords
                 outcome.Length == 0 ? "no effect" : outcome,
                 attack.LeaderCreation is { } created
                     ? Said($"Leader Creation dr {created.Dr}{ModifierText(created.Drm)} = {created.FinalDr}: {(created.LeaderDefinitionId is { } leader ? $"creates {leader}" : "no leader")} (A18.12)")
-                    : null);
+                    : null)
+            {
+                DisplayDice = AslRollView.Values(eventId + ":attack", "", attack.Dice, coloredFirst: true),
+                LeaderDice = attack.LeaderCreation is { } creation ? AslRollView.Values(eventId + ":leader", "", [creation.Dr]) : null,
+            };
         }).ToArray();
         var hand = combat.Facts.TryGetProperty("handToHand", out var handToHand) && handToHand.ValueKind == JsonValueKind.True ? ", Hand-to-Hand (red Kill Numbers)" : "";
         return new CloseCombatTable(Said(combat.Location.ToString()), $"{combat.Round} round{hand}", attacks, [.. notes.Select(Said)]);

@@ -11,12 +11,23 @@
         Total @FireText.Number(Arithmetic.TotalFirepower) FP: the @(Arithmetic.UnshiftedColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no") column@(Arithmetic.ColumnShift != 0 || Arithmetic.Cowered ? $", shifted {Arithmetic.ColumnShift}{(Arithmetic.Cowered ? " by Cowering (A7.9)" : "")} to the {Arithmetic.ColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no"} column" : "")
     </li>
     <li class="fire-dr">
-        IFT DR @string.Join(", ", Arithmetic.Dice) = @Arithmetic.OriginalDr@Say(FireText.ModifierText(Arithmetic.Drm)):
+        @if (ShowDice)
+        {
+            <AslDice Roll="@AslRollView.Values("ift", "IFT DR", Arithmetic.Dice, coloredFirst: true)" /><text> = </text>
+        }
+        else
+        {
+            <text>Original DR </text>
+        }
+        @Arithmetic.OriginalDr@Say(FireText.ModifierText(Arithmetic.Drm)):
         Final DR <span class="fire-final-dr">@Arithmetic.FinalDr</span>, result <strong class="fire-result">@FireText.ResultText(Arithmetic.Result)</strong>
     </li>
 </ul>
 
 @code {
+    [Parameter]
+    public bool ShowDice { get; set; } = true;
+
     [Parameter, EditorRequired]
     public FireArithmetic Arithmetic { get; set; } = default!;
 
