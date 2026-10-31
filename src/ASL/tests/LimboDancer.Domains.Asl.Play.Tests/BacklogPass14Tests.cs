@@ -453,6 +453,9 @@ public sealed class BacklogPass14Tests : IDisposable
         Assert.Equal(InstanceStatus.Eliminated, Current.Unit(guard)!.Status);
         var rearmed = Current.Units.Single(unit => unit.Status == InstanceStatus.Active && unit.Definition?.Definition == "defender-conscript-half-squad");
         Assert.False(Is(rearmed, Conditions.Captured) || Is(rearmed, Conditions.Unarmed));
+        // A20.551, A25.01 (the review of PR 80, item 29): Rules says the rearming Replacement, a lower quality unit, loses Assault Engineer status.
+        Assert.True(Since(0).Select(item => item.Payload).OfType<LineageRecorded>()
+            .Last(lineage => lineage.Produced.Any(made => made.Definition == "defender-conscript-half-squad")).AssaultEngineerLoss);
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 

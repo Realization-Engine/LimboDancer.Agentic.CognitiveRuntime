@@ -54,8 +54,6 @@ public sealed class ScenarioA1StealthCalculatorTests
 
     private static readonly string[] HeroExampleNames = ["stealthy", "vehicle", "bu-or-stunned-afv"];
 
-    private static readonly string[] LaxHeroNotes = ["-1 Stealthy", "+1 Lax"];
-
     private static readonly string[] LaxNotes = ["+1 Lax"];
 
     private static StealthFacts Unit(string kind, string? nationality = "german", string? @class = null, bool heroic = false, bool? inexperienced = false,
@@ -356,18 +354,21 @@ public sealed class ScenarioA1StealthCalculatorTests
         public bool Illuminated(int location) => false;
     }
 
-    private static ConcealmentCandidateFacts Candidate(string id, string kind, int leadership = 0) =>
+    private static ConcealmentCandidateFacts Candidate(string id, string kind, int leadership = 0, StealthStatus? stealth = StealthStatus.Normal) =>
         new(id, kind, true, true, false, true, false, true, kind == "asl:squad", kind == "asl:half-squad", 0, false, false, false, false, false, false,
-            () => false, () => false, () => "open-ground", () => false, () => leadership);
+            () => false, () => false, () => "open-ground", () => false, () => leadership)
+        {
+            Stealth = () => stealth
+        };
 
-    private static int? GainDrm(ConcealmentCandidateFacts unit) => ScenarioA1FireFollowUps.ConcealmentGains([unit],
+    private static int? GainDrm(ConcealmentCandidateFacts unit) => ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit],
         [new WatchingEnemyFacts(0, true, new SightSeerFacts(true, "russian", false, false, false, true, true, false, false, 1))], false, 7, new GainMap())
-        .Single().Drm;
+        .Gains!.Single().Drm;
 
     [Fact]
     public void UnknownStealthRefusesOnlyAConcealmentDrThatIsNeeded()
     {
-        var unit = Candidate("u", "asl:squad");
+        var unit = Candidate("u", "asl:squad", stealth: null);
         WatchingEnemyFacts[] watchers = [new(0, true, new SightSeerFacts(true, "russian", false, false, false, true, true, false, false, 1))];
         var day = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit], watchers, false, 7, new GainMap());
         Assert.Null(day.Gains);
@@ -378,13 +379,33 @@ public sealed class ScenarioA1StealthCalculatorTests
         var ineligible = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit with { Broken = true }], watchers, false, 7, new GainMap());
         Assert.Null(ineligible.Reason);
         Assert.Empty(ineligible.Gains!);
-        Assert.Single(ScenarioA1FireFollowUps.ConcealmentGains([unit], watchers, false, 7, new GainMap()));
-        var known = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit with { Stealth = StealthStatus.Lax }], watchers, false, 7, new GainMap());
+        var known = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit with { Stealth = () => StealthStatus.Lax }], watchers, false, 7, new GainMap());
         Assert.Null(known.Reason);
         Assert.Equal(GainDrm(unit with
         {
-            Stealth = StealthStatus.Lax
+            Stealth = () => StealthStatus.Lax
         }), Assert.Single(known.Gains!).Drm);
+    }
+
+    [Fact]
+    public void AConcealmentCandidateReadsItsStealthOnlyWhenItNeedsADr()
+    {
+        // The review of PR 80 (item 30): the status is read when asked, so a unit that gains "?" with no dr, or none, never reads it.
+        var reads = 0;
+        var unit = Candidate("u", "asl:squad") with
+        {
+            Stealth = () =>
+            {
+                reads++;
+                return StealthStatus.Normal;
+            }
+        };
+        WatchingEnemyFacts[] watchers = [new(0, true, new SightSeerFacts(true, "russian", false, false, false, true, true, false, false, 1))];
+        Assert.Null(Assert.Single(ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit], watchers, true, 7, new GainMap()).Gains!).Drm);
+        Assert.Empty(ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit with { Broken = true }], watchers, false, 7, new GainMap()).Gains!);
+        Assert.Equal(0, reads);
+        Assert.NotNull(Assert.Single(ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit], watchers, false, 7, new GainMap()).Gains!).Drm);
+        Assert.Equal(1, reads);
     }
 
     [Fact]
@@ -399,79 +420,51 @@ public sealed class ScenarioA1StealthCalculatorTests
     public void TheHeroExampleOfA12122TakesTheStatus()
     {
         // A12.122's EX (p. 77): "6 [dr] +1 [US#] -1 [Leadership] -1 [Stealthy] = 5".
-        var hero = Candidate("gh", "asl:hero", leadership: -1) with
-        {
-            Stealth = Status(Unit("asl:hero"))
-        };
+        var hero = Candidate("gh", "asl:hero", leadership: -1, stealth: Status(Unit("asl:hero")));
         Assert.Equal(-1, GainDrm(hero));
         Assert.Equal(5, 6 + GainDrm(hero));
-        Assert.Equal(-1, GainDrm(Candidate("gh", "asl:hero", leadership: -1)));
     }
 
     [Fact]
-    public void TheConcealmentCandidateKeepsItsAnswerUntilItsStealthIsSet()
+    public void TheConcealmentDrTakesTheStatusAlone()
     {
-        // Ruling RA11S.7: null reads the old Lax and Stealthy, on every input; set, the status alone (a Lax hero is +1, not 0).
+        // Ruling RA11S.7; the review of PR 80 (item 28): the status alone gives +1 Lax or -1 Stealthy, whatever the kind (a Lax hero is +1, not 0).
         foreach (var kind in new[] { "asl:squad", "asl:hero", "asl:leader", "asl:half-squad" })
         {
-            foreach (var heroic in new[] { false, true })
+            var rest = GainDrm(Candidate("u", kind))!.Value;
+            foreach (var status in Enum.GetValues<StealthStatus>())
             {
-                foreach (var inexperienced in new[] { false, true })
-                {
-                    var unit = Candidate("u", kind) with
-                    {
-                        Heroic = heroic,
-                        Inexperienced = () => inexperienced
-                    };
-                    // The dr's other terms, read with a Normal status.
-                    var rest = GainDrm(unit with
-                    {
-                        Stealth = StealthStatus.Normal
-                    })!.Value;
-                    var old = rest + (inexperienced ? 1 : 0) - (kind == "asl:hero" || (kind == "asl:leader" && heroic) ? 1 : 0);
-                    Assert.Equal(old, GainDrm(unit));
-                    foreach (var status in Enum.GetValues<StealthStatus>())
-                    {
-                        Assert.Equal(rest + ScenarioA1StealthCalculator.Drm(status), GainDrm(unit with
-                        {
-                            Stealth = status
-                        }));
-                    }
-                }
+                Assert.Equal(rest + ScenarioA1StealthCalculator.Drm(status), GainDrm(Candidate("u", kind, stealth: status)));
             }
         }
     }
 
-    private static SearcherFacts Searcher(bool hero, bool leader, bool heroic, bool lax) =>
-        new("s", true, true, true, true, !hero && !leader, leader, false, false, false, false, false, hero, heroic, hero || leader ? 0 : 1, leader ? 0 : null, false, lax, false);
+    private static SearcherFacts Searcher(bool leader, StealthStatus stealth) =>
+        new("s", true, true, true, true, !leader, leader, false, false, false, false, false, leader ? 0 : 1, leader ? 0 : null, false, false)
+        {
+            Stealth = stealth
+        };
 
     [Fact]
-    public void TheSearchAndCasualtyDrsKeepTheirAnswersUntilStealthIsSet()
+    public void TheSearchAndCasualtyDrsCountTheStatus()
     {
-        // Ruling RA11S.7: with Stealth null, the old counts (a copy below); set, the status: a Lax hero gives +1 and no -1.
-        foreach (var flags in Enumerable.Range(0, 16))
+        // Ruling RA11S.7; the review of PR 80 (item 28): each searcher or defender counts by its status alone: a Lax hero gives +1 and no -1.
+        foreach (var leader in new[] { false, true })
         {
-            var (hero, leader, heroic, lax) = ((flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0);
-            var searcher = Searcher(hero, leader, heroic, lax);
-            var defender = new MopUpDefenderFacts(hero, leader, heroic, hero || leader ? 0 : 1, leader ? 0 : null, false, lax);
-            var stealthy = hero || (leader && heroic) ? 1 : 0;
-            var expected = (lax ? 1 : 0) - stealthy;
-            Assert.Equal(expected, ScenarioA1Searching.Drm([searcher]).Drm);
-            Assert.Equal(expected, ScenarioA1MoppingUp.CasualtyDrm([defender]).Drm);
             foreach (var status in Enum.GetValues<StealthStatus>())
             {
-                Assert.Equal(ScenarioA1StealthCalculator.Drm(status), ScenarioA1Searching.Drm([searcher with { Stealth = status }]).Drm);
-                Assert.Equal(ScenarioA1StealthCalculator.Drm(status), ScenarioA1MoppingUp.CasualtyDrm([defender with { Stealth = status }]).Drm);
+                Assert.Equal(ScenarioA1StealthCalculator.Drm(status), ScenarioA1Searching.Drm([Searcher(leader, status)]).Drm);
+                Assert.Equal(ScenarioA1StealthCalculator.Drm(status), ScenarioA1MoppingUp.CasualtyDrm([new MopUpDefenderFacts(leader, leader ? 0 : 1, leader ? 0 : null, false)
+                {
+                    Stealth = status
+                }]).Drm);
             }
         }
 
-        var laxHero = Searcher(true, false, false, true);
-        Assert.Equal(LaxHeroNotes, ScenarioA1Searching.Drm([laxHero]).Notes);
-        Assert.Equal(LaxNotes, ScenarioA1Searching.Drm([laxHero with { Stealth = StealthStatus.Lax }]).Notes);
+        Assert.Equal(LaxNotes, ScenarioA1Searching.Drm([Searcher(false, StealthStatus.Lax)]).Notes);
         StealthFacts[] finns = [Unit("asl:squad", "finnish", "elite"), Unit("asl:squad", "finnish", "1st-line")];
         var statuses = finns.Select(unit => ScenarioA1StealthCalculator.Status(unit, StealthPurpose.Search)!.Value).ToArray();
-        Assert.Equal(-2, ScenarioA1Searching.Drm([Searcher(false, false, false, false) with { Stealth = statuses[0] },
-            Searcher(false, false, false, false) with { Stealth = statuses[1] }]).Drm + 1);
+        Assert.Equal(-2, ScenarioA1Searching.Drm([Searcher(false, statuses[0]), Searcher(false, statuses[1])]).Drm + 1);
     }
 
     private static readonly string[] OwnedPurposes = ["concealment", "search", "search-casualty"];

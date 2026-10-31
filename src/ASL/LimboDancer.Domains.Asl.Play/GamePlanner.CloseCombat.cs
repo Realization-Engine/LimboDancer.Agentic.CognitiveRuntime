@@ -51,6 +51,21 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The review of PR 80 (item 27): a Search or a Mop Up asks for the Stealth facts of every active unit of the state, both sides, before any dice and
+    /// before it reads what a "?" hides. Its refusal names no unit and is the same whatever is searched, so it tells the searcher nothing about the hexes
+    /// searched, and the dice are never drawn twice. Rules counts; this gathers.
+    /// </summary>
+    private string? StealthStateRefusal(GameState state) => ScenarioA1StealthCalculator.FactsRefusal(state.Units
+        .Where(unit => unit.Status == InstanceStatus.Active).Select(unit => StealthStatusOf(state, unit, StealthPurpose.Search)));
+
+    /// <summary>
+    /// A unit's status where <see cref="StealthStateRefusal"/> has already passed: null cannot arise, and is refused as a guard that writes nothing (the
+    /// review of PR 80, item 27).
+    /// </summary>
+    private StealthStatus KnownStealth(GameState state, UnitInstance unit, StealthPurpose purpose) =>
+        StealthStatusOf(state, unit, purpose) ?? throw new GameBuildRefusedException(ScenarioA1StealthCalculator.FactsRefusal([null])!);
+
+    /// <summary>
     /// An advance (A3.7, A4.7): Infantry of the phasing side in one Location enter one ADJACENT Location at the same level, even
     /// one holding Known enemy units, in reviewed terrain (ruling R29.2).
     /// </summary>
@@ -1058,7 +1073,7 @@ public sealed partial class GamePlanner
                 yield return ("lineage", new LineageRecorded(LineageAction.Replaced, [unit.Id],
                     [new NewInstance($"{attemptId}-{unit.Id}", conscript.Kind, conscript.Id, unit.Side, unit.Position, null, armed)])
                 {
-                    AssaultEngineerLoss = true,
+                    AssaultEngineerLoss = ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByRearming(),
                 });
                 continue;
             }

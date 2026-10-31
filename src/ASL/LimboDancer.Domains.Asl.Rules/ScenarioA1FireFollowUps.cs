@@ -41,18 +41,12 @@ public static class ScenarioA1FireFollowUps
     /// Illuminated, E1.101), nor beyond 16 out of Concealment Terrain; with the Final Concealment dr modifier it needs (+US#, + the best Good Order
     /// leader's Leadership in the Location, - the Location's TEM, -2 for SMOKE in the hex; A12.122, A6.7), or null when it gains "?" with no dr (at
     /// night, E1.32). A search through the fact reader (the design's D4). Pass 70 (ruling R70.22): a vehicle and an Emplaced Gun's crew gain by their own
-    /// rows (Cases J and K, never in an enemy's LOS), with what shares their "?"; Lax and Stealthy and a 5/8" US# in the dr.
+    /// rows (Cases J and K, never in an enemy's LOS), with what shares their "?"; a 5/8" US# in the dr. A11.17 and A11.18 (the A11.17 claim, ruling
+    /// RA11S.7): each candidate's Stealth status in the dr, read only when it needs one; an unknown status refuses the gains then, and only then. The
+    /// hero-only reading of the old entry point is removed (the review of PR 80, item 28).
     /// </summary>
-    public static List<ConcealmentGain> ConcealmentGains(IEnumerable<ConcealmentCandidateFacts> units, IEnumerable<WatchingEnemyFacts> watchers, bool night, int? month,
-        IConcealmentFactReader map) => ConcealmentGains(units, watchers, night, month, map, requireStealth: false).Gains!;
-
-    /// <summary>A12.122 and A11.17: current-reading gains, refusing an unknown Stealth status only when a candidate actually needs a dr.</summary>
     public static (List<ConcealmentGain>? Gains, string? Reason) ConcealmentGainsWithStealth(IEnumerable<ConcealmentCandidateFacts> units,
-        IEnumerable<WatchingEnemyFacts> watchers, bool night, int? month, IConcealmentFactReader map) =>
-        ConcealmentGains(units, watchers, night, month, map, requireStealth: true);
-
-    private static (List<ConcealmentGain>? Gains, string? Reason) ConcealmentGains(IEnumerable<ConcealmentCandidateFacts> units,
-        IEnumerable<WatchingEnemyFacts> watchers, bool night, int? month, IConcealmentFactReader map, bool requireStealth)
+        IEnumerable<WatchingEnemyFacts> watchers, bool night, int? month, IConcealmentFactReader map)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(watchers);
@@ -118,9 +112,9 @@ public static class ScenarioA1FireFollowUps
                 continue;
             }
 
-            if (requireStealth && ScenarioA1StealthCalculator.FactsRefusal([unit.Stealth]) is { } refusal)
+            if (unit.Stealth() is not { } status)
             {
-                return (null, refusal);
+                return (null, ScenarioA1StealthCalculator.FactsRefusal([null]));
             }
 
             // A12.122: +US# of the unit or its possessed Gun (A1.6: 4 for a 5/8" counter, 5 when large), + the best Good Order leader's Leadership in the
@@ -130,8 +124,8 @@ public static class ScenarioA1FireFollowUps
             var tem = terrain is not null && ScenarioA1FireReference.Tem.TryGetValue(terrain, out var value) ? value : 0;
             // A6.7 (referee, pass 12): only SMOKE in the Location hinders its own units; brush, grain, orchard, and marsh do not.
             var smoke = unit.SmokeInHex() ? 2 : 0;
-            // The A11.17 claim (ruling RA11S.7): a candidate's Stealth status, when given, in place of its old Lax and Stealthy.
-            var stealth = unit.Stealth is { } status ? ScenarioA1StealthCalculator.Drm(status) : (unit.Lax ? 1 : 0) - (unit.Stealthy ? 1 : 0);
+            // The A11.17 claim (ruling RA11S.7): +1 Lax, -1 Stealthy, by the candidate's Stealth status.
+            var stealth = ScenarioA1StealthCalculator.Drm(status);
             gains.Add(new ConcealmentGain(unit.Id, size + leadership + stealth - tem - smoke) { With = with });
         }
 

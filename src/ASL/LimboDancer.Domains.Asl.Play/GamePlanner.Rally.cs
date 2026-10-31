@@ -291,7 +291,7 @@ public sealed partial class GamePlanner
             yield return ("lineage", new LineageRecorded(replaced ? LineageAction.Replaced : LineageAction.Reduced, [unit.Id],
                 [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)])
             {
-                AssaultEngineerLoss = effect.ReplacedByCommissar,
+                AssaultEngineerLoss = ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByRally(effect.ReplacedByCommissar, replaced),
             });
             yield break;
         }

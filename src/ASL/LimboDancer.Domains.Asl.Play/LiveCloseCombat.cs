@@ -59,9 +59,10 @@ public static class LiveCloseCombat
                 engineers.Add(unit.Id);
             }
 
-            if (definition?.Nationality == "ethiopian")
+            // Rules chooses the national case from the nationality (the review of PR 80, item 29).
+            if (ScenarioA1CloseCombatValueCalculator.NationalCcvOf(definition?.Nationality) is var nationalCase and not NationalCcv.None)
             {
-                national.Add(unit.Id, NationalCcv.Ethiopian);
+                national.Add(unit.Id, nationalCase);
             }
         }
 

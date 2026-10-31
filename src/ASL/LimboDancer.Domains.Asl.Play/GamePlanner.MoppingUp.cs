@@ -110,6 +110,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, ScenarioA1MoppingUp.GuardText(guardId, side!, building!));
         }
 
+        // The review of PR 80 (item 27): every active unit's Stealth facts are known before the declaration, so no refusal of the Mopping Up depends on
+        // what a "?" hides.
+        if (StealthStateRefusal(state) is { } stealthStateBar)
+        {
+            return Refused(scope, label, expected, stealthStateBar);
+        }
+
         // A12.153, A12.154 (the referee's finding at the reviews): what the Mopping Up finds under the "?" is the DEFENDER's until it is made, so the plan is
         // always rolled and its line says only what the declarer knows; the hidden units placed, the Dummies removed, the building secured or not, the
         // surrenders, and the Casualty dr are decided and written at the commit, and the records say them.
@@ -170,18 +177,13 @@ public sealed partial class GamePlanner
             }
 
             // A12.154: -1 per Stealthy unit, -1 per HS-equivalent beyond one, the best leader's leadership unless alone, +1 per Lax unit; the catalog and the
-            // Inexperience are read here, and Rules counts (pass 32.g). Pass 70's fixes: the record keeps the drm for the lines of the views that may know it.
-            MopUpDefenderFacts[] casualtyFacts = [.. defenders.Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:hero", unit.Kind == "asl:leader", Is(unit, Conditions.Heroic),
-                ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)), DefinitionOf(unit)?.Leadership, Is(unit, Conditions.Wounded),
-                Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True)
+            // Stealth status are read here, and Rules counts (pass 32.g). Pass 70's fixes: the record keeps the drm for the lines of the views that may know it.
+            // The status is known: the state's check before the declaration (the review of PR 80, item 27); KnownStealth's refusal is only a guard.
+            MopUpDefenderFacts[] casualtyFacts = [.. defenders.Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:leader",
+                ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)), DefinitionOf(unit)?.Leadership, Is(unit, Conditions.Wounded))
             {
-                Stealth = StealthStatusOf(state, unit, StealthPurpose.SearchCasualty),
+                Stealth = KnownStealth(state, unit, StealthPurpose.SearchCasualty),
             })];
-            if (ScenarioA1StealthCalculator.FactsRefusal(casualtyFacts.Select(fact => fact.Stealth)) is { } casualtyBar)
-            {
-                throw new GameBuildRefusedException(casualtyBar);
-            }
-
             var (drm, _) = ScenarioA1MoppingUp.CasualtyDrm(casualtyFacts);
             Push("building-mopped-up", new BuildingMoppedUp(building!, side!, ids, null) { CasualtyDrm = drm });
             var drawn = draw(new RollRequest(1, 6));

@@ -241,20 +241,16 @@ public sealed record VehicleCloseCombatResolution(
 public static class ScenarioA1VehicleCloseCombat
 {
     /// <summary>
-    /// The attack as every recorded game has read it: <see cref="Resolve(VehicleCloseCombatFacts, ScenarioA1CloseCombatReference, CcvContext?)"/> with no
-    /// context, the same answer. It keeps its answer where A11.5 differs (the A11.5 claim's design, ruling RA11C.6; W-A11.5): no Assault Engineer +1, no
-    /// -1 for a concealed vehicle or an outnumbered Guard, no national CCV, an Unarmed or swimming attacker admitted, a combining leader's DRM for a berserk
-    /// attacker, a Final DR equal to a CCV of 0 or less a burning wreck, and a defender's CCV floored at 1 with no DRM for the excess.
-    /// </summary>
-    public static VehicleCloseCombatResolution Resolve(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference) => Resolve(facts, reference, null);
-
-    /// <summary>
     /// A11.5, A11.51, A11.62 (the A11.5 claim's design, ruling RA11C.5): the attack with the facts no recorded record holds. With a context, even an empty
     /// one, the rule's reading through <see cref="ScenarioA1CloseCombatValueCalculator"/>: <see cref="ScenarioA1CloseCombatValueCalculator.AttackerRefusal"/>
-    /// refuses an Unarmed or swimming attacker after <see cref="Precheck"/>; the CCV takes the Assault Engineer, the concealed vehicle, the outnumbered Guard,
-    /// and the national case; <see cref="ScenarioA1CloseCombatValueCalculator.LeaderDrmApplies"/> drops a combining leader's DRM for a berserk attacker;
-    /// <see cref="ScenarioA1CloseCombatValueCalculator.VehicleResult"/> gives the result; and a vehicle's attack takes the defenders' Assault Engineer +1 and
-    /// <see cref="ScenarioA1CloseCombatValueCalculator.DefenseCcvDrm"/>. With null, the recorded reading.
+    /// refuses an Unarmed or swimming attacker after <see cref="Precheck(VehicleCloseCombatFacts, ScenarioA1CloseCombatReference)"/>; the CCV takes the
+    /// Assault Engineer, the concealed vehicle, the outnumbered Guard, and the national case; <see cref="ScenarioA1CloseCombatValueCalculator.LeaderDrmApplies"/>
+    /// drops a combining leader's DRM for a berserk attacker; <see cref="ScenarioA1CloseCombatValueCalculator.VehicleResult"/> gives the result; and a
+    /// vehicle's attack takes the defenders' Assault Engineer +1 and <see cref="ScenarioA1CloseCombatValueCalculator.DefenseCcvDrm"/>. With null, the
+    /// recorded reading every record without a <c>ccvVersion</c> keeps (ruling RA11C.6; rule 6): no Assault Engineer +1, no -1 for a concealed vehicle or
+    /// an outnumbered Guard, no national CCV, an Unarmed or swimming attacker admitted, a combining leader's DRM for a berserk attacker, a Final DR equal
+    /// to a CCV of 0 or less a burning wreck, and a defender's CCV floored at 1 with no DRM for the excess. The no-context overload that forwarded to the
+    /// null reading is removed (the review of PR 80, item 28): it did not give the rule's answer on every input, so a caller names the reading it wants.
     /// </summary>
     public static VehicleCloseCombatResolution Resolve(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, CcvContext? context)
     {

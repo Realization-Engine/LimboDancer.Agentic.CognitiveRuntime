@@ -1512,8 +1512,10 @@ public sealed class BacklogPass70Tests : IDisposable
     }
 
     [Fact]
-    public async Task AnUnknownSearchedDefenderRefusesAtomicallyAfterThePublicProposal()
+    public async Task AnUnknownSearchedDefenderRefusesTheSearchBeforeItsProposalWithAPublicReason()
     {
+        // The review of PR 80 (item 27): the Stealth facts of every active unit are checked before any searcher or "?" is read, so the refusal comes at the
+        // proposal, draws no dice, and names no unit.
         var leader = Unit("rl", "asl:leader", "defender-leader", "E7", "russian", Conditions.Concealed);
         ((Dictionary<string, bool>)leader["conditions"]).Remove(Conditions.Broken);
         await SetupAt(2, "german", Squad("g1", "E5", "german"),
@@ -1522,7 +1524,7 @@ public sealed class BacklogPass70Tests : IDisposable
         await MoveAndClose(GermanSquad, "E6");
         var before = Revision;
         var original = GameEventWriter.Write(Scope, store.Read(Scope)!);
-        var play = Play(Once(1));
+        var play = Play(NoRoll());
         var arguments = JsonSerializer.SerializeToElement(new
         {
             gameId = Scope.Game,
@@ -1532,18 +1534,20 @@ public sealed class BacklogPass70Tests : IDisposable
             hexes = new[] { L("E7") },
         });
         var proposal = await play.ProposeAsync(GameActions.Search, arguments, Player);
-        Assert.Equal(PlayOutcome.NeedsConfirmation, proposal.Outcome);
-        var result = await play.ConfirmAsync(GameActions.Search, arguments, Player, proposal.Correlation);
-        Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
-        Assert.Contains(result.Reasons, reason => reason.Contains("play.stealth-facts", StringComparison.Ordinal));
+        Assert.NotEqual(PlayOutcome.NeedsConfirmation, proposal.Outcome);
+        Assert.NotEqual(PlayOutcome.Committed, proposal.Outcome);
+        var reason = Assert.Single(proposal.Reasons, reason => reason.Contains("play.stealth-facts", StringComparison.Ordinal));
+        Assert.DoesNotContain("r1", reason, StringComparison.Ordinal);
+        Assert.DoesNotContain("rl", reason, StringComparison.Ordinal);
         Assert.Equal(before, Revision);
         Assert.Equal(original, GameEventWriter.Write(Scope, store.Read(Scope)!));
         NoReplayErrors();
     }
 
     [Fact]
-    public async Task AnUnknownDefenderOutsideTheSearchedHexesDoesNotRefuseSearch()
+    public async Task AnUnknownDefenderOutsideTheSearchedHexesRefusesTheSearchWithTheSameReason()
     {
+        // The review of PR 80 (item 27): the refusal does not depend on what is searched, so it says nothing about the hexes searched.
         var otherHex = N("E6", HexsideDirection.NorthWest);
         var leader = Unit("rl", "asl:leader", "defender-leader", otherHex, "russian", Conditions.Concealed);
         ((Dictionary<string, bool>)leader["conditions"]).Remove(Conditions.Broken);
@@ -1551,13 +1555,14 @@ public sealed class BacklogPass70Tests : IDisposable
             Unit("r1", "asl:squad", "american-green-squad", otherHex, "russian", Conditions.Concealed), leader);
         await MoveAndClose(GermanSquad, "E6");
         var before = Revision;
-        Committed(await Do(GameActions.Search, Once(6), new
+        var result = await Do(GameActions.Search, NoRoll(), new
         {
             unitIds = GermanSquad,
             hexes = new[] { L("E7") },
-        }));
-        var search = Assert.Single(Since(before).Select(item => item.Payload).OfType<UnitsSearched>());
-        Assert.DoesNotContain(search.Searched, location => location.Hex.ToString() == otherHex);
+        });
+        Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
+        Assert.Contains(result.Reasons, reason => reason.Contains("play.stealth-facts", StringComparison.Ordinal));
+        Assert.Equal(before, Revision);
         Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
         NoReplayErrors();
     }
@@ -2294,7 +2299,7 @@ public sealed class BacklogPass70Tests : IDisposable
         var resolution = Rules.ScenarioA1VehicleCloseCombat.Resolve(facts with
         {
             Rolls = new Rules.VehicleCloseCombatRolls(SnakeEyesRoll)
-        }, new Rules.ScenarioA1CloseCombatPackage().Reference);
+        }, new Rules.ScenarioA1CloseCombatPackage().Reference, null);
         Assert.Null(resolution.LeaderCreation);
         events[index] = events[index] with
         {

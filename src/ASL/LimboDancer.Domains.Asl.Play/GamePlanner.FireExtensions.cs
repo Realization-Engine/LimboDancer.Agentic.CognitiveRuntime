@@ -239,12 +239,11 @@ public sealed partial class GamePlanner
                 HoldsEmplacedGun = emplaced,
                 VehicleConcealmentTerrain = vehicle ? () => VehicleConcealmentTerrain(state, index.Location(unit.Id)!.Location) : null,
                 Aboard = index.VehicleOf(unit.Id) is not null,
-                // A1.6, A19.36, A15.21: the sizes, Inexperience, and heroism Rules reads for the US#, Lax, and Stealthy (the boundary review, finding 4).
+                // A1.6: the sizes Rules reads for the US# (the boundary review, finding 4); A11.17, A11.18: the Stealth status, read only for a unit
+                // that needs a dr (the review of PR 80, item 30).
                 VehicleSize = vehicle ? FireReference.Value.Armor.GetValueOrDefault(unit.Definition?.Definition ?? string.Empty)?.TargetSize : null,
                 GunSize = gun is null ? null : OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty)?.TargetSize,
-                Inexperienced = () => Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True,
-                Heroic = Is(unit, Conditions.Heroic),
-                Stealth = StealthStatusOf(state, unit, StealthPurpose.Concealment),
+                Stealth = () => StealthStatusOf(state, unit, StealthPurpose.Concealment),
                 Shared = vehicle ? () => [.. index.Aboard(unit.Id).Select(rider => (rider.Id, GoodOrder(rider)))]
                     : emplaced ? () => [(gun!.Id, true)]
                     : null,

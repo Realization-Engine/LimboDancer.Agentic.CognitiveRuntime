@@ -40,6 +40,13 @@ public static class ScenarioA1CloseCombatValueCalculator
     }
 
     /// <summary>
+    /// Ruling RA11C.4: the national CCV case a unit's nationality gives (the review of PR 80, item 29: chosen here, not by the caller). Ethiopian MMC have a
+    /// CCV one lower (A25.934, p. 98); no other nationality has a case by nationality alone (the T-H Hero and the TACP are designations, not nationalities).
+    /// An unknown or absent nationality has none.
+    /// </summary>
+    public static NationalCcv NationalCcvOf(string? nationality) => nationality == "ethiopian" ? NationalCcv.Ethiopian : NationalCcv.None;
+
+    /// <summary>
     /// A11.5 (p. 74; rulings RA11C.1, RA11C.2): the attackers' CCV, the vehicle's Basic Kill Number. The main unit's base CCV; +1 for a SMC combining with
     /// it, or failing one for the leader an Original 2 created (A18.12); +1 an Assault Engineer (H1.22, A25.01); -1 Inexperienced (A19.34); and -1 for each
     /// halving FP penalty, once per kind (A7.8: Pin effects are not cumulative): pinned, a concealed vehicle (A11.19), a Guard attacking non-prisoners (A20.52),
@@ -126,6 +133,20 @@ public static class ScenarioA1CloseCombatValueCalculator
 
         return false;
     }
+
+    /// <summary>
+    /// A25.01 (p. 93) with A25.222 (p. 95; the review of PR 80, item 29): a Commissar's failed rally loses Assault Engineer status when it Replaces the unit
+    /// "by the next lower quality unit of its size"; when the unit is already the lowest quality the squad is Casualty Reduced instead, which is no
+    /// Replacement by a lower quality unit. Neither Battle Hardening nor Fate's Reduction loses it. <paramref name="replacedByCommissar"/> is the Rally's
+    /// Commissar Replacement (null with no Commissar); <paramref name="replaced"/> whether the lineage is a Replacement rather than a Reduction.
+    /// </summary>
+    public static bool AssaultEngineerLostByRally(bool? replacedByCommissar, bool replaced) => replacedByCommissar == true && replaced;
+
+    /// <summary>
+    /// A25.01 (p. 93) with A20.551 (p. 88; the review of PR 80, item 29): a rearmed prisoner "is replaced with a Green or Conscript squad/HS of its size",
+    /// a lower quality unit than an Assault Engineer (Elite, A25.01), so the status is lost.
+    /// </summary>
+    public static bool AssaultEngineerLostByRearming() => true;
 
     /// <summary>
     /// A25.01 (p. 93): true retains AE through lineage, false records permanent lower-quality loss, and null uses the printed trait.
