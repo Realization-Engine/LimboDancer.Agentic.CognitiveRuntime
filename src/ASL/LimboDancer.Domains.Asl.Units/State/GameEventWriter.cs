@@ -11,6 +11,15 @@ namespace LimboDancer.Domains.Asl.Units.State;
 /// </summary>
 public static class GameEventWriter
 {
+    private static void ArmamentEvidence(Utf8JsonWriter writer, VehicleArmamentEvidence? evidence)
+    {
+        if (evidence is not null)
+        {
+            writer.WritePropertyName("vehicleArmamentEvidence");
+            JsonSerializer.Serialize(writer, evidence, JsonSerializerOptions.Web);
+        }
+    }
+
     private static readonly JsonWriterOptions Options = new()
     {
         Indented = true,
@@ -394,6 +403,11 @@ public static class GameEventWriter
                 writer.WriteBoolean("passed", check.Passed);
                 break;
             case FireResolved fire:
+                ArmamentEvidence(writer, fire.VehicleArmamentEvidence);
+                if (fire.SmokeWiringVersion is { } fireSmokeVersion)
+                {
+                    writer.WriteNumber("smokeWiringVersion", fireSmokeVersion);
+                }
                 Strings(writer, "firers", fire.Firers);
                 if (fire.Director is { } director)
                 {
@@ -449,6 +463,7 @@ public static class GameEventWriter
                 writer.WriteNumber("fp", residual.Fp);
                 break;
             case RepairAttempted repair:
+                ArmamentEvidence(writer, repair.VehicleArmamentEvidence);
                 writer.WriteString("unit", repair.Unit);
                 writer.WriteString("equipment", repair.Equipment);
                 writer.WriteString("roll", repair.Roll);
@@ -458,6 +473,14 @@ public static class GameEventWriter
                 {
                     writer.WriteString("weapon", repairedWeapon);
                 }
+                if (repair.VehicleRepairVersion is { } repairVersion)
+                {
+                    writer.WriteNumber("vehicleRepairVersion", repairVersion);
+                }
+                if (repair.Hero is { } repairHero)
+                {
+                    writer.WriteString("hero", repairHero);
+                }
                 break;
             case VehicleCloseCombatResolved vehicleCombat:
                 if (vehicleCombat.CcvVersion is { } ccvVersion)
@@ -465,6 +488,7 @@ public static class GameEventWriter
                     writer.WriteNumber("ccvVersion", ccvVersion);
                 }
 
+                ArmamentEvidence(writer, vehicleCombat.VehicleArmamentEvidence);
                 writer.WriteString("location", vehicleCombat.Location.ToString());
                 writer.WriteString("vehicle", vehicleCombat.Vehicle);
                 Strings(writer, "attackers", vehicleCombat.Attackers);
@@ -784,6 +808,10 @@ public static class GameEventWriter
 
                 break;
             case RiderBailedOut bailed:
+                if (bailed.MoraleCheck is { } bailCheck)
+                {
+                    writer.WriteString("moraleCheck", bailCheck);
+                }
                 writer.WriteString("unit", bailed.Unit);
                 writer.WriteString("vehicle", bailed.Vehicle);
                 writer.WriteString("at", bailed.At.ToString());
@@ -1150,6 +1178,11 @@ public static class GameEventWriter
 
                 break;
             case OrdnanceFired ordnance:
+                ArmamentEvidence(writer, ordnance.VehicleArmamentEvidence);
+                if (ordnance.SmokeWiringVersion is { } ordnanceSmokeVersion)
+                {
+                    writer.WriteNumber("smokeWiringVersion", ordnanceSmokeVersion);
+                }
                 if (ordnance.SpotterWiringVersion is { } spotterWiringVersion)
                 {
                     writer.WriteNumber("spotterWiringVersion", spotterWiringVersion);

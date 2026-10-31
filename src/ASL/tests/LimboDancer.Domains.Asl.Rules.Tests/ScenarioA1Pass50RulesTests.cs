@@ -237,16 +237,6 @@ public sealed class ScenarioA1Pass50RulesTests
         Assert.False(ScenarioA1RallyRules.VehicleCrewImpaired(false, false, false, true, true));
         Assert.True(ScenarioA1RallyRules.VehicleCrewImpaired(false, true, false, false, false));
 
-        // A 1 removes the weapon's own Malfunction counter; a 6 disables it.
-        Assert.Equal([(UnitCondition.BmgMalfunctioned, false)], ScenarioA1RallyRules.VehicleWeaponRepairChanges("bmg", RepairOutcome.Repaired, false));
-        Assert.Equal([(UnitCondition.CmgDisabled, true)], ScenarioA1RallyRules.VehicleWeaponRepairChanges("cmg", RepairOutcome.Eliminated, false));
-        Assert.Empty(ScenarioA1RallyRules.VehicleWeaponRepairChanges("ma", RepairOutcome.NoChange, false));
-
-        // D3.7: a vehicle whose MA is disabled "is immediately Recalled (5.341) unless that vehicle has Passenger/Towing capability".
-        var recalled = ScenarioA1RallyRules.VehicleWeaponRepairChanges("ma", RepairOutcome.Eliminated, false);
-        Assert.Contains((UnitCondition.Disabled, true), recalled);
-        Assert.Contains((UnitCondition.Recalled, true), recalled);
-        Assert.Equal([(UnitCondition.Disabled, true)], ScenarioA1RallyRules.VehicleWeaponRepairChanges("ma", RepairOutcome.Eliminated, true));
         Assert.Contains("Recalls", ScenarioA1RallyRules.VehicleWeaponRepairSummary("de-tank", "ma", true), StringComparison.Ordinal);
     }
 

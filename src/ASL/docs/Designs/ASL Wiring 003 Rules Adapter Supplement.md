@@ -1,6 +1,6 @@
 # Wiring 003 Rules adapter supplement
 
-Status: implementation in progress on `codex/rules-wiring003-adapters`. The user approved the designs and autonomous implementation on 2026-10-30. The inventory records the scoped Rules holds; the caller claims remain separate.
+Status: built on `codex/rules-wiring003-adapters`, pending review (Claude's review findings 14 to 17 and 46 to 49 settled 2026-10-31; see "Review follow-up" below). The user approved the designs and autonomous implementation on 2026-10-30. The inventory records the scoped Rules holds; the caller claims remain separate.
 
 ## Review and scope
 
@@ -15,7 +15,7 @@ The fire review also found a caller requirement: a burning wreck created after F
 
 ## Replay and merge order
 
-The close-combat wiring review found one further correction in A20.52 (PDF p. 87): every Guard halves its attack FP against non-prisoners in CC. The separate US# restriction is not a condition of that halving. The CCV calculator represents that penalty by one -1 CCV modifier. Additive `CcvAttackFacts.Guard` and nullable, omitted-when-null `CcvContext.Guards` supply it without changing the old constructor or the old outnumbered-only inputs. Either fact applies the penalty once. The contract accepts the old optional `guardOutnumbered` fact and the new optional `guard` fact; at least one must be known. New minigame checks use `guard`. Both a main attacker and a combining SMC may supply the Guard fact. The callers still wait for wire-close-combat-1.
+The close-combat wiring review found one further correction in A20.52 (PDF p. 87): every Guard halves its attack FP against non-prisoners in CC. The separate US# restriction is not a condition of that halving. The CCV calculator represents that penalty by one -1 CCV modifier. Additive `CcvAttackFacts.Guard` and nullable, omitted-when-null `CcvContext.Guards` supply it without changing the old constructor or the old outnumbered-only inputs. Either fact applies the penalty once. The contract accepts the old optional `guardOutnumbered` fact and the new optional `guard` fact. It evaluates when `guard` is known, or when `guardOutnumbered` is true (the penalty applies either way); `guardOutnumbered: false` with `guard` unknown is not evaluated, since "not outnumbered" does not show that the attacker is no Guard (review item 15). New minigame checks use `guard`. Both a main attacker and a combining SMC may supply the Guard fact. The callers still wait for wire-close-combat-1.
 
 No recorded record changes in this supplement. Existing rule entry points keep their answers except the two unwired new calculator paths above. The DC deadline forward is algebraically equal to its previous body.
 
@@ -28,6 +28,19 @@ Focused methods cover the lone-SMC IFE verdict and unknown owner fact, the new-c
 The Studio build passed with zero warnings and errors. Before unit tests, the Rule Workbench at port 6680 showed First Fire IFE at range 1 in DFPh refused for a lone SMC, permitted once more when not a lone SMC, and not evaluated when that fact was unknown. No caller behavior has changed, so this Rules-only supplement uses its focused tests and PR CI; each later wiring claim runs its own replay and sweep gate.
 
 The Guard follow-up also built Studio with zero warnings and errors. The Workbench minigame `wire-guard-review-2` showed CCV 4 and immobilization on Final DR 4 with `guard = true`, CCV 5 and elimination with `guard = false`, and not-evaluated when both Guard inputs were unknown. Facts were entered by hand on the manufactured A11.5 position. The Studio was stopped afterward. Five focused Rules methods passed with warnings as errors, including the existing empty-context comparison, old contract input, new Guard input, a combining SMC, one penalty when both inputs apply, and omission of null Guards. All eight vehicle CCV bundle checks passed. The independent read-only review found no further correctness or compatibility issue.
+
+## Review follow-up (2026-10-31)
+
+Claude's reviews of this branch (items 14 to 17 of the combined prompt, 46 to 49 of the addendum) are settled here. None changes a recorded game's answer: every changed path is a Rules member no Play or projector caller asks yet, or one behind a nullable recorded fact.
+
+- Item 14, A25.01 (p. 93): `AssaultEngineerLineage` takes each parent's printed trait (`parentPrintedTraits`, optional). A parent with no recorded status is AE when its printed trait is, so its lower-quality Replacement is recorded as lost "even if it subsequently Battle Hardens". Without the list the answer is the earlier one.
+- Item 15, A20.52 (p. 87): the A11.5 contract evaluates only when `guard` is known or `guardOutnumbered` is true. `guardOutnumbered: false` with `guard` unknown is not evaluated.
+- Item 16: A25.01 and A20.52 join the A11.5 claim in the inventory's section 6; their work is in the claim's held files, so no file was added. Both rows read Owner "A11.5 (Codex)" and state "built".
+- Item 17: backlog section 89 (DC Placement into a Cave, G11.8331; mixed Assault Engineer recombination); two IFE checks in the `a8-final-fire` bundle (a lone SMC refused, a crew once more); the status line above and the `CcvAttackFacts` summary (`Guard` is the full reading).
+- Item 46, D3.5 (p. 200): `ScenarioA1FinalFireCalculator.VehicleFacts` takes the vehicle's definition, and an MA MG sustains only with a printed Multiple ROF. With none it is a vehicular MG that is not the MA: no Final Fire, and `FireSpent` reads it as spent.
+- Item 47, A6.7 (p. 54), D9.4 (p. 210): `FireLaneWreckFacts` has a required `TargetRange`, the range to the attacked Location. A wreck at range 0, at that range, or beyond it is refused. The record is new on this branch, so no recorded shape changes.
+- Item 48: tests for `vehicle-breakdown-facts-missing`, `final-fire-marker-unknown`, `VehicleMarker`'s fallback, a lone leader or hero's First-Fire MG, a First-Fire light mortar in the DFPh, and the omission of `FinalFireVersion` and `FinalFireMarker` when null. A vehicle Gun's Intensive Fire with the version null was already asserted by `CurrentVehicleGunMayIntensiveFinalFireWithItsOwnBreakdownFacts`.
+- Item 49: under version 1 an MA that fired this Player Turn, kept no ROF, and has no counter is refused (`final-fire-marker-contradicts`); W-A8.41 lists the two sites that still read the unit's counter; a comment says the constant `WreckBlazeLos` call is there to cite B25.2.
 
 ## Memory and performance
 

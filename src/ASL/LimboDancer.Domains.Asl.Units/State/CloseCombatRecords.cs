@@ -91,6 +91,13 @@ public sealed record VehicleCloseCombatResolved(BoardLocation Location, string V
         get; init;
     }
 
+    /// <summary>Versioned vehicle breakdown source values; null keeps the earlier catalog read.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public VehicleArmamentEvidence? VehicleArmamentEvidence
+    {
+        get; init;
+    }
+
     public string? Next
     {
         get; init;

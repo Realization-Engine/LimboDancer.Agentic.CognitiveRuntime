@@ -148,7 +148,7 @@ public static class ScenarioA1CanisterCalculator
             BoundingFirstFire = shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire ? true : null,
             Motion = shot.Vehicle?.InMotion == true ? true : null,
             IntensiveFire = shot.IntensiveFire == true ? true : null,
-            PinnedCrew = shot.Crew?.Pinned == true ? true : null,
+            PinnedCrew = ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) ? true : null,
             CaseA = caseA > 0 ? caseA : null,
         };
     }
@@ -278,17 +278,16 @@ public static class ScenarioA1CanisterCalculator
 
         // A21.12 (W-A21.13): the penalty multiple lowers the Multiple ROF one each; a shot recorded before the wiring was not lowered.
         var rof = ScenarioA1OrdnanceCalculator.UnloweredRateOfFire(shot, gun);
-        if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
-        {
-            rof--;
-        }
+        var conditional = ScenarioA1OrdnanceParticipationCalculator.ConditionalRof(shot, gun, reference, rof);
+        rof = conditional.Rof;
 
-        if (shot.Crew!.Pinned == true || ScenarioA1OrdnanceCalculator.AfphFire(shot))
+        if (ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) || ScenarioA1OrdnanceCalculator.AfphFire(shot)
+            || ScenarioA1OrdnanceParticipationCalculator.HeroGunLimited(shot, gun, reference))
         {
             rof = 0;
         }
 
-        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0]);
+        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0], conditional.IntensiveFireCounter);
         OrdnanceCanisterAttack[] attacks = use == "none" ? [] : [.. canister.Locations!.Select(location =>
         {
             var multipliers = Multipliers(AttackFact(shot, gun, location));
@@ -304,7 +303,7 @@ public static class ScenarioA1CanisterCalculator
             })
         {
             // A12.14 (ruling R8.5): the "?" is lost only in the view of a Good Order enemy ground unit within 16 hexes.
-            CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,
+            CrewConcealmentLost = ScenarioA1OrdnanceParticipationCalculator.Concealed(shot) && shot.CrewSeen != false ? true : null,
             AmmunitionUse = use,
             Canister = Block(attacks),
         };

@@ -151,26 +151,42 @@ public static class ScenarioA1CloseCombatValueCalculator
     /// <summary>
     /// A25.01 (p. 93): true retains AE through lineage, false records permanent lower-quality loss, and null uses the printed trait.
     /// An absent recorded reading keeps the former projector answer. Mixed AE ancestry needs a separate recombination ruling (A1.32, p. 45).
+    /// <paramref name="parentPrintedTraits"/> gives each parent's printed AE trait, read where its status is null: a printed Assault Engineer
+    /// that no lineage event has touched is an AE parent, so its lower-quality Replacement is recorded as lost, "even if it subsequently Battle
+    /// Hardens" (the review of PR 75, item 14). Null keeps the earlier reading, in which an untouched parent counts as no AE.
     /// </summary>
-    public static (bool? Status, string? Reason) AssaultEngineerLineage(bool? lowerQualityReplacement, IReadOnlyList<bool?> parents, bool? printedTrait)
+    public static (bool? Status, string? Reason) AssaultEngineerLineage(bool? lowerQualityReplacement, IReadOnlyList<bool?> parents, bool? printedTrait,
+        IReadOnlyList<bool?>? parentPrintedTraits = null)
     {
         ArgumentNullException.ThrowIfNull(parents);
+        if (parentPrintedTraits is not null && parentPrintedTraits.Count != parents.Count)
+        {
+            throw new ArgumentException("One printed trait is required for each parent.", nameof(parentPrintedTraits));
+        }
+
         if (lowerQualityReplacement is null)
         {
             return (null, null);
         }
 
-        if (parents.Contains(true) && parents.Any(parent => parent != true))
+        // A parent is AE by its recorded status, or by its printed trait when no status is recorded; false is a recorded loss.
+        var engineer = new bool[parents.Count];
+        for (var i = 0; i < parents.Count; i++)
+        {
+            engineer[i] = parents[i] ?? parentPrintedTraits?[i] == true;
+        }
+
+        if (engineer.Contains(true) && engineer.Contains(false))
         {
             return (null, "play.ae-lineage: mixed Assault Engineer ancestry is not resolved for recombination");
         }
 
-        if (parents.Contains(false) || (lowerQualityReplacement == true && parents.Contains(true)))
+        if (parents.Contains(false) || (lowerQualityReplacement == true && engineer.Contains(true)))
         {
             return (false, null);
         }
 
-        return (parents.Contains(true) || printedTrait == true ? true : null, null);
+        return (engineer.Contains(true) || printedTrait == true ? true : null, null);
     }
 
     /// <summary>

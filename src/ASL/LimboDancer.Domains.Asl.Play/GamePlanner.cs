@@ -325,7 +325,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // Ruling R26.2: a Passenger acts only with its vehicle until it unloads.
         if (ScenarioA1SequenceCalculator.PassengerBar(action.Id.Value, existing.Count > 0,
-            () => Replay(existing).Current is { } boardState ? AboardBar(boardState, arguments) : null) is { } aboard)
+            () => Replay(existing).Current is { } boardState
+                ? action.Id == GameActions.Repair.Id ? RepairParticipantBar(boardState, arguments) : AboardBar(boardState, arguments)
+                : null) is { } aboard)
         {
             return Refused(scope, label, expected, aboard);
         }
@@ -438,6 +440,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         // DR order; those Fire's own calls answered are not called again.
         if (plan.Status == GamePlanStatus.Ready && plan.Roll is { } sniping)
         {
+            if (Replay(existing).Current is { } sniperState && SniperSmokeBar(sniperState) is { } smokeBar)
+            {
+                return Refused(scope, label, expected, smokeBar);
+            }
             plan = plan with
             {
                 Roll = sniping with
@@ -2301,7 +2307,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             };
         }
 
-        return new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload, rulePackage, causes ?? [], visibility);
+        return new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload switch
+        {
+            FireResolved fire => fire with { SmokeWiringVersion = 1 },
+            OrdnanceFired shot => shot with { SmokeWiringVersion = 1 },
+            _ => payload,
+        }, rulePackage, causes ?? [], visibility);
     }
 
     private static JsonObject EventNode(int index, string type, JsonObject payload, IReadOnlyList<string>? visibility)

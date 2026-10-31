@@ -383,7 +383,7 @@ public static class LiveCloseCombat
     /// the MPh is Non-Stopped (A11.51).
     /// </summary>
     public static (VehicleCloseCombatFacts? Facts, string? Reason) VehicleFromState(GameState state, BoardLocation location, string vehicleId,
-        IReadOnlyList<string> attackers, IReadOnlyList<string> defenders, bool byVehicle, bool reaction)
+        IReadOnlyList<string> attackers, IReadOnlyList<string> defenders, bool byVehicle, bool reaction, bool legacyVehicleBreakdown = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         if (state.Unit(vehicleId) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle) || state.Location(vehicleId)?.Location != location
@@ -401,13 +401,7 @@ public static class LiveCloseCombat
         var moving = ScenarioA1CloseCombatFactBuilders.VehicleMoving(reaction, state.Movement is { Vehicle: true, Started: true, Stopped: false },
             state.Movement?.Members.Contains(vehicle.Id, StringComparer.Ordinal) == true);
         var facts = ScenarioA1CloseCombatFactBuilders.VehicleAttack(state.Phase, location.ToString(),
-            ScenarioA1CloseCombatFactBuilders.Vehicle(vehicle.Id, definition.Definition, vehicle.Side, LiveFire.CrewExposed(vehicle), Is(vehicle, Conditions.Motion), moving,
-                Is(vehicle, Conditions.Immobilized), Is(vehicle, Conditions.Bogged), Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled),
-                Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill), Is(vehicle, Conditions.Abandoned),
-                Is(vehicle, Conditions.Malfunctioned), Is(vehicle, Conditions.Disabled), Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned),
-                Is(vehicle, Conditions.StunRecovery),
-                // D3.44 (pass 55, ruling R55.16): the Armor Leader modifies the vehicle's own CC attack; Rules gives none to an attack on it.
-                ScenarioA1ArmorLeaders.CloseCombatLeadership(LiveFire.ArmorLeadership(vehicle), byVehicle)),
+            VehicleFacts(vehicle, moving, byVehicle),
             [.. units.Where(unit => state.Unit(unit.UnitId!) is { } found && !LiveFire.IsVehicle(found))], attackers, defenders, byVehicle, reaction,
             ScenarioA1CloseCombatFactBuilders.FireMarked(reaction, [.. attackers.Where(id => state.Unit(id) is { } unit && (Is(unit, Conditions.FirstFire) || Is(unit, Conditions.FinalFire)))]));
 
@@ -420,7 +414,7 @@ public static class LiveCloseCombat
         // A11.52 (ruling R70.34): the defenders that tried this CCPh to capture Passengers there defend against the Passengers' attack with +2.
         var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
         string[] captors = passengers is null ? [] : [.. defenders.Where(id => entry?.Captors.Contains(id, StringComparer.Ordinal) == true)];
-        return ((Is(vehicle, Conditions.Abandoned) && !byVehicle ? facts with
+        facts = (Is(vehicle, Conditions.Abandoned) && !byVehicle ? facts with
         {
             Unmanned = true
         } : facts) with
@@ -428,8 +422,16 @@ public static class LiveCloseCombat
             Ambusher = entry?.Ambusher,
             Passengers = passengers,
             Captors = captors.Length == 0 ? null : captors,
-        }, null);
+        };
+        return legacyVehicleBreakdown ? (facts, null) : LiveFire.WithVehicleCloseCombatBreakdown(state, vehicle, facts);
     }
+
+    internal static VehicleCloseCombatVehicle VehicleFacts(UnitInstance vehicle, bool moving, bool byVehicle) =>
+        ScenarioA1CloseCombatFactBuilders.Vehicle(vehicle.Id, vehicle.Definition!.Definition, vehicle.Side, LiveFire.CrewExposed(vehicle), Is(vehicle, Conditions.Motion), moving,
+            Is(vehicle, Conditions.Immobilized), Is(vehicle, Conditions.Bogged), Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled),
+            Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill), Is(vehicle, Conditions.Abandoned),
+            Is(vehicle, Conditions.Malfunctioned), Is(vehicle, Conditions.Disabled), Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned),
+            Is(vehicle, Conditions.StunRecovery), ScenarioA1ArmorLeaders.CloseCombatLeadership(LiveFire.ArmorLeadership(vehicle), byVehicle));
 
     /// <summary>
     /// The PRC aboard a vehicle who join its own CC attack on Infantry (A11.62; pass 70, ruling R70.31), as Rules reads each one's part: a Passenger of a
@@ -449,7 +451,7 @@ public static class LiveCloseCombat
     }
 
     /// <summary>The Passengers who join a vehicle's attack (A11.62; ruling R70.31), as the package reads a CC unit.</summary>
-    private static IReadOnlyList<CloseCombatUnit>? PassengerUnits(GameState state, IReadOnlyList<string> ids) =>
+    internal static IReadOnlyList<CloseCombatUnit>? PassengerUnits(GameState state, IReadOnlyList<string> ids) =>
         ids.Select(state.Unit).OfType<UnitInstance>().Where(unit => unit.Definition is not null).ToArray() is { Length: > 0 } found
             ? [.. found.Select(unit => ScenarioA1CloseCombatFactBuilders.Unit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
                 Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted), Is(unit, Conditions.Berserk), Is(unit, Conditions.Fanatic), Is(unit, Conditions.Heroic),
@@ -638,7 +640,23 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             return "The CC record's facts are incomplete.";
         }
 
-        var (expected, reason) = LiveCloseCombat.VehicleFromState(state, combat.Location, combat.Vehicle, combat.Attackers, combat.Defenders, combat.ByVehicle, combat.Reaction);
+        if (combat.VehicleArmamentEvidence is { } evidence)
+        {
+            if (recorded.VehicleBreakdown is null)
+            {
+                return "Vehicle armament evidence requires a vehicle breakdown reading.";
+            }
+            if (VehicleArmamentFacts.EvidenceRefusal(state, state.Unit(combat.Vehicle), evidence) is { } evidenceRefusal)
+            {
+                return evidenceRefusal;
+            }
+            state = state with
+            {
+                VehicleArmamentEvidence = evidence
+            };
+        }
+        var (expected, reason) = LiveCloseCombat.VehicleFromState(state, combat.Location, combat.Vehicle, combat.Attackers, combat.Defenders, combat.ByVehicle, combat.Reaction,
+            legacyVehicleBreakdown: recorded.Vehicle?.UnavailableWeapons is null);
         if (expected is null)
         {
             return reason;

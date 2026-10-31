@@ -376,6 +376,56 @@ public sealed class ScenarioA1Pass55RulesTests
     }
 
     [Fact]
+    public void AFactoryTemReplacesTheBuildingsCaseQOnTheInfantryAndVehicleTargetTypes()
+    {
+        // B23.741 (p. 139; the B23.74 claim, ruling RB23F.5): a shot traced entirely within a Factory takes +1, not the stone building's +3.
+        static OrdnanceShot InStone(bool vehicle, int? factoryTem)
+        {
+            var shot = Gun("american", 1944, vehicle ? "ap" : null, vehicle, [5, 6]);
+            return shot with
+            {
+                Hit = shot.Hit! with
+                {
+                    TargetTerrain = "stone-building",
+                    FactoryTem = factoryTem,
+                },
+            };
+        }
+
+        foreach (var vehicle in new[] { false, true })
+        {
+            // Null is the old reading, to the modifier.
+            var old = Resolve(InStone(vehicle, null));
+            Assert.Equal((3m, null), (Drm(old, "case-q:stone-building"), Drm(old, "case-q:factory")));
+
+            var factory = Resolve(InStone(vehicle, 1));
+            Assert.Equal((null, 1m), (Drm(factory, "case-q:stone-building"), Drm(factory, "case-q:factory")));
+            Assert.Equal(old.ToHit!.FinalDr - 2, factory.ToHit!.FinalDr);
+        }
+
+        Assert.Equal(ScenarioA1GunDuels.Classify("case-q:stone-building"), ScenarioA1GunDuels.Classify("case-q:factory"));
+
+        // C11.2 (the review of the B23.74 build, finding 3): an Emplaced Gun's crew takes the Emplacement's +2 instead of the Factory's lower +1, while
+        // the building's +3 stays.
+        static OrdnanceShot AtEmplacedCrew(int? factoryTem)
+        {
+            var shot = InStone(false, factoryTem);
+            return shot with
+            {
+                Hit = shot.Hit! with
+                {
+                    GunTarget = new FireGunTarget("de-gun", "attacker-inf-gun", "de-s", true, false),
+                },
+            };
+        }
+
+        var crewed = Resolve(AtEmplacedCrew(null));
+        Assert.Equal((3m, null), (Drm(crewed, "case-q:stone-building"), Drm(crewed, "case-q:emplacement")));
+        var emplaced = Resolve(AtEmplacedCrew(1));
+        Assert.Equal((null, null, 2m), (Drm(emplaced, "case-q:stone-building"), Drm(emplaced, "case-q:factory"), Drm(emplaced, "case-q:emplacement")));
+    }
+
+    [Fact]
     public void HeightAdvantageIsCaseQOnTheInfantryAndVehicleTargetTypes()
     {
         // B10.31, C6.8: "Any unit in a hex receiving Direct Fire from a lower elevation is entitled to a +1 TEM".
@@ -2030,6 +2080,7 @@ public sealed class ScenarioA1Pass55RulesTests
         ("case-c3:backblast", ToHitDrmClass.FirerBased), ("case-c4:lower-dr", ToHitDrmClass.LowerDrDoubled), ("case-d", ToHitDrmClass.FirerBased),
         ("case-e", ToHitDrmClass.FirerBased), ("case-f", ToHitDrmClass.FirerBased), ("case-h", ToHitDrmClass.FirerBased), ("case-h:captured", ToHitDrmClass.FirerBased),
         ("case-i", ToHitDrmClass.FirerBased), ("cx", ToHitDrmClass.FirerBased), ("stun", ToHitDrmClass.FirerBased), ("spotted", ToHitDrmClass.FirerBased), ("overstack-firer", ToHitDrmClass.FirerBased),
+        ("encircled", ToHitDrmClass.FirerBased),
         ("leadership:", ToHitDrmClass.FirerBased), ("hero:", ToHitDrmClass.FirerBased), ("hero-two-man:", ToHitDrmClass.FirerBased),
         (ScenarioA1ArmorLeaders.LeaderModifier, ToHitDrmClass.FirerBased),
         (ScenarioA1ArmorLeaders.InexperiencedModifier, ToHitDrmClass.FirerBased), ("case-n", ToHitDrmClass.Acquisition), ("case-j", ToHitDrmClass.TargetBased),

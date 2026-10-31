@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Rules;
@@ -122,7 +123,14 @@ public sealed partial class GamePlanner
             return;
         }
 
-        foreach (var rider in riders)
+        // Resolve the Hero batch against the still-mounted snapshot before legacy Riders move onto the map.
+        BailingRider[] heroes = [.. riders.Where(rider => Is(rider.Source, Conditions.Heroic)
+            || rider.Definition is { } name && FireReference.Value.Definitions.GetValueOrDefault(name)?.IsHero == true)];
+        if (heroes.Length > 0)
+        {
+            AddMemberBailOuts(scope, attemptId, expected, actor, package, events, draw, state, heroes, vehicleId, at, causes, null, Roll);
+        }
+        foreach (var rider in riders.Except(heroes))
         {
             // D6.24: a Rider's Morale Level is in the catalog, which boarding and setup check (RiderBar).
             var definition = rider.Definition is { } known ? FireReference.Value.Definitions.GetValueOrDefault(known) : null;
@@ -212,7 +220,7 @@ public sealed partial class GamePlanner
     /// for each Rider its SW drs, the <c>rider-bailed-out</c> record with its DRM and ELR, and its effects as a fire record's are written, on foot beneath the AFV.
     /// </summary>
     private void AddMemberBailOuts(GameScope scope, string attemptId, long expected, string actor, string? package, List<GameEvent> events, Func<RollRequest, RollResult> draw,
-        GameState state, IReadOnlyList<BailingRider> riders, string vehicleId, BoardLocation at, IReadOnlyList<string>? causes, int sideElr, Func<int, string, string> roll)
+        GameState state, IReadOnlyList<BailingRider> riders, string vehicleId, BoardLocation at, IReadOnlyList<string>? causes, int? sideElr, Func<int, string, string> roll)
     {
         var moving = state.Unit(vehicleId) is { } vehicle && VehicleMoved(state, vehicle, false);
         FireTarget Subject(UnitInstance unit, string id, string? definition, bool broken, bool pinned) => LiveFire.Target(state, unit, at) with
@@ -230,7 +238,9 @@ public sealed partial class GamePlanner
         foreach (var rider in riders)
         {
             // D6.24: a Rider's Morale Level is in the catalog, which boarding and setup check (RiderBar).
-            if (rider.Definition is not { } known || FireReference.Value.Definitions.GetValueOrDefault(known) is not { Morale: not null, BrokenMorale: not null })
+            var definition = rider.Definition is { } known ? FireReference.Value.Definitions.GetValueOrDefault(known) : null;
+            if (ScenarioA1RiderRules.MoraleBar(rider.Id, definition?.Morale, definition?.BrokenMorale,
+                definition?.IsHero == true, definition?.WoundedMorale) is not null)
             {
                 throw new InvalidOperationException($"The catalog gives the Rider {rider.Id} no Morale Level (D6.24).");
             }
@@ -251,13 +261,47 @@ public sealed partial class GamePlanner
             Others = others.Length > 0 ? others : null,
             NoQuarter = state.NoQuarter.Contains(riders[0].Source.Side ?? string.Empty, StringComparer.Ordinal) ? true : null,
         };
-        var (resolution, _, _) = ResolveMoraleCheck(scope, attemptId, expected, actor, events, draw, facts, null, causes);
+        var initialRolls = rollIds.ToDictionary(item => "checks:" + item.Key, item => item.Value, StringComparer.Ordinal);
+        var (resolution, resolvedRollIds, _) = ResolveMoraleCheck(scope, attemptId, expected, actor, events, draw, facts, initialRolls, causes);
+        bool Heroic(BailingRider rider) => Is(rider.Source, Conditions.Heroic)
+            || rider.Definition is { } name && FireReference.Value.Definitions.GetValueOrDefault(name)?.IsHero == true;
+        string? moraleRecord = null;
+        if (riders.Any(Heroic))
+        {
+            moraleRecord = EventId(attemptId, events.Count + 1);
+            var recorded = facts with
+            {
+                Rolls = null,
+                UnitSubstitution = true
+            };
+            FireTarget[] named = [.. subjects, .. others];
+            var visibility = ScenarioA1MoraleCheck.Unnamed(resolution, others).Count > 0 || ScenarioA1MoraleCheck.Withheld(resolution, named)
+                ? new[] { riders[0].Source.Side } : null;
+            if (visibility is not null)
+            {
+                var checkRolls = resolvedRollIds.Values.ToHashSet(StringComparer.Ordinal);
+                for (var index = 0; index < events.Count; index++)
+                {
+                    if (events[index].Payload is DiceRolled die && checkRolls.Contains(die.Roll))
+                    {
+                        events[index] = events[index] with
+                        {
+                            Visibility = visibility
+                        };
+                    }
+                }
+            }
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "morale-check-resolved",
+                new MoraleCheckResolved([.. subjects.Select(item => item.UnitId!), .. others.Select(item => item.UnitId!)], at.ToString(), "rider-bail-out",
+                    resolvedRollIds, JsonSerializer.SerializeToElement(recorded, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)),
+                package, visibility, causes));
+        }
         foreach (var (rider, subject) in riders.Zip(subjects))
         {
             var effect = resolution.Effects.First(item => item.UnitId == rider.Id);
             var check = effect.Checks.First(item => item.Kind == "MC");
             var replaced = effect.Events.Any(item => item is "replaced-elr" or "replaced-by-two-half-squads");
-            var result = ScenarioA1MoraleCheck.BailOutResult(check, rider.Broken, replaced, subject.Unarmed == true);
+            var result = ScenarioA1MoraleCheck.BailOutResult(check, rider.Broken, replaced, subject.Unarmed == true, Heroic(rider));
             var carrierBroken = ScenarioA1RiderRules.LeavesBroken(result, rider.Broken);
             var weapons = new List<RiderWeapon>();
             foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
@@ -276,6 +320,7 @@ public sealed partial class GamePlanner
                     Weapons = weapons.Count == 0 ? null : weapons,
                     Drm = (int)check.Drm.Sum(item => item.Value),
                     Elr = subject.Elr ?? sideElr,
+                    MoraleCheck = Heroic(rider) ? moraleRecord : null,
                 }, package, null, causes));
 
             // What the NMC did, on the unit now on foot beneath the AFV, as a fire record's effect is written.

@@ -411,7 +411,9 @@ public static class ScenarioA1VictoryCalculator
     /// <summary>
     /// A26.22, A26.221, A26.222 (rulings R21.2, R24.3): a side's CVP: the VP of the enemy units eliminated or wrecked, or that left the map other than by
     /// their own exit conditions, of the enemy units and vehicles it holds captured, and of the enemy Guns eliminated or last held by it; captured ones
-    /// double once the game has ended. The second value is the part from Guns and vehicles.
+    /// double once the game has ended. The second value is the part from Guns and vehicles. The A20.54 claim (rulings RA20.5, RA20.12): an enemy unit's
+    /// arms forward to <see cref="ScenarioA1PrisonerCalculator.PrisonerCvp"/>; a prisoner its own side's attack eliminated counts double at once when the
+    /// standing gives <see cref="VictoryStandingUnitFacts.EliminatedBy"/>, and as before (normal) while that fact is null.
     /// </summary>
     private static (int Cvp, int GunsAndVehicles) Cvp(VictoryCardFacts card, IReadOnlyList<VictoryStandingUnitFacts> units, IReadOnlyList<VictoryGunFacts> guns, string side, bool ended,
         Dictionary<string, string> holders)
@@ -422,14 +424,17 @@ public static class ScenarioA1VictoryCalculator
         {
             var value = unit.Status switch
             {
+                // A26.222, A20.54 (ruling RA20.5): a prisoner eliminated by an attack of its own side counts double at once.
+                VictoryStatus.Eliminated when !unit.Vehicle => ScenarioA1PrisonerCalculator.PrisonerCvp(unit.Vp(),
+                    ScenarioA1PrisonerCalculator.EliminatedStatus(unit.Captured, unit.Side, unit.EliminatedBy), ended),
                 VictoryStatus.Eliminated or VictoryStatus.Wrecked => unit.Vp(),
                 // A20.53, A26.222 (ruling R25.5): a prisoner its Guard took off the map is still held; A26.221: the escorting Guard is not eliminated.
-                VictoryStatus.Exited when unit.LastExit is { CapturedBy: not null } => unit.Vp() * (ended ? 2 : 1),
+                VictoryStatus.Exited when unit.LastExit is { CapturedBy: not null } => ScenarioA1PrisonerCalculator.PrisonerCvp(unit.Vp(), PrisonerCvpStatus.ExitedUnderGuard, ended),
                 // A26.23, A26.221 (ruling R26.4): a vehicle leaving under Recall counts no CVP.
                 VictoryStatus.Exited when unit.LastExit is { Recalled: true } => 0,
                 VictoryStatus.Exited when unit.LastExit is not { } exit
                     || (!(exit.Escort && EscortEdge(card.FriendlyEdge(unit.Side), card.Outcomes?.SelectMany(outcome => outcome.Any), unit.Side, exit.Edge)) && !Qualifies(card, exit, unit.Side)) => unit.Vp(),
-                VictoryStatus.Active when unit.Captured => unit.Vp() * (ended ? 2 : 1),
+                VictoryStatus.Active when unit.Captured => ScenarioA1PrisonerCalculator.PrisonerCvp(unit.Vp(), PrisonerCvpStatus.Held, ended),
                 _ => 0,
             };
             total += value;
@@ -603,7 +608,17 @@ public sealed record VictoryExitFacts(string Unit, bool Broken, bool Recalled, s
     (string Id, string? Side)? ExitedGun);
 
 /// <summary>A unit as the standing reads it: its side, whether a Dummy, its status, whether captured, whether a vehicle, its VP (read only when counted), and its last exit record.</summary>
-public sealed record VictoryStandingUnitFacts(string Id, string Side, bool Dummy, VictoryStatus Status, bool Captured, bool Vehicle, Func<int> Vp, VictoryExitFacts? LastExit);
+public sealed record VictoryStandingUnitFacts(string Id, string Side, bool Dummy, VictoryStatus Status, bool Captured, bool Vehicle, Func<int> Vp, VictoryExitFacts? LastExit)
+{
+    /// <summary>
+    /// A26.222, A20.54 (the A20.54 claim, ruling RA20.5): the side whose attack eliminated the unit, when it is a prisoner that was eliminated; null when not
+    /// known or not an attack, which counts as before (normal CVP).
+    /// </summary>
+    public string? EliminatedBy
+    {
+        get; init;
+    }
+}
 
 /// <summary>A Gun as the standing reads it: its id, its own side, its status, and its last exit record.</summary>
 public sealed record VictoryGunFacts(string Id, string? Side, VictoryStatus Status, VictoryExitFacts? LastExit);

@@ -1,0 +1,69 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "a7-encirclement",
+  "title": "Minigame: A7.7 Encirclement",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Manufactured under R0.3 as the minigame of the D5.34 claim's Encirclement increment (the Rules-first plan, section 7): the A7.7 and A7.71 examples on board 3, two positions: a Russian squad in [T3] fired on by German squads, and a Russian squad in [T4] fired on by a German fire group, their facts entered by hand.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "A minimal card (ruling R22.3): whether attacks seal an Encirclement, and what being Encircled does, asked on the Rule Workbench."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 0
+  },
+  "introduction": "A7.7 Encirclement: German squads fire on a Russian squad in [T3] from [U2] and [S5], and, in the A7.71 example's position, a four-hex German fire group in [T3]-[U4]-[U5]-[T5] fires on a Russian squad in [T4].",
+  "boards": [
+    {
+      "board": "bd03",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "",
+        "basis": "none",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "a7-encirclement"
+}

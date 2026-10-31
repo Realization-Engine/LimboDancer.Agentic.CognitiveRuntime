@@ -36,15 +36,10 @@ public sealed record TurnWhiteSmokeVerdict(string Counter, TurnWhiteSmokeEffect 
 }
 public sealed record TurnWhiteSmokePlacement(TurnSmokeStrength Strength, int? Hindrance, string Reason);
 
-/// <summary>Original white-counter strength and owner-relative opening cleanup only. This does not authorize placement or resolve WP/weather/drift consequences.</summary>
+/// <summary>Owner-relative white-counter opening cleanup only. A24.5 owns initial strength. This does not authorize placement or resolve WP/weather/drift consequences.</summary>
 public static class TurnWhiteSmokeRules
 {
     private static readonly string[] Phases = ["rph", "pfph", "mph", "dfph", "afph", "rtph", "aph", "ccph"];
-
-    /// <summary>A24.5's placement side, decided by <see cref="ScenarioA1SmokeStrengthCalculator.PlacementStrength"/> (the A24.5 claim, RA24.3): the same answer.</summary>
-    public static TurnWhiteSmokePlacement InitialStrength(TurnSmokeSource source, TurnSmokeChemical chemical,
-        bool ownerPrepFire, bool? beforeNonSmokeFire) =>
-        ScenarioA1SmokeStrengthCalculator.PlacementStrength(source, chemical, ownerPrepFire, beforeNonSmokeFire);
 
     public static TurnWhiteSmokeVerdict Evaluate(TurnWhiteSmokeFacts facts, TurnRulePosition now)
     {

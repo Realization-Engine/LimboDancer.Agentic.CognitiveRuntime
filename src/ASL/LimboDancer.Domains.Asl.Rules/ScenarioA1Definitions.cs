@@ -410,11 +410,13 @@ public static class ScenarioA1Definitions
 
     /// <summary>
     /// Whether a unit in a Location is Encircled (A7.7; ruling R12.11): of the Encircled side there (<paramref name="encircledForSide"/>), or in Melee
-    /// there while any side is Encircled there (<paramref name="encircledForAnySide"/>); never berserk or heroic, a hero, or a vehicle.
+    /// there while any side is Encircled there (<paramref name="encircledForAnySide"/>); never berserk or heroic, a hero, or a vehicle. Decided by
+    /// <see cref="ScenarioA1EncirclementCalculator.Encircled(bool, bool, bool, bool, bool)"/> (the D5.34 claim, ruling RD5.16), to which it forwards with
+    /// no pillbox and no PRC fact, so its answer is the same; the pillbox (B30.32) and the Vulnerable PRC of an Immobile vehicle (A7.7) arrive by wiring.
     /// </summary>
     public static bool Encircled(bool onMap, bool encircledForSide, bool encircledForAnySide, string kind, RuleState melee, RuleState berserk, RuleState heroic) =>
-        onMap && (encircledForSide || (encircledForAnySide && melee == RuleState.True))
-        && berserk != RuleState.True && heroic != RuleState.True && kind != "asl:hero" && kind != "asl:vehicle";
+        ScenarioA1EncirclementCalculator.Encircled(onMap, encircledForSide, encircledForAnySide, melee == RuleState.True,
+            ScenarioA1EncirclementCalculator.Subject(kind, berserk == RuleState.True, heroic == RuleState.True, null, null, null));
 
     /// <summary>
     /// Whether an event belongs to the setup (C13.31, ruling R9.7; ruling R19.2), by its type: the start, a unit set up, a Bore Sighted Location, or

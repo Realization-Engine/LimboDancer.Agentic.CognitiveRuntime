@@ -200,6 +200,27 @@ public sealed partial class GamePlanner
     /// </summary>
     private (List<(UnitInstance Unit, int? Drm, IReadOnlyList<string> With)>? Gains, string? Reason) ConcealmentGains(GameState state)
     {
+        string? missingSmoke = null;
+        var smoke = new Dictionary<BoardLocation, bool>();
+        bool SmokeAt(BoardLocation at)
+        {
+            if (smoke.TryGetValue(at, out var present))
+            {
+                return present;
+            }
+            // Keep concealment's existing wreck-Blaze hex reading until W-B25.2 changes it.
+            var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
+            if (snapshot.Columns.Any(item => item.Key.Board == at.Board && item.Key.Hex == at.Hex && item.Value.Any(column => column.Height is null)))
+            {
+                smoke.Add(at, true);
+                return true;
+            }
+            var (values, reason) = SmokeHindrancesAt(state, at);
+            missingSmoke ??= reason;
+            present = values is { Count: > 0 };
+            smoke.Add(at, present);
+            return present;
+        }
         var map = new ConcealmentMap(this, state);
         UnitInstance[] units = [.. state.Units];
         // Pass 70 (ruling R70.16; the memory guideline): every Location and stack from the state's index, and the watchers as the sight table holds them.
@@ -230,7 +251,7 @@ public sealed partial class GamePlanner
                 () => gun is not null,
                 () => Stack(unit).Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)),
                 () => ReadLocation(state, index.Location(unit.Id)!.Location) is { } read ? TerrainKey(read) : null,
-                () => SmokeSources(state).Any(place => place.Board == index.Location(unit.Id)!.Location.Board && place.Hex == index.Location(unit.Id)!.Location.Hex),
+                () => SmokeAt(index.Location(unit.Id)!.Location),
                 () => Stack(unit).Where(other => other != unit && other.Status == InstanceStatus.Active
                         && other.Side == unit.Side && other.Kind == "asl:leader" && !Is(other, Conditions.Broken) && !Is(other, Conditions.Pinned)
                         && other.Definition is { } definition && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.Leadership is not null)
@@ -253,7 +274,8 @@ public sealed partial class GamePlanner
         var (gains, reason) = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth(units.Select(Candidate),
             units.Select((unit, position) => new WatchingEnemyFacts(position, unit.Side != state.PhasingSide, sight.Units[position] with { Location = LocationIndex(unit) })),
             state.Night, state.ScenarioMonth, map);
-        return gains is null ? (null, reason) : ([.. gains.Select(gain => (index.Unit(gain.Id)!, gain.Drm, gain.With))], null);
+        return gains is null ? (null, reason) : missingSmoke is not null ? (null, missingSmoke)
+            : ([.. gains.Select(gain => (index.Unit(gain.Id)!, gain.Drm, gain.With))], null);
     }
 
     /// <summary>The map and the night as the concealment gain's search reads them: a table of Locations by index, the hex distance and LOS between two, a unit's NVR, and Illumination.</summary>

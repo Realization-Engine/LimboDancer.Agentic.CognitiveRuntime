@@ -26,7 +26,7 @@ from paths import REPO, VASL_ROOT  # noqa: E402
 
 LIVE = REPO + "/src/ASL/boards/units/live/5a7d1f000000400080000000000057d0/"
 TEMPLATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "game_started_template.json")
-CATALOG = "asl-scenario-a1@1.18.0"
+CATALOG = "asl-scenario-a1@1.19.0"
 CLEAR = {"asl:broken": False, "asl:berserk": False, "asl:captured": False, "asl:melee": False, "asl:ti": False,
          "asl:disrupted": False, "asl:concealed": False, "asl:hidden": False}
 CREWS = {"german": "attacker-crew", "russian": "defender-crew", "british": "british-crew", "american": "american-crew"}

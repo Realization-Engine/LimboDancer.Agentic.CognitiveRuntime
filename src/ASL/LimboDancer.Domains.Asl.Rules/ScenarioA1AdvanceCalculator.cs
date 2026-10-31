@@ -60,9 +60,11 @@ public static class ScenarioA1AdvanceCalculator
 
     /// <summary>
     /// A7.7 (ruling R12.11), A5.11 (ruling R14.10): the entry's half MF, doubled for an Encircled unit's first Location, plus one MF per excess
-    /// squad-equivalent (<see cref="StackCount.PersonnelExcess"/>).
+    /// squad-equivalent (<see cref="StackCount.PersonnelExcess"/>). The doubling is <see cref="ScenarioA1EncirclementCalculator.EntryMultiplier"/>'s (the
+    /// D5.34 claim, ruling RD5.16).
     /// </summary>
-    public static int AdvanceHalfMf(int entryHalfMf, bool anyEncircled, int excess) => (entryHalfMf * (anyEncircled ? 2 : 1)) + (2 * excess);
+    public static int AdvanceHalfMf(int entryHalfMf, bool anyEncircled, int excess) =>
+        (entryHalfMf * ScenarioA1EncirclementCalculator.EntryMultiplier(anyEncircled)) + (2 * excess);
 
     /// <summary>
     /// A4.72 EX, A4.12, A4.42 (ruling R10.8): the MMC advancing with an unbroken leader of their nationality, who add his two MF, and the one laden MMC that
