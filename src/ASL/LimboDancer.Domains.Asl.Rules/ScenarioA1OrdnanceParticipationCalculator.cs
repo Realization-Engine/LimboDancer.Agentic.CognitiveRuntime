@@ -75,13 +75,12 @@ public static class ScenarioA1OrdnanceParticipationCalculator
         {
             if (shot.HexspinesToTurn is > 0 and var turned)
             {
-                yield return new FireModifier("case-a:" + turned.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    ScenarioA1ArmorCalculator.CaseA(gun.Mount360 ? "t" : gun.MaType, turned) * (shot.FirerInWoodsOrBuilding == true ? 2 : 1), "C5.1");
+                yield return ScenarioA1ArmorCalculator.CaseADrm(gun.Mount360 ? "t" : gun.MaType, turned, shot.FirerInWoodsOrBuilding == true);
             }
 
             if (shot.IntensiveFire == true)
             {
-                yield return new FireModifier("case-f", 2, "C5.61");
+                yield return ScenarioA1ArmorCalculator.CaseFDrm();
             }
         }
 

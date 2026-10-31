@@ -945,8 +945,7 @@ public static class ScenarioA1OrdnanceCalculator
         {
             // C5.1, C5.11: a non-turreted Gun adds +3 for the first hexspine and +1 for each other, a turret less (ruling R7.10), doubled in
             // woods or a building.
-            var caseA = ScenarioA1ArmorCalculator.CaseA(gun.MaType, turned) * (woods ? 2 : 1);
-            drm.Add(new FireModifier("case-a:" + turned.ToString(System.Globalization.CultureInfo.InvariantCulture), caseA, "C5.1"));
+            drm.Add(ScenarioA1ArmorCalculator.CaseADrm(gun.MaType, turned, woods));
         }
         else if (shot.Vehicle?.Weapons?.MaintainedCaseA is > 0 and var maintained && shot.SameHex != true)
         {
@@ -1721,7 +1720,7 @@ public static class ScenarioA1OrdnanceCalculator
     {
         if (shot.IntensiveFire == true)
         {
-            yield return new FireModifier("case-f", 2, "C5.61");
+            yield return ScenarioA1ArmorCalculator.CaseFDrm();
         }
 
         if (shot.UseMultiple is { } multiple && shot.Vehicle is null)

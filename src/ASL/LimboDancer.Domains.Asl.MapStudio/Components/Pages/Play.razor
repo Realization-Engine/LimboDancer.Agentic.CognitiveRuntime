@@ -1226,7 +1226,7 @@ else if (state is not null)
                         @if (state.Phase != "mph" && state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:gun" } chosenGun && (!OrdnanceMortar || !OrdnanceLightMode))
                         {
                             <GunArcAction Facing="@ordnanceTurn" OnFacing="@(facing => ordnanceTurn = facing)" OnPropose="@ProposeTurnGun"
-                                Arc="@([.. FireTargets(firing).Select(at => new GunArcAction.ArcReading(at, LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation.TryParse(at, out var reading) ? Live.Planner.GunTargetStatus(state, chosenGun.Id, reading, ordnanceSecondFirer) ?? "not read" : "not read"))])" />
+                                Arc="@([.. FireTargets(firing).Select(at => new GunArcAction.ArcReading(at, LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation.TryParse(at, out var reading) ? Live.Planner.GunTargetStatus(state, chosenGun.Id, reading, ordnanceSecondFirer.Length == 0 ? null : ordnanceSecondFirer) ?? "not read" : "not read"))])" />
                         }
                     }
                 }
@@ -8308,8 +8308,27 @@ else if (state is not null)
 
     private bool OrdnanceMortar => state?.Find(ordnanceGun) is EquipmentInstance gun && LiveOrdnance.IsMortar(gun);
 
-    private bool OrdnanceLightMode => state is not null && LiveOrdnance.FiresAsLight(state, ordnanceGun,
-        ordnanceSecondFirer.Length == 0 ? null : ordnanceSecondFirer);
+    // The light-mode reading asks ParticipantRefusal; it is read once per state, weapon, and second firer, not at each use in a render.
+    private (GameState? State, string Gun, string Second, bool Light) ordnanceLightModeRead;
+
+    private bool OrdnanceLightMode
+    {
+        get
+        {
+            if (state is null)
+            {
+                return false;
+            }
+            var read = ordnanceLightModeRead;
+            if (!ReferenceEquals(read.State, state) || read.Gun != ordnanceGun || read.Second != ordnanceSecondFirer)
+            {
+                read = (state, ordnanceGun, ordnanceSecondFirer,
+                    LiveOrdnance.FiresAsLight(state, ordnanceGun, ordnanceSecondFirer.Length == 0 ? null : ordnanceSecondFirer));
+                ordnanceLightModeRead = read;
+            }
+            return read.Light;
+        }
+    }
 
     /// <summary>The units that may spot for the chosen mortar, as the C9.3 calculator says, or null for another weapon.</summary>
     private IReadOnlyList<PlayChoice>? OrdnanceSpotters(string side)

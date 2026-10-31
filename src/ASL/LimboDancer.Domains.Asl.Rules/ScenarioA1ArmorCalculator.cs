@@ -20,6 +20,13 @@ internal static class ScenarioA1ArmorCalculator
         _ => 3 + hexspines - 1,
     };
 
+    /// <summary>The Case A To Hit DRM item (C5.1), doubled when the firer is in woods or a building (C5.11); the one copy every Gun path asks.</summary>
+    internal static FireModifier CaseADrm(string? maType, int hexspines, bool woodsOrBuilding) =>
+        new("case-a:" + hexspines.ToString(CultureInfo.InvariantCulture), CaseA(maType, hexspines) * (woodsOrBuilding ? 2 : 1), "C5.1");
+
+    /// <summary>The Case F To Hit DRM item for Intensive Fire (C5.61); the one copy every Gun path asks.</summary>
+    internal static FireModifier CaseFDrm() => new("case-f", 2, "C5.61");
+
     /// <summary>
     /// One item of a counter's special ammunition (C8.9, C8.91; ruling R55.4), written <c>&lt;type&gt;&lt;number&gt;[^&lt;year digit&gt;[m&lt;month&gt;][+][E]]</c>:
     /// the type (A for APCR, D for APDS, H for HEAT, HE, AP, C for Canister), its Depletion Number, the first year it holds in, the first month of
@@ -353,7 +360,7 @@ internal static class ScenarioA1ArmorCalculator
         var woods = shot.FirerInWoodsOrBuilding == true;
         if (shot.HexspinesToTurn is int turned && turned > 0)
         {
-            drm.Add(new FireModifier("case-a:" + turned.ToString(CultureInfo.InvariantCulture), CaseA(gun.MaType, turned) * (woods ? 2 : 1), "C5.1"));
+            drm.Add(CaseADrm(gun.MaType, turned, woods));
         }
         else if (shot.Vehicle?.Weapons?.MaintainedCaseA is > 0 and var maintained && shot.SameHex != true)
         {
