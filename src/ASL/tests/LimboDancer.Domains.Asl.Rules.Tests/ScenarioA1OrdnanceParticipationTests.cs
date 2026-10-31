@@ -790,6 +790,59 @@ public sealed class ScenarioA1OrdnanceParticipationTests
         }
     }
 
+    [Theory]
+    [InlineData(true, 3)]
+    [InlineData(false, 1)]
+    public void TheVehicleTargetPathUsesTheSameNtOnlyConditionalRof(bool turreted, int printedRof)
+    {
+        // C2.5 (p. 168): the armor path asks the one ConditionalRof the direct and Canister paths ask.
+        var original = Shot(false, true);
+        var shot = original with
+        {
+            Gun = original.Gun! with
+            {
+                DefinitionId = "defender-at-gun"
+            },
+            TargetType = null,
+            VehicleTarget = new OrdnanceVehicleTarget("tank", "defender-tank", "front", "front", false, false, false, false, true),
+            Ammunition = "ap",
+            ScenarioYear = 1942,
+            UseMultiple = 1,
+            HexspinesToTurn = 1,
+            Hit = original.Hit! with
+            {
+                Targets = []
+            },
+            Rolls = new OrdnanceRolls([3, 4], null, null, null, null) { ToKill = [6, 6], CollateralCheck = [6, 5], CrewSurvival = [6, 6] }
+        };
+        var gun = Reference.Guns[shot.Gun.DefinitionId!] with
+        {
+            MaType = turreted ? "t" : null,
+            RateOfFire = printedRof
+        };
+        var reference = Reference.WithGun(gun);
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, reference);
+        Assert.True(result.Disposition == OrdnanceResolution.Resolved, string.Join(", ", result.Reasons));
+        var legacy = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Participation = null
+        }, reference);
+        Assert.True(legacy.Disposition == OrdnanceResolution.Resolved, string.Join(", ", legacy.Reasons));
+        if (turreted)
+        {
+            // A turret's CA change costs no ROF under Participation; the record before it keeps the old one lower.
+            Assert.Equal(legacy.Gun!.RateOfFire + 1, result.Gun!.RateOfFire);
+            Assert.NotEqual("intensive-fire", result.Gun.FireCounter);
+        }
+        else
+        {
+            // An NT Gun with no Multiple ROF left after the CA change takes the Intensive Fire counter; the record before it does not.
+            Assert.Equal(0, result.Gun!.RateOfFire);
+            Assert.Equal("intensive-fire", result.Gun.FireCounter);
+            Assert.NotEqual("intensive-fire", legacy.Gun!.FireCounter);
+        }
+    }
+
     private static OrdnanceShot Shot(bool heavy, bool pair)
     {
         var second = Second with
