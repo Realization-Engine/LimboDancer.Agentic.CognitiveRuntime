@@ -114,7 +114,7 @@ public sealed class PlayWorkspaceComponentTests : IDisposable
         var panel = context.Render<RallyActionPanel>(parameters => parameters.Add(item => item.Units, [new PlayChoice("r1", "r1 (russian)")])
             .Add(item => item.Leaders, []));
         Assert.Equal("propose-rally-ready", panel.Find("#propose-rally").GetAttribute("aria-describedby"));
-        Assert.Equal("Choose the broken unit that tries to rally.", panel.Find("#propose-rally-ready").TextContent);
+        Assert.Equal("Choose a broken unit.", panel.Find("#propose-rally-ready").TextContent);
 
         panel.Render(parameters => parameters.Add(item => item.Unit, "r1"));
         Assert.Empty(panel.FindAll("#propose-rally-ready"));

@@ -151,6 +151,8 @@ The user approved committing, pushing and merging after green CI. Integrated mai
 
 The one affected icon-inventory check passed after a strict build of the merged Studio test project. The current `rally-workflow-single-checks.log` and `results/rally-workflow-single.trx` now hold that integration check. The earlier successful deployment retry report was preserved as `results/rally-deploy-single.trx` before replacement. Full CI is the remaining merge condition.
 
+The first full CI run, [41249375856](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/actions/runs/41249375856), found four outdated UI-text assertions after 634 Studio tests passed (five existing skips). Updated the expected Fire placeholder, Movement destination prompt, Rally readiness and Close Combat heading, retaining each test's behavioral assertions. All four passed in the focused strict-build retry, recorded in `action-form-design/ci-presentation-checks.log` and `results/ci-presentation.trx`. The task check script now includes this group so subsequent wording edits can check these affected contracts without a full local suite. No application behavior changed in this correction.
+
 ### Retained outputs
 
 `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex`. Task builds and checks are registered under `action-form-design`. The active demo stays on port 6680 for review; other Studio ports are untouched. Keep logs/results as verification evidence, and clean superseded task-owned binaries after the active demo build is established.

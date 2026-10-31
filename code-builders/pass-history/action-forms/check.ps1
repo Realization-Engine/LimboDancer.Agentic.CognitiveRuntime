@@ -1,4 +1,4 @@
-param([switch]$Movement, [switch]$Fire, [switch]$Rout, [switch]$Advance, [switch]$CloseCombat, [switch]$Rally, [switch]$RallyRefusal, [string]$Only)
+param([switch]$Movement, [switch]$Fire, [switch]$Rout, [switch]$Advance, [switch]$CloseCombat, [switch]$Rally, [switch]$RallyRefusal, [switch]$CiPresentation, [string]$Only)
 $ErrorActionPreference = 'Stop'
 if (-not $env:ASL_GATE_WORK) { throw 'Set ASL_GATE_WORK first.' }
 $repoRoot = (Resolve-Path "$PSScriptRoot/../../..").Path
@@ -78,6 +78,15 @@ if ($RallyRefusal) {
     $methods = @('MovementPlotTests.TheRallyBarIsTheGatesOwnRefusal')
     $testProject = "$repoRoot/src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/LimboDancer.Domains.Asl.Play.Tests.csproj"
     $checkName = 'rally-refusal'
+}
+if ($CiPresentation) {
+    $methods = @(
+        'PlayPagePass31cTests.AnArmedLocationTakesTheNextHexClickedAndAHandOverDropsIt',
+        'PlayPagePass31cTests.TheFirePanelReadsItsTargetsByRangeOnceAFirerIsTicked',
+        'PlayWorkspaceComponentTests.ADisabledProposeButtonSaysWhatIsMissing',
+        'CloseCombatComponentTests.TheAttackBuilderOffersCaptureFieldsOnlyForACapture'
+    )
+    $checkName = 'ci-presentation'
 }
 $filter = ($methods | ForEach-Object { "FullyQualifiedName~$_" }) -join '|'
 if ($Only) {

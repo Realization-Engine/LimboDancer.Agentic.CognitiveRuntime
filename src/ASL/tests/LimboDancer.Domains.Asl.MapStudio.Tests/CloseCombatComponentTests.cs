@@ -280,7 +280,7 @@ public sealed class CloseCombatComponentTests : IDisposable
                 [new CloseCombatAttackBuilder.Participant("g1", "g1 (4-6-7)", false)])])
             .Add(item => item.Attackers, new HashSet<string>()).Add(item => item.Defenders, new HashSet<string>())
             .Add(item => item.OnAttacker, value => attacker = value).Add(item => item.OnCapture, value => capture = value).Add(item => item.OnAdd, () => added = true));
-        Assert.Contains("Russian (ATTACKER)", builder.Find(".cc-side[data-side='russian']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Russian: build an attack", builder.Find(".cc-side[data-side='russian']").TextContent, StringComparison.Ordinal);
         Assert.True(builder.Find(".cc-attacker[data-unit='r1']").HasAttribute("disabled"));
         Assert.False(builder.Find(".cc-attacker[data-unit='r2']").HasAttribute("disabled"));
         Assert.Equal("russian", builder.Find(".cc-defender[data-unit='g1']").GetAttribute("data-by"));

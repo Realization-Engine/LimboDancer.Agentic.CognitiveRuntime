@@ -276,11 +276,11 @@ public sealed class PlayPagePass31cTests : IDisposable
         var events = live.History("village")!.Events.Count;
 
         page.Find("#fire-from").Change(from);
-        Assert.Equal(["choose", "[A1]", "[B0]"], Texts(page, "#fire-target option"));
+        Assert.Equal(["Choose location", "[A1]", "[B0]"], Texts(page, "#fire-target option"));
         Assert.Empty(page.FindAll("#fire-range"));
 
         page.Find(".fire-firer[data-unit='r1']").Change(true);
-        Assert.Equal(["choose", "[B0]: 1 hex, PBF", "[A1]: 2 hexes, Normal Range"], Texts(page, "#fire-target option"));
+        Assert.Equal(["Choose location", "[B0]: 1 hex, PBF", "[A1]: 2 hexes, Normal Range"], Texts(page, "#fire-target option"));
         Assert.Equal(["", near, far], page.FindAll("#fire-target option").Select(option => option.GetAttribute("value")));
         Assert.All(page.FindAll("#fire-target option"), option => Assert.False(option.HasAttribute("disabled")));
 
@@ -629,7 +629,7 @@ public sealed class PlayPagePass31cTests : IDisposable
         page.Find("#move-to-pick").Click();
         Assert.Equal("true", page.Find("span.location-field:has(#move-to)").GetAttribute("data-armed"));
         Assert.Equal("Cancel picking", page.Find("#move-to-pick").TextContent);
-        Assert.Contains("The next hex clicked on the map fills \"To\", at ground level.", page.Find("#play-picking").TextContent, StringComparison.Ordinal);
+        Assert.Contains("The next hex clicked on the map fills destination, at ground level.", page.Find("#play-picking").TextContent, StringComparison.Ordinal);
         Assert.Equal(string.Empty, page.Find("#move-to").GetAttribute("value"));
 
         ClickHex(page, hexes.Building);
@@ -651,7 +651,7 @@ public sealed class PlayPagePass31cTests : IDisposable
         page.ViewAs("german");
         Assert.Empty(page.FindAll("#play-picking"));
         Assert.Equal("false", page.Find("span.location-field:has(#move-to)").GetAttribute("data-armed"));
-        Assert.Equal("Pick \"To\" on map", page.Find("#move-to-pick").TextContent);
+        Assert.Equal("Pick destination on map", page.Find("#move-to-pick").TextContent);
     }
 
     // Design D15: the card opens from the header's link and takes no room in the workspace; the units table is a panel of the activity strip, one
