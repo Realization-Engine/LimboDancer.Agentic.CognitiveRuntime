@@ -908,7 +908,9 @@ else if (state is not null)
                 @* The Play streamlining plan, S7 (ruling R-PS.8): the Advance form is the ATTACKER's; the other view is shown no section for it. *@
                 @if (state.Phase == "aph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
                 {
-                    <AdvanceActionPanel Side="@(state.PhasingSide ?? string.Empty)" Units="@AdvanceRows" Selected="@advanceUnits" Destinations="@AdvanceDestinations" Waiting="@AdvanceWaiting"
+                    var advanceRows = AdvanceRows;
+                    <AdvanceActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" Side="@(state.PhasingSide ?? string.Empty)" Units="@advanceRows" Selected="@advanceUnits" Destinations="@AdvanceDestinations" Waiting="@AdvanceWaiting"
+                        Locations="@(advanceRows.ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)?.Location.ToString()))" OnClear="@ClearAdvanceDraft"
                         Edges="@ExitEdges" To="@advanceTo" Edge="@advanceExit" OnToggle="@ToggleAdvancer"
                         OnTo="@(to => advanceTo = to)" OnEdge="@(edge => advanceExit = edge)" OnPropose="@ProposeAdvanceUnits" OnExit="@ProposeAdvanceExit" />
                 }
@@ -3044,7 +3046,7 @@ else if (state is not null)
     private void PickHex(StudioBoard board, HexFacts? facts)
     {
         highlight = facts is null ? null : GameMaps.LocationOf(board, facts.Index);
-        (Picking.Picked, Picking.Serial) = (highlight?.ToString(), Picking.Serial + 1);
+        (Picking.Picked, Picking.PickedBy, Picking.Serial) = (highlight?.ToString(), Picking.Armed, Picking.Serial + 1);
 
         // The Play streamlining plan, S3: while a route is plotted, a click adds the hex to it.
         if (plotOn && highlight is { } plotted && state is not null && handOver is null && !SetupOpen)
@@ -6797,8 +6799,18 @@ else if (state is not null)
 
     private void ToggleAdvancer(UnitSelectionList.Toggle toggle)
     {
+        if (Picking.Armed == "advance-to") Picking.Arm(null, null);
         Toggle(advanceUnits, toggle.Id, toggle.On);
+        advanceExit = string.Empty;
         PruneMoveDrafts();
+    }
+
+    private void ClearAdvanceDraft()
+    {
+        if (Picking.Armed == "advance-to") Picking.Arm(null, null);
+        advanceUnits.Clear();
+        advanceTo = string.Empty;
+        advanceExit = string.Empty;
     }
 
     private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun,

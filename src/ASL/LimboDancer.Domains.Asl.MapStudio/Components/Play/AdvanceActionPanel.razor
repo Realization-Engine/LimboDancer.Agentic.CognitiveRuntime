@@ -2,34 +2,80 @@
    turn has come, into a hex of their entry edge (A2.5; ruling R25.1); or units in an edge hex off the map (A2.6; ruling R25.5). The page reads the units
    for the view (ruling R23.1), keeps the draft and its reset rules (plan section 15.3), and proposes; the planner decides. *@
 <ActionSection Title="Advance" Key="advance">
-<RuleHelp Id="advance-help" Summary="@($"The {Side} side's Infantry that are not broken, pinned, berserk, or held in Melee may advance one Location, even into Known enemy units (A4.7).")">
+@if (scope is { } scoped)
+{
+    <div class="toolbar" id="advance-scope">
+        <strong>Advancing from @Say(scoped)</strong>
+        <button type="button" class="link" @onclick="ReleaseScope">Show all advance units</button>
+    </div>
+}
+<RuleHelp Id="advance-help" Summary="Select units, then choose a destination or pick it on the map.">
     The @Side side's Infantry that are not broken, pinned, berserk, or held in Melee may advance one Location (A3.7, A4.7),
     even into a Location of Known enemy units, where Close Combat follows. A unit that fired in the PFPh may advance.
 </RuleHelp>
-@if (Waiting.Count > 0)
+@if (scope is null && Waiting.Count > 0)
 {
     <p class="muted" id="advance-entry">
-        @Say(string.Join(", ", Waiting)) @(Waiting.Count == 1 ? "waits" : "wait") off board: units whose entry turn has come enter by advance into a hex of their entry
-        edge, and the APh does not end while one still may (A2.5; ruling R25.1).
+        @Say(string.Join(", ", Waiting)): waiting off board. Choose units to see their entry destinations.
     </p>
 }
 <div class="action-form">
-    <UnitSelectionList Rows="@Units" Selected="@Selected" CssClass="advance-unit" Legend="Units advancing" Empty="none may advance now." OnToggle="@OnToggle" />
+    <UnitSelectionList Rows="@ShownUnits" Selected="@Selected" CssClass="advance-unit" Legend="Units advancing" Empty="none may advance now." OnToggle="@OnToggle" />
+@if (Selected.Count > 0)
+{
 <ActionFormGroup Legend="Destination">
     <ActionLocationChoice Id="advance-to" Label="Destination" AllowFreeEntry="false" Value="@To" Choices="@Destinations" OnSuggested="OnTo" />
 </ActionFormGroup>
 <ActionProposalArea>
     <button id="propose-advance-units" disabled="@(Selected.Count == 0 || To.Trim().Length == 0)" aria-describedby="propose-advance-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: advance</button>
-    @if (Selected.Count == 0 || To.Trim().Length == 0)
+    @if (To.Trim().Length == 0)
     {
-        <span id="propose-advance-ready" class="toolbar-note">Check the units advancing and choose where.</span>
+        <span id="propose-advance-ready" class="toolbar-note">@(Destinations.Count == 0 ? "No destination is offered for this selection." : "Choose a destination.")</span>
     }
 </ActionProposalArea>
-    <MapExitAction SelectId="advance-exit" ButtonId="propose-advance-exit" DescribedBy="advance-help-summary" Edges="@Edges" Edge="@Edge" Ready="@(Selected.Count > 0)" OnEdge="@OnEdge" OnPropose="@OnExit" />
+    <details class="action-options" open="@(Edge.Length > 0)">
+        <summary>Leave the map</summary>
+        <div class="toolbar">
+            <MapExitAction SelectId="advance-exit" ButtonId="propose-advance-exit" DescribedBy="advance-help-summary" Edges="@Edges" Edge="@Edge" Ready="true" OnEdge="@OnEdge" OnPropose="@OnExit" />
+        </div>
+    </details>
+}
+else if (Units.Count > 0)
+{
+    <p class="toolbar-note" id="advance-select">Select the units to advance.</p>
+}
 </div>
 </ActionSection>
 
 @code {
+    [CascadingParameter(Name = "PickedLocation")] public string? Picked { get; set; }
+    [CascadingParameter(Name = "Picking")] public LocationPicking? Picking { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string?> Locations { get; set; } = new Dictionary<string, string?>();
+    [Parameter] public EventCallback OnClear { get; set; }
+    private string? scope;
+    private string? lastPicked;
+    private long seenPick = -1;
+    private IReadOnlyList<UnitSelectionList.Row> ShownUnits => scope is null ? Units : [.. Units.Where(unit => InHex(unit.Id, scope))];
+    private bool InHex(string id, string hex) => BoardLocation.TryParse(hex, out var picked)
+        && BoardLocation.TryParse(Locations.GetValueOrDefault(id), out var at) && at.Board == picked.Board && at.Hex == picked.Hex;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var serial = Picking?.Serial ?? 0;
+        var fresh = serial != seenPick || Picked != lastPicked;
+        (seenPick, lastPicked) = (serial, Picked);
+        if (fresh && Picking?.Armed is null && Picking?.PickedBy is null)
+            scope = Picked is { } picked && Units.Any(unit => InHex(unit.Id, picked)) ? picked : null;
+        else if (scope is { } current && !Units.Any(unit => InHex(unit.Id, current))) scope = null;
+        if (scope is not null && Selected.Any(id => !InHex(id, scope))) await OnClear.InvokeAsync();
+    }
+
+    private void ReleaseScope()
+    {
+        scope = null;
+        if (Picking?.Armed == "advance-to") Picking.Arm(null, null);
+    }
+
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }

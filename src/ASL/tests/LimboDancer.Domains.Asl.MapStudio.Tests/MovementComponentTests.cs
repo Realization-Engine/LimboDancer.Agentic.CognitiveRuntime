@@ -149,6 +149,76 @@ public sealed class MovementComponentTests : IDisposable
         Assert.Empty(rout.FindAll("#rout-unit, #rout-route"));
     }
 
+    [Fact]
+    public void AdvanceScopePreservesDestinationPicksAfterTheChooserDisarms()
+    {
+        var selected = new HashSet<string>();
+        string? destination = null;
+        var picking = new LocationPicking();
+        picking.Arm = (id, label) => { picking.Armed = id; picking.ArmedLabel = label; };
+        var host = context.Render<CascadingValue<string>>(parameters => parameters
+            .AddCascadingValue("Picking", picking).Add(item => item.Name, "PickedLocation").Add(item => item.Value, "bd01:A1:0")
+            .AddChildContent<AdvanceActionPanel>(parameters => parameters
+                .Add(item => item.Side, "russian")
+                .Add(item => item.Units, [new("ground", "ground squad"), new("upper", "upper squad"), new("other", "other board"), new("second", "second hex")])
+                .Add(item => item.Locations, new Dictionary<string, string?>
+                {
+                    ["ground"] = "bd01:A1:0",
+                    ["upper"] = "bd01:A1:1",
+                    ["other"] = "bd02:A1:0",
+                    ["second"] = "bd01:B2:0",
+                })
+                .Add(item => item.Selected, selected).Add(item => item.Edges, [])
+                .Add(item => item.Destinations, ["bd01:B2:0"])
+                .Add(item => item.OnTo, value => destination = value)
+                .Add(item => item.OnClear, () => selected.Clear())));
+        var panel = host.FindComponent<AdvanceActionPanel>();
+        var childContent = host.Instance.ChildContent;
+
+        void RenderPick(string hex) => host.Render(parameters => parameters.Add(item => item.Name, "PickedLocation")
+            .Add(item => item.Value, hex).Add(item => item.ChildContent, childContent));
+        void Pick(string hex)
+        {
+            picking.PickedBy = picking.Armed;
+            picking.Picked = hex;
+            picking.Serial++;
+            RenderPick(hex);
+        }
+
+        Assert.Equal(["ground", "upper"], panel.FindAll(".advance-unit").Select(unit => unit.GetAttribute("data-unit")));
+        Assert.Empty(selected);
+        Assert.Empty(panel.FindAll("#advance-to, #advance-exit"));
+        panel.Find("#advance-scope button").Click();
+        Assert.Equal(4, panel.FindAll(".advance-unit").Count);
+        Pick("bd01:A1:0");
+        Assert.Equal(2, panel.FindAll(".advance-unit").Count);
+        selected.Add("ground");
+        panel.Render();
+        panel.Find(".pick-on-map").Click();
+
+        // The page's mutable picker can arrive before the PickedLocation cascade. The child disarms on success;
+        // the later cascade must not reinterpret that same click as a change of origin.
+        picking.PickedBy = picking.Armed;
+        picking.Picked = "bd01:B2:0";
+        picking.Serial++;
+        RenderPick("bd01:A1:0");
+        Assert.Null(picking.Armed);
+        Assert.Equal("bd01:B2:0", destination);
+        RenderPick("bd01:B2:0");
+        Assert.Contains("A1", panel.Find("#advance-scope").TextContent, StringComparison.Ordinal);
+        Assert.Contains("ground", selected);
+        Pick("bd01:B2:0");
+        Assert.Empty(selected);
+        Assert.Equal("second", Assert.Single(panel.FindAll(".advance-unit")).GetAttribute("data-unit"));
+        Pick("bd01:C4:0");
+        Assert.Empty(panel.FindAll("#advance-scope"));
+        Assert.Equal(4, panel.FindAll(".advance-unit").Count);
+        Pick("bd02:A1:0");
+        Assert.Equal("other", Assert.Single(panel.FindAll(".advance-unit")).GetAttribute("data-unit"));
+        panel.Render(parameters => parameters.Add(item => item.Units, []));
+        Assert.Empty(panel.FindAll("#advance-scope, #advance-to, #advance-exit"));
+    }
+
     // A13: the step's options come back as one draft; the push shows only for a crew with a Gun.
     [Fact]
     public void MapOriginsKeepBoardsLevelsAndUnitSelectionDistinct()
@@ -228,7 +298,11 @@ public sealed class MovementComponentTests : IDisposable
         var panel = context.Render<AdvanceActionPanel>(parameters => parameters.Add(item => item.Side, "british")
             .Add(item => item.Units, [new UnitSelectionList.Row("bs9", "bs9 (off board: enters along the top edge)")]).Add(item => item.Selected, new HashSet<string>())
             .Add(item => item.Destinations, []).Add(item => item.Waiting, ["bs9"]).Add(item => item.Edges, [new MapExitAction.EdgeChoice("top", "top (north)")]));
-        Assert.Contains("bs9 waits off board", panel.Find("#advance-entry").TextContent, StringComparison.Ordinal);
+        Assert.Contains("bs9: waiting off board", panel.Find("#advance-entry").TextContent, StringComparison.Ordinal);
+        Assert.Empty(panel.FindAll("#advance-to, #advance-exit"));
+        panel.Render(parameters => parameters.Add(item => item.Selected, new HashSet<string> { "bs9" })
+            .Add(item => item.Destinations, ["bd04:A1:0"]));
+        Assert.Contains(panel.FindAll("#advance-to option"), option => option.GetAttribute("value") == "bd04:A1:0");
         Assert.NotNull(panel.Find("#advance-exit"));
         Assert.True(panel.Find("#propose-advance-exit").HasAttribute("disabled"));
         Assert.Empty(context.Render<AdvanceActionPanel>(parameters => parameters.Add(item => item.Side, "british").Add(item => item.Units, [])

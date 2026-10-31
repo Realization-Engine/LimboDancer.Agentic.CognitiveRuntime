@@ -1,4 +1,4 @@
-param([switch]$Movement, [switch]$Fire, [switch]$Rout, [string]$Only)
+param([switch]$Movement, [switch]$Fire, [switch]$Rout, [switch]$Advance, [string]$Only)
 $ErrorActionPreference = 'Stop'
 if (-not $env:ASL_GATE_WORK) { throw 'Set ASL_GATE_WORK first.' }
 $repoRoot = (Resolve-Path "$PSScriptRoot/../../..").Path
@@ -34,6 +34,15 @@ if ($Rout) {
         'PlayPagePass31dTests.TheRoutPanelSaysWhatALadenUnitLeavesOffersAWayAndTheReviewSaysWhatIsLeft'
     )
     $checkName = 'rout-workflow'
+}
+if ($Advance) {
+    $methods = @(
+        'MovementComponentTests.AdvanceScopePreservesDestinationPicksAfterTheChooserDisarms',
+        'MovementComponentTests.TheAdvanceNamesUnitsWaitingOffBoard',
+        'IconCoverageTests.TheCoverageFileMatchesTheSources'
+    )
+    $checkName = 'advance-workflow'
+    $env:ASL_ICONS_UPDATE_COVERAGE = '1'
 }
 $filter = ($methods | ForEach-Object { "FullyQualifiedName~$_" }) -join '|'
 if ($Only) {
