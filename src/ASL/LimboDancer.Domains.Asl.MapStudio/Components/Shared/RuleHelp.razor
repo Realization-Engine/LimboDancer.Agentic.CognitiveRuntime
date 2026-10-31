@@ -1,14 +1,22 @@
 @* Plan S08 (pass 28b): a rule paragraph moved out of the task flow. The summary always shows; the full text and its citations sit in a collapsed
    disclosure that keeps the paragraph's id, so a test or an aria-describedby still finds it. Its only state is whether it is open. *@
 <div class="rule-help" data-help="@Id">
-    <p class="muted rule-help-summary" id="@($"{Id}-summary")">@Summary</p>
+    @if (!CompactAction)
+    {
+        <p class="muted rule-help-summary" id="@($"{Id}-summary")">@Summary</p>
+    }
     <details class="rule-help-detail">
         <summary aria-describedby="@($"{Id}-summary")">@DetailLabel</summary>
+        @if (CompactAction)
+        {
+            <p class="muted rule-help-summary" id="@($"{Id}-summary")">@Summary</p>
+        }
         <p class="muted" id="@Id">@ChildContent</p>
     </details>
 </div>
 
 @code {
+    [CascadingParameter(Name = "CompactActionHelp")] public bool CompactAction { get; set; }
     /// <summary>The disclosure's label: "The rule in full", or "How this works" for a page's introduction (Claude Design's review).</summary>
     [Parameter]
     public string DetailLabel { get; set; } = "The rule in full";

@@ -54,7 +54,7 @@ public sealed class RallyAndRecordComponentTests : IDisposable
             .Add(item => item.Squad, "g1").Add(item => item.SpotterChoiceRequired, true)
             .Add(item => item.OnSpotterHalf, (string value) => selected = value));
         Assert.True(panel.Find("#propose-deploy").HasAttribute("disabled"));
-        Assert.Contains("remain pending", panel.Markup, StringComparison.Ordinal);
+        Assert.Contains("Retains spotting if Deployment succeeds.", panel.Markup, StringComparison.Ordinal);
         panel.Find("#deploy-spotter").Change("second");
         Assert.Equal("second", selected);
         panel.Render(parameters => parameters.Add(item => item.SpotterHalf, "second"));
@@ -101,6 +101,27 @@ public sealed class RallyAndRecordComponentTests : IDisposable
 
         panel.Render(parameters => parameters.Add(item => item.Barred, (string?)null));
         Assert.False(panel.Find("#propose-rally").HasAttribute("disabled"));
+    }
+
+    [Fact]
+    public void RallyOffersOnlySuppliedAssistanceAndRequiresASelectedMethod()
+    {
+        PlayChoice[] units = [new("g1", "squad")];
+        PlayChoice[] assistance = [new("gl", "leader")];
+        var panel = context.Render<RallyActionPanel>(parameters => parameters
+            .Add(item => item.Units, units).Add(item => item.Leaders, [])
+            .Add(item => item.Assistance, assistance));
+        Assert.Empty(panel.FindAll("#rally-leader"));
+        panel.Render(parameters => parameters.Add(item => item.Unit, "g1"));
+        Assert.DoesNotContain(panel.FindAll("#rally-leader option"), option => option.TextContent == "Self-Rally");
+        Assert.True(panel.Find("#propose-rally").HasAttribute("disabled"));
+        panel.Render(parameters => parameters.Add(item => item.Leader, "gl"));
+        Assert.False(panel.Find("#propose-rally").HasAttribute("disabled"));
+        panel.Render(parameters => parameters.Add(item => item.Assistance, Array.Empty<PlayChoice>())
+            .Add(item => item.Barred, "Already attempted this Player Turn."));
+        Assert.Empty(panel.FindAll("#rally-leader"));
+        Assert.True(panel.Find("#propose-rally").HasAttribute("disabled"));
+        Assert.Contains("Already attempted", panel.Find("#propose-rally-ready").TextContent, StringComparison.Ordinal);
     }
 
     // A09 and A10: with nothing to choose, neither renders anything.

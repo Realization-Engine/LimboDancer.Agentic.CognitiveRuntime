@@ -188,7 +188,7 @@ public sealed class LocationWordsTests : IDisposable
         var field = context.Render<LocationField>(parameters => parameters.AddCascadingValue("Picking", picking)
             .Add(item => item.Id, "move-to").Add(item => item.Label, "To").Add(item => item.OnChange, at => taken = at));
         Assert.Equal("false", field.Find(".location-field").GetAttribute("data-armed"));
-        Assert.Equal("Pick on the map", field.Find("#move-to-pick").TextContent);
+        Assert.Equal("Pick \"To\" on map", field.Find("#move-to-pick").TextContent);
 
         field.Find("#move-to-pick").Click();
         Assert.Equal(("move-to", "fills \"To\""), (picking.Armed, picking.ArmedLabel));
@@ -197,7 +197,7 @@ public sealed class LocationWordsTests : IDisposable
         field.Render(parameters => parameters.Add(item => item.Value, taken));
         Assert.Equal(string.Empty, taken);
         Assert.Equal("true", field.Find(".location-field").GetAttribute("data-armed"));
-        Assert.Equal("Stop picking", field.Find("#move-to-pick").TextContent);
+        Assert.Equal("Cancel picking", field.Find("#move-to-pick").TextContent);
         Assert.Empty(field.FindAll("#move-to-use"));
 
         // The next pick fills the field, at ground level, and disarms it.

@@ -4,23 +4,29 @@
    is toggled. *@
 @foreach (var side in Sides)
 {
-    <div class="toolbar cc-side" data-side="@side.Side">
-        <span>@DisplayText.Side(side.Side)@(side.Attacker ? " (ATTACKER)" : "")</span>
-        <span>attack with</span>
+    <div class="cc-side" data-side="@side.Side">
+        <h5>@DisplayText.Side(side.Side): build an attack</h5>
+        <div class="cc-participants">
+<ActionFormGroup Legend="Attackers">
         @foreach (var unit in side.Attackers)
         {
             <label><input class="cc-attacker" type="checkbox" data-unit="@unit.Id" disabled="@unit.Broken" checked="@Attackers.Contains(unit.Id)" @onchange="@(args => OnAttacker.InvokeAsync(new UnitSelectionList.Toggle(unit.Id, args.Value is true)))" /> @Say(unit.Label)</label>
         }
-        <span>attack</span>
+</ActionFormGroup>
+<ActionFormGroup Legend="Targets">
         @foreach (var unit in side.Defenders)
         {
             <label><input class="cc-defender" type="checkbox" data-unit="@unit.Id" data-by="@side.Side" checked="@Defenders.Contains(unit.Id)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit.Id, args.Value is true)))" /> @Say(unit.Label)</label>
         }
+</ActionFormGroup>
+        </div>
     </div>
 }
 @if (Declaring)
 {
-    <div class="toolbar" id="cc-attack">
+    <div id="cc-attack">
+        @if (Directors.Count > 0)
+        {
         <label>
             Director
             <select id="cc-director" value="@Director" @onchange="@(args => OnDirector.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -28,6 +34,8 @@
                 <UnitOptions Units="@([.. Directors.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
             </select>
         </label>
+        }
+        <details class="action-options" open="@Capture"><summary>Capture attempt</summary>
         <label><input id="cc-capture" type="checkbox" checked="@Capture" @onchange="@(args => OnCapture.InvokeAsync(args.Value is true))" /> capture attempt</label>
         @if (Capture)
         {
@@ -41,11 +49,19 @@
             @* Pass 31 (play test P-10; A20.22): at the Kill Number one defender is captured, of the defender's choice; left empty, the order is the targets' as listed. *@
             <label>The defender's order of choice, when several are attacked <input id="cc-yield" value="@Yield" placeholder="@(Defenders.Count > 1 ? string.Join(", ", Defenders.Order(StringComparer.Ordinal)) : "the one target")" @onchange="@(args => OnYield.InvokeAsync(args.Value as string ?? string.Empty))" /></label>
         }
-        <button id="cc-add-attack" disabled="@(Attackers.Count == 0 || Defenders.Count == 0)" @onclick="@(() => OnAdd.InvokeAsync())">Add the attack</button>
+        </details>
+        <div class="toolbar">
+        <button id="cc-add-attack" disabled="@(Attackers.Count == 0 || Defenders.Count == 0)" @onclick="@(() => OnAdd.InvokeAsync())">Add attack</button>
+        @if (Attackers.Count > 0 || Defenders.Count > 0 || Capture || Director.Length > 0 || Guard.Length > 0 || Yield.Length > 0)
+        {
+            <button type="button" class="link" id="cc-clear-attack" @onclick="@(() => OnClear.InvokeAsync())">Clear selection</button>
+        }
+        </div>
     </div>
 }
 
 @code {
+    [Parameter] public EventCallback OnClear { get; set; }
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }

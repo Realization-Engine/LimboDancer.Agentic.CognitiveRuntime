@@ -610,8 +610,14 @@ public sealed partial class GamePlanner
         }
 
         var directing = new[] { facts.Director?.UnitId }.Concat(facts.OtherDirectors?.Select(item => item.UnitId) ?? []).OfType<string>().ToArray();
+        IEnumerable<string?> firingNames = facts.VehicleFire is { } byVehicle
+            ? [byVehicle.Weapons is { Count: > 0 } mgs ? $"{byVehicle.VehicleId}'s {string.Join(" and ", mgs.Select(item => (item.Weapon ?? string.Empty).ToUpperInvariant()))}" : byVehicle.VehicleId]
+            : facts.Firers!.Select(item => item.UsesInherentFp == false && item.Weapons is { Count: > 0 } firingWeapons
+                ? $"{string.Join(" and ", firingWeapons.Select(weapon => weapon.EquipmentId))} of {item.UnitId}"
+                : item.UnitId);
+        var fireVerb = facts.VehicleFire is null && facts.Firers is [{ UsesInherentFp: false, Weapons: { Count: 1 } }] ? "fires" : "fire";
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.fire: {string.Join(", ", facts.VehicleFire is { } byVehicle ? [byVehicle.Weapons is { Count: > 0 } mgs ? $"{byVehicle.VehicleId}'s {string.Join(" and ", mgs.Select(item => (item.Weapon ?? string.Empty).ToUpperInvariant()))}" : byVehicle.VehicleId] : facts.Firers!.Select(item => item.UnitId))} fire at {facts.TargetLocationId} in the {facts.Phase}"
+            [$"play.fire: {string.Join(", ", firingNames)} {fireVerb} at {facts.TargetLocationId} in the {facts.Phase}"
                 + (facts.FireKind is { } kind ? $" ({kind})" : string.Empty)
                 + (directing.Length > 0 ? $", directed by {string.Join(", ", directing)}" : string.Empty)
                 + $"; range {facts.Range}, {facts.TargetTerrain}, Hindrance {facts.Los!.HindranceDrm}"

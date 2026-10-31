@@ -5,7 +5,7 @@
     The owner of an open-topped AFV places or removes its BU counter in its own MPh or APh, once per phase, not in an MPh after it Prep
     Fired, and not while its crew is Stunned (D5.33, D5.34). A CE crew may fire the AAMG and is Vulnerable to Collateral Attacks (D5.3, D.8B).
 </RuleHelp>
-<div class="toolbar">
+<div class="toolbar action-fields">
     @foreach (var afv in Vehicles)
     {
         <button class="bu-toggle" data-vehicle="@afv.Id" @onclick="@(() => OnToggle.InvokeAsync(afv))">Propose: @afv.Id @(afv.ButtonedUp ? "exposes its crew (CE)" : "buttons up (BU)")</button>

@@ -1,39 +1,84 @@
 @* Plan A05 (pass 28b): a broken unit's rally in the RPh. The page gives the broken units and the leaders in the chosen unit's Location that the view
    sees (ruling R23.1); choosing another unit clears the leader, which the page does in its OnUnit handler (section 15.3). *@
-<RuleHelp Id="rally-help" Summary="A broken unit tries to rally once per Player Turn, with a Good Order leader in its Location or by Self-Rally if able, +4 under DM; a Good Order unit may repair a malfunctioned SW it holds (A10.6, A10.62, A10.63, A9.72).">
-    In the RPh a broken unit may attempt to rally once per Player Turn, rallied by a Good Order leader in its Location or by Self-Rally if able
-    (A10.6, A10.63), and a Good Order unit that did not attempt to rally may repair a malfunctioned SW it possesses (A9.72). A vehicle's CE crew,
-    not Stunned or Recalled, may repair its AAMG: a dr of 1 repairs it, a 6 disables it (D3.7).
-    The reviewed Rally package resolves the attempt only when every outcome the dice can reach is decided.
+<RuleHelp Id="rally-help" Summary="Choose a broken unit, then its Rally method.">
+    A broken unit may attempt to rally once per Player Turn, with a Good Order leader in its Location or by Self-Rally when permitted.
+    DM adds +4 to the Rally DR (A10.6, A10.62, A10.63).
 </RuleHelp>
-<div class="toolbar">
+@if (scope is { } scoped)
+{
+    <div class="toolbar" id="rally-scope">
+        <strong>Rallying in @Say(scoped)</strong>
+        <button type="button" class="link" @onclick="ReleaseScope">Show all rally units</button>
+    </div>
+}
+<div class="action-form">
+<ActionFormGroup Legend="Unit and assistance">
     <label>
         Broken unit
         <select id="rally-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            <UnitOptions Units="@Units" Text="@At" />
+            <UnitOptions Units="@ShownUnits" Text="@At" />
         </select>
     </label>
+    @if (HasUnit && Methods.Count > 0)
+    {
     <label>
         Rallied by
         <select id="rally-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
-            <option value="">Self-Rally</option>
-            <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
+            @if (!Methods.Any(method => method.Id == Leader))
+            {
+                <option value="@Leader" disabled>choose</option>
+            }
+            @foreach (var method in Methods)
+            {
+                <option value="@method.Id">@(method.Id.Length == 0 ? "Self-Rally" : At(method.Label))</option>
+            }
         </select>
     </label>
-    <button id="propose-rally" disabled="@(!Units.Any(unit => unit.Id == Unit) || Barred is not null)" aria-describedby="propose-rally-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
-    @if (!Units.Any(unit => unit.Id == Unit))
+    }
+</ActionFormGroup>
+<ActionProposalArea>
+    <button id="propose-rally" disabled="@(!HasUnit || !Methods.Any(method => method.Id == Leader) || Barred is not null)" aria-describedby="propose-rally-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rally</button>
+    @if (!HasUnit)
     {
-        <span id="propose-rally-ready" class="toolbar-note">Choose the broken unit that tries to rally.</span>
+        <span id="propose-rally-ready" class="toolbar-note">Choose a broken unit.</span>
     }
     else if (Barred is { } barred)
     {
         @* The Play streamlining plan, S4: an attempt the gate would refuse is not offered; the reason is the gate's own. *@
         <span id="propose-rally-ready" class="toolbar-note">@barred</span>
     }
+</ActionProposalArea>
 </div>
 
 @code {
+    [Parameter] public IReadOnlyList<PlayChoice>? Assistance { get; set; }
+    private IReadOnlyList<PlayChoice> Methods => Assistance ?? [new(string.Empty, "Self-Rally"), .. Leaders.Select(id => new PlayChoice(id, id))];
+    [CascadingParameter(Name = "PickedLocation")] public string? Picked { get; set; }
+    [CascadingParameter(Name = "Picking")] public LocationPicking? Picking { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string?> Locations { get; set; } = new Dictionary<string, string?>();
+
+    private string? scope;
+    private string? lastPicked;
+    private long seenPick = -1;
+    private IReadOnlyList<PlayChoice> ShownUnits => scope is null ? Units : [.. Units.Where(unit => InHex(unit.Id, scope))];
+    private bool HasUnit => Units.Any(unit => unit.Id == Unit && (scope is null || InHex(unit.Id, scope)));
+    private bool InHex(string id, string hex) => BoardLocation.TryParse(hex, out var picked)
+        && BoardLocation.TryParse(Locations.GetValueOrDefault(id), out var at) && at.Board == picked.Board && at.Hex == picked.Hex;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var serial = Picking?.Serial ?? 0;
+        var fresh = serial != seenPick || Picked != lastPicked;
+        (seenPick, lastPicked) = (serial, Picked);
+        if (fresh && Picking?.Armed is null && Picking?.PickedBy is null)
+            scope = Picked is { } picked && Units.Any(unit => InHex(unit.Id, picked)) ? picked : null;
+        else if (scope is { } current && !Units.Any(unit => InHex(unit.Id, current))) scope = null;
+        if (Unit.Length > 0 && !HasUnit) await OnUnit.InvokeAsync(string.Empty);
+    }
+
+    private void ReleaseScope() => scope = null;
+
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }

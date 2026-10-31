@@ -8,7 +8,7 @@
     placed beneath "?" and Dummies removed. With no concealed enemy unit left, the side Controls every Location of the building and the broken enemy
     units there surrender to the guard chosen; otherwise the DEFENDER's Casualty dr may Reduce a Mopping-Up unit (A12.153, A12.154; ruling R24.2).
 </RuleHelp>
-<div class="toolbar" id="mop-up">
+<div class="toolbar action-fields" id="mop-up">
     <label>
         Building
         <select id="mop-up-building" aria-describedby="mop-up-help-summary" value="@building" @onchange="@(args => Choose(args.Value as string))">
@@ -43,7 +43,7 @@
     <button id="propose-mop-up" disabled="@(Checked.Count == 0)" aria-describedby="mop-up-ready" @onclick="Proposed">Propose: Mop Up</button>
     @if (Checked.Count == 0)
     {
-        <span id="mop-up-ready" class="toolbar-note">Choose a building and at least one unit.</span>
+        <span id="mop-up-ready" class="toolbar action-fields-note">Choose a building and at least one unit.</span>
     }
 </div>
 </ActionSection>

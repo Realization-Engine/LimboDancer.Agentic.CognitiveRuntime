@@ -1,7 +1,9 @@
 using Bunit;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.MapStudio.Components.Play;
+using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Units.State;
+using Microsoft.AspNetCore.Components;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 
@@ -14,6 +16,112 @@ public sealed class CloseCombatComponentTests : IDisposable
     private readonly BunitContext context = new();
 
     public void Dispose() => context.Dispose();
+
+    [Fact]
+    public void CloseCombatRequiresFinishedDeclarationsAndReview()
+    {
+        var handedOver = 0;
+        var proposed = 0;
+        var selected = new HashSet<string> { "r1" };
+        var panel = context.Render<CloseCombatPanel>(parameters => parameters
+            .Add(item => item.Locations, ["bd04:E5:0"]).Add(item => item.Location, "bd04:E5:0")
+            .Add(item => item.Step, CloseCombatPanel.DeclareStep).Add(item => item.FirstSide, "russian").Add(item => item.SecondSide, "german")
+            .Add(item => item.Attackers, selected)
+            .Add(item => item.OnDeclare, () => handedOver++).Add(item => item.OnPropose, () => proposed++));
+        Assert.True(panel.Find("#declare-cc").HasAttribute("disabled"));
+        Assert.Empty(panel.FindAll("#propose-cc"));
+        selected.Clear();
+        panel.Render();
+        panel.Find("#declare-cc").Click();
+        Assert.Equal(1, handedOver);
+
+        panel.Render(parameters => parameters.Add(item => item.Step, CloseCombatPanel.WaitStep));
+        Assert.Empty(panel.FindAll("#cc-review"));
+        Assert.Empty(panel.FindAll("#propose-cc"));
+
+        var russian = new CloseCombatPanel.DeclaredAttack(["r1"], ["g1"], null);
+        panel.Render(parameters => parameters.Add(item => item.Step, CloseCombatPanel.ResolveStep)
+            .Add(item => item.OtherDeclared, true).Add(item => item.OtherAttacks, [russian]));
+        Assert.Contains("r1 attack g1", panel.Find("#cc-declared").TextContent, StringComparison.Ordinal);
+        Assert.Empty(panel.FindAll("#propose-cc"));
+        selected.Add("g1");
+        panel.Render();
+        Assert.True(panel.Find("#cc-review").HasAttribute("disabled"));
+        selected.Clear();
+        panel.Render();
+        panel.Find("#cc-review").Click();
+        Assert.Contains("No attacks.", panel.Find("[aria-label='Your declarations']").TextContent, StringComparison.Ordinal);
+        Assert.Equal(0, proposed);
+        panel.Find("#cc-edit-declarations").Click();
+        Assert.Empty(panel.FindAll("#propose-cc"));
+
+        panel.Render(parameters => parameters.Add(item => item.Attacks, [new(["g1"], ["r1"], null)]));
+        panel.Find("#cc-review").Click();
+        Assert.Single(panel.FindAll("#cc-declared li"));
+        Assert.Single(panel.FindAll("#cc-attacks li"));
+        Assert.Empty(panel.FindAll("#cc-attacks button"));
+        panel.Find("#propose-cc").Click();
+        Assert.Equal(1, proposed);
+        panel.Render(parameters => parameters.Add(item => item.Round, CloseCombatResolved.PrisonersRound));
+        Assert.Empty(panel.FindAll("#propose-cc"));
+    }
+
+    [Fact]
+    public void CloseCombatMapSelectionPreservesDraftsAndDistinguishesLevels()
+    {
+        string? selected = null;
+        var cleared = 0;
+        var picking = new LocationPicking();
+        var location = string.Empty;
+        var attackers = new HashSet<string>();
+        string[] locations = ["bd01:A1:0", "bd01:A1:1", "bd02:A1:0", "bd01:B2:0"];
+        RenderFragment content = builder =>
+        {
+            builder.OpenComponent<CloseCombatPanel>(0);
+            builder.AddAttribute(1, nameof(CloseCombatPanel.Locations), locations);
+            builder.AddAttribute(2, nameof(CloseCombatPanel.Location), location);
+            builder.AddAttribute(3, nameof(CloseCombatPanel.Attackers), attackers);
+            builder.AddAttribute(4, nameof(CloseCombatPanel.OnLocation), EventCallback.Factory.Create<string>(this, value => selected = value));
+            builder.AddAttribute(5, nameof(CloseCombatPanel.OnClearAll), EventCallback.Factory.Create(this, () => cleared++));
+            builder.CloseComponent();
+        };
+        var host = context.Render<CascadingValue<string>>(parameters => parameters
+            .AddCascadingValue("Picking", picking).Add(item => item.Name, "PickedLocation").Add(item => item.Value, "bd01:A1:0")
+            .Add(item => item.ChildContent, content));
+        var panel = host.FindComponent<CloseCombatPanel>();
+        void Pick(string hex)
+        {
+            picking.Serial++;
+            host.Render(parameters => parameters.Add(item => item.Name, "PickedLocation").Add(item => item.Value, hex).Add(item => item.ChildContent, content));
+        }
+
+        Assert.Null(selected); // A hex inspection never guesses a level.
+        Pick("bd02:A1:0");
+        Assert.Equal("bd02:A1:0", selected);
+        Pick("bd01:B2:0");
+        Assert.Equal("bd01:B2:0", selected);
+        location = "bd01:B2:0";
+        attackers.Add("r1");
+        Pick("bd02:A1:0");
+        Assert.NotNull(panel.Find(".cc-change-location"));
+        Assert.Equal(0, cleared);
+        panel.FindAll(".cc-change-location button")[0].Click();
+        Assert.Equal(1, cleared);
+        Assert.Equal("bd02:A1:0", selected);
+        attackers.Clear();
+        location = "bd02:A1:0";
+        Pick("bd02:A1:0");
+        panel.Find("#cc-release").Click();
+        Assert.Equal(string.Empty, selected);
+        picking.PickedBy = "another-field";
+        Pick("bd01:B2:0");
+        Assert.Equal(string.Empty, selected);
+        picking.PickedBy = null;
+        Pick("bd01:B2:0");
+        Assert.Equal("bd01:B2:0", selected);
+        Pick("bd01:C3:0");
+        Assert.Equal(string.Empty, selected);
+    }
 
     [Fact]
     public void VehicleTargetOffersOnlyTheAttackersAdmittedByItsRulesVerdict()
@@ -97,7 +205,7 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Contains("CC is due", panel.Find("#cc-due").TextContent, StringComparison.Ordinal);
         Assert.Empty(panel.FindAll("#cc-stacking"));
         Assert.Empty(panel.FindAll("#cc-prisoners-round"));
-        Assert.True(panel.Find("#propose-ambush").HasAttribute("disabled"));
+        Assert.Empty(panel.FindAll("#propose-ambush"));
 
         panel.Render(parameters => parameters.Add(item => item.Location, "bd04:E5:0").Add(item => item.AmbushDue, true));
         Assert.NotNull(panel.Find("#cc-ambush-first"));
@@ -116,6 +224,8 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Contains("The Russian side ambushes.", panel.Find("#cc-status").TextContent, StringComparison.Ordinal);
         Assert.NotNull(panel.Find("#cc-round"));
         Assert.Empty(panel.FindAll("#cc-prisoners-round"));
+        Assert.Empty(panel.FindAll("#propose-cc"));
+        panel.Find("#cc-review").Click();
         Assert.Equal("Propose: resolve CC with no attacks", panel.Find("#propose-cc").TextContent);
     }
 
@@ -134,8 +244,8 @@ public sealed class CloseCombatComponentTests : IDisposable
             .Add(item => item.OnRemoveAttack, value => removed = value).Add(item => item.OnAmbushWithdraw, value => withdrawn = value)
             .Add(item => item.OnInfiltration, value => infiltrated = value).Add(item => item.OnPropose, () => proposed = true));
         Assert.StartsWith("r1, r2 attempt to capture g1, directed by rl (the defender gives up g1)", panel.Find("#cc-attacks li").TextContent, StringComparison.Ordinal);
-        Assert.Equal("Propose: resolve CC", panel.Find("#propose-cc").TextContent);
-        panel.Find("#cc-attacks button").Click();
+        Assert.Empty(panel.FindAll("#propose-cc"));
+        panel.Find("#cc-attacks button[aria-label^='Remove:']").Click();
         Assert.Same(attack, removed);
         // The user, 2026-10-21: one form, the units ticked and a Location open to all of them, in place of a button per unit and Location.
         Assert.True(panel.Find("#propose-ambush-withdraw").HasAttribute("disabled"));
@@ -147,6 +257,7 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Equal("to bd04:F5:0", panel.FindAll(".cc-infiltrate[data-unit='r2'] option")[1].TextContent);
         panel.Find(".cc-infiltrate[data-unit='r2']").Change("bd04:F5:0");
         Assert.Equal(new CloseCombatInfiltrationChoices.Choice("r2", "bd04:F5:0"), infiltrated);
+        panel.Find("#cc-review").Click();
         panel.Find("#propose-cc").Click();
         Assert.True(proposed);
 
@@ -169,7 +280,7 @@ public sealed class CloseCombatComponentTests : IDisposable
                 [new CloseCombatAttackBuilder.Participant("g1", "g1 (4-6-7)", false)])])
             .Add(item => item.Attackers, new HashSet<string>()).Add(item => item.Defenders, new HashSet<string>())
             .Add(item => item.OnAttacker, value => attacker = value).Add(item => item.OnCapture, value => capture = value).Add(item => item.OnAdd, () => added = true));
-        Assert.Contains("Russian (ATTACKER)", builder.Find(".cc-side[data-side='russian']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Russian: build an attack", builder.Find(".cc-side[data-side='russian']").TextContent, StringComparison.Ordinal);
         Assert.True(builder.Find(".cc-attacker[data-unit='r1']").HasAttribute("disabled"));
         Assert.False(builder.Find(".cc-attacker[data-unit='r2']").HasAttribute("disabled"));
         Assert.Equal("russian", builder.Find(".cc-defender[data-unit='g1']").GetAttribute("data-by"));
@@ -334,10 +445,15 @@ public sealed class CloseCombatComponentTests : IDisposable
             .Add(item => item.SelectedWeapons, new HashSet<string> { "lmg1" }).Add(item => item.Targets, ["bd04:E7:0"]).Add(item => item.MolAllowed, true)
             .Add(item => item.OnFrom, value => from = value));
         Assert.Contains("The German side may fire in the Prep Fire Phase", panel.Find("#fire-side").TextContent, StringComparison.Ordinal);
-        Assert.Equal("lmg1 of g1", panel.Find(".fire-weapon[data-weapon='lmg1']").Parent!.TextContent.Trim());
+        Assert.Equal("lmg1", panel.Find(".fire-weapon[data-weapon='lmg1']").Parent!.TextContent.Trim());
+        Assert.Equal("lmg1 of g1", panel.Find(".fire-weapon[data-weapon='lmg1']").GetAttribute("aria-label"));
+        Assert.NotNull(panel.Find(".fire-unit[aria-label='g1'] .fire-weapon[data-weapon='lmg1']"));
+        Assert.Empty(panel.FindAll(".fire-unit[aria-label='g2'] .fire-weapon"));
         Assert.Equal("g1", panel.Find(".fire-alone").GetAttribute("data-unit"));
         Assert.Single(panel.FindAll(".fire-alone"));
         Assert.Equal(["", "g1", "g2"], panel.FindAll("#fire-mol option").Select(option => option.GetAttribute("value")));
+        Assert.Empty(panel.FindAll("#fire-spray"));
+        panel.FindAll("button").Single(button => button.TextContent == "Add spraying fire").Click();
         Assert.NotNull(panel.Find("#fire-spray"));
         Assert.Empty(panel.FindAll("#fire-snap-shot"));
         Assert.Empty(panel.FindAll("#fire-lane-weapon"));
@@ -347,7 +463,7 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Equal("bd04:E5:0", from);
 
         // A typed Location is a target; the MPh brings Snap Shot and the Fire Lane of a chosen MG; a firing leader his partner.
-        panel.Render(parameters => parameters.Add(item => item.FreeTarget, "bd04:E8:0").Add(item => item.Phase, "mph").Add(item => item.MolAllowed, false)
+        panel.Render(parameters => parameters.Add(item => item.Target, "bd04:E8:0").Add(item => item.Phase, "mph").Add(item => item.MolAllowed, false)
             .Add(item => item.Partners, ["l2"]));
         Assert.False(panel.Find("#propose-fire").HasAttribute("disabled"));
         Assert.NotNull(panel.Find("#fire-snap-shot"));

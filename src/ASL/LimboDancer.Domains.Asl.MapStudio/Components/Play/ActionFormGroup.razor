@@ -1,0 +1,9 @@
+<fieldset class="action-form-group" id="@Id">
+    <legend>@Legend</legend>
+    <div class="action-fields">@ChildContent</div>
+</fieldset>
+@code {
+    [Parameter] public string? Id { get; set; }
+    [Parameter, EditorRequired] public string Legend { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

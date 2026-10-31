@@ -6,7 +6,7 @@
     or move in the MPh, and fire in the AFPh without its halving, their MGs keeping Multiple ROF (A7.25). A concealed one in the LOS of a
     Good Order enemy ground unit within 16 hexes loses its "?".
 </RuleHelp>
-<div class="toolbar">
+<div class="toolbar action-fields">
     @foreach (var unit in Units)
     {
         <label><input class="opportunity-unit" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)" @onchange="@(args => OnToggle.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @At(unit)</label>

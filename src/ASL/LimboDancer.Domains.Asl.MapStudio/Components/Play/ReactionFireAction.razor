@@ -7,7 +7,7 @@
     SMC, may attack it in CC as its Defensive First Fire, after a PAATC against an AFV unless exempt or already passed this phase; after an
     OVR, only once the OVR is resolved (D7.2, D7.21, A11.6). The vehicle does not attack back.
 </RuleHelp>
-<div class="toolbar">
+<div class="toolbar action-fields">
     <label>
         Attacker
         <select id="reaction-attacker" value="@Attacker" @onchange="@(args => OnAttacker.InvokeAsync(args.Value as string ?? string.Empty))">

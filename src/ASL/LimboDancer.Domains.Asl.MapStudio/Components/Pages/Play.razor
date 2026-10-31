@@ -597,10 +597,11 @@ else if (state is not null)
                 @* Pass 70 (ruling R70.11): the Voluntary Break is offered to either side at the RtPh's start, before any unit routs, the DEFENDER's too. *@
                 @if (state.Phase == "rtph" && ((!DefenderRoutsWait && (RoutObligations.Count > 0 || RoutChoices.Count > 0)) || VoluntaryBreakRows.Count > 0))
                 {
-                    <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
+                    <RoutActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
+                        Locations="@(RoutChoices.Select(unit => unit.Id).Concat(RoutObligations.Select(item => item.Unit)).Distinct(StringComparer.Ordinal).ToDictionary(id => id, id => state.Location(id)?.Location.ToString(), StringComparer.Ordinal))"
                         Load="@RoutLoadText" Loads="@RoutLoads" Keep="@string.Join(",", RoutKept)" OnKeep="@(keep => routKeep = keep)"
-                        OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl, routLeader) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, routLowCrawl && !way.Route.Contains(','), way.Unit == routUnit ? routLeader : string.Empty))"
-                        OnUnit="@(id => (routUnit, routKeep, routRoute, routLeader) = (id, string.Empty, id == routUnit ? routRoute : string.Empty, id == routUnit ? routLeader : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout"
+                        OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl, routLeader) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, way.Unit == routUnit && routLowCrawl && !way.Route.Contains(','), way.Unit == routUnit ? routLeader : string.Empty))"
+                        OnUnit="@(id => (routUnit, routKeep, routRoute, routLeader, routLowCrawl) = (id, id == routUnit ? routKeep : string.Empty, id == routUnit ? routRoute : string.Empty, id == routUnit ? routLeader : string.Empty, id == routUnit && routLowCrawl))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout"
                         OnRoutGroup="@ProposeRoutGroup" OnBeneath="@ProposeRoutBeneath" Busy="@busy"
                         RoutsOffered="@(!DefenderRoutsWait)" BreakRows="@VoluntaryBreakRows" BreakSelected="@voluntaryBreak" OnBreakToggle="@(toggle => { if (toggle.On) { voluntaryBreak.Add(toggle.Id); } else { voluntaryBreak.Remove(toggle.Id); } })"
                         OnProposeBreak="@ProposeVoluntaryBreak" Leaders="@RoutLeaders" Leader="@routLeader" OnLeader="@(id => routLeader = id)" />
@@ -639,8 +640,10 @@ else if (state is not null)
                 @if (state.Phase == "rph" && RallyChoices is { Count: > 0 } rallyShown)
                 {
                     <ActionSection Title="Rally" Key="rally">
-                    <RallyActionPanel Units="@rallyShown" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader" Barred="@RallyBarNow"
-                        OnUnit="@(id => { rallyUnit = id; rallyLeader = string.Empty; })" OnLeader="@(id => rallyLeader = id)" OnPropose="@ProposeRally" />
+                    <RallyActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" Units="@rallyShown" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader" Barred="@RallyBarNow"
+                        Assistance="@RallyAssistance.Choices"
+                        Locations="@(rallyShown.ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)?.Location.ToString(), StringComparer.Ordinal))"
+                        OnUnit="@ChooseRallyUnit" OnLeader="@(id => rallyLeader = id)" OnPropose="@ProposeRally" />
                     </ActionSection>
                 }
                 @if (state.Phase == "rph" && RepairChoices is { Count: > 0 } repairShown)
@@ -650,15 +653,22 @@ else if (state is not null)
                     Heroes="@RepairHeroes" Hero="@repairHero" OnHero="@(id => repairHero = id)" Ready="@RepairReady" OnPropose="@ProposeRepair" />
                     </ActionSection>
                 }
-                @if (state.Phase == "rph" && DeployChoices is var deployShown && RecombineChoices is var recombineShown && (deployShown.Count > 0 || recombineShown.Count > 0))
+                @if (state.Phase == "rph" && DeployChoices is { Count: > 0 } deployShown)
                 {
-                    <ActionSection Title="Deploy and Recombine" Key="deploy-and-recombine">
-                <DeployActionPanel Squads="@deployShown" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
+                    <ActionSection Title="Deploy" Key="deploy">
+                <DeployActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" Squads="@deployShown" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
+                        Locations="@(deployShown.ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)?.Location.ToString(), StringComparer.Ordinal))"
                         Squad="@deploySquad" Leader="@deployLeader" Second="@deployWeapons"
                         SpotterChoiceRequired="@GamePlanner.RequiresSpotterSuccessor(state, deploySquad)" SpotterHalf="@deploySpotterHalf" OnSpotterHalf="@(value => deploySpotterHalf = value)"
                         OnSquad="@(id => { deploySquad = id; deployLeader = deploySpotterHalf = string.Empty; deployWeapons.Clear(); })" OnLeader="@(id => deployLeader = id)"
                         OnWeapon="@(pick => Toggle(deployWeapons, pick.Id, pick.On))" OnPropose="@ProposeDeploy" />
-                    <RecombineActionPanel HalfSquads="@recombineShown" Partners="@([.. RecombinePartners.Select(unit => unit.Id)])"
+                    </ActionSection>
+                }
+                @if (state.Phase == "rph" && RecombineChoices is { Count: > 0 } recombineShown)
+                {
+                    <ActionSection Title="Recombine" Key="recombine">
+                    <RecombineActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" HalfSquads="@recombineShown" Partners="@([.. RecombinePartners.Select(unit => unit.Id)])"
+                        Locations="@(recombineShown.ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)?.Location.ToString(), StringComparer.Ordinal))"
                         Leaders="@([.. LeadersWith(recombineOne).Select(leader => leader.Id)])" One="@recombineOne" Two="@recombineTwo" Leader="@recombineLeader"
                         OnOne="@(id => { recombineOne = id; recombineTwo = string.Empty; recombineLeader = string.Empty; })" OnTwo="@(id => recombineTwo = id)"
                         OnLeader="@(id => recombineLeader = id)" OnPropose="@ProposeRecombine" />
@@ -765,8 +775,9 @@ else if (state is not null)
                         }
                         else
                         {
+                        var movementRows = MoveRows;
                         <div class="toolbar">
-                            <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id" CarryMen="@CarryMen" Carriers="@Carriers"
+                            <InfantryMovementAction Movers="@movementRows" Locations="@(movementRows.ToDictionary(row => row.Id, row => state.Location(row.Id)?.Location.ToString(), StringComparer.Ordinal))" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id" CarryMen="@CarryMen" Carriers="@Carriers"
                                 OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" OnOverrunNtc="@ProposeOverrunNtc">
                                 <Route>
                                     @* The Play streamlining plan, S3 and S6: the route plotted on the map and made step by step; a plan that waits for the
@@ -781,9 +792,9 @@ else if (state is not null)
                                         {
                                             <p class="toolbar-note" id="move-route-last">@lastPlan</p>
                                         }
-                                        <MovementRoutePanel Ready="@(moveUnits.Count > 0)" Plotting="@plotOn" Steps="@PlotSteps" Stop="@PlotStop" Note="@plotNote" CanMove="@PlotCanMove" Busy="@busy"
+                                        <MovementRoutePanel HasMovers="@(movementRows.Count > 0)" Ready="@(moveUnits.Count > 0)" Plotting="@(plotOn && planPlotting is null)" Steps="@PlotSteps" Stop="@PlotStop" Note="@plotNote" CanMove="@PlotCanMove" Busy="@busy"
                                             Paused="@PlanNow?.Paused" Remaining="@(PlanNow is { } paused ? paused.Route.Count - paused.Next : 0)"
-                                            OnToggle="@TogglePlot" OnUndo="@UndoPlot" OnClear="@ClearPlot" OnMove="@MoveAlongRoute" OnContinue="@PlanContinue" OnChange="@PlanChange" OnEnd="@PlanEnd" />
+                                            OnToggle="@TogglePlot" OnCancel="@CancelPlot" OnUndo="@UndoPlot" OnClear="@ClearPlot" OnMove="@MoveAlongRoute" OnContinue="@PlanContinue" OnChange="@PlanChange" OnEnd="@PlanEnd" />
                                     }
                                 </Route>
                             </InfantryMovementAction>
@@ -903,7 +914,9 @@ else if (state is not null)
                 @* The Play streamlining plan, S7 (ruling R-PS.8): the Advance form is the ATTACKER's; the other view is shown no section for it. *@
                 @if (state.Phase == "aph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
                 {
-                    <AdvanceActionPanel Side="@(state.PhasingSide ?? string.Empty)" Units="@AdvanceRows" Selected="@advanceUnits" Destinations="@AdvanceDestinations" Waiting="@AdvanceWaiting"
+                    var advanceRows = AdvanceRows;
+                    <AdvanceActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" Side="@(state.PhasingSide ?? string.Empty)" Units="@advanceRows" Selected="@advanceUnits" Destinations="@AdvanceDestinations" Waiting="@AdvanceWaiting"
+                        Locations="@(advanceRows.ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)?.Location.ToString()))" OnClear="@ClearAdvanceDraft"
                         Edges="@ExitEdges" To="@advanceTo" Edge="@advanceExit" OnToggle="@ToggleAdvancer"
                         OnTo="@(to => advanceTo = to)" OnEdge="@(edge => advanceExit = edge)" OnPropose="@ProposeAdvanceUnits" OnExit="@ProposeAdvanceExit" />
                 }
@@ -940,10 +953,11 @@ else if (state is not null)
                 }
                 @if (state.Phase == "ccph")
                 {
-                    <CloseCombatPanel Due="@Live.Planner.CloseCombatDue(state)" Locations="@([.. CloseCombatLocations])" Location="@ccLocation" Entry="@CloseCombatEntry" Round="@ccRound"
+                    <CloseCombatPanel @key="@((gameId, viewAs, history!.Events.Count))" Due="@Live.Planner.CloseCombatDue(state)" Locations="@([.. CloseCombatLocations])" Location="@ccLocation" Entry="@CloseCombatEntry" Round="@ccRound"
                         AmbushDue="@AmbushDue" HandToHandAllowed="@state.SpecialRules.Contains(GamePlanner.HandToHandRule)" HandToHand="@ccHandToHand" AmbushWithdrawals="@AmbushWithdrawals"
                         Step="@CcStep" FirstSide="@(CloseCombatSides.FirstOrDefault())" OtherAttacks="@(CcOtherDeclared?.Attacks ?? [])" OtherDeclared="@(CcOtherDeclared is not null)" OnDeclare="@DeclareCloseCombat"
                         CanClear="@(CcKept is not null || ccAttacks.Count > 0)" OnClearAll="@ClearAllCloseCombat"
+                        OtherChoices="@CcOtherChoices" SecondSide="@(CloseCombatSides.LastOrDefault())" OnClearAttack="@ClearAttackSelection" OnEditAttack="@EditCloseCombatAttack"
                         Smcs="@StackingChoices" Stacking="@ccStacking" Withdrawers="@Withdrawers" Withdrawals="@ccWithdrawals" Sides="@DeclaringSides" Attackers="@ccAttackers"
                         Defenders="@ccDefenders" Directors="@([.. CloseCombatDirectors.Select(unit => unit.Id)])" Director="@ccDirector" Capture="@ccCapture" Guard="@ccGuard" Yield="@ccYield"
                         Infiltrators="@Infiltrators" Infiltrations="@ccInfiltrations" Attacks="@ccAttacks" OnLocation="@ChooseCloseCombatLocation" OnRound="@ChooseRound"
@@ -1136,10 +1150,10 @@ else if (state is not null)
                         MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@byRange.Targets" Target="@fireTarget"
                         VehicleChoices="@(fireMol.Length > 0 || FireWeapons.Any(weapon => weapon.Kind == "asl:ft" && fireWeapons.Contains(weapon.Id)) ? NamedVehicleChoices(firing, FireTarget) : [])"
                         Vehicle="@fireVehicle" OnVehicle="@(id => fireVehicle = id)"
-                        FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" LanesOffered="@FireLanesOffered(firing)" Partners="@FirePartners(firing)"
+                        TargetEditing="@fireTargetEditing" ResetToken="@fireResetToken" OnTargetEditing="@(pending => fireTargetEditing = pending)" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" LanesOffered="@FireLanesOffered(firing)" Partners="@FirePartners(firing)"
                         Partner="@firePartner" OnFrom="@(at => { fireFrom = at; fireAlso.Clear(); PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
                         OnWeapon="@(pick => Toggle(fireWeapons, pick.Id, pick.On))" OnAlone="@(pick => Toggle(fireAlone, pick.Id, pick.On))" OnDirector="@(id => fireDirector = id)"
-                        OnMol="@(id => fireMol = id)" OnTarget="@(at => fireTarget = at)" OnFreeTarget="@(at => fireFreeTarget = at)" OnSnapShot="@(on => fireSnapShot = on)"
+                        OnMol="@(id => fireMol = id)" OnTarget="@(at => SetFireTarget(at, false))" OnFreeTarget="@(at => SetFireTarget(at, true))" OnSnapShot="@(on => fireSnapShot = on)"
                         OnSpray="@(at => fireSpray = at)" OnLaneWeapon="@(id => fireLaneWeapon = id)" OnLaneTo="@(at => fireLaneTo = at)" OnPartner="@(id => firePartner = id)"
                         OnPropose="@ProposeFire" OnClear="@ClearFire" />
                     }
@@ -2729,6 +2743,8 @@ else if (state is not null)
     /// <summary>The map's keys during setup: Esc ends a move or a swap; [ and ] step the map through the setup plans and the list.</summary>
     private void MapKey(string key)
     {
+        if (key == "Escape" && plotOn) { CancelPlot(); return; }
+        if (key == "Escape" && Picking.Armed is not null) { Picking.Arm(null, null); return; }
         if (!SetupMode)
         {
             return;
@@ -3039,7 +3055,7 @@ else if (state is not null)
     private void PickHex(StudioBoard board, HexFacts? facts)
     {
         highlight = facts is null ? null : GameMaps.LocationOf(board, facts.Index);
-        (Picking.Picked, Picking.Serial) = (highlight?.ToString(), Picking.Serial + 1);
+        (Picking.Picked, Picking.PickedBy, Picking.Serial) = (highlight?.ToString(), Picking.Armed, Picking.Serial + 1);
 
         // The Play streamlining plan, S3: while a route is plotted, a click adds the hex to it.
         if (plotOn && highlight is { } plotted && state is not null && handOver is null && !SetupOpen)
@@ -4044,7 +4060,15 @@ else if (state is not null)
     private readonly HashSet<string> fireFirers = new(StringComparer.Ordinal);
     private string fireDirector = string.Empty;
     private string fireTarget = string.Empty;
-    private string fireFreeTarget = string.Empty;
+    private bool fireTargetFree;
+    private bool fireTargetEditing;
+    private int fireResetToken;
+    private void SetFireTarget(string value, bool free)
+    {
+        fireTarget = value;
+        fireTargetFree = free;
+        fireVehicle = string.Empty;
+    }
     private readonly HashSet<string> fireWeapons = new(StringComparer.Ordinal);
     private readonly HashSet<string> fireAlone = new(StringComparer.Ordinal);
     private string rallyUnit = string.Empty;
@@ -4938,6 +4962,7 @@ else if (state is not null)
 
     private void AddAttack()
     {
+        if (ccAttackers.Count == 0 || ccDefenders.Count == 0) return;
         string[] yielded = [.. ccYield.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
 
         // Pass 31 (play test P-10; A20.22): a capture attempt on several units needs the defender's order of choice; left empty, it is the targets' order.
@@ -4950,6 +4975,11 @@ else if (state is not null)
         ccAttacks.Add(new CloseCombatPanel.DeclaredAttack([.. ccAttackers.Order(StringComparer.Ordinal)], [.. ccDefenders.Order(StringComparer.Ordinal)],
             ccDirector.Length > 0 && ccAttackers.Contains(ccDirector) ? ccDirector : null, ccCapture, ccCapture && yielded.Length > 0 ? yielded : null,
             ccCapture && ccGuard.Length > 0 && ccAttackers.Contains(ccGuard) ? ccGuard : null));
+        ClearAttackSelection();
+    }
+
+    private void ClearAttackSelection()
+    {
         ccAttackers.Clear();
         ccDefenders.Clear();
         ccDirector = string.Empty;
@@ -4958,7 +4988,24 @@ else if (state is not null)
         ccYield = string.Empty;
     }
 
-    /// <summary>Pass 31 (play test P-04): the stacking is the Location's own, so a round resolved or cancelled leaves it as it was read.</summary>
+    /// <summary>Restore an added attack to the editor without overwriting an unfinished selection.</summary>
+    private void EditCloseCombatAttack(CloseCombatPanel.DeclaredAttack attack)
+    {
+        if (CcAttackDraft || !MayRemoveAttack(attack) || !ccAttacks.Remove(attack)) return;
+        ccAttackers.UnionWith(attack.Attackers);
+        ccDefenders.UnionWith(attack.Defenders);
+        ccDirector = attack.Director ?? string.Empty;
+        ccCapture = attack.Capture;
+        ccGuard = attack.Guard ?? string.Empty;
+        ccYield = string.Join(", ", attack.Yield);
+    }
+
+    private bool CcAttackDraft => ccAttackers.Count > 0 || ccDefenders.Count > 0 || ccCapture || ccDirector.Length > 0 || ccGuard.Length > 0 || ccYield.Length > 0;
+
+    private IReadOnlyList<string> CcOtherChoices => CcOtherDeclared is { } kept
+        ? [.. CloseCombatPanel.ChoiceNotes(kept.Stacking, kept.Withdrawals, kept.Infiltrations, kept.Drops, kept.HandToHand, kept.Round)] : [];
+
+    /// <summary>Pass 31 (play test P-04): reset the draft and restore the Location's recorded stacking.</summary>
     private void ClearCloseCombat()
     {
         ClearCloseCombatDraft();
@@ -5011,7 +5058,7 @@ else if (state is not null)
     /// <summary>The first side declares: its declarations are kept for the revision, and the screen goes to the other side.</summary>
     private void DeclareCloseCombat()
     {
-        if (history is null || CloseCombatSides is not [var first, var second] || viewAs != first)
+        if (history is null || CcAttackDraft || CcStep != CloseCombatPanel.DeclareStep || CloseCombatSides is not [var first, var second] || viewAs != first)
         {
             return;
         }
@@ -5042,6 +5089,7 @@ else if (state is not null)
 
     private Task ProposeCloseCombat()
     {
+        if (CcAttackDraft || CcStep != CloseCombatPanel.ResolveStep) return Task.CompletedTask;
         // The second side resolves the round with the first side's declarations kept for it; each Location's draft holds the view's own.
         var kept = CcOtherDeclared;
         var attacks = kept is null ? ccAttacks : [.. kept.Attacks, .. ccAttacks];
@@ -6024,7 +6072,7 @@ else if (state is not null)
             && LiveFire.CapturedBy(weapon.Definition?.Definition, holder) == true));
 
     /// <summary>The target: any Location typed in, or else the one chosen from the Locations the firing side knows to hold an enemy.</summary>
-    private string FireTarget => fireFreeTarget.Trim() is { Length: > 0 } typed ? typed : fireTarget;
+    private string FireTarget => fireTarget;
 
     /// <summary>The vehicle each Passenger of the chosen group rides (D6.1; pass 65, ruling R65.10), said beside it in the firer list.</summary>
     private IReadOnlyDictionary<string, string> FireAboard(string side) => state is null ? new Dictionary<string, string>()
@@ -6238,7 +6286,8 @@ else if (state is not null)
         fireAlone.Clear();
         fireDirector = string.Empty;
         fireTarget = string.Empty;
-        fireFreeTarget = string.Empty;
+        fireTargetFree = fireTargetEditing = false;
+        fireResetToken++;
         fireSnapShot = false;
         fireSpray = string.Empty;
         fireLaneWeapon = string.Empty;
@@ -6577,6 +6626,7 @@ else if (state is not null)
 
     private Task ProposeRally()
     {
+        if (rallyUnit.Length == 0 || RallyBarNow is not null) return Task.CompletedTask;
         var arguments = new Dictionary<string, object>
         {
             ["gameId"] = gameId,
@@ -6783,8 +6833,18 @@ else if (state is not null)
 
     private void ToggleAdvancer(UnitSelectionList.Toggle toggle)
     {
+        if (Picking.Armed == "advance-to") Picking.Arm(null, null);
         Toggle(advanceUnits, toggle.Id, toggle.On);
+        advanceExit = string.Empty;
         PruneMoveDrafts();
+    }
+
+    private void ClearAdvanceDraft()
+    {
+        if (Picking.Armed == "advance-to") Picking.Arm(null, null);
+        advanceUnits.Clear();
+        advanceTo = string.Empty;
+        advanceExit = string.Empty;
     }
 
     private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun,
@@ -7110,6 +7170,7 @@ else if (state is not null)
 
     private Task ProposeFire()
     {
+        if (fireTargetEditing) return Task.CompletedTask;
         var arguments = new Dictionary<string, object>
         {
             ["gameId"] = gameId,
@@ -7325,7 +7386,7 @@ else if (state is not null)
             fireAlso.RemoveAll(at => !FireLocations(side).Contains(at, StringComparer.Ordinal));
         }
 
-        if (fireTarget.Length > 0 && !FireTargets(side).Contains(fireTarget, StringComparer.Ordinal))
+        if (!fireTargetFree && fireTarget.Length > 0 && !FireTargets(side).Contains(fireTarget, StringComparer.Ordinal))
         {
             fireTarget = string.Empty;
         }
@@ -7362,6 +7423,8 @@ else if (state is not null)
     /// </summary>
     private void ResetDrafts(bool keepCloseCombat)
     {
+        planPlotting = null;
+        CancelPlot();
         (Picking.Armed, Picking.ArmedLabel) = (null, null);
         vehicleTurret = string.Empty;
         boundingVehicle = string.Empty;
@@ -7771,6 +7834,11 @@ else if (state is not null)
     private bool turnGuideOpen;
     private void SelectInspectorTab(string tab)
     {
+        if (tab != inspectorTab)
+        {
+            Picking.Arm(null, null);
+            CancelPlot();
+        }
         inspectorTab = tab;
         if (tab == "phase-guide")
         {
@@ -8965,7 +9033,41 @@ else if (state is not null)
     }
 
     // The Play streamlining plan, S4: why the Rally attempt chosen would be refused, asked of the planner once a state, unit, and leader.
-    private (GameState? State, string Unit, string Leader, string? Bar) rallyBarMemo;
+    private (GameState? State, string Viewer, string Unit, IReadOnlyList<PlayChoice> Choices, string? Refusal) rallyAssistanceMemo;
+
+    private (IReadOnlyList<PlayChoice> Choices, string? Refusal) RallyAssistance
+    {
+        get
+        {
+            if (state is null || history is null || rallyUnit.Length == 0 || !RallyChoices.Any(choice => choice.Id == rallyUnit)) return ([], null);
+            if (!ReferenceEquals(rallyAssistanceMemo.State, state) || rallyAssistanceMemo.Viewer != Viewer.Name || rallyAssistanceMemo.Unit != rallyUnit)
+            {
+                var scope = new GameScope(LivePlay.Tenant, gameId);
+                var choices = new List<PlayChoice>();
+                var selfBar = Live.Planner.RallyBar(scope, history.Events, rallyUnit, null);
+                if (selfBar is null) choices.Add(new(string.Empty, "Self-Rally"));
+                string? leaderBar = null;
+                foreach (var leader in RallyLeaders)
+                {
+                    var refusal = Live.Planner.RallyBar(scope, history.Events, rallyUnit, leader.Id);
+                    if (refusal is null) choices.Add(new(leader.Id, leader.Id));
+                    else leaderBar ??= refusal;
+                }
+
+                var bar = leaderBar ?? selfBar;
+                rallyAssistanceMemo = (state, Viewer.Name, rallyUnit, choices, bar is null ? null : PlainReason(bar));
+            }
+
+            return (rallyAssistanceMemo.Choices, rallyAssistanceMemo.Refusal);
+        }
+    }
+
+    private void ChooseRallyUnit(string id)
+    {
+        rallyUnit = id;
+        var methods = RallyAssistance.Choices;
+        rallyLeader = methods.Count == 1 ? methods[0].Id : string.Empty;
+    }
 
     private string? RallyBarNow
     {
@@ -8976,13 +9078,9 @@ else if (state is not null)
                 return null;
             }
 
-            if (!ReferenceEquals(rallyBarMemo.State, state) || rallyBarMemo.Unit != rallyUnit || rallyBarMemo.Leader != rallyLeader)
-            {
-                var bar = Live.Planner.RallyBar(new GameScope(LivePlay.Tenant, gameId), history.Events, rallyUnit, rallyLeader.Length > 0 ? rallyLeader : null);
-                rallyBarMemo = (state, rallyUnit, rallyLeader, bar is null ? null : PlainReason(bar));
-            }
-
-            return rallyBarMemo.Bar;
+            var methods = RallyAssistance;
+            return methods.Choices.Any(choice => choice.Id == rallyLeader) ? null
+                : methods.Choices.Count > 0 ? "Choose a Rally method." : methods.Refusal ?? "No Rally method is available for this unit.";
         }
     }
 
@@ -8995,11 +9093,26 @@ else if (state is not null)
 
     private void TogglePlot()
     {
+        Picking.Arm(null, null);
         plotOn = !plotOn;
         planNote = null;
         plotRoute.Clear();
         (plotVersion, plotNote) = (plotVersion + 1, null);
         RefreshPlot();
+    }
+
+    private void CancelPlot()
+    {
+        if (!plotOn) return;
+        if (planPlotting is not null)
+        {
+            // The planner's existing stop operation keeps its checked steps in the queue.
+            PlanPlot(null);
+            return;
+        }
+        (plotOn, plot, plotMarks, plotNote) = (false, null, null, null);
+        plotRoute.Clear();
+        plotVersion++;
     }
 
     private void UndoPlot()
@@ -9060,6 +9173,7 @@ else if (state is not null)
 
     private void PlanChange()
     {
+        Picking.Arm(null, null);
         Live.Plans.Drop(gameId);
         plotOn = true;
         plotRoute.Clear();
@@ -9219,6 +9333,7 @@ else if (state is not null)
     /// <summary>Starts plotting a stack's route on the map, or, with null, keeps the route plotted and stops.</summary>
     private void PlanPlot(string? key)
     {
+        Picking.Arm(null, null);
         if (planPlotting is { } current && PlanStacks.FirstOrDefault(stack => stack.Key == current) is { } plotted)
         {
             plotted.Route.Clear();
@@ -10224,6 +10339,7 @@ else if (state is not null)
         Levels = location => MapLayers?.Board is { } board && BoardLocation.TryParse(location, out var at) ? LevelsAt(board, at) : [0],
         Arm = (id, label) =>
         {
+            if (id is not null) CancelPlot();
             (picking!.Armed, picking.ArmedLabel) = (id, label);
             StateHasChanged();
         },

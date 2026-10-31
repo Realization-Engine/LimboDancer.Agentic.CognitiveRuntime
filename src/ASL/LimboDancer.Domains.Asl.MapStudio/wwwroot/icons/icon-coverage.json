@@ -1978,6 +1978,41 @@
       ]
     },
     {
+      "name": "ActionLocationChoice",
+      "path": "Components/Play/ActionLocationChoice.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "AdvanceActionPanel",
+        "OrdnanceTargetFields",
+        "SmallArmsFirePanel"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(manual ? \u0022Close location editor\u0022 : \u0022Enter another location\u0022)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "ActionLocationChoice"
+        },
+        {
+          "kind": "button",
+          "label": "Pick @Label.ToLowerInvariant() on map",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "ActionLocationChoice"
+        },
+        {
+          "kind": "button",
+          "label": "@(Picking.Armed == Id ? \u0022Cancel picking\u0022 : $\u0022Pick {Label.ToLowerInvariant()} ...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "ActionLocationChoice"
+        }
+      ]
+    },
+    {
       "name": "ActionOutcomeCard",
       "path": "Components/Play/ActionOutcomeCard.razor",
       "pages": [
@@ -2019,6 +2054,26 @@
       ]
     },
     {
+      "name": "ActionUnitScope",
+      "path": "Components/Play/ActionUnitScope.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "DeployActionPanel",
+        "RecombineActionPanel"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@ReleaseText",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "ActionUnitScope toolbar"
+        }
+      ]
+    },
+    {
       "name": "AdvanceActionPanel",
       "path": "Components/Play/AdvanceActionPanel.razor",
       "pages": [
@@ -2030,11 +2085,18 @@
       "controls": [
         {
           "kind": "button",
+          "label": "Show all advance units",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "AdvanceActionPanel advance-scope"
+        },
+        {
+          "kind": "button",
           "label": "Propose: advance",
           "dynamic": false,
           "id": "propose-advance-units",
           "status": "needed",
-          "strip": "AdvanceActionPanel toolbar"
+          "strip": "AdvanceActionPanel"
         }
       ]
     },
@@ -2054,7 +2116,7 @@
           "dynamic": true,
           "id": "propose-ambush-withdraw",
           "status": "needed",
-          "strip": "AmbushWithdrawalActions toolbar"
+          "strip": "AmbushWithdrawalActions action-fields"
         }
       ]
     },
@@ -2118,11 +2180,19 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Add the attack",
+          "label": "Add attack",
           "dynamic": false,
           "id": "cc-add-attack",
           "status": "needed",
-          "strip": "CloseCombatAttackBuilder cc-attack"
+          "strip": "CloseCombatAttackBuilder toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Clear selection",
+          "dynamic": false,
+          "id": "cc-clear-attack",
+          "status": "needed",
+          "strip": "CloseCombatAttackBuilder toolbar"
         }
       ]
     },
@@ -2138,24 +2208,61 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Propose: roll for Ambush",
+          "label": "Release location",
           "dynamic": false,
-          "id": "propose-ambush",
+          "id": "cc-release",
           "status": "needed",
-          "strip": "CloseCombatPanel toolbar"
+          "strip": "CloseCombatPanel cc-location"
         },
         {
           "kind": "button",
-          "label": "remove",
+          "label": "Clear declarations and change location",
           "dynamic": false,
           "status": "needed",
           "strip": "CloseCombatPanel"
         },
         {
           "kind": "button",
-          "label": "Declare @(Attacks.Count == 0 ? \u0022no attack\u0022 : Attacks.Count == 1 ? \u0022this attac...",
+          "label": "Keep this location",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: roll for Ambush",
+          "dynamic": false,
+          "id": "propose-ambush",
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Edit",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Declare @(Attacks.Count == 0 ? \u0022no attacks\u0022 : \u0022attacks\u0022) and hand over",
           "dynamic": true,
           "id": "declare-cc",
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Declare @(Attacks.Count == 0 ? \u0022no attacks\u0022 : \u0022attacks\u0022) and review",
+          "dynamic": true,
+          "id": "cc-review",
           "status": "needed",
           "strip": "CloseCombatPanel"
         },
@@ -2164,6 +2271,14 @@
           "label": "Propose: resolve CC@(Attacks.Count \u002B OtherAttacks.Count == 0 ? \u0022 with no atta...",
           "dynamic": true,
           "id": "propose-cc",
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Edit declarations",
+          "dynamic": false,
+          "id": "cc-edit-declarations",
           "status": "needed",
           "strip": "CloseCombatPanel"
         },
@@ -2192,7 +2307,7 @@
           "label": "Propose: @afv.Id @(afv.ButtonedUp ? \u0022exposes its crew (CE)\u0022 : \u0022buttons up (BU)\u0022)",
           "dynamic": true,
           "status": "needed",
-          "strip": "CrewExposureActions toolbar"
+          "strip": "CrewExposureActions action-fields"
         }
       ]
     },
@@ -2212,7 +2327,7 @@
           "dynamic": false,
           "id": "propose-deploy",
           "status": "needed",
-          "strip": "DeployActionPanel toolbar"
+          "strip": "DeployActionPanel"
         }
       ]
     },
@@ -2268,7 +2383,7 @@
           "dynamic": false,
           "id": "propose-turn-gun",
           "status": "needed",
-          "strip": "GunArcAction toolbar"
+          "strip": "GunArcAction action-fields"
         }
       ]
     },
@@ -2324,6 +2439,13 @@
       "controls": [
         {
           "kind": "button",
+          "label": "Move units from @Say(location)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "InfantryMovementAction"
+        },
+        {
+          "kind": "button",
           "label": "Propose: the OVR\u0027s NTC",
           "dynamic": false,
           "id": "propose-overrun-ntc",
@@ -2347,6 +2469,7 @@
         "/games/play"
       ],
       "usedBy": [
+        "ActionLocationChoice",
         "InfantryMovementAction",
         "PlaceDemolitionChargeAction",
         "RoutActionPanel",
@@ -2358,7 +2481,7 @@
       "controls": [
         {
           "kind": "button",
-          "label": "@(Armed ? \u0022Stop picking\u0022 : \u0022Pick on the map\u0022)",
+          "label": "@(Armed ? \u0022Cancel picking\u0022 : $\u0022Pick {Noun} on map\u0022)",
           "dynamic": true,
           "status": "needed",
           "strip": "LocationField"
@@ -2634,7 +2757,7 @@
           "dynamic": false,
           "id": "propose-opportunity",
           "status": "needed",
-          "strip": "OpportunityFireAction toolbar"
+          "strip": "OpportunityFireAction action-fields"
         }
       ]
     },
@@ -2654,7 +2777,7 @@
           "dynamic": false,
           "id": "propose-ordnance",
           "status": "needed",
-          "strip": "OrdnanceFirePanel toolbar"
+          "strip": "OrdnanceFirePanel"
         }
       ]
     },
@@ -2725,9 +2848,7 @@
         "/games/play"
       ],
       "usedBy": [
-        "AdvanceActionPanel",
-        "CloseCombatPanel",
-        "OrdnanceTargetFields",
+        "ActionLocationChoice",
         "SmallArmsFirePanel",
         "SmokeGrenadeAction"
       ],
@@ -2776,14 +2897,14 @@
           "label": "Propose: detonate @Say(placed.Charge) in @Say(placed.Target) (30 FP@(placed.T...",
           "dynamic": true,
           "status": "needed",
-          "strip": "PlacedChargeDetonationActions toolbar"
+          "strip": "PlacedChargeDetonationActions action-fields"
         },
         {
           "kind": "button",
           "label": "Propose: detonate @Say(placed.Charge) in @Say(placed.Target) at @Say(vehicle....",
           "dynamic": true,
           "status": "needed",
-          "strip": "PlacedChargeDetonationActions toolbar"
+          "strip": "PlacedChargeDetonationActions action-fields"
         }
       ]
     },
@@ -2940,11 +3061,18 @@
       "controls": [
         {
           "kind": "button",
+          "label": "Show all rally units",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "RallyActionPanel rally-scope"
+        },
+        {
+          "kind": "button",
           "label": "Propose: rally",
           "dynamic": false,
           "id": "propose-rally",
           "status": "needed",
-          "strip": "RallyActionPanel toolbar"
+          "strip": "RallyActionPanel"
         }
       ]
     },
@@ -2964,7 +3092,7 @@
           "dynamic": true,
           "id": "propose-reaction",
           "status": "needed",
-          "strip": "ReactionFireAction toolbar"
+          "strip": "ReactionFireAction action-fields"
         }
       ]
     },
@@ -2984,7 +3112,7 @@
           "dynamic": false,
           "id": "propose-recombine",
           "status": "needed",
-          "strip": "RecombineActionPanel toolbar"
+          "strip": "RecombineActionPanel"
         }
       ]
     },
@@ -3004,7 +3132,7 @@
           "dynamic": false,
           "id": "propose-repair",
           "status": "needed",
-          "strip": "RepairActionPanel toolbar"
+          "strip": "RepairActionPanel"
         }
       ]
     },
@@ -3018,6 +3146,13 @@
         "Play"
       ],
       "controls": [
+        {
+          "kind": "button",
+          "label": "Show all rout units",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "RoutActionPanel rout-scope"
+        },
         {
           "kind": "button",
           "label": "Propose: Voluntary Break",
@@ -3053,7 +3188,7 @@
           "dynamic": false,
           "id": "propose-rout",
           "status": "needed",
-          "strip": "RoutActionPanel toolbar"
+          "strip": "RoutActionPanel"
         }
       ]
     },
@@ -3307,7 +3442,7 @@
           "dynamic": false,
           "id": "propose-shock",
           "status": "needed",
-          "strip": "ShockRecoveryAction toolbar"
+          "strip": "ShockRecoveryAction action-fields"
         }
       ]
     },
@@ -3326,15 +3461,29 @@
           "label": "remove",
           "dynamic": false,
           "status": "needed",
-          "strip": "SmallArmsFirePanel toolbar"
+          "strip": "SmallArmsFirePanel"
         },
         {
           "kind": "button",
-          "label": "Show the range on the map",
+          "label": "Show range on map",
           "dynamic": false,
           "id": "fire-range-show",
           "status": "needed",
-          "strip": "SmallArmsFirePanel toolbar"
+          "strip": "SmallArmsFirePanel"
+        },
+        {
+          "kind": "button",
+          "label": "Remove spraying fire",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "SmallArmsFirePanel"
+        },
+        {
+          "kind": "button",
+          "label": "Add spraying fire",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "SmallArmsFirePanel"
         },
         {
           "kind": "button",
@@ -3342,7 +3491,7 @@
           "dynamic": false,
           "id": "propose-fire",
           "status": "needed",
-          "strip": "SmallArmsFirePanel toolbar"
+          "strip": "SmallArmsFirePanel"
         },
         {
           "kind": "button",
@@ -3350,7 +3499,7 @@
           "dynamic": false,
           "id": "fire-clear",
           "status": "needed",
-          "strip": "SmallArmsFirePanel toolbar"
+          "strip": "SmallArmsFirePanel"
         }
       ]
     },
@@ -3390,7 +3539,7 @@
           "dynamic": true,
           "id": "propose-spotter-designation",
           "status": "needed",
-          "strip": "SpotterDesignationPanel toolbar"
+          "strip": "SpotterDesignationPanel action-fields"
         }
       ]
     },
@@ -3410,7 +3559,7 @@
           "dynamic": false,
           "id": "propose-starshell",
           "status": "needed",
-          "strip": "StarshellActionPanel toolbar"
+          "strip": "StarshellActionPanel action-fields"
         }
       ]
     },
@@ -3430,7 +3579,7 @@
           "dynamic": false,
           "id": "propose-transfer",
           "status": "needed",
-          "strip": "SupportWeaponActionPanel toolbar"
+          "strip": "SupportWeaponActionPanel action-fields"
         },
         {
           "kind": "button",
@@ -3438,7 +3587,7 @@
           "dynamic": false,
           "id": "propose-drop",
           "status": "needed",
-          "strip": "SupportWeaponActionPanel toolbar"
+          "strip": "SupportWeaponActionPanel action-fields"
         },
         {
           "kind": "button",
@@ -3446,7 +3595,7 @@
           "dynamic": false,
           "id": "propose-recover",
           "status": "needed",
-          "strip": "SupportWeaponActionPanel toolbar"
+          "strip": "SupportWeaponActionPanel action-fields"
         },
         {
           "kind": "button",
@@ -3454,7 +3603,7 @@
           "dynamic": false,
           "id": "propose-dismantle",
           "status": "needed",
-          "strip": "SupportWeaponActionPanel toolbar"
+          "strip": "SupportWeaponActionPanel action-fields"
         }
       ]
     },
@@ -3474,7 +3623,7 @@
           "dynamic": false,
           "id": "propose-throw-dc",
           "status": "needed",
-          "strip": "ThrowDemolitionChargeAction toolbar"
+          "strip": "ThrowDemolitionChargeAction action-fields"
         }
       ]
     },
@@ -3547,14 +3696,14 @@
           "label": "Propose: Abandon @At(vehicle.Id)",
           "dynamic": true,
           "status": "needed",
-          "strip": "VehicleCrewActions toolbar"
+          "strip": "VehicleCrewActions action-fields"
         },
         {
           "kind": "button",
           "label": "Propose: re-crew (D5.42)",
           "dynamic": false,
           "status": "needed",
-          "strip": "VehicleCrewActions toolbar"
+          "strip": "VehicleCrewActions action-fields"
         }
       ]
     },
@@ -3573,7 +3722,7 @@
           "label": "Propose: scrounge (D10.5)",
           "dynamic": false,
           "status": "needed",
-          "strip": "VehicleScroungeActions toolbar"
+          "strip": "VehicleScroungeActions action-fields"
         }
       ]
     },

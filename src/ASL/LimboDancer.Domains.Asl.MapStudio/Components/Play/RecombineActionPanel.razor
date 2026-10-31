@@ -1,20 +1,31 @@
 @* Plan A08 (pass 28b): two HS Recombining into a squad (A1.32). The page gives the HS the view sees, the partners of the first, and the leaders with
    it (ruling R23.1); choosing another first HS clears the partner and the leader, which the page does in its OnOne handler (section 15.3). *@
-<div class="toolbar">
+<RuleHelp Id="recombine-help" Summary="Combine two matching half-squads into a squad.">
+    Two matching Good Order half-squads in the same Location and terrain may Recombine at the start of the RPh,
+    with the required leader. This is their sole RPh action (A1.32).
+</RuleHelp>
+<ActionUnitScope Units="@HalfSquads" Unit="@One" Locations="@Locations" Title="Recombining in" ReleaseText="Show all recombine units"
+                 OnClear="@(() => OnOne.InvokeAsync(string.Empty))" Context="shown">
+<div class="action-form">
+<ActionFormGroup Legend="Units and leader">
     <label>
-        HS
+        First half-squad
         <select id="recombine-one" value="@One" @onchange="@(args => OnOne.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            <UnitOptions Units="@HalfSquads" Text="@At" />
+            <UnitOptions Units="@shown" Text="@At" />
         </select>
     </label>
+    @if (shown.Any(unit => unit.Id == One))
+    {
     <label>
-        with
+        Second half-squad
         <select id="recombine-two" value="@Two" @onchange="@(args => OnTwo.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
             <UnitOptions Units="@([.. Partners.Select(unit => new PlayChoice(unit, unit))])" Text="@Say" />
         </select>
     </label>
+    @if (Partners.Contains(Two))
+    {
     <label>
         Leader
         <select id="recombine-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -22,14 +33,21 @@
             <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
         </select>
     </label>
-    <button id="propose-recombine" disabled="@(!HalfSquads.Any(unit => unit.Id == One) || !Partners.Contains(Two))" aria-describedby="propose-recombine-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: recombine</button>
-    @if (!HalfSquads.Any(unit => unit.Id == One) || !Partners.Contains(Two))
-    {
-        <span id="propose-recombine-ready" class="toolbar-note">Choose the two HS that Recombine.</span>
     }
+    }
+</ActionFormGroup>
+<ActionProposalArea>
+    <button id="propose-recombine" disabled="@(!shown.Any(unit => unit.Id == One) || !Partners.Contains(Two))" aria-describedby="propose-recombine-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: recombine</button>
+    @if (!shown.Any(unit => unit.Id == One) || !Partners.Contains(Two))
+    {
+        <span id="propose-recombine-ready" class="toolbar-note">@(One.Length == 0 ? "Choose the first half-squad." : Partners.Count == 0 ? "No matching half-squad is available here." : "Choose the second half-squad.")</span>
+    }
+</ActionProposalArea>
 </div>
+</ActionUnitScope>
 
 @code {
+    [Parameter] public IReadOnlyDictionary<string, string?> Locations { get; set; } = new Dictionary<string, string?>();
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }

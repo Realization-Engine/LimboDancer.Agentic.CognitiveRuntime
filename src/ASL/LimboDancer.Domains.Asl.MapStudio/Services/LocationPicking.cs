@@ -25,6 +25,12 @@ public sealed class LocationPicking
         get; set;
     }
 
+    /// <summary>The field that owned the latest map click, retained after that field disarms.</summary>
+    public string? PickedBy
+    {
+        get; set;
+    }
+
     /// <summary>Rises with every pick, so a field tells a new pick from the one it has already taken.</summary>
     public long Serial
     {

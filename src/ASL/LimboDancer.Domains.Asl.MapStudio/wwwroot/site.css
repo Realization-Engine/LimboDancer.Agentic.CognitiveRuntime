@@ -4052,6 +4052,57 @@ button[data-working]::after {
     .turn-layout aside { border-right:0; border-bottom:1px solid var(--line); max-height:40vh; }
 }
 
+/* Action entry: scoped to the forms, never the global toolbar. */
+.action-form { min-width: 0; }
+.action-form-group { border: 0; border-top: 1px solid #ddd6c8; margin: 1rem 0 0; padding: .65rem 0 .25rem; min-width: 0; }
+.action-form-group > legend { font-weight: 700; padding: 0 .5rem 0 0; font-size: .95rem; }
+.action-fields { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .75rem 1rem; min-width: 0; }
+.action-fields > label:has(select), .action-fields > label:has(input:not([type=checkbox])) { display: flex; flex-direction: column; align-items: flex-start; gap: .3rem; }
+.action-form select, .action-form input { max-width: 100%; min-width: 0; }
+.action-fields > *, .action-location-choice { min-width: 0; max-width: 100%; }
+.action-location-choice { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; width: 100%; }
+.action-location-choice > label, .action-location-choice > div { flex-basis: 100%; }
+.action-location-choice > select { flex: 1 1 12rem; }
+.action-proposal { border-top: 1px solid #ddd6c8; padding-top: .75rem; margin-top: 1rem; }
+.action-buttons { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; }
+.action-feedback { margin: 0 0 .5rem; font-size: .9rem; }
+.action-form .pick-on-map { font-weight: 600; }
+.action-form .location-field { max-width: 100%; }
+.action-form .toolbar { align-items: flex-start; }
+.action-form [hidden] { display: none !important; }
+
+.action-form .toolbar > label:has(select), .action-form .toolbar > label:has(input:not([type=checkbox])) { display: flex; flex-direction: column; gap: .3rem; max-width: 100%; }
+.action-form .toolbar > .location-field, .action-form .toolbar > fieldset { flex-basis: 100%; }
+.action-form .toolbar > button[id^="propose-"] { margin-top: .5rem; }
+.action-form .rule-help { margin: .5rem 0; }
+.action-form .fire-range { width: 100%; }
+
+.action-form .fire-source-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem 1rem; width: 100%; }
+.action-form .fire-source-controls > label { display: flex; flex-direction: column; gap: .3rem; min-width: 0; max-width: 100%; }
+.action-form .fire-unit-list { display: grid; gap: .75rem; width: 100%; }
+.action-form .fire-unit { min-width: 0; }
+.action-form .fire-unit label { display: flex; align-items: baseline; gap: .4rem; overflow-wrap: anywhere; }
+.action-form .fire-unit input { flex-shrink: 0; }
+.action-form .fire-unit-weapons { display: grid; gap: .4rem; margin-left: 1.5rem; }
+.action-form .fire-unit-weapons:not(:empty) { margin-top: .4rem; }
+#rout-route-help { flex-basis: 100%; }
+
+/* Close Combat: location, declaration, review, then proposal. */
+.cc-workflow { gap: .75rem; }
+.cc-workflow h5, .cc-side h5 { font-size: 1rem; margin: 0 0 .5rem; }
+.cc-progress { display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; padding: .6rem 1rem .6rem 2rem; margin: 0; background: #f5f4ef; font-size: .85rem; }
+.cc-progress [aria-current="step"] { font-weight: 700; color: #4b622d; }
+.cc-participants { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: .75rem; }
+.cc-participants .action-fields { display: flex; flex-direction: column; align-items: stretch; gap: .5rem; }
+.cc-participants .action-fields > label { display: flex; align-items: baseline; gap: .4rem; }
+.cc-participants .action-form-group { margin: 0; }
+.cc-declarations { border-top: 1px solid #ddd7c9; padding-top: .65rem; }
+.cc-declarations p, .cc-declarations ul { margin: .25rem 0; }
+.cc-declarations li { margin-bottom: .4rem; }
+.cc-declarations button { margin-left: .5rem; }
+.cc-infiltration-unit { margin-top: .6rem; }
+.cc-infiltration-unit > label:first-child { display: grid; grid-template-columns: minmax(0, 1fr) minmax(6rem, 10rem); align-items: center; gap: .75rem; }
+.cc-change-location { padding: .65rem; border: 1px solid #a6853c; }
 /* The Minigames page (the user, 2026-10-31): a list of the minigames at the left, scrolled on its own, and the one chosen beside it; the list's
    items read as the Studio's own menu does. Where the page is narrow the list gives way to a dropdown. */
 .minigame-browser {
