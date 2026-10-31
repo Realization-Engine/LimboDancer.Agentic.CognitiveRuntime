@@ -201,7 +201,7 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
         {
             HeroRider = HeroRider(weapon.VehicleId, facts.Hero)
         };
-        if (!facts.InherentCrew && !authoritative.HeroRider)
+        if (!authoritative.Disabled && !facts.InherentCrew && !authoritative.HeroRider)
         {
             return $"play.repair-unit: {weapon.VehicleId}'s armament needs an inherent crew or an eligible Hero Rider (D3.7)";
         }

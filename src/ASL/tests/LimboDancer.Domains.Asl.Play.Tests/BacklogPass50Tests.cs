@@ -493,6 +493,14 @@ public sealed class BacklogPass50Tests : IDisposable
         Assert.Null(replay.Current.VehicleArmamentEvidence);
         var current = updated.Replay(events.Take((int)before).ToArray()).Current!;
         Assert.DoesNotContain("bmg", GamePlanner.VehicleRepairWeapons(current, current.Unit("de-tank")!));
+        var overlaid = VehicleArmamentFacts.Definition(current with
+        {
+            VehicleArmamentEvidence = evidence
+        }, current.Unit("de-tank")!)!;
+        var loaded = revised.Definition("attacker-tank")!;
+        var retained = loaded.Values.First(value => value.Face == "front" && value.Name == "asl:movement-points");
+        Assert.Contains(retained, overlaid.Values);
+        Assert.Contains(evidence.Values.Single(value => value.Name == "asl:bmg"), overlaid.Values);
         Assert.True(updated.Replay(events.Select(item => item.Payload is RepairAttempted
             ? item with
             {

@@ -1192,6 +1192,10 @@ public static class ScenarioA1FireCalculator
     private static void OverrunOutside(FireAttack attack, FireOverrun overrun, ScenarioA1FireReference reference,
         IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
     {
+        if (overrun.DisabledWeapons?.Any(name => name is not ("ma" or "bmg" or "cmg")) == true)
+        {
+            outside.Add("asl.a1.fire.overrun-disabled-weapon-unknown");
+        }
         var definition = reference.Definitions.GetValueOrDefault(overrun.DefinitionId!);
         if (definition is not { IsVehicle: true } || attack.Firers is { Count: > 0 } || Directors(attack).Any() || attack.VehicleFire is not null
             || attack.OrdnanceHit is not null || overrun.LocationId != attack.FirerLocationId || overrun.LocationId != attack.TargetLocationId)

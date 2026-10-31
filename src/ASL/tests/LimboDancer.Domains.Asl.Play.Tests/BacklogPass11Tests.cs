@@ -901,9 +901,25 @@ public sealed class BacklogPass11Tests : IDisposable
         var state = Current;
         var location = state.Location("de-ht")!.Location!;
         Assert.Equal(("german", true), Planner().VehicleCloseCombatTurn(state, location));
-        var barred = state with
+        var noWeapon = state with
         {
             Units = [.. state.Units.Select(unit => unit.Id != "de-ht" ? unit : unit with
+            {
+                Conditions = new Dictionary<string, ConditionState>(unit.Conditions) { [Conditions.Malfunctioned] = ConditionState.True },
+            })],
+        };
+        Assert.False(Planner().VehicleCloseCombatTurn(noWeapon, location).Open);
+        var passengersOnly = noWeapon with
+        {
+            Units = [.. noWeapon.Units.Select(unit => unit.Id != "g1" ? unit : unit with
+            {
+                Position = new ContainedPosition("de-ht", ContainmentRole.Passenger)
+            })]
+        };
+        Assert.True(Planner().VehicleCloseCombatTurn(passengersOnly, location).Open);
+        var barred = passengersOnly with
+        {
+            Units = [.. passengersOnly.Units.Select(unit => unit.Id != "de-ht" ? unit : unit with
             {
                 Conditions = new Dictionary<string, ConditionState>(unit.Conditions) { [condition] = ConditionState.True },
             })],

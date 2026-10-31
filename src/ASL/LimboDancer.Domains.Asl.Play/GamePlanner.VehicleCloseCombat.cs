@@ -14,10 +14,11 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    /// <summary>Whether a vehicle has a CC attack (A11.62): a CMG not malfunctioned, or an AAMG while CE, with its crew able to fight.</summary>
-    private static bool VehicleCcArmament(UnitInstance vehicle) => VehicleDefinition(vehicle) is { } definition
+    /// <summary>Gather the vehicle and joining Passengers for the same A11.62 firepower test as the attack precheck.</summary>
+    private static bool VehicleCcArmament(GameState state, UnitInstance vehicle, ObjectIndex index) => VehicleDefinition(vehicle) is { } definition
         && ScenarioA1VehicleCloseCombat.CanAttack(LiveFire.VehicleCloseCombatAvailability(vehicle, LiveCloseCombat.VehicleFacts(vehicle, false, true)),
-            definition, Is(vehicle, Conditions.Captured), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.UnconfirmedKill));
+            definition, LiveCloseCombat.PassengerUnits(state, LiveCloseCombat.JoiningPassengers(vehicle, index.Aboard(vehicle.Id))) ?? [],
+            CloseCombatReference.Value, Is(vehicle, Conditions.Captured), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.UnconfirmedKill));
 
     /// <summary>Whether an Infantry unit may make a CC attack in the CCPh (A11.16, A20.5): active, unbroken, and not a prisoner.</summary>
     private bool CcAttacker(UnitInstance unit) => ScenarioA1VehicleCloseCombatRules.CcAttacker(unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit), vocabulary.IsA(unit.Kind, "asl:personnel"),
@@ -27,7 +28,7 @@ public sealed partial class GamePlanner
     /// A unit of a Location holding a vehicle as Rules reads it (pass 32.g): its CC armament, attacker status, Personnel, prisoner, berserk, and Known
     /// flags (a Gun's crew is ordinary Infantry since pass 70, ruling R70.27).
     /// </summary>
-    private VehicleCcUnitFacts VehicleCcUnit(UnitInstance unit) => new(unit.Id, unit.Side, LiveFire.IsVehicle(unit), VehicleCcArmament(unit), CcAttacker(unit),
+    private VehicleCcUnitFacts VehicleCcUnit(GameState state, UnitInstance unit, ObjectIndex index) => new(unit.Id, unit.Side, LiveFire.IsVehicle(unit), VehicleCcArmament(state, unit, index), CcAttacker(unit),
         vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Captured), Is(unit, Conditions.Berserk), KnownEnemy(unit));
 
     /// <summary>
@@ -39,17 +40,9 @@ public sealed partial class GamePlanner
     {
         var index = MemoOf(state).Objects(state);
         var here = index.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
-        return [.. here.Select(unit => LiveFire.IsVehicle(unit) && !VehicleCcArmament(unit) && PassengersJoin(index, unit) ? VehicleCcUnit(unit) with { Armed = true } : VehicleCcUnit(unit)),
-            .. here.Where(LiveFire.IsVehicle).SelectMany(vehicle => index.Aboard(vehicle.Id, ContainmentRole.Rider)).Select(rider => VehicleCcUnit(rider) with { Rider = true })];
+        return [.. here.Select(unit => VehicleCcUnit(state, unit, index)),
+            .. here.Where(LiveFire.IsVehicle).SelectMany(vehicle => index.Aboard(vehicle.Id, ContainmentRole.Rider)).Select(rider => VehicleCcUnit(state, rider, index) with { Rider = true })];
     }
-
-    /// <summary>
-    /// Whether Passengers join a vehicle's CC attack on Infantry (A11.62; pass 70, ruling R70.31), read from the planner's index: some do, as Rules reads each
-    /// one's part, and the vehicle is neither Stunned, Shocked, Abandoned, nor captured.
-    /// </summary>
-    private static bool PassengersJoin(ObjectIndex index, UnitInstance vehicle) =>
-        ScenarioA1VehicleCloseCombatRules.PassengersJoin(Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.Abandoned), Is(vehicle, Conditions.Captured),
-            LiveCloseCombat.JoiningPassengers(vehicle, index.Aboard(vehicle.Id)).Count);
 
     /// <summary>
     /// The sides with an attack left in a CC Location holding a vehicle (ruling R11.16): Infantry that have not attacked and face an enemy vehicle, and

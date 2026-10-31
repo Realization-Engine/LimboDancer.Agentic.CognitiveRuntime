@@ -308,7 +308,7 @@ public static class LiveCloseCombat
     }
 
     /// <summary>The Passengers who join a vehicle's attack (A11.62; ruling R70.31), as the package reads a CC unit.</summary>
-    private static IReadOnlyList<CloseCombatUnit>? PassengerUnits(GameState state, IReadOnlyList<string> ids) =>
+    internal static IReadOnlyList<CloseCombatUnit>? PassengerUnits(GameState state, IReadOnlyList<string> ids) =>
         ids.Select(state.Unit).OfType<UnitInstance>().Where(unit => unit.Definition is not null).ToArray() is { Length: > 0 } found
             ? [.. found.Select(unit => ScenarioA1CloseCombatFactBuilders.Unit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
                 Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted), Is(unit, Conditions.Berserk), Is(unit, Conditions.Fanatic), Is(unit, Conditions.Heroic),

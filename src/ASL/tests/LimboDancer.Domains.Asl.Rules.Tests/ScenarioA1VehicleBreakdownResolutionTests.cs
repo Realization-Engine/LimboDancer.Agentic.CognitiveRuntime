@@ -122,6 +122,43 @@ public sealed class ScenarioA1VehicleBreakdownResolutionTests
 
     private static readonly VehicleBreakdownUseFacts Circled = new(VehicleBreakdownWeapon.MainArmament, 11, null, true, false, false, false);
 
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(1, true)]
+    [InlineData(6, true)]
+    [InlineData(7, false)]
+    public void WeaponSelectionRequiresDiceFromOneThroughSix(int die, bool valid)
+    {
+        var weapons = new Dictionary<string, VehicleBreakdownUseFacts>
+        {
+            ["bmg"] = Circled with { Weapon = VehicleBreakdownWeapon.BowMg },
+            ["cmg"] = Circled with { Weapon = VehicleBreakdownWeapon.CoaxialMg }
+        };
+        var result = ScenarioA1VehicleBreakdownResolutionCalculator.ResolveWeapons("tank", weapons, VehicleBreakdownUse.CloseCombat, 12,
+            new Dictionary<string, int> { ["tank:bmg"] = die, ["tank:cmg"] = 1 }, out var keys);
+        Assert.Equal(["tank:bmg", "tank:cmg"], keys);
+        Assert.Equal(valid, result is not null);
+    }
+
+    [Fact]
+    public void RepairRequiresAnInherentCrewButReportsPermanentDisablementFirst()
+    {
+        var weapon = new VehicleRepairFacts("tank", "ma", true, false, false, false);
+        var facts = new VehicleRepairUseFacts(weapon, true, InherentCrew: false);
+        Assert.Contains("needs an inherent crew", ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(facts));
+        Assert.Null(ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(facts with
+        {
+            InherentCrew = true
+        }));
+        Assert.Contains("disabled for good", ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(facts with
+        {
+            WeaponFacts = weapon with
+            {
+                Disabled = true
+            }
+        }));
+    }
+
     [Fact]
     public void OverrunMalfunctionsAtACircledBreakdownNumberInsteadOfGivingLowAmmo()
     {

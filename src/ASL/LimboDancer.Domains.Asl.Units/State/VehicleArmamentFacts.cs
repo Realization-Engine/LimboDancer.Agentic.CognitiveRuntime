@@ -22,7 +22,7 @@ public static class VehicleArmamentFacts
         return definition is not null && state.VehicleArmamentEvidence is { } evidence && evidence.Definition == definition.Id
             ? definition with
             {
-                Values = evidence.Values
+                Values = [.. definition.Values.Where(value => value.Face != "front" || !EvidenceNames.Contains(value.Name)), .. evidence.Values]
             } : definition;
     }
 
