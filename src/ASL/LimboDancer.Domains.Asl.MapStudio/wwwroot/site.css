@@ -4086,3 +4086,20 @@ button[data-working]::after {
 .action-form .fire-unit-weapons { display: grid; gap: .4rem; margin-left: 1.5rem; }
 .action-form .fire-unit-weapons:not(:empty) { margin-top: .4rem; }
 #rout-route-help { flex-basis: 100%; }
+
+/* Close Combat: location, declaration, review, then proposal. */
+.cc-workflow { gap: .75rem; }
+.cc-workflow h5, .cc-side h5 { font-size: 1rem; margin: 0 0 .5rem; }
+.cc-progress { display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; padding: .6rem 1rem .6rem 2rem; margin: 0; background: #f5f4ef; font-size: .85rem; }
+.cc-progress [aria-current="step"] { font-weight: 700; color: #4b622d; }
+.cc-participants { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: .75rem; }
+.cc-participants .action-fields { display: flex; flex-direction: column; align-items: stretch; gap: .5rem; }
+.cc-participants .action-fields > label { display: flex; align-items: baseline; gap: .4rem; }
+.cc-participants .action-form-group { margin: 0; }
+.cc-declarations { border-top: 1px solid #ddd7c9; padding-top: .65rem; }
+.cc-declarations p, .cc-declarations ul { margin: .25rem 0; }
+.cc-declarations li { margin-bottom: .4rem; }
+.cc-declarations button { margin-left: .5rem; }
+.cc-infiltration-unit { margin-top: .6rem; }
+.cc-infiltration-unit > label:first-child { display: grid; grid-template-columns: minmax(0, 1fr) minmax(6rem, 10rem); align-items: center; gap: .75rem; }
+.cc-change-location { padding: .65rem; border: 1px solid #a6853c; }

@@ -1,8 +1,4 @@
 @using LimboDancer.Domains.Asl.Units.State
-@* Plan C02 (pass 27): the CCPh in one chosen Location. The Location, the Ambush and the round (plan C03 and N05, kept here) come first, then the
-   ambusher's withdrawal (N06), the SMC stacking (C04), the Melee withdrawals (C05), the attacks being declared (C06), the infiltrations (N08), and
-   the attacks declared (C07, kept here). The page reads every fact for the view (ruling R23.1), keeps the draft and its resets (a new Location or
-   round starts the declarations over), and proposes; this panel calls no planner. *@
 <ActionSection Title="Close Combat" Key="close-combat">
 <RuleHelp Id="cc-help" Summary="Units of both sides in a Location attack each other, one Location at a time, none attacking or attacked more than once; roll for Ambush first where it applies, and declare SMC stacking before the attacks (A11.11, A11.12, A11.4, A11.14).">
     Units of both sides in one Location attack each other (A11.11): one Location at a time, each unit attacking and attacked at most once
@@ -17,116 +13,244 @@
 </RuleHelp>
 @if (Due.Count > 0)
 {
-    <ul id="cc-due">
-        @foreach (var item in Due)
-        {
-            <li>@DisplayText.Sentence(Say(item))</li>
-        }
-    </ul>
+    <ul id="cc-due">@foreach (var item in Due) { <li>@DisplayText.Sentence(Say(item))</li> }</ul>
 }
-<div class="toolbar">
-    <label>
-        Location
-        <select id="cc-location" value="@Location" @onchange="@(args => OnLocation.InvokeAsync(args.Value as string ?? string.Empty))">
-            <option value="">choose</option>
-            @foreach (var at in Locations)
-            {
-                <option value="@at">@Say($"{at}")</option>
-            }
-        </select>
-    </label>
-    <PickedOption For="cc-location" Options="@Locations" Value="@Location" OnChange="@OnLocation" />
-    @if (Entry is { } entry)
-    {
-        <span id="cc-status">
-            @(entry.AmbushRolled ? entry.Ambusher is { } ambusher ? $"The {DisplayText.Side(ambusher)} side ambushes." : "No Ambush." : "")
-            @(entry.Closed ? "Resolved this CCPh." : entry.Rounds.Count > 0 ? "The ambusher may attack again, or the ambushed side's round follows." : "")
-        </span>
-        @if (!entry.Closed && entry.Ambusher is not null && entry.Rounds.Count > 0)
-        {
-            <label>
-                Round
-                <select id="cc-round" value="@Round" @onchange="@(args => OnRound.InvokeAsync(args.Value as string))">
-                    <option value="">the ambushed side's round</option>
-                    <option value="@CloseCombatResolved.AmbusherRound">another attack by the ambusher</option>
-                </select>
-            </label>
-        }
-    }
-    <button id="propose-ambush" disabled="@(!AmbushDue)" @onclick="@(() => OnProposeAmbush.InvokeAsync())">Propose: roll for Ambush</button>
-    @if (Location.Length > 0 && (Entry is null || Entry.Rounds.Count == 0))
-    {
-        <label><input id="cc-prisoners-round" type="checkbox" checked="@(Round == CloseCombatResolved.PrisonersRound)"
-            @onchange="@(args => OnRound.InvokeAsync(args.Value is true ? CloseCombatResolved.PrisonersRound : null))" /> prisoners' escape round (A20.55)</label>
-        @if (HandToHandAllowed)
-        {
-            <label><input id="cc-hand-to-hand" type="checkbox" checked="@HandToHand" @onchange="@(args => OnHandToHand.InvokeAsync(args.Value is true))" /> Hand-to-Hand (J2.31)</label>
-        }
-    }
-</div>
-@if (AmbushWithdrawals is { } withdrawals)
+@if (Locations.Count == 0)
 {
-    <AmbushWithdrawalActions Withdrawals="@withdrawals" OnPropose="@OnAmbushWithdraw" />
+    <p id="cc-empty" class="toolbar-note">No Close Combat locations are available.</p>
 }
-@if (Location.Length > 0)
+else
 {
-    <CloseCombatStacking Smcs="@Smcs" Stacking="@Stacking" OnStacking="@OnStacking" />
-    @if (Withdrawers.Count > 0)
-    {
-        <CloseCombatWithdrawals Units="@Withdrawers" Withdrawals="@Withdrawals" OnWithdrawal="@OnWithdrawal" Dropped="@Dropped" OnDrop="@OnDrop" />
-    }
-    @if (AmbushDue)
-    {
-        <p class="muted" id="cc-ambush-first">Infantry advanced into CC here, in woods or a building or with or against a concealed unit, or a hidden unit was placed here: roll for Ambush before any attack is declared (A11.4).</p>
-    }
-    <CloseCombatAttackBuilder Sides="@(Step == WaitStep ? [] : Sides)" Declaring="@(!AmbushDue && Step != WaitStep)" Attackers="@Attackers" Defenders="@Defenders" Directors="@Directors" Director="@Director"
-        Capture="@Capture" Guard="@Guard" Yield="@Yield" OnAttacker="@OnAttacker" OnDefender="@OnDefender" OnDirector="@OnDirector" OnCapture="@OnCapture"
-        OnGuard="@OnGuard" OnYield="@OnYield" OnAdd="@OnAddAttack" />
-    @if (!AmbushDue)
-    {
-        @if (Infiltrators is { } infiltrators)
+<div class="action-form cc-workflow">
+    <div class="toolbar cc-location">
+        <label>Location
+            <select id="cc-location" value="@Location" @onchange="@(args => RequestLocation(args.Value as string ?? string.Empty))">
+                <option value="">choose</option>
+                @foreach (var at in Locations) { <option value="@at">@Say(at)</option> }
+            </select>
+        </label>
+        @if (Location.Length > 0)
         {
-            <CloseCombatInfiltrationChoices Units="@infiltrators" Infiltrations="@Infiltrations" OnInfiltration="@OnInfiltration" Dropped="@Dropped" OnDrop="@OnDrop" />
-        }
-        @* The user, 2026-10-22 (A11.11): both sides declare before a simultaneous round is resolved, the first side's attacks read here by the second. *@
-        @if (OtherDeclared)
-        {
-            <p class="toolbar-note" id="cc-declared-by">The @DisplayText.Side(FirstSide) side has declared @(OtherAttacks.Count == 0 ? "no attack" : OtherAttacks.Count == 1 ? "this attack" : "these attacks"):</p>
-            <ul id="cc-declared">
-                @foreach (var attack in OtherAttacks)
-                {
-                    <li>@AttackText(attack)</li>
-                }
-            </ul>
-        }
-        <ul id="cc-attacks">
-            @foreach (var attack in Attacks)
-            {
-                <li>@AttackText(attack) <button class="link" aria-label="@Say($"Remove: {string.Join(", ", attack.Attackers)} against {string.Join(", ", attack.Defenders)}")" @onclick="@(() => OnRemoveAttack.InvokeAsync(attack))" hidden="@(!MayRemove(attack))">remove</button></li>
-            }
-        </ul>
-        @if (Step == DeclareStep)
-        {
-            <button id="declare-cc" class="primary" @onclick="@(() => OnDeclare.InvokeAsync())">Declare @(Attacks.Count == 0 ? "no attack" : Attacks.Count == 1 ? "this attack" : "these attacks") and hand over</button>
-            <p class="toolbar-note" id="cc-declare-note">CC is simultaneous: the other side declares its attacks next, and then every attack is rolled together (A11.11).</p>
-        }
-        else if (Step == WaitStep)
-        {
-            <p class="toolbar-note" id="cc-declares-first">The @DisplayText.Side(FirstSide) side declares its CC attacks here first; then the screen comes to you to declare yours, and every attack is rolled together (A11.11).</p>
+            <button type="button" class="link" id="cc-release" @onclick="@(() => RequestLocation(string.Empty))">Release location</button>
         }
         else
         {
-            <button id="propose-cc" @onclick="@(() => OnPropose.InvokeAsync())">Propose: resolve CC@(Attacks.Count + OtherAttacks.Count == 0 ? " with no attacks" : "")</button>
+            <span class="toolbar-note">Choose a location or select its hex on the map.</span>
         }
-        @if (CanClear)
+    </div>
+    @if (mapNote is not null) { <p class="toolbar-note" role="status">@mapNote</p> }
+    @if (pendingLocation is not null)
+    {
+        <div class="cc-change-location" role="status">
+            <p>Changing location clears this round's declarations.</p>
+            <button type="button" @onclick="ConfirmLocation">Clear declarations and change location</button>
+            <button type="button" class="link" @onclick="@(() => pendingLocation = null)">Keep this location</button>
+        </div>
+    }
+    @if (Location.Length > 0)
+    {
+        @if (Entry is { } entry)
         {
-            <button type="button" class="link" id="cc-clear-all" title="Drops every declaration of this round, both sides', kept or not yet proposed; nothing is recorded until the round is resolved." @onclick="@(() => OnClearAll.InvokeAsync())">Clear all declarations</button>
+            <p id="cc-status" class="toolbar-note">
+                @(entry.AmbushRolled ? entry.Ambusher is { } ambusher ? $"The {DisplayText.Side(ambusher)} side ambushes." : "No Ambush." : "")
+                @(entry.Closed ? "Resolved this CCPh." : "")
+            </p>
+        }
+        @if (Entry?.Closed != true)
+        {
+            @if (Step == DeclareStep || Step == WaitStep || OtherDeclared)
+            {
+                <ol class="cc-progress" aria-label="Close Combat progress">
+                    <li aria-current="@(Step == DeclareStep || Step == WaitStep ? "step" : null)">@DisplayText.Side(FirstSide) declares@(OtherDeclared ? " (done)" : "")</li>
+                    <li aria-current="@(OtherDeclared && !reviewing ? "step" : null)">@DisplayText.Side(SecondSide) declares@(OtherDeclared && reviewing ? " (done)" : "")</li>
+                    <li aria-current="@(reviewing ? "step" : null)">Review and resolve</li>
+                </ol>
+            }
+            @if (AmbushDue)
+            {
+                <p id="cc-ambush-first" class="toolbar-note">Resolve Ambush before declaring attacks.</p>
+                <button id="propose-ambush" @onclick="@(() => OnProposeAmbush.InvokeAsync())">Propose: roll for Ambush</button>
+            }
+            @if (AmbushWithdrawals is { } withdrawals)
+            {
+                <AmbushWithdrawalActions Withdrawals="@withdrawals" OnPropose="@OnAmbushWithdraw" />
+            }
+            @if (Step == WaitStep)
+            {
+                <p id="cc-declares-first" class="toolbar-note">Waiting for the @DisplayText.Side(FirstSide) side to declare.</p>
+            }
+            else if (!reviewing)
+            {
+                @if (Smcs.Count > 0) { <CloseCombatStacking Smcs="@Smcs" Stacking="@Stacking" OnStacking="@OnStacking" /> }
+                @if (Withdrawers.Count > 0)
+                {
+                    <CloseCombatWithdrawals Units="@Withdrawers" Withdrawals="@Withdrawals" OnWithdrawal="@OnWithdrawal" Dropped="@Dropped" OnDrop="@OnDrop" />
+                }
+                @if (!AmbushDue && (HasDraft || Sides.Any(side => side.Attackers.Count > 0 && side.Defenders.Count > 0)))
+                {
+                    <CloseCombatAttackBuilder Sides="@Sides" Declaring="true" Attackers="@Attackers" Defenders="@Defenders" Directors="@Directors" Director="@Director"
+                        Capture="@Capture" Guard="@Guard" Yield="@Yield" OnAttacker="@OnAttacker" OnDefender="@OnDefender" OnDirector="@OnDirector" OnCapture="@OnCapture"
+                        OnGuard="@OnGuard" OnYield="@OnYield" OnAdd="@OnAddAttack" OnClear="@OnClearAttack" />
+                }
+                @if (!OtherDeclared)
+                {
+                    <details class="action-options" open="@(Round.Length > 0 || HandToHand)">
+                        <summary>Round options</summary>
+                        <div class="action-fields">
+                        @if (Entry is { Closed: false, Ambusher: not null } prior && prior.Rounds.Count > 0)
+                        {
+                            <label>Round
+                                <select id="cc-round" value="@Round" @onchange="@(args => OnRound.InvokeAsync(args.Value as string))">
+                                    <option value="">the ambushed side's round</option>
+                                    <option value="@CloseCombatResolved.AmbusherRound">another attack by the ambusher</option>
+                                </select>
+                            </label>
+                        }
+                        else if (Entry is null || Entry.Rounds.Count == 0)
+                        {
+                            <label><input id="cc-prisoners-round" type="checkbox" checked="@(Round == CloseCombatResolved.PrisonersRound)"
+                                @onchange="@(args => OnRound.InvokeAsync(args.Value is true ? CloseCombatResolved.PrisonersRound : null))" /> Prisoners' escape round (A20.55)</label>
+                            @if (HandToHandAllowed)
+                            {
+                                <label><input id="cc-hand-to-hand" type="checkbox" checked="@HandToHand" @onchange="@(args => OnHandToHand.InvokeAsync(args.Value is true))" /> Hand-to-Hand (J2.31)</label>
+                            }
+                        }
+                        </div>
+                    </details>
+                }
+                @if (!AmbushDue && Infiltrators is { Count: > 0 } infiltrators)
+                {
+                    <details class="action-options" open="@(Infiltrations.Count > 0)">
+                        <summary>Infiltration choices</summary>
+                        <CloseCombatInfiltrationChoices Units="@infiltrators" Infiltrations="@Infiltrations" OnInfiltration="@OnInfiltration" Dropped="@Dropped" OnDrop="@OnDrop" />
+                    </details>
+                }
+            }
+            @if (!AmbushDue)
+            {
+                @if (OtherDeclared)
+                {
+                    <section class="cc-declarations" aria-label="First side declarations">
+                        <h5 id="cc-declared-by">@DisplayText.Side(FirstSide): declared</h5>
+                        @if (OtherAttacks.Count == 0) { <p>No attacks.</p> }
+                        <ul id="cc-declared">@foreach (var attack in OtherAttacks) { <li>@AttackText(attack)</li> }</ul>
+                        @foreach (var note in OtherChoices) { <p class="toolbar-note">@Say(note)</p> }
+                    </section>
+                }
+                @if (Step != WaitStep)
+                {
+                    <section class="cc-declarations" aria-label="Your declarations">
+                        <h5>@(Sides.Count == 1 ? DisplayText.Side(Sides[0].Side) : "This round"): @(reviewing ? "declared" : "attacks added")</h5>
+                        @if (Attacks.Count == 0) { <p>@(reviewing ? "No attacks." : "No attacks added.")</p> }
+                        <ul id="cc-attacks">
+                            @foreach (var attack in Attacks)
+                            {
+                                <li>@AttackText(attack)
+                                    @if (!reviewing && MayRemove(attack))
+                                    {
+                                        <button type="button" class="link" aria-label="@Say($"Edit: {string.Join(", ", attack.Attackers)} against {string.Join(", ", attack.Defenders)}")" disabled="@HasDraft" @onclick="@(() => OnEditAttack.InvokeAsync(attack))">Edit</button>
+                                        <button type="button" class="link" aria-label="@Say($"Remove: {string.Join(", ", attack.Attackers)} against {string.Join(", ", attack.Defenders)}")" @onclick="@(() => OnRemoveAttack.InvokeAsync(attack))">Remove</button>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                        @if (reviewing)
+                        {
+                            @foreach (var note in ChoiceNotes(Stacking, Withdrawals, Infiltrations, Dropped, HandToHand, Round)) { <p class="toolbar-note">@Say(note)</p> }
+                        }
+                    </section>
+                    <ActionProposalArea>
+                        @if (HasDraft) { <span id="cc-draft-note" class="toolbar-note">Add or clear the current attack first.</span> }
+                        @if (Step == DeclareStep)
+                        {
+                            <button id="declare-cc" disabled="@HasDraft" aria-describedby="@(HasDraft ? "cc-draft-note" : null)" @onclick="FinishFirst">Declare @(Attacks.Count == 0 ? "no attacks" : "attacks") and hand over</button>
+                        }
+                        else if (!reviewing)
+                        {
+                            <button id="cc-review" disabled="@HasDraft" aria-describedby="@(HasDraft ? "cc-draft-note" : null)" @onclick="Review">Declare @(Attacks.Count == 0 ? "no attacks" : "attacks") and review</button>
+                        }
+                        else
+                        {
+                            <button id="propose-cc" @onclick="ProposeReviewed">Propose: resolve CC@(Attacks.Count + OtherAttacks.Count == 0 ? " with no attacks" : "")</button>
+                            <button type="button" class="link" id="cc-edit-declarations" @onclick="@(() => reviewing = false)">Edit declarations</button>
+                        }
+                    </ActionProposalArea>
+                }
+                @if (CanClear)
+                {
+                    <button type="button" class="link" id="cc-clear-all" @onclick="ClearAll">Clear all declarations</button>
+                }
+            }
         }
     }
+</div>
 }
 </ActionSection>
 
 @code {
+    [CascadingParameter(Name = "PickedLocation")] public string? Picked { get; set; }
+    [CascadingParameter(Name = "Picking")] public LocationPicking? Picking { get; set; }
+    [Parameter] public EventCallback OnClearAttack { get; set; }
+    [Parameter] public EventCallback<DeclaredAttack> OnEditAttack { get; set; }
+    [Parameter] public IReadOnlyList<string> OtherChoices { get; set; } = [];
+    [Parameter] public string? SecondSide { get; set; }
+    private bool reviewing;
+    private string? pendingLocation;
+    private string? mapNote;
+    private string? lastPicked;
+    private long seenPick = -1;
+    private (string Location, string Round, string Step, bool OtherDeclared) reviewContext;
+    private bool HasDraft => Attackers.Count > 0 || Defenders.Count > 0 || Capture || Director.Length > 0 || Guard.Length > 0 || Yield.Length > 0;
+    private bool HasDeclarations => HasDraft || Attacks.Count > 0 || OtherDeclared || Withdrawals.Count > 0 || Infiltrations.Count > 0 || Dropped.Count > 0 || HandToHand || Round.Length > 0;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var current = (Location, Round, Step, OtherDeclared);
+        if (reviewContext != current || HasDraft) reviewing = false;
+        reviewContext = current;
+        var serial = Picking?.Serial ?? 0;
+        var fresh = serial != seenPick || Picked != lastPicked;
+        (seenPick, lastPicked) = (serial, Picked);
+        if (!fresh || Picked is null || Picking?.Armed is not null || Picking?.PickedBy is not null) return;
+        var matches = Locations.Where(at => BoardLocation.TryParse(Picked, out var picked) && BoardLocation.TryParse(at, out var location)
+            && picked.Board == location.Board && picked.Hex == location.Hex).ToArray();
+        mapNote = matches.Length > 1 ? "Several locations share this hex. Choose the level from Location." : null;
+        if (matches.Length <= 1) await RequestLocation(matches.FirstOrDefault() ?? string.Empty);
+    }
+
+    private async Task RequestLocation(string at)
+    {
+        if (at == Location) return;
+        if (HasDeclarations) { pendingLocation = at; return; }
+        reviewing = false;
+        await OnLocation.InvokeAsync(at);
+    }
+
+    private async Task ConfirmLocation()
+    {
+        var at = pendingLocation;
+        pendingLocation = null;
+        if (at is null) return;
+        await ClearAll();
+        await OnLocation.InvokeAsync(at);
+    }
+
+    private async Task ClearAll() { reviewing = false; await OnClearAll.InvokeAsync(); }
+    private Task FinishFirst() => !HasDraft && Step == DeclareStep ? OnDeclare.InvokeAsync() : Task.CompletedTask;
+    private void Review() { if (!HasDraft && Step == ResolveStep) reviewing = true; }
+    private Task ProposeReviewed() => reviewing && !HasDraft && Step == ResolveStep ? OnPropose.InvokeAsync() : Task.CompletedTask;
+
+    public static IEnumerable<string> ChoiceNotes(IReadOnlyDictionary<string, string> stacking, IReadOnlyDictionary<string, string> withdrawals,
+        IReadOnlyDictionary<string, string> infiltrations, IEnumerable<string> dropped, bool handToHand, string round)
+    {
+        foreach (var (unit, with) in stacking) yield return $"{unit} stacked with {with}.";
+        foreach (var (unit, to) in withdrawals) yield return $"{unit} withdraws to {to}.";
+        foreach (var (unit, to) in infiltrations) yield return $"{unit} infiltrates to {to} if triggered.";
+        foreach (var weapon in dropped) yield return $"Drop {weapon} on withdrawal or infiltration.";
+        if (handToHand) yield return "Hand-to-Hand.";
+        if (round.Length > 0) yield return $"Round: {round}.";
+    }
+
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }

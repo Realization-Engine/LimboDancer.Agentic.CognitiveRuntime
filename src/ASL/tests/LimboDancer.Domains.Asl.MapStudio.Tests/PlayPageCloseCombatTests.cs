@@ -69,6 +69,11 @@ public sealed class PlayPageCloseCombatTests : IDisposable
 
     private static void Commit(IRenderedComponent<PlayPage> page, string propose)
     {
+        if (propose == "#propose-cc")
+        {
+            Assert.Empty(page.FindAll("#propose-cc"));
+            page.Find("#cc-review").Click();
+        }
         page.Find(propose).Click();
         page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         page.Find("#play-confirm").Click();
@@ -279,7 +284,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         page.EndPhase(Commit);
 
         page.Find("#cc-location").Change(hexes.Two);
-        Assert.True(page.Find("#propose-ambush").HasAttribute("disabled"));
+        Assert.Empty(page.FindAll("#propose-ambush"));
         Assert.True(page.FindAll(".cc-withdraw").Count == 0);
         page.Find(".cc-attacker[data-unit='g1']").Change(true);
         page.Find(".cc-defender[data-unit='r1']").Change(true);

@@ -2142,11 +2142,19 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Add the attack",
+          "label": "Add attack",
           "dynamic": false,
           "id": "cc-add-attack",
           "status": "needed",
-          "strip": "CloseCombatAttackBuilder cc-attack"
+          "strip": "CloseCombatAttackBuilder toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Clear selection",
+          "dynamic": false,
+          "id": "cc-clear-attack",
+          "status": "needed",
+          "strip": "CloseCombatAttackBuilder toolbar"
         }
       ]
     },
@@ -2162,24 +2170,61 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Propose: roll for Ambush",
+          "label": "Release location",
           "dynamic": false,
-          "id": "propose-ambush",
+          "id": "cc-release",
           "status": "needed",
-          "strip": "CloseCombatPanel toolbar"
+          "strip": "CloseCombatPanel cc-location"
         },
         {
           "kind": "button",
-          "label": "remove",
+          "label": "Clear declarations and change location",
           "dynamic": false,
           "status": "needed",
           "strip": "CloseCombatPanel"
         },
         {
           "kind": "button",
-          "label": "Declare @(Attacks.Count == 0 ? \u0022no attack\u0022 : Attacks.Count == 1 ? \u0022this attac...",
+          "label": "Keep this location",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: roll for Ambush",
+          "dynamic": false,
+          "id": "propose-ambush",
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Edit",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Declare @(Attacks.Count == 0 ? \u0022no attacks\u0022 : \u0022attacks\u0022) and hand over",
           "dynamic": true,
           "id": "declare-cc",
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Declare @(Attacks.Count == 0 ? \u0022no attacks\u0022 : \u0022attacks\u0022) and review",
+          "dynamic": true,
+          "id": "cc-review",
           "status": "needed",
           "strip": "CloseCombatPanel"
         },
@@ -2188,6 +2233,14 @@
           "label": "Propose: resolve CC@(Attacks.Count \u002B OtherAttacks.Count == 0 ? \u0022 with no atta...",
           "dynamic": true,
           "id": "propose-cc",
+          "status": "needed",
+          "strip": "CloseCombatPanel"
+        },
+        {
+          "kind": "button",
+          "label": "Edit declarations",
+          "dynamic": false,
+          "id": "cc-edit-declarations",
           "status": "needed",
           "strip": "CloseCombatPanel"
         },
@@ -2758,7 +2811,6 @@
       ],
       "usedBy": [
         "ActionLocationChoice",
-        "CloseCombatPanel",
         "SmallArmsFirePanel",
         "SmokeGrenadeAction"
       ],

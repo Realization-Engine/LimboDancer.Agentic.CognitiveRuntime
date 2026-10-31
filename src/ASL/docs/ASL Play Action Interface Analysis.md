@@ -125,3 +125,11 @@ Reviewed against the source baseline for accuracy, correctness, internal consist
 - Required an inventory and staged rollout across action families rather than implying Fire alone completes the request.
 
 No unresolved contradiction was found in this revised analysis. Visual effectiveness remains a hypothesis to verify in Studio, not a tested result of this document.
+
+### Close Combat review, 2026-10-31
+
+The live review found equal visual emphasis on location, exceptional rules, attack building and completion. Empty Ambush and Director controls, free-flowing unit rows and always-visible infiltration inputs obscured the main sequence. More seriously, checked attackers and targets were not yet added attacks: the first side could still choose "Declare no attack and hand over", and the second side could propose resolution while its checked selection was omitted.
+
+The approved correction separates first-side declaration, second-side declaration, combined review and resolution proposal. Unfinished selections block completion; Add or Clear is explicit. Preserve the existing side visibility, first-side storage, sequential-round handling and rule verdicts. Optional rules belong in disclosures, while required stacking and withdrawal inputs stay available. Map inspection selects only an offered location, never guesses a level, and protects drafts before changing locations. The implementation design section 14 records the approved contract.
+
+The subsequent Support Weapons question exposed a separate correctness issue. A4.43 (PDF p. 50) permits the start-of-CC weapon drop in order to withdraw from Melee; A11.21 (p. 73) limits what a withdrawing unit carries. The current generic offer checks phase and enemy presence; the command checks possession, an unbroken holder and no previous CC, without requiring withdrawal. Consequently it offers Drop in the fresh-CC demo. Generic receiving-unit and cross-phase help also distract here. Record the eligibility correction separately, keep its rule in Rules, and place permitted weapon-drop choices with withdrawal. Removing all CC weapon handling would omit legitimate cases. Backlog section 91 tracks this finding; the approved presentation change does not silently change that rule.

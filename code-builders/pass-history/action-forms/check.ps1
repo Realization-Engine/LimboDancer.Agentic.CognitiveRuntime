@@ -1,4 +1,4 @@
-param([switch]$Movement, [switch]$Fire, [switch]$Rout, [switch]$Advance, [string]$Only)
+param([switch]$Movement, [switch]$Fire, [switch]$Rout, [switch]$Advance, [switch]$CloseCombat, [string]$Only)
 $ErrorActionPreference = 'Stop'
 if (-not $env:ASL_GATE_WORK) { throw 'Set ASL_GATE_WORK first.' }
 $repoRoot = (Resolve-Path "$PSScriptRoot/../../..").Path
@@ -42,6 +42,21 @@ if ($Advance) {
         'IconCoverageTests.TheCoverageFileMatchesTheSources'
     )
     $checkName = 'advance-workflow'
+    $env:ASL_ICONS_UPDATE_COVERAGE = '1'
+}
+if ($CloseCombat) {
+    $methods = @(
+        'CloseCombatComponentTests.TheCloseCombatPanelHoldsAttacksUntilTheAmbushIsRolled',
+        'CloseCombatComponentTests.TheCloseCombatPanelListsItsAttacksAndChoices',
+        'CloseCombatComponentTests.CloseCombatRequiresFinishedDeclarationsAndReview',
+        'CloseCombatComponentTests.CloseCombatMapSelectionPreservesDraftsAndDistinguishesLevels',
+        'PlayPageCloseCombatTests.U33OnThePageASquadAdvancesAndItsCloseCombatLeavesTheSurvivorsInMelee',
+        'PlayPageCloseCombatTests.ACaptureAttemptIsDeclaredOnThePageAndItsRecordNamesTheGuard',
+        'PlayPageCloseCombatTests.AFirstSidesDeclarationWaitsForTheOtherAndClearAllStartsTheRoundOver',
+        'PlayPageCloseCombatTests.AUnitHeldInMeleeWithdrawsFromThePage',
+        'IconCoverageTests.TheCoverageFileMatchesTheSources'
+    )
+    $checkName = 'cc-workflow'
     $env:ASL_ICONS_UPDATE_COVERAGE = '1'
 }
 $filter = ($methods | ForEach-Object { "FullyQualifiedName~$_" }) -join '|'

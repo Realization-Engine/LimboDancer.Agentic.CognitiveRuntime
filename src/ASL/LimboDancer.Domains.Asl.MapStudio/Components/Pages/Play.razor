@@ -947,10 +947,11 @@ else if (state is not null)
                 }
                 @if (state.Phase == "ccph")
                 {
-                    <CloseCombatPanel Due="@Live.Planner.CloseCombatDue(state)" Locations="@([.. CloseCombatLocations])" Location="@ccLocation" Entry="@CloseCombatEntry" Round="@ccRound"
+                    <CloseCombatPanel @key="@((gameId, viewAs, history!.Events.Count))" Due="@Live.Planner.CloseCombatDue(state)" Locations="@([.. CloseCombatLocations])" Location="@ccLocation" Entry="@CloseCombatEntry" Round="@ccRound"
                         AmbushDue="@AmbushDue" HandToHandAllowed="@state.SpecialRules.Contains(GamePlanner.HandToHandRule)" HandToHand="@ccHandToHand" AmbushWithdrawals="@AmbushWithdrawals"
                         Step="@CcStep" FirstSide="@(CloseCombatSides.FirstOrDefault())" OtherAttacks="@(CcOtherDeclared?.Attacks ?? [])" OtherDeclared="@(CcOtherDeclared is not null)" OnDeclare="@DeclareCloseCombat"
                         CanClear="@(CcKept is not null || ccAttacks.Count > 0)" OnClearAll="@ClearAllCloseCombat"
+                        OtherChoices="@CcOtherChoices" SecondSide="@(CloseCombatSides.LastOrDefault())" OnClearAttack="@ClearAttackSelection" OnEditAttack="@EditCloseCombatAttack"
                         Smcs="@StackingChoices" Stacking="@ccStacking" Withdrawers="@Withdrawers" Withdrawals="@ccWithdrawals" Sides="@DeclaringSides" Attackers="@ccAttackers"
                         Defenders="@ccDefenders" Directors="@([.. CloseCombatDirectors.Select(unit => unit.Id)])" Director="@ccDirector" Capture="@ccCapture" Guard="@ccGuard" Yield="@ccYield"
                         Infiltrators="@Infiltrators" Infiltrations="@ccInfiltrations" Attacks="@ccAttacks" OnLocation="@ChooseCloseCombatLocation" OnRound="@ChooseRound"
@@ -4953,6 +4954,7 @@ else if (state is not null)
 
     private void AddAttack()
     {
+        if (ccAttackers.Count == 0 || ccDefenders.Count == 0) return;
         string[] yielded = [.. ccYield.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
 
         // Pass 31 (play test P-10; A20.22): a capture attempt on several units needs the defender's order of choice; left empty, it is the targets' order.
@@ -4965,6 +4967,11 @@ else if (state is not null)
         ccAttacks.Add(new CloseCombatPanel.DeclaredAttack([.. ccAttackers.Order(StringComparer.Ordinal)], [.. ccDefenders.Order(StringComparer.Ordinal)],
             ccDirector.Length > 0 && ccAttackers.Contains(ccDirector) ? ccDirector : null, ccCapture, ccCapture && yielded.Length > 0 ? yielded : null,
             ccCapture && ccGuard.Length > 0 && ccAttackers.Contains(ccGuard) ? ccGuard : null));
+        ClearAttackSelection();
+    }
+
+    private void ClearAttackSelection()
+    {
         ccAttackers.Clear();
         ccDefenders.Clear();
         ccDirector = string.Empty;
@@ -4973,7 +4980,24 @@ else if (state is not null)
         ccYield = string.Empty;
     }
 
-    /// <summary>Pass 31 (play test P-04): the stacking is the Location's own, so a round resolved or cancelled leaves it as it was read.</summary>
+    /// <summary>Restore an added attack to the editor without overwriting an unfinished selection.</summary>
+    private void EditCloseCombatAttack(CloseCombatPanel.DeclaredAttack attack)
+    {
+        if (CcAttackDraft || !MayRemoveAttack(attack) || !ccAttacks.Remove(attack)) return;
+        ccAttackers.UnionWith(attack.Attackers);
+        ccDefenders.UnionWith(attack.Defenders);
+        ccDirector = attack.Director ?? string.Empty;
+        ccCapture = attack.Capture;
+        ccGuard = attack.Guard ?? string.Empty;
+        ccYield = string.Join(", ", attack.Yield);
+    }
+
+    private bool CcAttackDraft => ccAttackers.Count > 0 || ccDefenders.Count > 0 || ccCapture || ccDirector.Length > 0 || ccGuard.Length > 0 || ccYield.Length > 0;
+
+    private IReadOnlyList<string> CcOtherChoices => CcOtherDeclared is { } kept
+        ? [.. CloseCombatPanel.ChoiceNotes(kept.Stacking, kept.Withdrawals, kept.Infiltrations, kept.Drops, kept.HandToHand, kept.Round)] : [];
+
+    /// <summary>Pass 31 (play test P-04): reset the draft and restore the Location's recorded stacking.</summary>
     private void ClearCloseCombat()
     {
         ClearCloseCombatDraft();
@@ -5026,7 +5050,7 @@ else if (state is not null)
     /// <summary>The first side declares: its declarations are kept for the revision, and the screen goes to the other side.</summary>
     private void DeclareCloseCombat()
     {
-        if (history is null || CloseCombatSides is not [var first, var second] || viewAs != first)
+        if (history is null || CcAttackDraft || CcStep != CloseCombatPanel.DeclareStep || CloseCombatSides is not [var first, var second] || viewAs != first)
         {
             return;
         }
@@ -5057,6 +5081,7 @@ else if (state is not null)
 
     private Task ProposeCloseCombat()
     {
+        if (CcAttackDraft || CcStep != CloseCombatPanel.ResolveStep) return Task.CompletedTask;
         // The second side resolves the round with the first side's declarations kept for it; each Location's draft holds the view's own.
         var kept = CcOtherDeclared;
         var attacks = kept is null ? ccAttacks : [.. kept.Attacks, .. ccAttacks];
