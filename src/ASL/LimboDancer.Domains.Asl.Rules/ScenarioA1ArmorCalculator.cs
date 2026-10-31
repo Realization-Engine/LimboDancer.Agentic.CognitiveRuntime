@@ -611,11 +611,10 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         // A21.12 (pass 65, ruling R65.22; W-A21.13): the penalty multiple lowers the Multiple ROF one each (ScenarioA1OrdnanceCalculator.RateOfFire).
+        // C2.5 (p. 168): the one ConditionalRof the direct and Canister paths ask; a shot without Participation keeps the old one lower per turn.
         var rof = ScenarioA1OrdnanceCalculator.RateOfFire(shot, gun);
-        if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
-        {
-            rof--;
-        }
+        var conditional = ScenarioA1OrdnanceParticipationCalculator.ConditionalRof(shot, gun, reference, rof);
+        rof = conditional.Rof;
 
         if (ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) || shot.Phase == "AFPh" || latw
             || ScenarioA1OrdnanceParticipationCalculator.HeroGunLimited(shot, gun, reference))
@@ -623,7 +622,7 @@ internal static class ScenarioA1ArmorCalculator
             rof = 0;
         }
 
-        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0]);
+        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0], conditional.IntensiveFireCounter);
         OrdnanceKill? kill = null;
         if (isHit && use != "none")
         {
