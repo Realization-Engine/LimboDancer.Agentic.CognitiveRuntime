@@ -151,3 +151,5 @@ DM retention is an end-of-phase choice, not an immediate Rally attempt. Its exis
 Review for accuracy and consistency: distinguish the Studio observations above from source findings and proposed changes; preserve both sides' access and handover; retain confirmation before rolling; keep eligibility in Rules; do not introduce Close Combat's simultaneous declaration sequence into Rally. No application code was changed for this review.
 
 Subsequent correction: the user's map-scoping report authorized that specific interaction. Design section 15 and the implementation record document the completed Rally scope filter and Studio checks. The other proposals above remain pending.
+
+Subsequent approval: the user approved assistance choices, clearer refusals and separate Deploy/Recombine workflows. Design section 16 records their implementation. Studio verified the sole eligible leader, permitted Self-Rally, the opposite-side refusal, the already-attempted refusal, staged organization fields and successful previews of all three actions. Each preview was cancelled. Support Weapons remains deferred, and these checks do not claim the untested exceptional cases above.

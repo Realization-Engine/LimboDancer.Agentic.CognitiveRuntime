@@ -1,4 +1,4 @@
-param([switch]$Movement, [switch]$Fire, [switch]$Rout, [switch]$Advance, [switch]$CloseCombat, [string]$Only)
+param([switch]$Movement, [switch]$Fire, [switch]$Rout, [switch]$Advance, [switch]$CloseCombat, [switch]$Rally, [switch]$RallyRefusal, [string]$Only)
 $ErrorActionPreference = 'Stop'
 if (-not $env:ASL_GATE_WORK) { throw 'Set ASL_GATE_WORK first.' }
 $repoRoot = (Resolve-Path "$PSScriptRoot/../../..").Path
@@ -59,6 +59,26 @@ if ($CloseCombat) {
     $checkName = 'cc-workflow'
     $env:ASL_ICONS_UPDATE_COVERAGE = '1'
 }
+$testProject = "$repoRoot/src/ASL/tests/LimboDancer.Domains.Asl.MapStudio.Tests/LimboDancer.Domains.Asl.MapStudio.Tests.csproj"
+if ($Rally) {
+    $methods = @(
+        'RallyAndRecordComponentTests.RallyOffersOnlySuppliedAssistanceAndRequiresASelectedMethod',
+        'RallyAndRecordComponentTests.TheRallyPanelHoldsBackAnAttemptTheGateWouldRefuse',
+        'RallyAndRecordComponentTests.DeployPanelRequiresTheBackendRequestedSpotterChoice',
+        'PlayPagePass28bTests.DeployGivesEachCheckedSwToTheSecondHs',
+        'PlayPagePass28bTests.AnotherViewClearsTheRallyAndSupportWeaponChoices',
+        'PlayPagePass35Tests.ATagIsKeptThroughDeploymentAndRecombinationInBothViews',
+        'PlayPageStepsTests.ALeaderRalliesInTheRphAndAMgJoinsTheFireThatRemovesADummy',
+        'IconCoverageTests.TheCoverageFileMatchesTheSources'
+    )
+    $checkName = 'rally-workflow'
+    $env:ASL_ICONS_UPDATE_COVERAGE = '1'
+}
+if ($RallyRefusal) {
+    $methods = @('MovementPlotTests.TheRallyBarIsTheGatesOwnRefusal')
+    $testProject = "$repoRoot/src/ASL/tests/LimboDancer.Domains.Asl.Play.Tests/LimboDancer.Domains.Asl.Play.Tests.csproj"
+    $checkName = 'rally-refusal'
+}
 $filter = ($methods | ForEach-Object { "FullyQualifiedName~$_" }) -join '|'
 if ($Only) {
     $selectedMethods = @($methods | Where-Object { $_.EndsWith(".$Only", [StringComparison]::Ordinal) })
@@ -69,7 +89,7 @@ if ($Only) {
 $env:DOTNET_CLI_USE_MSBUILD_SERVER = '0'
 $env:MSBUILDDISABLENODEREUSE = '1'
 $ErrorActionPreference = 'Continue' # Let the test runner finish its report when a failure is written to stderr.
-& dotnet test "$repoRoot/src/ASL/tests/LimboDancer.Domains.Asl.MapStudio.Tests/LimboDancer.Domains.Asl.MapStudio.Tests.csproj" --disable-build-servers -m:1 "-p:OutDir=$outputPath/" -p:RestoreLockedMode=true --warnaserror --filter $filter --logger "trx;LogFileName=$checkName.trx" --results-directory "$env:ASL_GATE_WORK/action-form-design/results" -v:q -nologo *> "$env:ASL_GATE_WORK/action-form-design/$checkName-checks.log"
+& dotnet test $testProject --disable-build-servers -m:1 "-p:OutDir=$outputPath/" -p:RestoreLockedMode=true --warnaserror --filter $filter --logger "trx;LogFileName=$checkName.trx" --results-directory "$env:ASL_GATE_WORK/action-form-design/results" -v:q -nologo *> "$env:ASL_GATE_WORK/action-form-design/$checkName-checks.log"
 $result = $LASTEXITCODE
 Get-Content "$env:ASL_GATE_WORK/action-form-design/$checkName-checks.log" -Tail 60
 exit $result

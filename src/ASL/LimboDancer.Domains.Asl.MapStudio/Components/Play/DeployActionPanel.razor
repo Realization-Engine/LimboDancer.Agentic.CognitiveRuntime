@@ -1,21 +1,25 @@
 @* Plan A07 (pass 28b): a squad Deploying into two HS (A1.31). The page gives the squads and leaders the view sees (ruling R23.1) and the SW the chosen
    squad possesses; choosing another squad clears the leader and the SW, which the page does in its OnSquad handler (section 15.3). Each SW checked
    goes to the second HS, the rest stay with the first (backlog section 23, built in pass 28b). *@
-<RuleHelp Id="deploy-help" Summary="A Good Order squad Deploys into two HS on a NTC with a Good Order leader in its Location (Russian squads may not Deploy, A25.2); two Good Order HS of one kind Recombine the same way. Either is the sole RPh action (A1.31, A1.32).">
+<RuleHelp Id="deploy-help" Summary="Split a squad into two half-squads.">
     A Good Order squad with a Good Order leader of its nationality in its Location Deploys into two HS on a NTC modified by his leadership; Russian
-    squads may not Deploy (A25.2); two Good Order HS of one kind Recombine with such a leader. Either is the units' and the leader's sole RPh action (A1.31, A1.32).
+    squads may not Deploy (A25.2). Deployment is the squad's and assisting leader's sole RPh action (A1.31).
     A squad waiting off board may attempt to Deploy from its entry turn's RPh with a leader waiting to enter along the same edge (A2.52; ruling R25.4).
-    A Guard of prisoners and an Unarmed unit need no leader: leave the leader unchosen. HS Recombine at the start of the RPh, before their side's other RPh actions (A1.32).
+    A Guard of prisoners and an Unarmed unit need no leader: leave the leader unchosen.
 </RuleHelp>
+<ActionUnitScope Units="@Squads" Unit="@Squad" Locations="@Locations" Title="Deploying in" ReleaseText="Show all deploy units"
+                 OnClear="@(() => OnSquad.InvokeAsync(string.Empty))" Context="shown">
 <div class="action-form">
 <ActionFormGroup Legend="Squad and leader">
     <label>
         Squad
         <select id="deploy-squad" value="@Squad" @onchange="@(args => OnSquad.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            <UnitOptions Units="@Squads" Text="@At" />
+            <UnitOptions Units="@shown" Text="@At" />
         </select>
     </label>
+    @if (shown.Any(unit => unit.Id == Squad))
+    {
     <label>
         Leader
         <select id="deploy-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -43,19 +47,22 @@
                 <option value="second">Second half-squad</option>
             </select>
         </label>
-        <span class="toolbar-note">The chosen half-squad retains spotting if Deployment succeeds. Other Spotter rules remain pending.</span>
+        <span class="toolbar-note">Retains spotting if Deployment succeeds.</span>
+    }
     }
 </ActionFormGroup>
 <ActionProposalArea>
-    <button id="propose-deploy" disabled="@(!Squads.Any(squad => squad.Id == Squad) || (SpotterChoiceRequired && SpotterHalf.Length == 0))" aria-describedby="propose-deploy-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: deploy</button>
-    @if (!Squads.Any(squad => squad.Id == Squad))
+    <button id="propose-deploy" disabled="@(!shown.Any(squad => squad.Id == Squad) || (SpotterChoiceRequired && SpotterHalf.Length == 0))" aria-describedby="propose-deploy-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: deploy</button>
+    @if (!shown.Any(squad => squad.Id == Squad))
     {
-        <span id="propose-deploy-ready" class="toolbar-note">Choose the squad that Deploys.</span>
+        <span id="propose-deploy-ready" class="toolbar-note">Choose a squad.</span>
     }
 </ActionProposalArea>
 </div>
+</ActionUnitScope>
 
 @code {
+    [Parameter] public IReadOnlyDictionary<string, string?> Locations { get; set; } = new Dictionary<string, string?>();
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }

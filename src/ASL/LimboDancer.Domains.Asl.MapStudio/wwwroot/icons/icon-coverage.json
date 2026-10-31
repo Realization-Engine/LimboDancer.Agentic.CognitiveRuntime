@@ -2036,6 +2036,26 @@
       ]
     },
     {
+      "name": "ActionUnitScope",
+      "path": "Components/Play/ActionUnitScope.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "DeployActionPanel",
+        "RecombineActionPanel"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@ReleaseText",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "ActionUnitScope toolbar"
+        }
+      ]
+    },
+    {
       "name": "AdvanceActionPanel",
       "path": "Components/Play/AdvanceActionPanel.razor",
       "pages": [
@@ -3021,6 +3041,13 @@
         "Play"
       ],
       "controls": [
+        {
+          "kind": "button",
+          "label": "Show all rally units",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "RallyActionPanel rally-scope"
+        },
         {
           "kind": "button",
           "label": "Propose: rally",

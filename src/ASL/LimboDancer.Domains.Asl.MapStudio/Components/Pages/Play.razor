@@ -644,8 +644,9 @@ else if (state is not null)
                 {
                     <ActionSection Title="Rally" Key="rally">
                     <RallyActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" Units="@rallyShown" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader" Barred="@RallyBarNow"
+                        Assistance="@RallyAssistance.Choices"
                         Locations="@(rallyShown.ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)?.Location.ToString(), StringComparer.Ordinal))"
-                        OnUnit="@(id => { rallyUnit = id; rallyLeader = string.Empty; })" OnLeader="@(id => rallyLeader = id)" OnPropose="@ProposeRally" />
+                        OnUnit="@ChooseRallyUnit" OnLeader="@(id => rallyLeader = id)" OnPropose="@ProposeRally" />
                     </ActionSection>
                 }
                 @if (state.Phase == "rph" && RepairChoices is { Count: > 0 } repairShown)
@@ -655,15 +656,22 @@ else if (state is not null)
                     Heroes="@RepairHeroes" Hero="@repairHero" OnHero="@(id => repairHero = id)" Ready="@RepairReady" OnPropose="@ProposeRepair" />
                     </ActionSection>
                 }
-                @if (state.Phase == "rph" && DeployChoices is var deployShown && RecombineChoices is var recombineShown && (deployShown.Count > 0 || recombineShown.Count > 0))
+                @if (state.Phase == "rph" && DeployChoices is { Count: > 0 } deployShown)
                 {
-                    <ActionSection Title="Deploy and Recombine" Key="deploy-and-recombine">
-                <DeployActionPanel Squads="@deployShown" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
+                    <ActionSection Title="Deploy" Key="deploy">
+                <DeployActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" Squads="@deployShown" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
+                        Locations="@(deployShown.ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)?.Location.ToString(), StringComparer.Ordinal))"
                         Squad="@deploySquad" Leader="@deployLeader" Second="@deployWeapons"
                         SpotterChoiceRequired="@GamePlanner.RequiresSpotterSuccessor(state, deploySquad)" SpotterHalf="@deploySpotterHalf" OnSpotterHalf="@(value => deploySpotterHalf = value)"
                         OnSquad="@(id => { deploySquad = id; deployLeader = deploySpotterHalf = string.Empty; deployWeapons.Clear(); })" OnLeader="@(id => deployLeader = id)"
                         OnWeapon="@(pick => Toggle(deployWeapons, pick.Id, pick.On))" OnPropose="@ProposeDeploy" />
-                    <RecombineActionPanel HalfSquads="@recombineShown" Partners="@([.. RecombinePartners.Select(unit => unit.Id)])"
+                    </ActionSection>
+                }
+                @if (state.Phase == "rph" && RecombineChoices is { Count: > 0 } recombineShown)
+                {
+                    <ActionSection Title="Recombine" Key="recombine">
+                    <RecombineActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" HalfSquads="@recombineShown" Partners="@([.. RecombinePartners.Select(unit => unit.Id)])"
+                        Locations="@(recombineShown.ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)?.Location.ToString(), StringComparer.Ordinal))"
                         Leaders="@([.. LeadersWith(recombineOne).Select(leader => leader.Id)])" One="@recombineOne" Two="@recombineTwo" Leader="@recombineLeader"
                         OnOne="@(id => { recombineOne = id; recombineTwo = string.Empty; recombineLeader = string.Empty; })" OnTwo="@(id => recombineTwo = id)"
                         OnLeader="@(id => recombineLeader = id)" OnPropose="@ProposeRecombine" />
@@ -6619,6 +6627,7 @@ else if (state is not null)
 
     private Task ProposeRally()
     {
+        if (rallyUnit.Length == 0 || RallyBarNow is not null) return Task.CompletedTask;
         var arguments = new Dictionary<string, object>
         {
             ["gameId"] = gameId,
@@ -9015,7 +9024,41 @@ else if (state is not null)
     }
 
     // The Play streamlining plan, S4: why the Rally attempt chosen would be refused, asked of the planner once a state, unit, and leader.
-    private (GameState? State, string Unit, string Leader, string? Bar) rallyBarMemo;
+    private (GameState? State, string Viewer, string Unit, IReadOnlyList<PlayChoice> Choices, string? Refusal) rallyAssistanceMemo;
+
+    private (IReadOnlyList<PlayChoice> Choices, string? Refusal) RallyAssistance
+    {
+        get
+        {
+            if (state is null || history is null || rallyUnit.Length == 0 || !RallyChoices.Any(choice => choice.Id == rallyUnit)) return ([], null);
+            if (!ReferenceEquals(rallyAssistanceMemo.State, state) || rallyAssistanceMemo.Viewer != Viewer.Name || rallyAssistanceMemo.Unit != rallyUnit)
+            {
+                var scope = new GameScope(LivePlay.Tenant, gameId);
+                var choices = new List<PlayChoice>();
+                var selfBar = Live.Planner.RallyBar(scope, history.Events, rallyUnit, null);
+                if (selfBar is null) choices.Add(new(string.Empty, "Self-Rally"));
+                string? leaderBar = null;
+                foreach (var leader in RallyLeaders)
+                {
+                    var refusal = Live.Planner.RallyBar(scope, history.Events, rallyUnit, leader.Id);
+                    if (refusal is null) choices.Add(new(leader.Id, leader.Id));
+                    else leaderBar ??= refusal;
+                }
+
+                var bar = leaderBar ?? selfBar;
+                rallyAssistanceMemo = (state, Viewer.Name, rallyUnit, choices, bar is null ? null : PlainReason(bar));
+            }
+
+            return (rallyAssistanceMemo.Choices, rallyAssistanceMemo.Refusal);
+        }
+    }
+
+    private void ChooseRallyUnit(string id)
+    {
+        rallyUnit = id;
+        var methods = RallyAssistance.Choices;
+        rallyLeader = methods.Count == 1 ? methods[0].Id : string.Empty;
+    }
 
     private string? RallyBarNow
     {
@@ -9026,13 +9069,9 @@ else if (state is not null)
                 return null;
             }
 
-            if (!ReferenceEquals(rallyBarMemo.State, state) || rallyBarMemo.Unit != rallyUnit || rallyBarMemo.Leader != rallyLeader)
-            {
-                var bar = Live.Planner.RallyBar(new GameScope(LivePlay.Tenant, gameId), history.Events, rallyUnit, rallyLeader.Length > 0 ? rallyLeader : null);
-                rallyBarMemo = (state, rallyUnit, rallyLeader, bar is null ? null : PlainReason(bar));
-            }
-
-            return rallyBarMemo.Bar;
+            var methods = RallyAssistance;
+            return methods.Choices.Any(choice => choice.Id == rallyLeader) ? null
+                : methods.Choices.Count > 0 ? "Choose a Rally method." : methods.Refusal ?? "No Rally method is available for this unit.";
         }
     }
 

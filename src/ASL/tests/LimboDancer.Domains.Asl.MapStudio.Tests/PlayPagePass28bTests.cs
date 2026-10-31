@@ -134,7 +134,8 @@ public sealed class PlayPagePass28bTests : IDisposable
         Assert.Equal(halves[0], HolderOf(state, "gm1"));
         Assert.Equal(halves[1], HolderOf(state, "gm2"));
         Assert.Equal(halves[1], HolderOf(state, "gm3"));
-        Assert.Equal(string.Empty, page.Find("#deploy-squad").GetAttribute("value"));
+        // Deploy has its own section now; no empty form remains after its last candidate deploys.
+        Assert.Empty(page.FindAll("#deploy-squad"));
 
         // Table player, pass 28b: the record says which HS took which SW. Pass 31c: each HS by its name and tag, each SW by its counter.
         var deployed = page.OutcomeRecord(".lineage-record").RecordText();

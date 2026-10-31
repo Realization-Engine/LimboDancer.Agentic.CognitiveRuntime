@@ -1,0 +1,40 @@
+@if (scope is { } scoped)
+{
+    <div class="toolbar">
+        <strong>@Title @Say(scoped)</strong>
+        <button type="button" class="link" @onclick="() => scope = null">@ReleaseText</button>
+    </div>
+}
+@ChildContent(Shown)
+
+@code {
+    [CascadingParameter(Name = "PickedLocation")] public string? Picked { get; set; }
+    [CascadingParameter(Name = "Picking")] public LocationPicking? Picking { get; set; }
+    [CascadingParameter(Name = "Say")] public Func<string, string>? Words { get; set; }
+    [Parameter, EditorRequired] public IReadOnlyList<PlayChoice> Units { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<string, string?> Locations { get; set; } = new Dictionary<string, string?>();
+    [Parameter] public string Unit { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string ReleaseText { get; set; } = "Show all units";
+    [Parameter] public EventCallback OnClear { get; set; }
+    [Parameter, EditorRequired] public RenderFragment<IReadOnlyList<PlayChoice>> ChildContent { get; set; } = default!;
+
+    private string? scope;
+    private string? lastPicked;
+    private long seenPick = -1;
+    private string Say(string text) => Words?.Invoke(text) ?? text;
+    private IReadOnlyList<PlayChoice> Shown => scope is null ? Units : [.. Units.Where(unit => InHex(unit.Id, scope))];
+    private bool InHex(string id, string hex) => BoardLocation.TryParse(hex, out var picked)
+        && BoardLocation.TryParse(Locations.GetValueOrDefault(id), out var at) && at.Board == picked.Board && at.Hex == picked.Hex;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var serial = Picking?.Serial ?? 0;
+        var fresh = serial != seenPick || Picked != lastPicked;
+        (seenPick, lastPicked) = (serial, Picked);
+        if (fresh && Picking?.Armed is null && Picking?.PickedBy is null)
+            scope = Picked is { } picked && Units.Any(unit => InHex(unit.Id, picked)) ? picked : null;
+        else if (scope is { } current && !Units.Any(unit => InHex(unit.Id, current))) scope = null;
+        if (Unit.Length > 0 && !Shown.Any(unit => unit.Id == Unit)) await OnClear.InvokeAsync();
+    }
+}
