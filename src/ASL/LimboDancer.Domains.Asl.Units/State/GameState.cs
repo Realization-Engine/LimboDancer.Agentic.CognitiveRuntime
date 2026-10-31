@@ -618,6 +618,13 @@ public sealed record GunShotThisGameTurn(string Unit, string? Definition);
 /// </summary>
 public sealed record PlacedCharge(string Charge, string Unit, BoardLocation From, BoardLocation Target, bool Cx, bool TargetsConcealed, bool Operable)
 {
+    /// <summary>Null retains the recorded placement's earlier settlement reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? SettlementVersion
+    {
+        get; init;
+    }
+
     public string? OriginEventId
     {
         get; init;

@@ -806,11 +806,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // A23.4 (backlog pass 15, ruling R15.2): a DC operably Placed detonates before the AFPh ends, unless the Fire package refuses its attack; it then stays
         // in its Location.
-        if (state.PlacedCharges.FirstOrDefault(item => ScenarioA1SequenceCalculator.PlacedChargeDue(state.Phase, item.Operable, () => PlanDetonateDc(scope,
+        if (state.PlacedCharges.FirstOrDefault(item => ScenarioA1DemolitionChargeRules.DetonationWindow(state.Phase,
+            item.OwnerSide is null || item.OwnerSide == state.PhasingSide, item.Operable, item.OriginGameTurn == state.Turn) && PlanDetonateDc(scope,
             JsonSerializer.SerializeToElement(new
             {
                 equipmentId = item.Charge
-            }), existing, attemptId + "-dc", expected, label, actor).Status == GamePlanStatus.Ready)) is { } unexploded)
+            }), existing, attemptId + "-dc", expected, label, actor).Status == GamePlanStatus.Ready) is { } unexploded)
         {
             return Refused(scope, label, expected, ScenarioA1SequenceCalculator.DcDetonatePendingText(unexploded.Charge, unexploded.Target.ToString()));
         }

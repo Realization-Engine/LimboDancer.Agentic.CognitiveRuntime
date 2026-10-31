@@ -565,6 +565,11 @@ public static class GameEventWriter
                 if (moving.DcPlacement is { } placement)
                 {
                     writer.WriteString("dcBy", placement.Unit);
+                    if (placement.SettlementVersion is { } settlementVersion)
+                    {
+                        writer.WriteNumber("dcSettlementVersion", settlementVersion);
+                    }
+
                     if (placement.OwnerSide is { } ownerSide)
                     {
                         writer.WriteString("dcOwnerSide", ownerSide);

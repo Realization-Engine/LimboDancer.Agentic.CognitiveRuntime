@@ -21,13 +21,14 @@ public sealed class LiveRecordTests
     private static readonly string[] G2 = ["g2"];
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("german")]
-    public void DcPlacementOwnershipRoundTripsWithoutInventingLegacyFacts(string? owner)
+    [InlineData(null, null)]
+    [InlineData("german", null)]
+    [InlineData("german", 1)]
+    public void DcPlacementOwnershipRoundTripsWithoutInventingLegacyFacts(string? owner, int? settlementVersion)
     {
         var step = new MovementStepped(G1, D5, 2, false, 1)
         {
-            DcPlacement = new("g1", "dc", D5, false, false) { OwnerSide = owner },
+            DcPlacement = new("g1", "dc", D5, false, false) { OwnerSide = owner, SettlementVersion = settlementVersion },
         };
         var events = With(9, ("dc-placement", "movement-step", step));
         var scope = events[0].Scope;
@@ -36,6 +37,8 @@ public sealed class LiveRecordTests
         Assert.NotNull(loaded.Record);
         Assert.Equal(owner, ((MovementStepped)loaded.Record.Events[^1].Payload).DcPlacement!.OwnerSide);
         Assert.Equal(owner is not null, json.Contains("dcOwnerSide", StringComparison.Ordinal));
+        Assert.Equal(settlementVersion, ((MovementStepped)loaded.Record.Events[^1].Payload).DcPlacement!.SettlementVersion);
+        Assert.Equal(settlementVersion is not null, json.Contains("dcSettlementVersion", StringComparison.Ordinal));
         Assert.Equal(json, GameEventWriter.Write(scope, loaded.Record));
     }
 

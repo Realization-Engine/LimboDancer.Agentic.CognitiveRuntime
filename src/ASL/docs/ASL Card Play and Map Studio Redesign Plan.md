@@ -1878,7 +1878,7 @@ Turns tasks that reach this pass from another: D9 (pass 73) covers this pass's p
 
 **Pass 75: Infantry VIII: MOL and DC** (12 rows of the inventory). Counters: none. Needs first: 45 for DC between levels; 65 (Passengers); 70 (Searching, which Set DC Clearance reads).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 12 rows: 2 built with a deviation, 6 partly, 4 not built. Claims: 11 open, 1 built (owners: A23.3 (Codex)). A rule decided outside Rules on 2 rows. Wiring: 0 of 12. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 12 rows: 2 built with a deviation, 6 partly, 4 not built. Claims: 11 open, 1 wired (owners: A23.3 (Codex)). A rule decided outside Rules on 2 rows. Wiring: 1 of 12. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1979,7 +1979,7 @@ Turns tasks that reach this pass from another: D2.3 (pass 85) and D7.3 (pass 90)
 
 **Pass 100: Position and cover** (new; 43 rows of the inventory). Counters: Wall Advantage and HD as kept states (no catalog counter). Needs first: 55 (levels for ordnance), 40.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 55 rows: 8 built with a deviation, 29 partly, 5 refused, 13 not built. Claims: 54 open, 1 built (owners: A10.531 (Codex)). A rule decided outside Rules on 6 rows. Wiring: 0 of 55. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 55 rows: 8 built with a deviation, 29 partly, 5 refused, 13 not built. Claims: 54 open, 1 wired (owners: A10.531 (Codex)). A rule decided outside Rules on 6 rows. Wiring: 1 of 55. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
