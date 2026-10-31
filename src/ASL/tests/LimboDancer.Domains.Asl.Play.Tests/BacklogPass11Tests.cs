@@ -1033,7 +1033,7 @@ public sealed class BacklogPass11Tests : IDisposable
         var legacyResolution = Rules.ScenarioA1VehicleCloseCombat.Resolve(legacy with
         {
             Rolls = new Rules.VehicleCloseCombatRolls([6, 6])
-        }, new Rules.ScenarioA1CloseCombatPackage().Reference);
+        }, new Rules.ScenarioA1CloseCombatPackage().Reference, null);
         Assert.Null(CloseCombatRecordVerifier.Shared.VerifyVehicle(stateBefore, record with
         {
             Facts = JsonSerializer.SerializeToElement(legacy, LiveFire.Json),
