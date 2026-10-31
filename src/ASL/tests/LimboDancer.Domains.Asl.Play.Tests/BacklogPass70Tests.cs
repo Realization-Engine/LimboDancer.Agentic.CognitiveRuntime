@@ -31,6 +31,7 @@ public sealed class BacklogPass70Tests : IDisposable
     private static readonly string[] R1 = ["r1"];
     private static readonly string[] BothGermans = ["de-1", "de-2"];
     private static readonly string[] TopGerman = ["de-1"];
+    private static readonly string[] SmokeSquad = ["de-2"];
     private static readonly string[] Transferers = ["de-s", "de-h"];
     private static readonly string[] HiddenState = ["asl:hidden"];
 
@@ -472,6 +473,84 @@ public sealed class BacklogPass70Tests : IDisposable
             Committed(result);
             Assert.Equal(scenarioMonth == 7, Is(Current.Unit("r1")!, Conditions.Concealed));
         }
+        NoReplayErrors();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ARoadRateEntryIntoGrainWithNoMonthIsRefusedWhetherOrNotAnEnemySeesIt(bool seen)
+    {
+        // A10.531 (p. 67), B15.6 (p. 129), A4.132 (p. 48): with no month the concealed squad's road-rate entry into the grain of E6 cannot say whether
+        // it loses its "?". The refusal is the same whether or not the German in E2 sees E6, so it tells the mover nothing of the enemy's units.
+        month = null;
+        grain.Add("E6");
+        roadSides.Add(("E6", HexsideDirection.North));
+        roadSides.Add(("E5", HexsideDirection.South));
+        if (!seen)
+        {
+            blocked.Add(("E2", "E6"));
+        }
+
+        await SetupAt(2, "russian", Squad("r1", "E5", "russian", Conditions.Concealed), Squad("g1", "E2", "german"));
+        var result = await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = R1,
+            to = L("E6"),
+            assault = true,
+        });
+        Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
+        Assert.True(result.Reasons.Any(reason => reason.StartsWith("play.open-ground-unknown", StringComparison.Ordinal)), string.Join("; ", result.Reasons));
+        Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
+        NoReplayErrors();
+    }
+
+    [Theory]
+    [InlineData("none", false)]
+    [InlineData("smoke", true)]
+    [InlineData("afv", true)]
+    public async Task SmokeOrAFriendlyAfvInTheOpenGroundEnteredKeepsTheConcealment(string cover, bool keeps)
+    {
+        // A10.531 and its EX (p. 67), A12.14 (p. 78): the concealed German squad's Assault Movement into the Open Ground of E6, in the Russian's LOS from
+        // E2, costs its "?" unless SMOKE (placed by de-2 on a dr of 1, A24.1) or a friendly AFV is there: then E6 is not Open Ground to the Russian.
+        await SetupAt(2, "german", [Squad("de-1", "E5", "german", Conditions.Concealed), Squad("de-2", "E7", "german"), Squad("ru-1", "E2", "russian"),
+            .. cover == "afv" ? new[] { Vehicle("de-tank", "attacker-tank", "E6", "german", "east") } : []]);
+        if (cover == "smoke")
+        {
+            Committed(await Do(GameActions.Move, Once(1), new
+            {
+                unitIds = SmokeSquad,
+                to = L("E7"),
+                smoke = L("E6"),
+                smokeBy = "de-2",
+            }));
+            Assert.Single(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
+            Committed(await Do(GameActions.PassFire, NoRoll(), new
+            {
+            }));
+            Committed(await Do(GameActions.EndMove, NoRoll(), new
+            {
+            }));
+        }
+
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = TopGerman,
+            to = L("E6"),
+            assault = true,
+        }));
+        Assert.Equal(keeps, Is(Current.Unit("de-1")!, Conditions.Concealed));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AConcealedSquadThatPassesItsPaatcLosesItsConcealmentAdvancingIntoOpenGround()
+    {
+        // A11.6 (p. 76), A12.14 (p. 78): the concealed 4-4-7 passes its PAATC (3 + 4 against 7) and advances into the Open Ground of E5, the German tank's
+        // Location, in the LOS of the German squad in E2: it loses its "?" there as any advancer would (W-A10.531).
+        await AdvanceOntoTheTank("E5", RussianOne, Squad("ru-1", "E4", "russian", Conditions.Concealed), Vehicle("de-tank", "attacker-tank", "E5", "german", "east"),
+            Squad("de-1", "E2", "german"));
+        Assert.False(Is(Current.Unit("ru-1")!, Conditions.Concealed));
         NoReplayErrors();
     }
 
