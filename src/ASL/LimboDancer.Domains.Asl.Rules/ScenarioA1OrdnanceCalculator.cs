@@ -403,6 +403,11 @@ public static class ScenarioA1OrdnanceCalculator
         var outside = new List<string>();
         var phase = shot.Phase!;
 
+        if (shot.FinalFireVersion is not (null or 1))
+        {
+            outside.Add(Prefix + "final-fire-version-outside");
+        }
+
         // A4.63 (p. 52; pass 40): "a weapon with a specified CA may not fire on a Dashing unit in the road Location if it must change its CA to do so".
         if (shot.Movement?.Dashing == true && shot.HexspinesToTurn is > 0)
         {
@@ -554,10 +559,17 @@ public static class ScenarioA1OrdnanceCalculator
         var othersOnly = shot.Vehicle?.Weapons?.MarkedByOthers == true;
         var firedBefore = !othersOnly && gunShot.FiredThisPlayerTurn == true;
         var firstFired = !othersOnly && gunShot.FirstFire == true && !(shot.Vehicle is not null && gunShot.ShotsThisPhase > 0 && gunShot.RateOfFireKept == true);
+        var finalFacts = shot.FinalFireVersion == 1 ? ScenarioA1FinalFireCalculator.OrdnanceFacts(shot, gun, reference) : null;
+        if (phase == "DFPh" && finalFacts is not null && ScenarioA1FinalFireCalculator.FinalFireRefusal(finalFacts) is { } finalRefusal)
+        {
+            outside.Add(Prefix + "final-fire:" + finalRefusal);
+        }
         var mayFire = pf
             ? gunShot.FiredThisPlayerTurn != true && gunShot.ShotsThisPhase < (reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind == "asl:squad" ? 2 : 1)
             : shot.IntensiveFire == true
-            ? shot.Vehicle is null && phase != "AFPh" && gunShot.IntensiveFired != true && gunShot.FinalFire != true && !ScenarioA1OrdnanceParticipationCalculator.Pinned(shot)
+            ? (finalFacts is not null ? ScenarioA1FinalFireCalculator.MayIntensiveFire(finalFacts.NoIntensiveFire, finalFacts.CrewFit)
+                : shot.Vehicle is null && !ScenarioA1OrdnanceParticipationCalculator.Pinned(shot))
+                && phase != "AFPh" && gunShot.IntensiveFired != true && gunShot.FinalFire != true
                 && (gunShot.FiredThisPlayerTurn == true || gunShot.FirstFire == true) && gunShot.RateOfFireKept != true
             : gunShot.IntensiveFired != true && !firstFired && (phase == "AFPh" && !OpportunityFire(shot)
                 ? !firedBefore && gunShot.ShotsThisPhase == 0

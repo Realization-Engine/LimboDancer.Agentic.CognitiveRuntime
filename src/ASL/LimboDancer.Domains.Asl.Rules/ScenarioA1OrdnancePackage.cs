@@ -217,6 +217,7 @@ public sealed class ScenarioA1OrdnanceReference
                 Number("rate-of-fire"), breakdown, Number("range-maximum"), Trait("asl:no-he") || latw, Trait("asl:mount-360"))
             {
                 NoAp = Trait("asl:no-ap") || latwType == "psk",
+                NoIntensiveFire = Trait("asl:no-intensive-fire"),
                 SpecialAmmo = Ammo(),
                 MaType = vehicle ? Text("ma-type") : null,
                 TargetSize = vehicle ? null : Text("target-size"),

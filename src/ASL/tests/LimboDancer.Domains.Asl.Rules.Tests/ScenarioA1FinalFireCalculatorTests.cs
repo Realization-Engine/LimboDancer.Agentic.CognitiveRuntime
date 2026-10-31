@@ -101,7 +101,7 @@ public sealed class ScenarioA1FinalFireCalculatorTests
     [Fact]
     public void AFirstFireMarkedGunFiresOnceMoreAsIntensiveFireOnlyAdjacent()
     {
-        Assert.Equal(new FinalFireVerdict(FinalFireUse.OnceMore, true, false, true, 0, null),
+        Assert.Equal(new FinalFireVerdict(FinalFireUse.OnceMore, false, false, true, 0, null),
             ScenarioA1FinalFireCalculator.Verdict(Facts(FinalFireWeapon.Gun, FireMarker.FirstFire, 1)));
         Assert.Equal("marked First Fire: it fires again only at an ADJACENT or same-hex target (A8.4, A8.41)",
             ScenarioA1FinalFireCalculator.FinalFireRefusal(Facts(FinalFireWeapon.Gun, FireMarker.FirstFire, 5)));

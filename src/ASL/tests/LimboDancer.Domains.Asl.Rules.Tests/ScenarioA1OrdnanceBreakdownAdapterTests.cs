@@ -67,6 +67,56 @@ public sealed class ScenarioA1OrdnanceBreakdownAdapterTests
         Assert.Equal(JsonSerializer.Serialize(legacy), JsonSerializer.Serialize(ScenarioA1OrdnanceCalculator.Resolve(shot, Reference)));
     }
 
+    [Fact]
+    public void CurrentVehicleGunMayIntensiveFinalFireWithItsOwnBreakdownFacts()
+    {
+        var plain = Shot();
+        var shot = plain with
+        {
+            Phase = "DFPh",
+            FiringSide = "non-phasing",
+            Range = 1,
+            FinalFireVersion = 1,
+            IntensiveFire = true,
+            Gun = plain.Gun! with
+            {
+                FirstFire = true,
+                FiredThisPlayerTurn = true
+            },
+            Hit = plain.Hit! with
+            {
+                Phase = "DFPh",
+                FiringSide = "non-phasing"
+            },
+        };
+        var facts = Circled with
+        {
+            Circled = false,
+            IntensiveFire = true
+        };
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, Reference, facts);
+        Assert.Equal(OrdnanceResolution.Resolved, result.Disposition);
+        Assert.Equal(9, result.Gun!.BreakdownNumber);
+        Assert.Equal(VehicleBreakdownOutcome.Disabled, result.Gun.VehicleBreakdown!.Outcome);
+        Assert.False(result.Gun.RateOfFireKept);
+        Assert.Contains("asl.a1.ordnance.gun-already-fired", ScenarioA1OrdnanceCalculator.Precheck(shot with
+        {
+            FinalFireVersion = null
+        }, Reference));
+        Assert.Contains(ScenarioA1OrdnanceCalculator.Precheck(shot with
+        {
+            Range = 3
+        }, Reference),
+            reason => reason.StartsWith("asl.a1.ordnance.final-fire:", StringComparison.Ordinal));
+        Assert.Contains("asl.a1.ordnance.gun-already-fired", ScenarioA1OrdnanceCalculator.Precheck(shot with
+        {
+            Vehicle = shot.Vehicle! with
+            {
+                Shocked = true
+            }
+        }, Reference));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
