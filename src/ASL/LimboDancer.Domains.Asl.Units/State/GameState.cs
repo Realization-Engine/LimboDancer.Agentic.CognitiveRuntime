@@ -193,6 +193,13 @@ public sealed record GameState(
     /// <summary>The units that attempted to place SMOKE grenades this MPh (A24.1; ruling R9.5); cleared at every phase change.</summary>
     public IReadOnlyList<string> SmokeAttempts { get; init; } = [];
 
+    /// <summary>
+    /// Counters whose creation was verified against a successful Infantry SMOKE attempt. Derived from events, never inferred from a counter's name.
+    /// Kept only while the grenades remain in play; their Locations come from the current instances.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IReadOnlyList<string> VerifiedSmokeGrenades { get; init; } = [];
+
     /// <summary>Each light mortar's Spotter (C9.3; ruling R9.4): the unit that spots for it until it is broken, eliminated, or captured.</summary>
     /// <summary>Successful new Deployment choices awaiting their lineage consequence.</summary>
     public IReadOnlyDictionary<string, string> SpotterDeploymentChoices { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);

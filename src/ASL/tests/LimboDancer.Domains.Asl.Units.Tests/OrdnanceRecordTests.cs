@@ -78,15 +78,27 @@ public sealed class OrdnanceRecordTests
         Assert.Contains(Project(events, null).Diagnostics, item => item.Code == "UNIT-STATE-023");
     }
 
-    [Fact]
-    public void TheOrdnanceRecordRoundTrips()
+    [Theory]
+    [InlineData(null)]
+    [InlineData(1)]
+    public void TheOrdnanceRecordRoundTrips(int? smokeVersion)
     {
         var events = With(8, Gun(), Phase("p1", "pfph"), Fired("f1", kept: true, UnitFacing.SouthWest));
+        events[^1] = events[^1] with
+        {
+            Payload = ((OrdnanceFired)events[^1].Payload) with
+            {
+                SmokeWiringVersion = smokeVersion
+            },
+        };
         var text = GameEventWriter.Write(events[0].Scope, new GameRecord("live", true, events));
         var read = GameEventReader.Read(Encoding.UTF8.GetBytes(text));
         Assert.False(read.HasErrors, string.Join(" ", read.Diagnostics));
         Assert.Equal(text, GameEventWriter.Write(events[0].Scope, read.Record!));
         var fired = Assert.IsType<OrdnanceFired>(read.Record!.Events[^1].Payload);
+        Assert.Equal(smokeVersion, fired.SmokeWiringVersion);
+        Assert.Equal(smokeVersion.HasValue, JsonSerializer.SerializeToElement(fired).TryGetProperty(nameof(OrdnanceFired.SmokeWiringVersion), out _));
+        Assert.Equal(smokeVersion.HasValue, text.Contains("smokeWiringVersion", StringComparison.Ordinal));
         Assert.Equal((UnitFacing.SouthWest, true, -1, E4), (fired.Facing!.Value, fired.RateOfFireKept, fired.Acquisition, fired.Acquired!));
     }
 

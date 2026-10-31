@@ -385,6 +385,10 @@ public static class GameEventWriter
                 writer.WriteBoolean("passed", check.Passed);
                 break;
             case FireResolved fire:
+                if (fire.SmokeWiringVersion is { } fireSmokeVersion)
+                {
+                    writer.WriteNumber("smokeWiringVersion", fireSmokeVersion);
+                }
                 Strings(writer, "firers", fire.Firers);
                 if (fire.Director is { } director)
                 {
@@ -448,6 +452,14 @@ public static class GameEventWriter
                 if (repair.Weapon is { } repairedWeapon)
                 {
                     writer.WriteString("weapon", repairedWeapon);
+                }
+                if (repair.VehicleRepairVersion is { } repairVersion)
+                {
+                    writer.WriteNumber("vehicleRepairVersion", repairVersion);
+                }
+                if (repair.Hero is { } repairHero)
+                {
+                    writer.WriteString("hero", repairHero);
                 }
                 break;
             case VehicleCloseCombatResolved vehicleCombat:
@@ -765,6 +777,10 @@ public static class GameEventWriter
 
                 break;
             case RiderBailedOut bailed:
+                if (bailed.MoraleCheck is { } bailCheck)
+                {
+                    writer.WriteString("moraleCheck", bailCheck);
+                }
                 writer.WriteString("unit", bailed.Unit);
                 writer.WriteString("vehicle", bailed.Vehicle);
                 writer.WriteString("at", bailed.At.ToString());
@@ -1126,6 +1142,10 @@ public static class GameEventWriter
 
                 break;
             case OrdnanceFired ordnance:
+                if (ordnance.SmokeWiringVersion is { } ordnanceSmokeVersion)
+                {
+                    writer.WriteNumber("smokeWiringVersion", ordnanceSmokeVersion);
+                }
                 if (ordnance.SpotterWiringVersion is { } spotterWiringVersion)
                 {
                     writer.WriteNumber("spotterWiringVersion", spotterWiringVersion);

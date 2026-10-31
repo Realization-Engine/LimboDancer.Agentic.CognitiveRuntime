@@ -699,6 +699,29 @@ public sealed class BacklogPass55Tests : IDisposable
     }
 
     [Fact]
+    public async Task TwoSmcCanisterUsesTheSameParticipantsAndRecordsBothFirers()
+    {
+        var pair = AmericanGun();
+        pair[0] = Unit("us-crew", "asl:leader", "american-leader-8-0", GunHex, "american");
+        await SetupAmerican(1943, 7, [.. pair, Unit("us-second", "asl:leader", "american-leader-8-0", GunHex, "american"), .. Squads()]);
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Once(1, 5, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2),
+            new
+            {
+                gunId = "us-gun",
+                ammunition = "canister",
+                aim = 4,
+                secondFirer = "us-second"
+            }));
+        var shot = LastShot(before);
+        Assert.Equal("us-second", shot.Facts.GetProperty("participation").GetProperty("second").GetProperty("crew").GetProperty("unitId").GetString());
+        Assert.Equal(1, shot.Facts.GetProperty("useMultiple").GetInt32());
+        Assert.Contains(Current.GunCrewsFired, id => id == "us-second");
+        Assert.Contains(Current.PhaseFirers, item => item.Unit == "us-second" && item.Weapon == "us-gun");
+        NoReplayErrors();
+    }
+
+    [Fact]
     public async Task CanisterAttacksEveryLocationOfItsAimOnOneDr()
     {
         // C8.4: no To Hit DR; one IFT DR of 6, below the Depletion Number 7, attacks the three hexes of the cluster at 12 FP and the adjacent hex

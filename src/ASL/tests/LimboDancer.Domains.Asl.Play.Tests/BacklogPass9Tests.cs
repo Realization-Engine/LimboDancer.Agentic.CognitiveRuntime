@@ -66,12 +66,19 @@ public sealed partial class BacklogPass9Tests : IDisposable
 
         public Dictionary<(string From, string To), LosHindrance[]> Hindrances { get; } = [];
 
+        public LosElevations? Elevations
+        {
+            get;
+            set;
+        }
+
         public LosResult? Read(GameState state, BoardLocation from, BoardLocation target) => Blocked.Contains(target) || Blocked.Contains(from)
             ? new(LosStatus.Blocked, true, Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty)
             : new(LosStatus.Clear, false, Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty)
             {
                 Crossed = Crossed.GetValueOrDefault((from.Hex.ToString(), target.Hex.ToString())) ?? [],
                 Hindrances = Hindrances.GetValueOrDefault((from.Hex.ToString(), target.Hex.ToString())) ?? [],
+                Elevations = Elevations,
             };
     }
 
@@ -412,6 +419,190 @@ public sealed partial class BacklogPass9Tests : IDisposable
     });
 
     [Fact]
+    public async Task TwoSmcMortarFireRecordsBothUsersAndRejectsForgedParticipation()
+    {
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german", Conditions.Concealed),
+            Mortar("m1", "attacker-light-mortar", "g1", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Once(2, 6), new
+        {
+            gunId = "m1",
+            target = "bd01:B6:0",
+            secondFirer = "g2"
+        }));
+        var facts = LastFacts(before);
+        Assert.Equal("g2", facts.Participation!.Second!.Crew!.UnitId);
+        Assert.Equal(0, facts.UseMultiple);
+        Assert.True(LastShot(before).Gun!.RateOfFireKept);
+        foreach (var id in new[] { "g1", "g2" })
+        {
+            Assert.Contains(Current.GunCrewsFired, item => item == id);
+            Assert.Contains(Current.PhaseFirers, item => item.Unit == id && item.Weapon == "m1");
+            Assert.True(Is(Current.Unit(id)!, Conditions.PrepFire));
+        }
+        Assert.False(Is(Current.Unit("g2")!, Conditions.Concealed));
+        var events = store.Read(Scope)!.Events;
+        Assert.False(Planner().Replay(events).HasErrors);
+        var forged = events.Select(item => item.Payload is OrdnanceFired fired ? item with
+        {
+            Payload = fired with
+            {
+                Facts = JsonSerializer.SerializeToElement(facts with
+                {
+                    Participation = facts.Participation with
+                    {
+                        Second = facts.Participation.Second with
+                        {
+                            Crew = facts.Participation.Second.Crew with
+                            {
+                                Cx = true
+                            }
+                        }
+                    }
+                }, LiveFire.Json)
+            }
+        } : item).ToArray();
+        Assert.True(Planner().Replay(forged).HasErrors);
+    }
+
+    [Fact]
+    public async Task TwoSmcInvalidParticipantsRefuseWithoutDiceOrEvents()
+    {
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g3", "asl:leader", "attacker-leader-8-0", "bd01:B9:0", "german"),
+            Mortar("m1", "attacker-light-mortar", "g1", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        var before = Revision;
+        foreach (var second in new[] { "g1", "g3", "r1", "missing" })
+        {
+            Refused(await Do(GameActions.FireOrdnance, NoRoll(), new
+            {
+                gunId = "m1",
+                target = "bd01:B6:0",
+                secondFirer = second
+            }), "play.ordnance-participant");
+        }
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), new
+        {
+            gunId = "m1",
+            target = "bd01:B6:0",
+            secondFirer = "g2",
+            director = "g2"
+        }), "play.ordnance-participant");
+        Assert.Equal(before, Revision);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TwoSmcSecondFirerLosesConcealmentOnlyWhenSeenByGoodOrderEnemy(bool enemyGoodOrder)
+    {
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german", Conditions.Concealed),
+            Mortar("m1", "attacker-light-mortar", "g1", "german"),
+            Unit("r1", "asl:squad", "defender-squad", "bd01:B6:0", "russian", enemyGoodOrder ? [] : [Conditions.Broken]));
+        await Advance();
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Once(2, 6), new
+        {
+            gunId = "m1",
+            target = "bd01:B6:0",
+            secondFirer = "g2"
+        }));
+        Assert.Equal(enemyGoodOrder, LastFacts(before).CrewSeen);
+        Assert.Equal(!enemyGoodOrder, Is(Current.Unit("g2")!, Conditions.Concealed));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task TwoSmcWorkbenchGathersOnlyOwnedParticipantsAndLeavesTheProposedShotUnknown()
+    {
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german", Conditions.Concealed),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german", Conditions.Concealed),
+            Gun("m1", "campaign-german-81mm-mortar", "bd01:B10:0", "west", "g1", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        var picks = new Dictionary<string, string> { ["firerId"] = "g1", ["secondId"] = "g2" };
+        var owner = Planner().ContractFacts("c9-ordnance-participation", Current, picks, Perspective.Side("german"));
+        Assert.Equal("g2", owner["secondId"]!.GetValue<string>());
+        Assert.True(owner["sameLocation"]!.GetValue<bool>());
+        Assert.False(owner["usedOther"]!.GetValue<bool>());
+        Assert.Empty(Planner().ContractFacts("c9-ordnance-participation", Current, picks, Perspective.Side("russian")));
+        var mortar = Planner().ContractFacts("c9-mortar-shot", Current, picks, Perspective.Side("german"));
+        Assert.Equal(81, mortar["caliber"]!.GetValue<int>());
+        Assert.Equal(3, mortar["minimumRange"]!.GetValue<int>());
+        Assert.DoesNotContain("loneSmc", mortar.Keys);
+        Assert.DoesNotContain("range", mortar.Keys);
+        Assert.Empty(Planner().ContractFacts("c9-mortar-shot", Current, picks, Perspective.Side("russian")));
+    }
+
+    [Fact]
+    public async Task TwoSmcRetainedRofDoesNotLetTheSecondUseOrDirectAnotherWeapon()
+    {
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Squad("g3", "bd01:B10:0", "german"),
+            Mortar("m1", "attacker-light-mortar", "g1", "german"), Mortar("m2", "attacker-light-mortar", "g2", "german"),
+            Mortar("m3", "attacker-light-mortar", "g3", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Once(2, 6), new
+        {
+            gunId = "m1",
+            target = "bd01:B6:0",
+            secondFirer = "g2"
+        }));
+        Assert.True(LastShot(before).Gun!.RateOfFireKept);
+        before = Revision;
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), new
+        {
+            gunId = "m2",
+            target = "bd01:B6:0"
+        }), "play.ordnance-participant");
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), new
+        {
+            gunId = "m3",
+            target = "bd01:B6:0",
+            director = "g2"
+        }), "director");
+        Assert.Equal(before, Revision);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TwoSmcActual81mmMortarUsesTheRecordedSoloOrPairMode(bool paired)
+    {
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Gun("m1", "campaign-german-81mm-mortar", "bd01:B10:0", "west", "g1", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        var before = Revision;
+        var arguments = new Dictionary<string, object> { ["gunId"] = "m1", ["target"] = "bd01:B6:0" };
+        var targetRead = Planner().GunTargetStatus(Current, "m1", BoardLocation.Parse("bd01:B6:0"), paired ? "g2" : null);
+        Assert.Equal(!paired, targetRead!.Contains("no CA", StringComparison.Ordinal));
+        Assert.StartsWith("refused:", Planner().GunTargetStatus(Current, "m1", BoardLocation.Parse("bd01:B9:0"), paired ? "g2" : null), StringComparison.Ordinal);
+        if (paired)
+        {
+            arguments["secondFirer"] = "g2";
+        }
+        Committed(await Do(GameActions.FireOrdnance, Once(1, 6, 6, 6), arguments));
+        var facts = LastFacts(before);
+        Assert.Equal(OrdnanceTargetTypes.Area, facts.TargetType);
+        Assert.Equal(paired ? 1 : 0, facts.UseMultiple);
+        Assert.Equal(paired, facts.HexspinesToTurn > 0);
+        Assert.Equal(paired, LastShot(before).Gun!.RateOfFireKept);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task ALightMortarHitsTheAreaAndItsSquadStillFiresItsInherentFp()
     {
         // C3.33, C3.331, B13.3 (R9.2, R9.3): the German squad's 5cm mortar in B10 fires at the Russian squad in woods B6, 4 hexes: TH# 7 (red
@@ -423,6 +614,13 @@ public sealed partial class BacklogPass9Tests : IDisposable
         Committed(await Shoot("de-mtr", "bd01:B6:0", null, null, 2, 3, 5, 6));
         var facts = LastFacts(before);
         var shot = LastShot(before);
+        var fired = Since(before).Select(item => item.Payload).OfType<OrdnanceFired>().Single();
+        Assert.Equal(1, fired.SmokeWiringVersion);
+        Assert.Equal("Unknown SMOKE wiring version.", OrdnanceRecordVerifier.Shared.Verify(Current,
+            fired with
+            {
+                SmokeWiringVersion = 99
+            }, new Dictionary<string, DiceRolled>()));
         Assert.Equal((OrdnanceTargetTypes.Area, 4, 7), (facts.TargetType, facts.Range, shot.ToHit!.ModifiedToHit));
         Assert.True(shot.AreaTargets!.Single().Hit);
         Assert.Contains(shot.Hit!.Arithmetic!.Drm, item => item.Name == "air-burst" && item.Value == -1);
@@ -987,7 +1185,20 @@ public sealed partial class BacklogPass9Tests : IDisposable
         Committed(await Move(G1, "bd01:B8:0"));
         await Pass();
         Committed(await Smoke(G1, "bd01:B8:0", "g1", "bd01:B8:0", 1));
-        Assert.Single(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
+        var grenade = Assert.Single(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
+        Assert.Equal(grenade.Id, Assert.Single(Current.VerifiedSmokeGrenades));
+        var smokeAt = BoardLocation.Parse("bd01:B8:0");
+        var above = BoardLocation.Parse("bd01:B8:1");
+        var unclassified = Current with
+        {
+            Entities = [.. Current.Entities, grenade with { Id = "unknown-source", Position = new MapPosition(above) }],
+        };
+        var (values, reason) = GamePlanner.SmokeStrengthsAt(unclassified, smokeAt);
+        Assert.Null(reason);
+        Assert.Equal(2, Assert.Single(values!));
+        Assert.Same(values, GamePlanner.SmokeStrengthsAt(unclassified, smokeAt).Hindrances);
+        Assert.Null(GamePlanner.SmokeStrengthsAt(unclassified, above).Hindrances);
+        Assert.Contains("play.smoke-facts", GamePlanner.SmokeStrengthsAt(unclassified, above).Reason!);
         Assert.Equal(G1, Current.SmokeAttempts);
         var smokeRevision = Revision;
         var smokeGuide = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", profile);
@@ -1001,6 +1212,12 @@ public sealed partial class BacklogPass9Tests : IDisposable
         var before = Revision;
         Committed(await Fire(R1, "bd01:B8:0", 6, 6));
         var record = LastFire(before);
+        Assert.Equal(1, record.SmokeWiringVersion);
+        Assert.Equal("Unknown SMOKE wiring version.", FireRecordVerifier.Shared.Verify(Current,
+            record with
+            {
+                SmokeWiringVersion = 99
+            }, new Dictionary<string, DiceRolled>()));
         Assert.True(HasDrm(record, "los-hindrance", 2));
         Assert.False(HasDrm(record, "ffmo", -1));
         await Pass();
@@ -1013,6 +1230,7 @@ public sealed partial class BacklogPass9Tests : IDisposable
         await EndMove();
         await Advance();
         Assert.DoesNotContain(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
+        Assert.Empty(Current.VerifiedSmokeGrenades);
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
         var afterSmoke = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "dfph", profile)).Atmosphere!;
         Assert.Equal(TurnSmokeState.RemovedAtMovementEnd, Assert.Single(afterSmoke.Grenades).State);
@@ -1043,6 +1261,67 @@ public sealed partial class BacklogPass9Tests : IDisposable
         Assert.Single(incomplete.UnclassifiedSmoke);
         Assert.Equal(TurnSmokeState.NotEvaluated, Assert.Single((await legacyReader.ReadTurnGuideProfileAsync(Scope,
             Perspective.Side("german"), "dfph", profile)).Atmosphere!.Grenades).State);
+    }
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(2, false)]
+    public async Task CrossedSmokeUsesTheLosHeightAndReplaysItsRecordedHindrance(int elevation, bool hindered)
+    {
+        await Setup("german", 7, 1942, Squad("g1", "bd01:A8:0", "german"), Squad("g2", "bd01:A7:0", "german"),
+            Squad("r1", "bd01:B10:0", "russian"));
+        await Advance(2);
+        Committed(await Smoke(G1, "bd01:A8:0", "g1", "bd01:B8:0", 1));
+        await Pass();
+        await EndMove();
+        Committed(await Move(G2, "bd01:B7:0"));
+        los.Crossed[("B10", "B7")] = [Crossing("B8", 2) with { RangeToTarget = 1 }];
+        los.Elevations = new(new(elevation, 0, false, false, false, 0), new(elevation, 0, false, false, false, 0));
+        var before = Revision;
+        Committed(await Fire(R1, "bd01:B7:0", 6, 6));
+        Assert.Equal(hindered, HasDrm(LastFire(before), "los-hindrance", 2));
+
+        // Replaying consumes the recorded map verdict, even when today's map reader would answer differently.
+        los.Elevations = null;
+        los.Crossed.Clear();
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.False(Planner().Replay(loaded.Events).HasErrors);
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(2, false)]
+    [InlineData(-1, false)]
+    public async Task SmokeOccupancyUsesTheCompleteLocationAndRequiresHeightFacts(int level, bool occupied)
+    {
+        // A24.4 (PDF p.92): a ground-level conventional grenade reaches level 1, not level 2 or the cellar.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:A8:0", "german"), Squad("r1", "bd01:B10:0", "russian"));
+        await Advance(2);
+        Committed(await Smoke(G1, "bd01:A8:0", "g1", "bd01:B8:0", 1));
+        var state = Current;
+        var at = new BoardLocation(BoardRef.Parse("bd01"), HexName.Parse("B8"), level);
+        los.Elevations = new(new(level, 0, level == -1, false, false, 0), new(level, 0, level == -1, false, false, 0));
+        var (values, reason) = Planner().SmokeHindrancesAt(state, at);
+        Assert.Null(reason);
+        if (occupied)
+        {
+            Assert.Equal(2, Assert.Single(values!));
+        }
+        else
+        {
+            Assert.Empty(values!);
+        }
+        los.Elevations = null;
+        Assert.Null(Planner().SmokeHindrancesAt(state, at).Hindrances);
+        Assert.Contains("play.smoke-height", Planner().SmokeHindrancesAt(state, at).Reason!);
+        Assert.Empty(Planner().SmokeHindrancesAt(state, BoardLocation.Parse("bd01:B7:0")).Hindrances!);
+        var unknown = state with
+        {
+            VerifiedSmokeGrenades = []
+        };
+        Assert.Contains("play.smoke-facts", Planner().SmokeHindrancesAt(unknown, at).Reason!);
     }
 
     [Fact]

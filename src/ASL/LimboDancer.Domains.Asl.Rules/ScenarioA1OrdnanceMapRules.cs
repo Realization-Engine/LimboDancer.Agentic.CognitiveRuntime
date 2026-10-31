@@ -196,6 +196,43 @@ public static class ScenarioA1OrdnanceMapRules
     /// <summary>C11.5 (referee, pass 8): the gunshield of an AT or INF Gun counts for a Good Order crew not moving, facing a firer within its CA.</summary>
     public static bool Gunshield(string? gunType, bool withinCa, bool crewKind, bool moving) => gunType is "at" or "inf" && withinCa && crewKind && !moving;
 
+    /// <summary>
+    /// C9.2, C9.4 p. 179 and C2.6 p. 168: the opt-in mortar target read includes its minimum, effective light mode, and signed elevation difference.
+    /// The older overload retains its exact reading. Non-mortars still use that reading.
+    /// </summary>
+    public static string GunTargetStatus(int range, int? maximum, Func<int?> rise, Func<double?> bearing, int facing,
+        string? gunType, int? caliber, int? minimum, bool loneSmc)
+    {
+        if (!ScenarioA1MortarCalculator.IsMortar(null, gunType))
+        {
+            return GunTargetStatus(range, maximum, rise, bearing, facing);
+        }
+
+        if (ScenarioA1MortarCalculator.MinimumRangeRefusal(true, range, minimum) is { } minimumRefusal)
+        {
+            return "refused: " + minimumRefusal;
+        }
+
+        if (maximum is { } most && range > most)
+        {
+            return $"beyond its range of {most} hexes";
+        }
+
+        if (rise() is not { } levels)
+        {
+            return $"range {range}; its elevation difference cannot be read here";
+        }
+
+        if (ElevationRefusal("the mortar", levels, range, "mortar") is { } elevationRefusal)
+        {
+            return "refused: " + elevationRefusal;
+        }
+
+        return ScenarioA1MortarCalculator.FiresAsLight(caliber, loneSmc)
+            ? $"range {range}, fires as a light mortar with no CA"
+            : GunTargetStatus(range, maximum, static () => 0, bearing, facing);
+    }
+
     /// <summary>C3.2, C2.25, C2.6 (ruling R8.9): a Gun's read of a target, after its own Location and LOS are settled; bearing and levels read lazily.</summary>
     public static string GunTargetStatus(int range, int? maximum, Func<int?> rise, Func<double?> bearing, int facing)
     {
