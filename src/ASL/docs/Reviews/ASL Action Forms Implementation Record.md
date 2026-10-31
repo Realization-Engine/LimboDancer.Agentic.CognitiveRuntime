@@ -109,6 +109,8 @@ The final `build-codex-studio.log` reports zero warnings/errors in 1:51 for `act
 
 `action-form-design/advance-workflow-checks.log` and `action-form-design/results/advance-workflow.trx` report 3 passed, 0 failed: the new click-ownership/scope regression, the affected off-board presentation check, and the required icon-coverage source check. The generated icon coverage also catches up this branch's earlier action-form layout changes. No full suite ran. Code and design were self-reviewed for scope transitions, board/level distinction, disclosure, reset behavior and bounded work. No merge is authorized.
 
+Cleanup initially refused the retired `studio-advance` because its process check also matched the active `studio-advance-final` prefix. The check now requires a directory separator after the full target path; the active-demo protection remains in place. This cost one cleanup retry, with no application rebuild or repeated tests.
+
 ## Current outputs
 
 `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex`. Task builds and checks are registered under `action-form-design`. The active demo stays on port 6680 for review; other Studio ports are untouched. Keep logs/results as verification evidence, and clean superseded task-owned binaries after the active demo build is established.

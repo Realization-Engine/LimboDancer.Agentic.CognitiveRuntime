@@ -5,7 +5,7 @@ $removed = @()
 foreach ($name in @('studio-6680', 'studio-next', 'studio-final', 'studio-movement', 'studio-map-movement', 'studio-fire', 'studio-rout', 'studio-advance', 'checks')) {
     $target = [IO.Path]::GetFullPath((Join-Path $taskRoot $name))
     if (-not $target.StartsWith($taskRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Outside task output root.' }
-    $running = Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | Where-Object { $_.CommandLine -and $_.CommandLine.Replace('\','/').Contains($target.Replace('\','/')) }
+    $running = Get-CimInstance Win32_Process -Filter "Name='dotnet.exe'" | Where-Object { $_.CommandLine -and $_.CommandLine.Replace('\','/').Contains($target.Replace('\','/') + '/') }
     if ($running) { throw "Output still in use: $target" }
     if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Recurse -Force }
     $removed += $target.Replace('\','/')
