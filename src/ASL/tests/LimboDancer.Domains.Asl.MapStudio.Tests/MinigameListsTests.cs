@@ -46,6 +46,9 @@ public sealed class MinigameListsTests : IDisposable
         context.UseViewport();
         context.Services.AddSingleton(new StudioLos(boards, maps, options));
         context.Services.AddSingleton(dice);
+
+        // The Minigames page brings the chosen entry into its list's view by a script, which these tests do not run.
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
     }
 
     public void Dispose()
@@ -120,15 +123,44 @@ public sealed class MinigameListsTests : IDisposable
     }
 
     [Fact]
-    public async Task TheMinigamesPageListsEachBundlesGamesAndStartsANewOneOnPlay()
+    public async Task TheMinigamesPageShowsOneMinigameChosenFromItsListWithItsGames()
     {
         await Start();
+
+        // The user, 2026-10-31: every minigame in the list at the left, in rule order (A7 before A10), one shown; with none named, the first.
         var page = Open<MinigameListPage>("games/minigames");
-        Assert.Equal(Minigames.All.Count, page.FindAll("section.minigame").Count);
-        var section = page.Find($"#minigame-{Bundle}");
+        Assert.Equal([.. MinigameOrder.All.Select(bundle => bundle.Id)], page.FindAll("#minigame-list a").Select(link => link.GetAttribute("data-minigame")));
+        Assert.Equal(Minigames.All.Count, MinigameOrder.All.Count);
+        Assert.True(string.CompareOrdinal(MinigameOrder.Key("A7.7"), MinigameOrder.Key("A10.531")) < 0);
+        Assert.True(string.CompareOrdinal(MinigameOrder.Key("A10.531"), MinigameOrder.Key("A10.6")) < 0);
+        Assert.True(string.CompareOrdinal(MinigameOrder.Key("A24.5"), MinigameOrder.Key("B23.74")) < 0);
+        Assert.True(string.CompareOrdinal(MinigameOrder.Key("E1.91"), MinigameOrder.Key("E10.1")) < 0);
+        Assert.Equal($"minigame-{MinigameOrder.All[0].Id}", Assert.Single(page.FindAll("section.minigame")).Id);
+        Assert.Equal(MinigameOrder.All[0].Id, page.Find("#minigame-list a.active").GetAttribute("data-minigame"));
+
+        page = Open<MinigameListPage>($"games/minigames?minigame={Bundle}");
+        var section = Assert.Single(page.FindAll("section.minigame"));
+        Assert.Equal($"minigame-{Bundle}", section.Id);
+        Assert.Equal(Bundle, page.Find("#minigame-list a.active").GetAttribute("data-minigame"));
+        Assert.Equal("1 game", page.Find($"#minigame-list a[data-minigame='{Bundle}'] .minigame-index-meta").TextContent);
         Assert.Single(section.QuerySelectorAll($"li[data-game='{Mini}']"));
         Assert.Equal($"games/play?card={Uri.EscapeDataString(Card)}", section.QuerySelector("a.minigame-start")!.GetAttribute("href"));
         Assert.Empty(page.FindAll($"li[data-game='{Real}']"));
+    }
+
+    [Fact]
+    public void TheMinigamesListFiltersByTitleIdOrRule()
+    {
+        var page = Open<MinigameListPage>("games/minigames");
+        page.Find("#minigame-filter").Input("A12.14");
+        var listed = page.FindAll("#minigame-list a").Select(link => link.GetAttribute("data-minigame")).ToList();
+        Assert.Equal([.. MinigameOrder.All.Where(bundle => bundle.Rules.Any(rule => rule.Contains("A12.14", StringComparison.OrdinalIgnoreCase))
+            || bundle.Title.Contains("A12.14", StringComparison.OrdinalIgnoreCase)).Select(bundle => bundle.Id)], listed);
+        Assert.Contains(Bundle, listed);
+
+        page.Find("#minigame-filter").Input("no such rule");
+        Assert.Empty(page.FindAll("#minigame-list a"));
+        Assert.Single(page.FindAll("#minigame-none-matches"));
     }
 
     [Fact]
@@ -165,9 +197,15 @@ public sealed class MinigameListsTests : IDisposable
         var page = Open<WorkbenchPage>("games/workbench");
         Assert.Equal([Mini], Options(page, "#workbench-game"));
 
+        // The user, 2026-10-31: the picker says it is for minigames, and each game sits under its minigame's title.
+        Assert.StartsWith("Minigame", page.Find("#workbench-toolbar label").TextContent.Trim(), StringComparison.Ordinal);
+        Assert.Equal("choose a minigame", page.Find("#workbench-game option[value='']").TextContent);
+        Assert.Equal(Minigames.Find(Bundle)!.Title, page.Find($"#workbench-game option[value='{Mini}']").ParentElement!.GetAttribute("label"));
+
         page = Open<WorkbenchPage>($"games/workbench?game={Real}&viewer=adjudicator");
         Assert.Equal([Real], Options(page, "#workbench-game"));
         Assert.Single(page.FindAll("#workbench-real-game"));
+        Assert.StartsWith("Game", page.Find("#workbench-toolbar label").TextContent.Trim(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -188,18 +226,17 @@ public sealed class MinigameListsTests : IDisposable
     [Fact]
     public void TheMinigamesPageShowsAMinigamesCardOnlyWhenOpened()
     {
-        context.JSInterop.Mode = JSRuntimeMode.Loose;
-        var page = Open<MinigameListPage>("games/minigames");
-        Assert.Empty(page.FindAll(".minigame-card"));
-        page.Find($"#minigame-{Bundle}-card-toggle").Click();
-        Assert.Single(page.FindAll(".minigame-card"));
-        Assert.Contains(Minigames.Find(Bundle)!.Title, page.Find($"#minigame-{Bundle}-card").TextContent, StringComparison.Ordinal);
-        page.Find($"#minigame-{Bundle}-card-toggle").Click();
-        Assert.Empty(page.FindAll(".minigame-card"));
+        var page = Open<MinigameListPage>($"games/minigames?minigame={Bundle}");
+        Assert.Empty(page.FindAll("#minigame-card"));
+        page.Find("#minigame-card-toggle").Click();
+        Assert.Contains(Minigames.Find(Bundle)!.Title, page.Find("#minigame-card").TextContent, StringComparison.Ordinal);
+        page.Find("#minigame-card-toggle").Click();
+        Assert.Empty(page.FindAll("#minigame-card"));
 
-        // Play's "The whole card" link names the bundle: its card opens with the page.
+        // Play's "The whole card" link names the bundle: that minigame is shown with its card open.
         page = Open<MinigameListPage>($"games/minigames?open={Bundle}");
-        Assert.Single(page.FindAll($"#minigame-{Bundle}-card"));
+        Assert.Equal($"minigame-{Bundle}", Assert.Single(page.FindAll("section.minigame")).Id);
+        Assert.Single(page.FindAll("#minigame-card"));
     }
 
     [Fact]
