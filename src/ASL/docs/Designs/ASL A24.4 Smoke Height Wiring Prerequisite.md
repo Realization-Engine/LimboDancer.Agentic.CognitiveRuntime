@@ -18,8 +18,16 @@ The Workbench contract `a24.4-smoke-height` exposes only public physical source 
 
 Existing white-counter duration remains `TurnWhiteSmokeRules`'s recorded reading. This prerequisite adds no duration or placement control. Earlier recorded map facts retain their recorded answers; new caller proposals use the new height read.
 
+## Review rulings and duration audit, 2026-10-30
+
+- **RA24H.1 Blind Hexes.** A6.42, PDF p. 53, counts whole levels of elevation advantage. Apply its minimum of one before A6.43 adjusts for the rear hex's elevation. The calculation retains the extra Blind Hex at the obstacle's top endpoint, consistent with A24.4's exclusive upper boundary and its level-two example. Tests cover half-level advantages, raised rear hexes, and both LOS directions. A top endpoint on a hillock, upslope or embankment remains undecided until its composition is established.
+- **RA24H.2 Cellars.** Adopt the clarification attributed by the combined Q&A, PDF p. 205, to Journal 1 and MMP: ground SMOKE affects cellar LOS to ground level or above, without an outgoing modifier, but does not occupy the cellar. This is an attributed ruling; the original Journal page was not inspected. It grants no general underside rule for elevated SMOKE.
+- **Duration audit.** A24.4, PDF p. 92, agrees with `TurnWhiteSmokeRules.Evaluate` and `Opening`: owner-relative Prep Fire opening cleanup removes Dispersed white counters before dispersing full white counters, using one opening snapshot. The existing provenance, unsupported-source and idempotence checks remain. `InitialStrength` was an unused forwarding member and is removed; A24.5's `PlacementStrength` owns that answer.
+
+The split is explicit: A24.4 supplies conventional/WP counter height, duration and LOS intersection; B25.2 supplies Blaze height through `ScenarioA1BlazeSmokeCalculator.Height`; A24.5 supplies strength through `ScenarioA1SmokeStrengthCalculator`. Intersection consumes the physical height without deciding either strength or Blaze height. The contract's Place is `Any`, because height applies in every fire phase, not only ASOP 2.22A.
+
 ## Explicit remaining limits
 
-Two independent read-only reviews did not establish a general underside rule for SMOKE placed upstairs, or the embankment composition. Those geometries remain undecided, with a caller refusal, rather than an invented answer. The known cellar clarification is not generalized to all upstairs sources. These limits are also in backlog section 85 and remain open before full acceptance.
+Two independent read-only reviews did not establish a general underside rule for SMOKE placed upstairs, or the embankment composition. Top-end hillock and upslope composition is also unsupported. Those geometries remain undecided, with a caller refusal. The known cellar clarification is not generalized to all upstairs sources. These limits are also in backlog section 85 and remain open before full acceptance.
 
 The calculator allocates only its small verdict and does no I/O or caching. The caller's source index belongs to one immutable state and contains no viewer identity. Geometry facts add bounded data to the existing LOS result, not a second LOS walk. Legacy/null records keep their existing reading. Focused tests, Workbench verification and caller replay gates are required; no gate success is claimed here.

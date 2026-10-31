@@ -8157,17 +8157,17 @@ else if (state is not null)
                 && GameState.Condition(item, Conditions.Malfunctioned) == ConditionState.True)
             .Select(weapon => new PlayChoice(weapon.Id, $"{weapon.Id} (held by {weapon.Holding!.Holder})")),
         .. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && LiveFire.IsVehicle(unit))
-            .SelectMany(vehicle => Live.Planner.VehicleRepairWeapons(state!, vehicle)
+            .SelectMany(vehicle => GamePlanner.VehicleRepairWeapons(state!, vehicle)
                 .Select(weapon => new PlayChoice(vehicle.Id + "|" + weapon, $"{vehicle.Id}'s {weapon.ToUpperInvariant()}"))),
     ];
 
     private IReadOnlyList<PlayChoice> RepairHeroes => state is not null && repairWeapon.Split('|') is [var vehicleId, var weapon]
         && state.Unit(vehicleId) is { } vehicle
-        ? [.. Live.Planner.VehicleRepairHeroes(state, vehicle, weapon).Select(Labelled)] : [];
+        ? [.. GamePlanner.VehicleRepairHeroes(state, vehicle, weapon).Select(Labelled)] : [];
 
     private bool RepairReady => repairWeapon.Split('|') is [var vehicleId, var weapon]
         ? state?.Unit(vehicleId) is { } vehicle
-            && Live.Planner.VehicleRepairRefusal(state, vehicle, weapon, repairHero.Length == 0 ? null : repairHero) is null
+            && GamePlanner.VehicleRepairRefusal(state, vehicle, weapon, repairHero.Length == 0 ? null : repairHero) is null
         : repairWeapon.Length > 0;
 
     private IReadOnlyList<PlayChoice> DeployChoices => state is null ? []

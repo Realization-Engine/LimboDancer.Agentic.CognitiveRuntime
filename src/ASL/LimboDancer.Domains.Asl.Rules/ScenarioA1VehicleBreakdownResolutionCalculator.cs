@@ -12,9 +12,30 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
 
     /// <summary>D3.7/D5.341: apply the weapon's Disabled result and, when ordered, the complete Recall transition.</summary>
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> DisabledChanges(string weapon, bool recalled) => recalled
-        ? [(ScenarioA1RallyRules.VehicleWeaponDisabled(weapon), true), (UnitCondition.Recalled, true), (UnitCondition.Stunned, false),
-            (UnitCondition.StunRecovery, false), (UnitCondition.ButtonedUp, true), (UnitCondition.Motion, false)]
+        ? [(ScenarioA1RallyRules.VehicleWeaponDisabled(weapon), true), .. RecallChanges()]
         : [(ScenarioA1RallyRules.VehicleWeaponDisabled(weapon), true)];
+
+    /// <summary>D3.7: the named armament's counter changes and any vehicle Recall transition, including a listed SA.</summary>
+    public sealed record ArmamentChanges(IReadOnlyList<(string Condition, bool Value)> Weapon,
+        IReadOnlyList<(UnitCondition Condition, bool Value)> Vehicle);
+
+    public static ArmamentChanges RepairChanges(string malfunction, string disabled, RepairOutcome outcome, bool recalled) => outcome switch
+    {
+        RepairOutcome.Repaired => new([(malfunction, false)], []),
+        RepairOutcome.Eliminated => BreakdownChanges(malfunction, disabled, VehicleBreakdownOutcome.Disabled, recalled),
+        _ => new([], []),
+    };
+
+    public static ArmamentChanges BreakdownChanges(string malfunction, string disabled, VehicleBreakdownOutcome outcome, bool recalled) => outcome switch
+    {
+        VehicleBreakdownOutcome.Malfunction => new([(malfunction, true)], []),
+        VehicleBreakdownOutcome.Disabled => new([(disabled, true)], recalled ? RecallChanges() : []),
+        _ => new([], []),
+    };
+
+    private static IReadOnlyList<(UnitCondition Condition, bool Value)> RecallChanges() =>
+        [(UnitCondition.Recalled, true), (UnitCondition.Stunned, false), (UnitCondition.StunRecovery, false),
+            (UnitCondition.ButtonedUp, true), (UnitCondition.Motion, false)];
 
     /// <summary>C8.9 (PDF p. 179): a vehicle's Low Ammo or breakdown result counts as firing despite absent special ammunition.</summary>
     public static bool NeverFired(string? ammunitionUse, bool malfunctioned, bool eliminated, VehicleBreakdownResolved? current) =>
@@ -72,20 +93,27 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
             facts.IntensiveFire ? 2 : 0, facts.WinterReduction + (facts.Captured ? 2 : 0) + (facts.NonQualified ? 2 : 0)));
     }
 
-    public static VehicleBreakdownResolved Resolve(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use, int originalDr)
+    public static VehicleBreakdownResolved Resolve(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use, int originalDr, bool legacyOverrun = false)
     {
         var numbers = Numbers(facts, use);
         var kind = use == VehicleBreakdownUse.OrdnanceToHit ? VehicleBreakdownDr.ToHit
             : use == VehicleBreakdownUse.CloseCombat ? VehicleBreakdownDr.CloseCombat : VehicleBreakdownDr.Ift;
-        return new(numbers, ScenarioA1VehicleBreakdownCalculator.Outcome(originalDr, numbers, kind));
+        // D7.17 (PDF p. 207), RD3.11: an OVR reaching B#/X# malfunctions, without Low Ammo or Disablement.
+        var outcomeNumbers = use == VehicleBreakdownUse.Overrun && !legacyOverrun ? numbers with
+        {
+            BNumber = Math.Min(numbers.BNumber, numbers.XNumber ?? 12),
+            XNumber = null,
+            Circled = false
+        } : numbers;
+        return new(numbers, ScenarioA1VehicleBreakdownCalculator.Outcome(originalDr, outcomeNumbers, kind));
     }
 
     /// <summary>A9.71 (PDF p. 65): select among actual failed armaments; Low Ammo remains independent of Random Selection.</summary>
     public static Dictionary<string, VehicleBreakdownResolved>? ResolveWeapons(string vehicleId,
         IReadOnlyDictionary<string, VehicleBreakdownUseFacts> weapons, VehicleBreakdownUse use, int originalDr,
-        IReadOnlyDictionary<string, int>? selection, out IReadOnlyList<string> selectionKeys)
+        IReadOnlyDictionary<string, int>? selection, out IReadOnlyList<string> selectionKeys, bool legacyOverrun = false)
     {
-        var outcomes = weapons.ToDictionary(item => item.Key, item => Resolve(item.Value, use, originalDr), StringComparer.Ordinal);
+        var outcomes = weapons.ToDictionary(item => item.Key, item => Resolve(item.Value, use, originalDr, legacyOverrun), StringComparer.Ordinal);
         var failed = outcomes.Where(item => item.Value.Failed).Select(item => item.Key).ToArray();
         selectionKeys = failed.Length > 1 ? [.. failed.Select(name => vehicleId + ":" + name)] : [];
         if (selectionKeys.Count == 0)
@@ -173,7 +201,7 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
         {
             HeroRider = HeroRider(weapon.VehicleId, facts.Hero)
         };
-        if (!facts.InherentCrew && !authoritative.HeroRider)
+        if (!authoritative.Disabled && !facts.InherentCrew && !authoritative.HeroRider)
         {
             return $"play.repair-unit: {weapon.VehicleId}'s armament needs an inherent crew or an eligible Hero Rider (D3.7)";
         }
@@ -183,10 +211,13 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
         }
 
         // D3.7 gives each listed SA the same inherent-crew repair as the MA; the caller preserves its actual identity/attempt.
-        var refusal = ScenarioA1VehicleBreakdownCalculator.RepairRefusal(authoritative with
+        return ScenarioA1VehicleBreakdownCalculator.RepairRefusal(authoritative with
         {
             Weapon = "ma"
-        });
-        return refusal?.Replace("MA", weapon.Weapon, StringComparison.Ordinal);
+        }, "SA '" + weapon.Weapon + "'");
     }
+
+    /// <summary>D3.7: the repair proposal describes the same result table the resolver uses.</summary>
+    public static string RepairSummary(string vehicleId, string weapon, string? hero) =>
+        $"play.repair: {vehicleId}'s {weapon.ToUpperInvariant()} repair by {hero ?? "its inherent crew"}; a dr of 1 repairs it, a 6 disables it (D3.7)";
 }

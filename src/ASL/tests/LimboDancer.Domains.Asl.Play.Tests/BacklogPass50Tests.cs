@@ -403,7 +403,7 @@ public sealed class BacklogPass50Tests : IDisposable
         var before = Revision;
         Refused(await Repair("ma", 1), "play.repair-unit");
         Assert.Equal(before, Revision);
-        Assert.Equal("hero", Assert.Single(Planner().VehicleRepairHeroes(Current, Current.Unit("de-tank")!, "ma")).Id);
+        Assert.Equal("hero", Assert.Single(GamePlanner.VehicleRepairHeroes(Current, Current.Unit("de-tank")!, "ma")).Id);
         Committed(await Do(GameActions.Repair, Once(1), new
         {
             unitId = "de-tank",
@@ -446,6 +446,90 @@ public sealed class BacklogPass50Tests : IDisposable
     }
 
     [Fact]
+    public async Task RepairEvidenceSurvivesACatalogChangeWithoutPinningNewChoices()
+    {
+        await Setup(Tank("north-east", Conditions.BmgMalfunctioned), Squad("r1", Target));
+        var before = Revision;
+        Committed(await Repair("bmg", 1));
+        var events = store.Read(Scope)!.Events;
+        var repair = Assert.Single(events.Select(item => item.Payload).OfType<RepairAttempted>());
+        var evidence = Assert.IsType<VehicleArmamentEvidence>(repair.VehicleArmamentEvidence);
+        Assert.Equal(Catalog.Identity, evidence.Catalog);
+        var text = GameEventWriter.Write(Scope, new GameRecord("catalog evidence", true, events));
+        var read = GameEventReader.Read(System.Text.Encoding.UTF8.GetBytes(text));
+        Assert.False(read.HasErrors);
+        Assert.Equal(text, GameEventWriter.Write(Scope, read.Record!));
+        var malformed = System.Text.Json.Nodes.JsonNode.Parse(text)!;
+        var source = Assert.Single(malformed["events"]!.AsArray().Select(item => item!["payload"]!["vehicleArmamentEvidence"]).OfType<System.Text.Json.Nodes.JsonObject>());
+        Assert.True(source.Remove("version"));
+        Assert.True(GameEventReader.Read(System.Text.Encoding.UTF8.GetBytes(malformed.ToJsonString())).HasErrors);
+        var withoutEvidence = events.Select(item => item.Payload is RepairAttempted
+            ? item with
+            {
+                Payload = repair with
+                {
+                    VehicleArmamentEvidence = null
+                }
+            } : item).ToArray();
+        Assert.DoesNotContain("vehicleArmamentEvidence", GameEventWriter.Write(Scope, new GameRecord("legacy evidence", true, withoutEvidence)), StringComparison.Ordinal);
+        var revised = Catalog with
+        {
+            Identity = Catalog.Identity with
+            {
+                Version = "999.0.0",
+                Hash = new string('a', 64)
+            },
+            Definitions = [.. Catalog.Definitions.Select(definition => definition.Id != "attacker-tank" ? definition : definition with
+            {
+                Values = [.. definition.Values.Select(value => value.Name == "asl:bmg"
+                    ? value with { State = PrintedState.NotPrinted, Value = null } : value)],
+            })],
+        };
+        var updated = new GamePlanner(store, boards, Vocabulary, [revised], fireLos: los);
+        var replay = updated.Replay(events);
+        Assert.False(replay.HasErrors);
+        Assert.Equal(revised.Identity, replay.Current!.Catalog);
+        Assert.False(Is(replay.Current.Unit("de-tank")!, Conditions.BmgMalfunctioned));
+        Assert.Null(replay.Current.VehicleArmamentEvidence);
+        var current = updated.Replay(events.Take((int)before).ToArray()).Current!;
+        Assert.DoesNotContain("bmg", GamePlanner.VehicleRepairWeapons(current, current.Unit("de-tank")!));
+        var overlaid = VehicleArmamentFacts.Definition(current with
+        {
+            VehicleArmamentEvidence = evidence
+        }, current.Unit("de-tank")!)!;
+        var loaded = revised.Definition("attacker-tank")!;
+        var retained = loaded.Values.First(value => value.Face == "front" && value.Name == "asl:movement-points");
+        Assert.Contains(retained, overlaid.Values);
+        Assert.Contains(evidence.Values.Single(value => value.Name == "asl:bmg"), overlaid.Values);
+        Assert.True(updated.Replay(events.Select(item => item.Payload is RepairAttempted
+            ? item with
+            {
+                Payload = repair with
+                {
+                    VehicleArmamentEvidence = null
+                }
+            } : item).ToArray()).HasErrors);
+
+        foreach (var forged in new[]
+        {
+            evidence with { Version = 2 },
+            evidence with { Definition = "attacker-halftrack" },
+            evidence with { Catalog = evidence.Catalog with { Hash = new string('b', 64) } },
+            evidence with { Values = [.. evidence.Values.Where(value => value.Name != "asl:bmg")] },
+        })
+        {
+            Assert.True(Planner().Replay(events.Select(item => item.Payload is RepairAttempted
+                ? item with
+                {
+                    Payload = repair with
+                    {
+                        VehicleArmamentEvidence = forged
+                    }
+                } : item).ToArray()).HasErrors);
+        }
+    }
+
+    [Fact]
     public async Task LegacyAamgAttemptAndCapturedInherentCrewRemainRecognized()
     {
         var halftrack = Tank("north-east", Conditions.Malfunctioned);
@@ -467,14 +551,15 @@ public sealed class BacklogPass50Tests : IDisposable
                 Payload = repair with
                 {
                     VehicleRepairVersion = null,
+                    VehicleArmamentEvidence = null,
                     Weapon = null
                 }
             } : item).ToArray();
         var legacy = Planner().Replay(events);
         Assert.False(legacy.HasErrors);
         Assert.Contains("de-tank", legacy.Current!.RepairsThisPhase);
-        Assert.NotNull(Planner().VehicleRepairRefusal(legacy.Current, legacy.Current.Unit("de-tank")!, "ma"));
-        Assert.Empty(Planner().VehicleRepairWeapons(legacy.Current, legacy.Current.Unit("de-tank")!));
+        Assert.NotNull(GamePlanner.VehicleRepairRefusal(legacy.Current, legacy.Current.Unit("de-tank")!, "ma"));
+        Assert.Empty(GamePlanner.VehicleRepairWeapons(legacy.Current, legacy.Current.Unit("de-tank")!));
     }
 
     [Fact]

@@ -22,12 +22,13 @@ public static class LiveFire
 
     private sealed record VehiclePrintedFacts(VehicleBreakdownUseFacts? Breakdown, bool? HasSecondary, int? Passengers, int? Towing);
 
-    // Keep only immutable source facts per vehicle, not another retained copy of the whole catalog.
-    private static readonly Lazy<IReadOnlyDictionary<string, VehiclePrintedFacts>> VehiclePrintedNumbers = new(() =>
-        UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary.Value)!.Catalog!.Definitions.Where(definition => definition.Kind == "asl:vehicle")
-            .ToDictionary(definition => definition.Id, definition => new VehiclePrintedFacts(PrintedVehicleBreakdown(definition),
-                VehicleArmamentFacts.HasSecondary(definition),
-                PrintedCapacity(definition, "asl:passenger-capacity"), PrintedCapacity(definition, "asl:towing")), StringComparer.Ordinal));
+    // Source facts live no longer than their immutable catalog definition (or verifier-local recorded snapshot).
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<UnitDefinition, VehiclePrintedFacts> VehiclePrintedNumbers = new();
+
+    private static VehiclePrintedFacts? PrintedNumbers(GameState state, UnitInstance vehicle) =>
+        VehicleArmamentFacts.Definition(state, vehicle) is { } definition
+            ? VehiclePrintedNumbers.GetValue(definition, static item => new(PrintedVehicleBreakdown(item), VehicleArmamentFacts.HasSecondary(item),
+                PrintedCapacity(item, "asl:passenger-capacity"), PrintedCapacity(item, "asl:towing"))) : null;
 
     private static int? PrintedCapacity(UnitDefinition definition, string attribute) => definition.Printed("front", attribute) switch
     {
@@ -36,10 +37,9 @@ public static class LiveFire
         _ => null,
     };
 
-    internal static bool VehicleRecalledAfterDisable(UnitInstance vehicle, bool maDisabled)
+    internal static bool VehicleRecalledAfterDisable(GameState state, UnitInstance vehicle, bool maDisabled)
     {
-        var printed = vehicle.Definition is { Catalog.Catalog: Catalog } definition
-            ? VehiclePrintedNumbers.Value.GetValueOrDefault(definition.Definition) : null;
+        var printed = PrintedNumbers(state, vehicle);
         return printed is not null && VehicleArmamentFacts.RecalledAfterDisable(vehicle, maDisabled, printed.HasSecondary,
             printed.Passengers, printed.Towing);
     }
@@ -65,8 +65,7 @@ public static class LiveFire
     internal static (VehicleBreakdownUseFacts? Facts, string? Reason) VehicleBreakdownFacts(GameState state, UnitInstance vehicle,
         VehicleBreakdownWeapon weapon, bool intensive = false)
     {
-        var listing = vehicle.Definition is { Catalog.Catalog: Catalog } definition
-            ? VehiclePrintedNumbers.Value.GetValueOrDefault(definition.Definition) : null;
+        var listing = PrintedNumbers(state, vehicle);
         var printed = listing?.Breakdown;
         if (printed is null)
         {
@@ -488,14 +487,18 @@ public static class LiveFire
         var facts = new Dictionary<string, VehicleBreakdownUseFacts>(StringComparer.Ordinal);
         foreach (var name in names)
         {
-            var weapon = name switch
+            VehicleBreakdownWeapon? weapon = name switch
             {
                 FireOverrunEffect.MainArmament => VehicleBreakdownWeapon.MainArmament,
                 FireOverrunEffect.BowMg => VehicleBreakdownWeapon.BowMg,
                 FireOverrunEffect.CoaxialMg => VehicleBreakdownWeapon.CoaxialMg,
-                _ => (VehicleBreakdownWeapon)(-1),
+                _ => null,
             };
-            var read = VehicleBreakdownFacts(state, vehicle, weapon);
+            if (weapon is null)
+            {
+                return (null, "play.vehicle-breakdown-facts: the firing armament is not identified (D3.7)");
+            }
+            var read = VehicleBreakdownFacts(state, vehicle, weapon.Value);
             if (read.Facts is null)
             {
                 return (null, read.Reason);
@@ -504,7 +507,7 @@ public static class LiveFire
         }
         return (attack with
         {
-            VehicleBreakdown = new FireVehicleBreakdownFacts(facts)
+            VehicleBreakdown = new FireVehicleBreakdownFacts(facts) { OverrunVersion = attack.Overrun is not null ? 1 : null }
         }, null);
     }
 
@@ -1317,6 +1320,21 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             return "The fire record's facts are incomplete.";
         }
 
+        if (fire.VehicleArmamentEvidence is { } evidence)
+        {
+            if (recorded.VehicleBreakdown is null)
+            {
+                return "Vehicle armament evidence requires a vehicle breakdown reading.";
+            }
+            if (VehicleArmamentFacts.EvidenceRefusal(state, state.Unit(recorded.VehicleFire?.VehicleId ?? recorded.Overrun?.VehicleId ?? ""), evidence) is { } evidenceRefusal)
+            {
+                return evidenceRefusal;
+            }
+            state = state with
+            {
+                VehicleArmamentEvidence = evidence
+            };
+        }
         FireAttack? expected;
         string? reason;
         if (recorded.FireKind == ScenarioA1FireCalculator.ResidualFire)
@@ -1332,6 +1350,16 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         {
             // D7.1 (ruling R11.11): an OVR is read from its vehicle's state; its crew's CE status is recorded as the OVR saw it.
             (expected, reason) = LiveFire.OverrunFromState(state, recorded.Overrun?.VehicleId ?? string.Empty, recorded.VehicleBreakdown is null);
+            if (expected?.VehicleBreakdown is { } overrunBreakdown)
+            {
+                expected = expected with
+                {
+                    VehicleBreakdown = overrunBreakdown with
+                    {
+                        OverrunVersion = recorded.VehicleBreakdown?.OverrunVersion
+                    }
+                };
+            }
         }
         else if (recorded.Canister is { } canister)
         {

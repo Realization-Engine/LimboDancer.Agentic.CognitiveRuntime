@@ -1018,6 +1018,22 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "Unknown Spotter use validation version.";
         }
 
+        if (fired.VehicleArmamentEvidence is { } evidence)
+        {
+            if (recorded.VehicleBreakdown is null)
+            {
+                return "Vehicle armament evidence requires a vehicle breakdown reading.";
+            }
+            if (VehicleArmamentFacts.EvidenceRefusal(state, state.Unit(fired.Gun), evidence) is { } evidenceRefusal)
+            {
+                return evidenceRefusal;
+            }
+            state = state with
+            {
+                VehicleArmamentEvidence = evidence
+            };
+        }
+
         // W-A21.13 (rule 6 as amended 2026-10-30): a shot recorded before the wiring carries no UseMultiple and is rebuilt on its recorded reading.
         if (recorded.UseMultiple is < 0 or > 2)
         {

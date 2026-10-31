@@ -723,35 +723,26 @@ public sealed class BacklogPass11Tests : IDisposable
     }
 
     [Fact]
-    public async Task SuccessiveOverrunsPersistLowAmmoThenDisableAndRecallTheMa()
+    public async Task OverrunAtTheShortageBreakdownNumberMalfunctionsWithoutLowAmmoOrRecall()
     {
         rules = ["ammo-shortage:german"];
         await Setup("german", Vehicle("de-tk", "attacker-tank", L("E5"), "german"),
             Squad("r1", L(Ne("E5")), "russian"), Squad("r2", L(Ne(Ne("E5"))), "russian"));
         Committed(await Step("de-tk", "start"));
         await Pass();
-        foreach (var target in new[] { Ne("E5"), Ne(Ne("E5")) })
+        Committed(await Step("de-tk", "enter", L(Ne("E5")), options: new()
         {
-            Committed(await Step("de-tk", "enter", L(target), options: new()
-            {
-                ["overrun"] = true
-            }));
-            await Pass();
-            Committed(await Do(GameActions.Overrun, Once(5, 6, 3, 3), new
-            {
-            }));
-            Assert.Contains("de-tk", Current.LowAmmoVehicles);
-            if (target == Ne("E5"))
-            {
-                Assert.False(Is(Current.Unit("de-tk")!, Conditions.Disabled));
-                await Pass();
-            }
-        }
+            ["overrun"] = true
+        }));
+        await Pass();
+        Committed(await Do(GameActions.Overrun, Once(5, 6, 3, 3), new
+        {
+        }));
+        Assert.DoesNotContain("de-tk", Current.LowAmmoVehicles);
         var vehicle = Current.Unit("de-tk")!;
-        Assert.True(Is(vehicle, Conditions.Disabled));
-        Assert.True(Is(vehicle, Conditions.Recalled));
-        Assert.False(Is(vehicle, Conditions.Motion));
-        Assert.True(Is(vehicle, Conditions.ButtonedUp));
+        Assert.True(Is(vehicle, Conditions.Malfunctioned));
+        Assert.False(Is(vehicle, Conditions.Disabled));
+        Assert.False(Is(vehicle, Conditions.Recalled));
         NoReplayErrors();
     }
 
@@ -892,6 +883,50 @@ public sealed class BacklogPass11Tests : IDisposable
         NoReplayErrors();
     }
 
+    [Theory]
+    [InlineData(Conditions.Recalled)]
+    [InlineData(Conditions.UnconfirmedKill)]
+    public async Task RecalledAndUnconfirmedKillVehiclesHaveNoCcAttackChoice(string condition)
+    {
+        await Setup("russian", Vehicle("de-ht", "attacker-halftrack", L(Ne("E5")), "german"),
+            Squad("r1", L("E5"), "russian"), Squad("g1", L("J9"), "german"));
+        await Advance(4);
+        Committed(await Do(GameActions.Advance, Once(3, 4), new
+        {
+            unitIds = R1,
+            to = L(Ne("E5"))
+        }));
+        await Advance();
+        Committed(await VehicleCc(L(Ne("E5")), Once(5, 6), vehicle: "de-ht", attackers: ["r1"]));
+        var state = Current;
+        var location = state.Location("de-ht")!.Location!;
+        Assert.Equal(("german", true), Planner().VehicleCloseCombatTurn(state, location));
+        var noWeapon = state with
+        {
+            Units = [.. state.Units.Select(unit => unit.Id != "de-ht" ? unit : unit with
+            {
+                Conditions = new Dictionary<string, ConditionState>(unit.Conditions) { [Conditions.Malfunctioned] = ConditionState.True },
+            })],
+        };
+        Assert.False(Planner().VehicleCloseCombatTurn(noWeapon, location).Open);
+        var passengersOnly = noWeapon with
+        {
+            Units = [.. noWeapon.Units.Select(unit => unit.Id != "g1" ? unit : unit with
+            {
+                Position = new ContainedPosition("de-ht", ContainmentRole.Passenger)
+            })]
+        };
+        Assert.True(Planner().VehicleCloseCombatTurn(passengersOnly, location).Open);
+        var barred = passengersOnly with
+        {
+            Units = [.. passengersOnly.Units.Select(unit => unit.Id != "de-ht" ? unit : unit with
+            {
+                Conditions = new Dictionary<string, ConditionState>(unit.Conditions) { [condition] = ConditionState.True },
+            })],
+        };
+        Assert.False(Planner().VehicleCloseCombatTurn(barred, location).Open);
+    }
+
     [Fact]
     public async Task AVehiclesCcAttackMalfunctionsOnlyItsParticipatingCmg()
     {
@@ -941,7 +976,8 @@ public sealed class BacklogPass11Tests : IDisposable
         Assert.Null(CloseCombatRecordVerifier.Shared.VerifyVehicle(stateBefore, record with
         {
             Facts = JsonSerializer.SerializeToElement(legacy, LiveFire.Json),
-            Resolution = JsonSerializer.SerializeToElement(legacyResolution, LiveFire.Json)
+            Resolution = JsonSerializer.SerializeToElement(legacyResolution, LiveFire.Json),
+            VehicleArmamentEvidence = null
         }, dice));
         NoReplayErrors();
     }

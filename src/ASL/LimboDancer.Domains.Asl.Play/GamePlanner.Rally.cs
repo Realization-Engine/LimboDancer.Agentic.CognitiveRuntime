@@ -405,8 +405,7 @@ public sealed partial class GamePlanner
     }
 
 
-    private UnitDefinition? VehicleRepairDefinition(GameState state, UnitInstance vehicle) => vehicle.Definition is { } reference
-        ? UnitCatalogs.For(catalogs, state.Catalog.ToString())?.Definition(reference.Definition) : null;
+    private static UnitDefinition? VehicleRepairDefinition(GameState state, UnitInstance vehicle) => VehicleArmamentFacts.Definition(state, vehicle);
 
     private string? RepairParticipantBar(GameState state, JsonElement arguments)
     {
@@ -422,7 +421,7 @@ public sealed partial class GamePlanner
         return AboardBar(state, arguments);
     }
 
-    public string? VehicleRepairRefusal(GameState state, UnitInstance vehicle, string weaponId, string? hero = null)
+    public static string? VehicleRepairRefusal(GameState state, UnitInstance vehicle, string weaponId, string? hero = null)
     {
         if (ScenarioA1RallyRules.VehicleRepairPhaseBar(state.Phase, vehicle.Status == InstanceStatus.Active) is { } phase)
         {
@@ -435,11 +434,11 @@ public sealed partial class GamePlanner
                 ?? ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(VehicleArmamentFacts.Repair(state, vehicle, definition, weapon, hero));
     }
 
-    public IReadOnlyList<string> VehicleRepairWeapons(GameState state, UnitInstance vehicle) => VehicleRepairDefinition(state, vehicle) is { } definition
+    public static IReadOnlyList<string> VehicleRepairWeapons(GameState state, UnitInstance vehicle) => VehicleRepairDefinition(state, vehicle) is { } definition
         ? [.. VehicleArmamentFacts.Weapons(definition).Where(weapon => VehicleRepairRefusal(state, vehicle, weapon.Id) is null
             || VehicleRepairHeroes(state, vehicle, weapon.Id).Count > 0).Select(weapon => weapon.Id)] : [];
 
-    public IReadOnlyList<UnitInstance> VehicleRepairHeroes(GameState state, UnitInstance vehicle, string weapon) =>
+    public static IReadOnlyList<UnitInstance> VehicleRepairHeroes(GameState state, UnitInstance vehicle, string weapon) =>
         [.. state.Units.Where(unit => unit.Side == vehicle.Side && unit.Position is ContainedPosition { Role: ContainmentRole.Rider } rider
             && rider.Container == vehicle.Id && VehicleRepairRefusal(state, vehicle, weapon, unit.Id) is null)];
 
@@ -464,21 +463,16 @@ public sealed partial class GamePlanner
                 Event(scope, attemptId, 2, expected, "repair-attempted", new RepairAttempted(vehicle.Id, vehicle.Id, rollId, 1, RepairResult(outcome))
                 {
                     Weapon = weapon.Id, Hero = hero, VehicleRepairVersion = 1,
+                    VehicleArmamentEvidence = VehicleArmamentFacts.Evidence(state, vehicle),
                 }, package, null),
             };
-            var changes = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-            if (outcome == RepairOutcome.Repaired)
+            var verdict = ScenarioA1VehicleBreakdownResolutionCalculator.RepairChanges(weapon.Malfunction, weapon.Disabled, outcome,
+                VehicleArmamentFacts.RecalledAfterDisable(vehicle, definition, weapon));
+            var changes = verdict.Weapon.ToDictionary(change => change.Condition,
+                change => change.Value ? ConditionState.True : ConditionState.False, StringComparer.Ordinal);
+            foreach (var change in verdict.Vehicle)
             {
-                changes[weapon.Malfunction] = ConditionState.False;
-            }
-            else if (outcome == RepairOutcome.Eliminated)
-            {
-                foreach (var change in ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma",
-                    VehicleArmamentFacts.RecalledAfterDisable(vehicle, definition, weapon)))
-                {
-                    changes[change.Condition == UnitCondition.Disabled ? weapon.Disabled : ConditionName(change.Condition)]
-                        = change.Value ? ConditionState.True : ConditionState.False;
-                }
+                changes[ConditionName(change.Condition)] = change.Value ? ConditionState.True : ConditionState.False;
             }
             if (changes.Count > 0)
             {
@@ -487,7 +481,7 @@ public sealed partial class GamePlanner
             return events;
         }
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.repair: {vehicle.Id}'s {weapon.Id.ToUpperInvariant()} repair by {hero ?? "its inherent crew"}; a dr of 1 repairs it, a 6 disables it (D3.7)"])
+            [ScenarioA1VehicleBreakdownResolutionCalculator.RepairSummary(vehicle.Id, weapon.Id, hero)])
         {
             Roll = new PlannedRoll("repair", Build),
             FirstEventId = EventId(attemptId, 1),

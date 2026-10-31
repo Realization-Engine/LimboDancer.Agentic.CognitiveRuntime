@@ -16,7 +16,7 @@ internal static class ScenarioA1SmokeHeightContract
                 Choices = Enum.GetNames<TurnSmokeChemical>()
             },
         ],
-        ["two-levels", "four-levels", ContractVerdict.NotEvaluated], [], new("PFPh", "2.22A"))
+        ["two-levels", "four-levels", ContractVerdict.NotEvaluated], [], new("Any", "none"))
     {
         Decide = facts => ScenarioA1SmokeHeightCalculator.Height(Enum.Parse<TurnSmokeSource>(facts.Text("source")!),
             Enum.Parse<TurnSmokeChemical>(facts.Text("chemical")!)) is { } height
