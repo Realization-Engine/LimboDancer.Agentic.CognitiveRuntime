@@ -40,6 +40,9 @@ public sealed record AppendResult(AppendStatus Status, long Revision, IReadOnlyL
 /// </summary>
 public sealed record PlannedRoll(string Purpose, Func<Func<RollRequest, RollResult>, IReadOnlyList<GameEvent>> Build);
 
+/// <summary>A rule could not resolve facts learned while building an atomic rolled batch; none of that batch may be written.</summary>
+internal sealed class GameBuildRefusedException(string reason) : Exception(reason);
+
 /// <summary>
 /// Where live games are kept (ASL-UNIT-040, 042): one ordered event log per game. Appends are atomic, happen only at
 /// the expected revision, and only when the whole log still replays without error.
@@ -233,7 +236,15 @@ public sealed class FileGameStore(string root) : IGameStore
                     [UnitDiagnostic.Error("PLAY-002", $"The game is at revision {existing.Count}, not the expected {expectedRevision}.")]);
             }
 
-            var batch = events();
+            IReadOnlyList<GameEvent> batch;
+            try
+            {
+                batch = events();
+            }
+            catch (GameBuildRefusedException refusal)
+            {
+                return new AppendResult(AppendStatus.Invalid, existing.Count, [UnitDiagnostic.Error("PLAY-UNDECIDED", refusal.Message)]);
+            }
             if (firstEventId is not null && (batch.Count == 0 || batch[0].EventId != firstEventId))
             {
                 return new AppendResult(AppendStatus.Invalid, existing.Count,

@@ -392,7 +392,7 @@ public sealed class ScenarioA1CloseCombatValueTests
         var facts = new VehicleCloseCombatFacts("CCPh", At, Vehicle("attacker-tank"), [defender], [], ["ru-g"], true, false,
             new VehicleCloseCombatRolls([3, 4]));
         Assert.Empty(ScenarioA1VehicleCloseCombat.Precheck(facts, CloseCombat));
-        Assert.Equal(CloseCombatResolution.Resolved, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).Disposition);
+        Assert.Equal(CloseCombatResolution.Resolved, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null).Disposition);
         Assert.Equal(["asl.a1.cc-vehicle.fact-missing:inexperienced"], ScenarioA1VehicleCloseCombat.Precheck(facts, CloseCombat, new CcvContext()));
         Assert.Equal(CloseCombatResolution.Abstained, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext()).Disposition);
         var known = defender with
@@ -433,14 +433,14 @@ public sealed class ScenarioA1CloseCombatValueTests
                     for (var second = 1; second <= 6; second++)
                     {
                         var facts = Against(vehicle, Russians, attackers, [first, second]);
-                        Assert.Equal(Json(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat)), Json(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext())));
+                        Assert.Equal(Json(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null)), Json(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext())));
                         var reaction = facts with
                         {
                             Phase = "MPh",
                             Reaction = true,
                             FireMarked = [attackers[0]]
                         };
-                        Assert.Equal(Json(ScenarioA1VehicleCloseCombat.Resolve(reaction, CloseCombat)), Json(ScenarioA1VehicleCloseCombat.Resolve(reaction, CloseCombat, new CcvContext())));
+                        Assert.Equal(Json(ScenarioA1VehicleCloseCombat.Resolve(reaction, CloseCombat, null)), Json(ScenarioA1VehicleCloseCombat.Resolve(reaction, CloseCombat, new CcvContext())));
                         compared++;
                     }
                 }
@@ -456,7 +456,7 @@ public sealed class ScenarioA1CloseCombatValueTests
                 RandomSelection = Russians.ToDictionary(unit => unit.UnitId!, _ => 3, StringComparer.Ordinal),
                 WoundSeverity = new Dictionary<string, int>(StringComparer.Ordinal) { ["ru-l"] = 3 },
             });
-            Assert.Equal(Json(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat)), Json(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext())));
+            Assert.Equal(Json(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null)), Json(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext())));
         }
 
         Assert.Equal(vehicles.Length * attacks.Length * 36, compared);
@@ -466,7 +466,7 @@ public sealed class ScenarioA1CloseCombatValueTests
     public void AContextAddsTheAssaultEngineerTheConcealedVehicleAndTheOutnumberedGuardToTheKillNumber()
     {
         var facts = Against(Vehicle("attacker-tank"), Russians, ["ru-s", "ru-l"], [3, 4]);
-        Assert.Equal(6, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).KillNumber);
+        Assert.Equal(6, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null).KillNumber);
         var engineer = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext(AssaultEngineers: ["ru-s"]));
         Assert.Equal(7, engineer.KillNumber);
         Assert.Equal(["smc-combining:ru-l", "assault-engineer:ru-s"], engineer.KillNumberModifiers.Select(item => item.Name));
@@ -488,7 +488,7 @@ public sealed class ScenarioA1CloseCombatValueTests
         var result = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, context);
         Assert.Equal(4, result.KillNumber);
         Assert.Contains(result.KillNumberModifiers, item => item.Name == "guard" && item.Value == -1m);
-        Assert.Equal(5, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).KillNumber);
+        Assert.Equal(5, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null).KillNumber);
         Assert.DoesNotContain("\"Guards\":", JsonSerializer.Serialize(new CcvContext()), StringComparison.Ordinal);
         var both = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext(OutnumberedGuards: ["ru-s"]) { Guards = ["ru-s"] });
         Assert.Equal(4, both.KillNumber);
@@ -503,7 +503,7 @@ public sealed class ScenarioA1CloseCombatValueTests
     {
         var units = Russians.Append(Unit("ru-u", "defender-squad", unarmed: true)).ToArray();
         var facts = Against(Vehicle("attacker-tank"), units, ["ru-u"], [3, 4]);
-        Assert.Equal(CloseCombatResolution.Resolved, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).Disposition);
+        Assert.Equal(CloseCombatResolution.Resolved, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null).Disposition);
         var refused = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext());
         Assert.Equal(CloseCombatResolution.Abstained, refused.Disposition);
         Assert.Contains("(A20.5)", Assert.Single(refused.Reasons), StringComparison.Ordinal);
@@ -516,7 +516,7 @@ public sealed class ScenarioA1CloseCombatValueTests
     {
         var units = Russians.Append(Unit("ru-b", "defender-squad", berserk: true)).ToArray();
         var facts = Against(Vehicle("attacker-tank"), units, ["ru-b", "ru-l"], [3, 4]);
-        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).Drm, item => item.Name == "leadership:ru-l");
+        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null).Drm, item => item.Name == "leadership:ru-l");
         var now = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext());
         Assert.DoesNotContain(now.Drm, item => item.Name.StartsWith("leadership:", StringComparison.Ordinal));
         Assert.Equal(6, now.KillNumber);
@@ -538,7 +538,7 @@ public sealed class ScenarioA1CloseCombatValueTests
     {
         var units = Russians.Append(Unit("ru-e", "defender-conscript-half-squad", pinned: true, inexperienced: true)).ToArray();
         var facts = new VehicleCloseCombatFacts("CCPh", At, Vehicle("attacker-tank"), units, [], ["ru-e"], true, false, new VehicleCloseCombatRolls([3, 4]));
-        var old = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat);
+        var old = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null);
         Assert.Equal(1m, old.DefenseValue);
         Assert.Empty(Assert.Single(old.Defending!).Drm);
         var ethiopian = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext(National: new Dictionary<string, NationalCcv>(StringComparer.Ordinal)
@@ -555,7 +555,7 @@ public sealed class ScenarioA1CloseCombatValueTests
             Defenders = ["ru-s"]
         };
         Assert.Equal(6m, ScenarioA1VehicleCloseCombat.Resolve(squad, CloseCombat, new CcvContext(AssaultEngineers: ["ru-s"])).DefenseValue);
-        Assert.Equal(5m, ScenarioA1VehicleCloseCombat.Resolve(squad, CloseCombat).DefenseValue);
+        Assert.Equal(5m, ScenarioA1VehicleCloseCombat.Resolve(squad, CloseCombat, null).DefenseValue);
     }
 
     // The contract a11.5-ccv-vs-vehicle.
@@ -651,5 +651,25 @@ public sealed class ScenarioA1CloseCombatValueTests
     {
         Assert.Contains(Evaluate(Facts(4, smc: true, berserk: true)).Reasons, reason => reason.Rule == "A11.51");
         Assert.DoesNotContain(Evaluate(Facts(4, smc: true)).Reasons, reason => reason.Rule == "A11.51");
+    }
+
+    [Fact]
+    public void TheNationalCaseComesFromTheNationality()
+    {
+        // A25.934 (p. 98; the review of PR 80, item 29): only Ethiopians have a CCV case by nationality.
+        Assert.Equal(NationalCcv.Ethiopian, ScenarioA1CloseCombatValueCalculator.NationalCcvOf("ethiopian"));
+        Assert.Equal(NationalCcv.None, ScenarioA1CloseCombatValueCalculator.NationalCcvOf("japanese"));
+        Assert.Equal(NationalCcv.None, ScenarioA1CloseCombatValueCalculator.NationalCcvOf(null));
+    }
+
+    [Fact]
+    public void ACommissarsReplacementAndRearmingLoseAssaultEngineerStatusAndACasualtyReductionDoesNot()
+    {
+        // A25.222 (p. 95), A20.551 (p. 88), A25.01 (p. 93; the review of PR 80, item 29).
+        Assert.True(ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByRally(true, true));
+        Assert.False(ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByRally(true, false));
+        Assert.False(ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByRally(false, true));
+        Assert.False(ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByRally(null, true));
+        Assert.True(ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByRearming());
     }
 }

@@ -515,6 +515,11 @@ public static partial class GameProjector
             // is the ELR its groups share.
             foreach (var side in started.Sides.Where(side => side.Groups.Count > 0))
             {
+                if (side.Groups.Any(group => Rules.ScenarioA1StealthCalculator.Designation(group.StealthDesignation) is null))
+                {
+                    return Fail<GameState>("UNIT-STEALTH-DESIGNATION", "The recorded force designation is not supported.");
+                }
+
                 if (Rules.ScenarioA1SequenceProjection.GroupsRefusal(side.Id, side.Groups.Select(group => group.Id).Distinct(StringComparer.Ordinal).Count() == side.Groups.Count,
                     side.Groups.Any(group => !VocabularyNames.IsSlug(group.Id)), [.. side.Groups.Select(group => group.Elr)], side.Elr) is { } groupsRefusal)
                 {
@@ -1191,6 +1196,18 @@ public static partial class GameProjector
             {
                 var verifier = Rules.ScenarioA1CloseCombatProjection.VerifierRefusal(reason);
                 return Fail<GameState>(verifier.Code, verifier.Text);
+            }
+
+            if (combat.CcvVersion is not null && combat.Resolution.TryGetProperty("vehicleResult", out var vehicleResult)
+                && vehicleResult.ValueKind == JsonValueKind.String && Rules.ScenarioA1CloseCombatValueCalculator.PrcEliminated(vehicleResult.GetString()!))
+            {
+                var prc = state.Units.Where(unit => unit.Status == InstanceStatus.Active
+                    && unit.Position is ContainedPosition { Container: var container, Role: ContainmentRole.Passenger or ContainmentRole.Rider or ContainmentRole.Crew }
+                    && container == combat.Vehicle).Select(unit => unit.Id).ToArray();
+                foreach (var id in prc)
+                {
+                    state = Eliminate(state, id)!;
+                }
             }
 
             if (combat.Resolution.TryGetProperty("vehicleBreakdowns", out var breakdowns)
@@ -4830,8 +4847,21 @@ public static partial class GameProjector
                 next = DropHeldBy(next, ids);
             }
 
+            bool? PrintedEngineer(UnitInstance parent) => parent.Definition is { } source
+                && catalogs.FirstOrDefault(item => item.Identity == source.Catalog)?.Definition(source.Definition)?.Printed("front", "asl:assault-engineer") is { State: PrintedState.Printed } printed
+                ? printed.TraitPresent : null;
+            bool?[] parents = [.. consumed.Select(parent => parent.AssaultEngineer
+                ?? (Rules.ScenarioA1CloseCombatValueCalculator.AssaultEngineer(PrintedEngineer(parent), false, false) ? true : (bool?)null))];
             foreach (var produced in lineage.Produced)
             {
+                var engineer = Rules.ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(lineage.AssaultEngineerLoss, parents,
+                    produced.Definition is { } destination && catalog?.Definition(destination)?.Printed("front", "asl:assault-engineer") is { State: PrintedState.Printed } printed
+                        ? printed.TraitPresent : null);
+                if (engineer.Reason is { } engineerBar)
+                {
+                    return Fail<GameState>("UNIT-AE-LINEAGE", engineerBar);
+                }
+
                 var instance = produced with
                 {
                     Side = produced.Side ?? consumed[0].Side,
@@ -4853,6 +4883,7 @@ public static partial class GameProjector
                         DoubleTimeMf = consumed.Max(item => item.DoubleTimeMf),
                         OffRoad = consumed.Any(item => item.OffRoad),
                         MovedWith = consumed.Select(item => item.MovedWith).FirstOrDefault(item => item is not null),
+                        AssaultEngineer = engineer.Status,
                     })
                     : created;
             }

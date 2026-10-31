@@ -202,7 +202,10 @@ public static class GameEventReader
                     {
                         if (fields.RequiredString(group, "id", groupPath) is { } groupId && fields.RequiredString(group, "name", groupPath) is { } groupName)
                         {
-                            groups.Add(new ObGroup(groupId, groupName, fields.OptionalInteger(group, "elr", groupPath)));
+                            groups.Add(new ObGroup(groupId, groupName, fields.OptionalInteger(group, "elr", groupPath))
+                            {
+                                StealthDesignation = fields.OptionalString(group, "stealthDesignation", groupPath)
+                            });
                         }
                     }
 
@@ -338,7 +341,8 @@ public static class GameEventReader
 
                 return action is null ? null : new LineageRecorded(action.Value, fields.StringList(payload, "consumed", path), produced)
                 {
-                    SpotterSuccessor = fields.OptionalString(payload, "spotterSuccessor", path)
+                    SpotterSuccessor = fields.OptionalString(payload, "spotterSuccessor", path),
+                    AssaultEngineerLoss = fields.OptionalBoolean(payload, "assaultEngineerLoss", path)
                 };
             case "instance-eliminated":
                 return fields.RequiredString(payload, "id", path) is { } eliminated ? new InstanceEliminated(eliminated) : null;
@@ -961,7 +965,10 @@ public static class GameEventReader
                     || !payload.TryGetProperty("facts", out var ambushFacts) || ambushFacts.ValueKind != JsonValueKind.Object
                     || !payload.TryGetProperty("resolution", out var ambushResolution) || ambushResolution.ValueKind != JsonValueKind.Object
                     ? Missing(diagnostics, "An Ambush record names its Location, rolls, facts, and resolution.", path)
-                    : new AmbushRolled(ambushAt, ambushRolls, fields.OptionalString(payload, "ambusher", path), ambushFacts.Clone(), ambushResolution.Clone());
+                    : new AmbushRolled(ambushAt, ambushRolls, fields.OptionalString(payload, "ambusher", path), ambushFacts.Clone(), ambushResolution.Clone())
+                    {
+                        StealthVersion = fields.OptionalInteger(payload, "stealthVersion", path)
+                    };
             case "close-combat-resolved":
                 var combatAt = ReadLocation(payload, "location", path, fields, diagnostics);
                 var round = fields.RequiredString(payload, "round", path);
@@ -996,6 +1003,7 @@ public static class GameEventReader
                         Next = fields.OptionalString(payload, "next", path),
                         Closed = fields.OptionalBoolean(payload, "closed", path),
                         CancelsFireLanes = fields.OptionalBoolean(payload, "cancelsFireLanes", path),
+                        CcvVersion = fields.OptionalInteger(payload, "ccvVersion", path),
 
                         // A18.12 (ruling R70.34): the leader the attack created; absent before the pass.
                         CreatedLeader = fields.OptionalString(payload, "createdLeader", path),

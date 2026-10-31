@@ -752,7 +752,29 @@ public sealed partial class BacklogPass15Tests : IDisposable
         Assert.Equal(8, resolution.Arithmetic.MoraleLevel);
         Assert.True(resolution.Effect!.ReplacedByCommissar);
         Assert.Equal("defender-conscript-squad", resolution.Effect.FinalDefinitionId);
+        // A25.222, A25.01 (the review of PR 80, item 29): Rules says the Commissar's Replacement by a lower quality unit loses Assault Engineer status.
+        var lineage = Since(before).Select(item => item.Payload).OfType<LineageRecorded>().Single();
+        Assert.Equal(LineageAction.Replaced, lineage.Action);
+        Assert.True(lineage.AssaultEngineerLoss);
         await Advance();
+    }
+
+    [Fact]
+    public async Task ACommissarsCasualtyReductionOfTheLowestQualitySquadIsNoAssaultEngineerLoss()
+    {
+        // A25.222 (p. 95): "if already the lowest quality, a squad is Casualty Reduced"; A25.01 (p. 93) loses the status only on Replacement by a lower
+        // quality unit, so Rules records no loss (the review of PR 80, item 29).
+        await SetupAt(0, "russian", Unit("r1", "defender-conscript-squad", "E3", "russian", "asl:broken", "asl:dm"), Unit("rc", "defender-commissar-9-0", "E3", "russian"),
+            Unit("g1", "attacker-squad", "H8", "german"));
+        var before = Revision;
+        Committed(await Do(GameActions.Rally, Then(3, 6, 5), new
+        {
+            unitId = "r1",
+            leader = "rc",
+        }));
+        var lineage = Since(before).Select(item => item.Payload).OfType<LineageRecorded>().Single();
+        Assert.Equal(LineageAction.Reduced, lineage.Action);
+        Assert.False(lineage.AssaultEngineerLoss);
     }
 
     [Fact]

@@ -1124,14 +1124,14 @@ public sealed class ScenarioA1Pass65RulesTests
             Unmanned = unmanned,
         };
 
-        var captured = ScenarioA1VehicleCloseCombat.Resolve(Facts(true, true), CloseCombat);
+        var captured = ScenarioA1VehicleCloseCombat.Resolve(Facts(true, true), CloseCombat, null);
         Assert.Equal((VehicleCloseCombatResolution.Captured, 3), (captured.VehicleResult, captured.FinalDr));
         Assert.Equal(UnmannedDrm, captured.Drm.Select(item => item.Name));
-        Assert.Equal(VehicleCloseCombatResolution.Eliminated, ScenarioA1VehicleCloseCombat.Resolve(Facts(null, true), CloseCombat).VehicleResult);
+        Assert.Equal(VehicleCloseCombatResolution.Eliminated, ScenarioA1VehicleCloseCombat.Resolve(Facts(null, true), CloseCombat, null).VehicleResult);
 
         // A record made before the pass has no unmanned fact: -1 alone, a Final 5 equal to the CCV, which immobilizes; a capture attempt then does nothing.
-        Assert.Equal(VehicleCloseCombatResolution.Immobilized, ScenarioA1VehicleCloseCombat.Resolve(Facts(null, null), CloseCombat).VehicleResult);
-        Assert.Equal(VehicleCloseCombatResolution.None, ScenarioA1VehicleCloseCombat.Resolve(Facts(true, null), CloseCombat).VehicleResult);
+        Assert.Equal(VehicleCloseCombatResolution.Immobilized, ScenarioA1VehicleCloseCombat.Resolve(Facts(null, null), CloseCombat, null).VehicleResult);
+        Assert.Equal(VehicleCloseCombatResolution.None, ScenarioA1VehicleCloseCombat.Resolve(Facts(true, null), CloseCombat, null).VehicleResult);
 
         // A manned AFV is never the target of a capture attempt (A11.52).
         Assert.Contains("asl.a1.cc-vehicle.capture-outside", ScenarioA1VehicleCloseCombat.Precheck(Facts(true, true) with

@@ -561,13 +561,8 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The Infantry of a CC attack on a vehicle, with each unit's Inexperience as A19.2 reads it (ruling R11.14).</summary>
-    private VehicleCloseCombatFacts WithInexperience(GameState state, VehicleCloseCombatFacts facts) => ScenarioA1VehicleCloseCombatRules.WithInexperience(facts,
-        id => (state.Unit(id) is { } found ? Experience.Inexperienced(state, found, catalogs, vocabulary) : ConditionState.Unknown) switch
-        {
-            ConditionState.True => true,
-            ConditionState.False => false,
-            _ => null,
-        });
+    private static VehicleCloseCombatFacts WithInexperience(GameState state, VehicleCloseCombatFacts facts) =>
+        LiveCloseCombat.WithCcvExperience(state, facts, CloseCombatReference.Value);
 
     /// <summary>
     /// Infantry attack a vehicle (A11.5; rulings R11.13, R11.14): in CC Reaction Fire a MMC takes its PAATC first against a manned AFV (a failure pins
@@ -578,6 +573,14 @@ public sealed partial class GamePlanner
     private GamePlan PlanVehicleAttack(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor,
         GameState state, BoardLocation location, UnitInstance vehicle, IReadOnlyList<UnitInstance> units, bool reaction, bool capture)
     {
+        foreach (var unit in units)
+        {
+            if (LiveCloseCombat.VehicleAttackerRefusal(unit, vehicle) is { } attackerBar)
+            {
+                return Refused(scope, label, expected, attackerBar);
+            }
+        }
+
         var (facts, reason) = LiveCloseCombat.VehicleFromState(state, location, vehicle.Id, [.. units.Select(unit => unit.Id)], [], false, reaction);
         if (facts is null)
         {
@@ -602,6 +605,7 @@ public sealed partial class GamePlanner
         }
 
         var testing = reaction ? units.Where(unit => NeedsPaatc(state, unit, vehicle)).ToArray() : [];
+        var context = LiveCloseCombat.CcvFromState(state, facts, reference);
         var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
         var package = ScenarioA1CloseCombatPackage.Identity.ToString();
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
@@ -622,7 +626,7 @@ public sealed partial class GamePlanner
             while ((resolution = ScenarioA1VehicleCloseCombat.Resolve(facts with
             {
                 Rolls = rolls
-            }, reference)).Disposition != CloseCombatResolution.Resolved)
+            }, reference, context)).Disposition != CloseCombatResolution.Resolved)
             {
                 if (ScenarioA1VehicleCloseCombatRules.VehicleRollMissing(resolution.Reasons) is not { } asked)
                 {
@@ -656,6 +660,7 @@ public sealed partial class GamePlanner
                     // A9.223 (pass 60, rulings R60.3, R60.20): a reaction planned from the pass on carries the Fire Lane's cancellation.
                     CancelsFireLanes = reaction,
                     CreatedLeader = leader,
+                    CcvVersion = 1,
                 }, package, null));
 
             // A18.12: the created leader is placed in the Location, as the CC of Infantry places one (Good Order, unconcealed, Fanatic with a Fanatic MMC).
@@ -802,7 +807,8 @@ public sealed partial class GamePlanner
             StreetFighters = StreetFighters(state, location, defenders),
         };
         var reference = CloseCombatReference.Value;
-        var precheck = ScenarioA1VehicleCloseCombat.Precheck(facts, reference);
+        var context = LiveCloseCombat.CcvFromState(state, facts, reference);
+        var precheck = ScenarioA1VehicleCloseCombat.Precheck(facts, reference, context);
         if (precheck.Count != 0)
         {
             return Refused(scope, label, expected, RefusalReasons.Refusal("play.cc-vehicle-refused", "Close Combat", "attack", precheck));
@@ -818,7 +824,7 @@ public sealed partial class GamePlanner
             while ((resolution = ScenarioA1VehicleCloseCombat.Resolve(facts with
             {
                 Rolls = rolls
-            }, reference)).Disposition != CloseCombatResolution.Resolved)
+            }, reference, context)).Disposition != CloseCombatResolution.Resolved)
             {
                 if (ScenarioA1VehicleCloseCombatRules.VehicleRollMissing(resolution.Reasons) is not { } asked)
                 {
@@ -850,6 +856,7 @@ public sealed partial class GamePlanner
                     VehicleArmamentEvidence = facts.VehicleBreakdown is not null ? VehicleArmamentFacts.Evidence(state, vehicle) : null,
                     Next = following,
                     Closed = closed,
+                    CcvVersion = 1,
                 }, package, null));
             if (resolution.VehicleBreakdowns is { } breakdowns && VehicleRepairDefinition(state, vehicle) is { } vehicleDefinition)
             {

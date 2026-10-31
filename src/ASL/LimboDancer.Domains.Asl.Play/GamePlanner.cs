@@ -964,11 +964,16 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         // A12.12, A12.122 (ruling R12.5): as a Player Turn ends, the phasing side's Good Order Infantry may gain "?", some on a Final Concealment dr.
-        string? smokeReason = null;
-        var gains = ScenarioA1SequenceCalculator.ConcealmentGainsDue(ending, state.Phase, phasing != state.PhasingSide) ? ConcealmentGains(state, out smokeReason) : [];
-        if (smokeReason is not null)
+        List<(UnitInstance Unit, int? Drm, IReadOnlyList<string> With)> gains = [];
+        if (ScenarioA1SequenceCalculator.ConcealmentGainsDue(ending, state.Phase, phasing != state.PhasingSide))
         {
-            return Refused(scope, label, expected, smokeReason);
+            var gainResult = ConcealmentGains(state);
+            if (gainResult.Reason is { } gainBar)
+            {
+                return Refused(scope, label, expected, gainBar);
+            }
+
+            gains = gainResult.Gains!;
         }
         // B25.65 (backlog pass 16, rulings R16.1, R16.10): the Wind Change DR at the start of a RPh.
         var wind = !ending && WindChangeDue(state, phase, turn, phasing);
@@ -2292,13 +2297,23 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     }
 
     private GameEvent Event(GameScope scope, string attemptId, int index, long expected, string type, EventPayload payload, string? rulePackage,
-        IReadOnlyList<string>? visibility, IReadOnlyList<string>? causes = null) =>
-        new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload switch
+        IReadOnlyList<string>? visibility, IReadOnlyList<string>? causes = null)
+    {
+        if (payload is LineageRecorded { AssaultEngineerLoss: null } lineage)
+        {
+            payload = lineage with
+            {
+                AssaultEngineerLoss = false,
+            };
+        }
+
+        return new(scope, EventId(attemptId, index), expected + index, clock.GetUtcNow(), LiveGames.Source, type, payload switch
         {
             FireResolved fire => fire with { SmokeWiringVersion = 1 },
             OrdnanceFired shot => shot with { SmokeWiringVersion = 1 },
             _ => payload,
         }, rulePackage, causes ?? [], visibility);
+    }
 
     private static JsonObject EventNode(int index, string type, JsonObject payload, IReadOnlyList<string>? visibility)
     {

@@ -59,6 +59,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a Search names its units once each");
         }
 
+        // The review of PR 80 (item 27): every active unit's Stealth facts are known before any searcher or "?" is read, so no later refusal of the
+        // Search depends on what a "?" hides.
+        if (StealthStateRefusal(state) is { } stealthStateBar)
+        {
+            return Refused(scope, label, expected, stealthStateBar);
+        }
+
         // Pass 70 (ruling R70.24): the searchers' facts, read from the state's index; Rules decides each bar.
         var index = MemoOf(state).Objects(state);
         var at = movement!.Location;
@@ -71,10 +78,13 @@ public sealed partial class GamePlanner
                 unit is not null && unit.Kind != UnitKinds.Dummy && vocabulary.IsA(unit.Kind, "asl:personnel") && index.VehicleOf(id) is null,
                 unit is not null && vocabulary.IsA(unit.Kind, "asl:mmc"), definition?.IsLeader == true, unit is not null && Is(unit, Conditions.Broken),
                 unit is not null && Is(unit, Conditions.Berserk), unit is not null && Is(unit, Conditions.Pinned), unit is not null && Is(unit, Conditions.Captured),
-                unit is not null && Is(unit, Conditions.Unarmed), unit?.Kind == "asl:hero", unit is not null && Is(unit, Conditions.Heroic),
+                unit is not null && Is(unit, Conditions.Unarmed),
                 unit is null ? 0 : ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)),
-                definition?.Leadership, unit is not null && Is(unit, Conditions.Wounded),
-                unit is not null && Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True, unit is not null && Is(unit, Conditions.Cx));
+                definition?.Leadership, unit is not null && Is(unit, Conditions.Wounded), unit is not null && Is(unit, Conditions.Cx))
+            {
+                // A unit missing or not active is refused by UnitBar before its status is read; the status of an active one is known (the check above).
+                Stealth = unit is { Status: InstanceStatus.Active } ? KnownStealth(state, unit, StealthPurpose.Search) : StealthStatus.Normal,
+            };
         }
 
         SearcherFacts[] facts = [.. ids.Select(Facts)];
@@ -90,6 +100,7 @@ public sealed partial class GamePlanner
         {
             return Refused(scope, label, expected, mmcBar);
         }
+
 
         // A12.152: one more MF in its present hex, read as a step of 1 MF is for each searcher (A4.11, A4.42; the leader bonus of the stack it moved with).
         UnitInstance[] searchers = [.. ids.Select(id => index.Unit(id)!)];
@@ -149,13 +160,20 @@ public sealed partial class GamePlanner
             // the Search found them. Pass 70's fixes: the Search's record keeps that drm for the lines of the views that may know it.
             UnitInstance[] defenders = [.. enemies.Select(item => item.Unit).Where(unit => ScenarioA1Searching.CasualtyTrigger(unit.Kind == UnitKinds.Dummy, LiveFire.IsVehicle(unit),
                 Is(unit, Conditions.Broken), Is(unit, Conditions.Unarmed), Is(unit, Conditions.Captured)))];
-            int? casualtyDrm = ScenarioA1Searching.CasualtyDue(defenders.Length > 0,
-                state.ResidualFire.Any(residual => residual.Location.Level >= 0 && searched.Any(hex => hex.Board == residual.Location.Board && hex.Hex == residual.Location.Hex)))
-                ? ScenarioA1MoppingUp.CasualtyDrm([.. defenders.Where(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden))
-                    .Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:hero", unit.Kind == "asl:leader", Is(unit, Conditions.Heroic),
+            int? casualtyDrm = null;
+            if (ScenarioA1Searching.CasualtyDue(defenders.Length > 0,
+                state.ResidualFire.Any(residual => residual.Location.Level >= 0 && searched.Any(hex => hex.Board == residual.Location.Board && hex.Hex == residual.Location.Hex))))
+            {
+                MopUpDefenderFacts[] casualtyFacts = [.. defenders.Where(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden))
+                    .Select(unit => new MopUpDefenderFacts(unit.Kind == "asl:leader",
                         ScenarioA1MoppingUp.HalfSquads(unit.Kind == "asl:squad", unit.Kind == "asl:half-squad" || ScenarioA1Definitions.IsCrew(unit.Kind)), DefinitionOf(unit)?.Leadership,
-                        Is(unit, Conditions.Wounded), Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True))]).Drm
-                : null;
+                        Is(unit, Conditions.Wounded))
+                    {
+                        // Known: the state's check before the dice (the review of PR 80, item 27); KnownStealth's refusal is only a guard.
+                        Stealth = KnownStealth(state, unit, StealthPurpose.SearchCasualty),
+                    })];
+                casualtyDrm = ScenarioA1MoppingUp.CasualtyDrm(casualtyFacts).Drm;
+            }
             Push("units-searched", new UnitsSearched(ids, at, rollId, drm, accessible.Count, searched) { CasualtyDrm = casualtyDrm });
             foreach (var (enemy, _) in enemies)
             {

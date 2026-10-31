@@ -140,9 +140,9 @@ public sealed class ScenarioA1Pass11Tests
         // A11.5, A11.61: a 4-4-7 (CCV 5) against the CE, OT halftrack (-2 OT): an Original 6 is 4, which eliminates it; 5 immobilizes; at most 2 burns.
         var units = new[] { Unit("ru-s", "defender-squad", "russian") };
         var halftrack = Vehicle("attacker-halftrack", crewExposed: true);
-        Assert.Equal(VehicleCloseCombatResolution.Eliminated, ScenarioA1VehicleCloseCombat.Resolve(Attack(halftrack, units, ["ru-s"], [3, 3]), CloseCombat).VehicleResult);
-        Assert.Equal(VehicleCloseCombatResolution.Immobilized, ScenarioA1VehicleCloseCombat.Resolve(Attack(halftrack, units, ["ru-s"], [3, 4]), CloseCombat).VehicleResult);
-        var burning = ScenarioA1VehicleCloseCombat.Resolve(Attack(halftrack, units, ["ru-s"], [2, 2]), CloseCombat);
+        Assert.Equal(VehicleCloseCombatResolution.Eliminated, ScenarioA1VehicleCloseCombat.Resolve(Attack(halftrack, units, ["ru-s"], [3, 3]), CloseCombat, null).VehicleResult);
+        Assert.Equal(VehicleCloseCombatResolution.Immobilized, ScenarioA1VehicleCloseCombat.Resolve(Attack(halftrack, units, ["ru-s"], [3, 4]), CloseCombat, null).VehicleResult);
+        var burning = ScenarioA1VehicleCloseCombat.Resolve(Attack(halftrack, units, ["ru-s"], [2, 2]), CloseCombat, null);
         Assert.Equal((5, VehicleCloseCombatResolution.BurningWreck), (burning.KillNumber, burning.VehicleResult));
     }
 
@@ -152,12 +152,12 @@ public sealed class ScenarioA1Pass11Tests
         // A11.51: -3 unarmored and -1 with no manned MG (a truck); A11.61: the -1 Immobile is for an AFV only (referee, pass 11); +2 against a moving
         // vehicle; +2 per escorting squad; the BU halftrack's AAMG is not manned, -1.
         var squad = Unit("ru-s", "defender-squad", "russian");
-        var truck = ScenarioA1VehicleCloseCombat.Resolve(Attack(Vehicle("attacker-truck", immobile: true), [squad], ["ru-s"], [4, 4]), CloseCombat);
+        var truck = ScenarioA1VehicleCloseCombat.Resolve(Attack(Vehicle("attacker-truck", immobile: true), [squad], ["ru-s"], [4, 4]), CloseCombat, null);
         Assert.Equal(["vs-unarmored", "vs-no-manned-mg"], truck.Drm.Select(item => item.Name));
         var escorted = ScenarioA1VehicleCloseCombat.Resolve(Attack(Vehicle("attacker-tank", motion: true, immobile: true), [squad, Unit("de-s", "attacker-squad", "german")],
-            ["ru-s"], [4, 4]), CloseCombat);
+            ["ru-s"], [4, 4]), CloseCombat, null);
         Assert.Equal([("vs-immobile", -1m), ("escort:de-s", 2m), ("vs-motion", 2m)], escorted.Drm.Select(item => (item.Name, item.Value)));
-        var bu = ScenarioA1VehicleCloseCombat.Resolve(Attack(Vehicle("attacker-halftrack"), [squad], ["ru-s"], [4, 4]), CloseCombat);
+        var bu = ScenarioA1VehicleCloseCombat.Resolve(Attack(Vehicle("attacker-halftrack"), [squad], ["ru-s"], [4, 4]), CloseCombat, null);
         Assert.Contains(bu.Drm, item => item.Name == "vs-no-manned-mg");
     }
 
@@ -170,9 +170,9 @@ public sealed class ScenarioA1Pass11Tests
         {
             FireMarked = ["ru-s"]
         },
-            CloseCombat);
+            CloseCombat, null);
         Assert.Contains("asl.a1.cc-vehicle.reaction-outside", result.Reasons);
-        var ccph = ScenarioA1VehicleCloseCombat.Resolve(Attack(Vehicle("attacker-tank"), units, ["ru-s", "ru-l"], [4, 4]), CloseCombat);
+        var ccph = ScenarioA1VehicleCloseCombat.Resolve(Attack(Vehicle("attacker-tank"), units, ["ru-s", "ru-l"], [4, 4]), CloseCombat, null);
         Assert.Equal(5, ccph.KillNumber);
         Assert.Contains(ccph.Drm, item => item.Name == "leadership:ru-l" && item.Value == -1m);
     }
@@ -183,12 +183,12 @@ public sealed class ScenarioA1Pass11Tests
         // A11.501: an Original 2 against the moving tank (+2) is 4, below 5: eliminated; a subsequent dr of 1 burns it.
         var units = new[] { Unit("ru-s", "defender-squad", "russian") };
         var tank = Vehicle("attacker-tank", motion: true);
-        Assert.Contains("asl.a1.cc-vehicle.roll-missing:unlikelyKill", ScenarioA1VehicleCloseCombat.Resolve(Attack(tank, units, ["ru-s"], [1, 1]), CloseCombat).Reasons);
-        Assert.Equal(VehicleCloseCombatResolution.BurningWreck, ScenarioA1VehicleCloseCombat.Resolve(Attack(tank, units, ["ru-s"], [1, 1], 1), CloseCombat).VehicleResult);
-        Assert.Equal(VehicleCloseCombatResolution.Eliminated, ScenarioA1VehicleCloseCombat.Resolve(Attack(tank, units, ["ru-s"], [1, 1], 5), CloseCombat).VehicleResult);
+        Assert.Contains("asl.a1.cc-vehicle.roll-missing:unlikelyKill", ScenarioA1VehicleCloseCombat.Resolve(Attack(tank, units, ["ru-s"], [1, 1]), CloseCombat, null).Reasons);
+        Assert.Equal(VehicleCloseCombatResolution.BurningWreck, ScenarioA1VehicleCloseCombat.Resolve(Attack(tank, units, ["ru-s"], [1, 1], 1), CloseCombat, null).VehicleResult);
+        Assert.Equal(VehicleCloseCombatResolution.Eliminated, ScenarioA1VehicleCloseCombat.Resolve(Attack(tank, units, ["ru-s"], [1, 1], 5), CloseCombat, null).VehicleResult);
 
         // A11.621: an Original 12 against the crewed tank Casualty Reduces the squad to its HS.
-        var twelve = ScenarioA1VehicleCloseCombat.Resolve(Attack(tank, units, ["ru-s"], [6, 6]), CloseCombat);
+        var twelve = ScenarioA1VehicleCloseCombat.Resolve(Attack(tank, units, ["ru-s"], [6, 6]), CloseCombat, null);
         Assert.Equal("defender-half-squad", Assert.Single(twelve.Effects).FinalDefinitionId);
     }
 
@@ -198,7 +198,7 @@ public sealed class ScenarioA1Pass11Tests
         // A11.62: the tank's CMG 5 against a squad (CCV 5) and a leader defending with it (+1): 5-6, the 1-2 column, Kill Number 4; the BMG never.
         var units = new[] { Unit("ru-s", "defender-squad", "russian"), Unit("ru-l", "defender-leader-8-1", "russian") };
         var facts = new VehicleCloseCombatFacts("CCPh", At, Vehicle("attacker-tank"), units, [], ["ru-s", "ru-l"], true, false, new VehicleCloseCombatRolls([2, 1]));
-        var result = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat);
+        var result = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null);
         Assert.Equal((5m, 6m, "1-2", 4), (result.AttackFirepower, result.DefenseValue, result.Odds, result.KillNumber));
         Assert.All(result.Defending!, item => Assert.Equal(CloseCombatDefenderResult.Eliminated, item.Result));
 
@@ -206,13 +206,13 @@ public sealed class ScenarioA1Pass11Tests
         var alone = ScenarioA1VehicleCloseCombat.Resolve(facts with
         {
             Defenders = ["ru-l"]
-        }, CloseCombat);
+        }, CloseCombat, null);
         Assert.Equal(2m, alone.DefenseValue);
         Assert.Contains("asl.a1.cc-vehicle.no-cc-armament",
             ScenarioA1VehicleCloseCombat.Resolve(facts with
             {
                 Vehicle = Vehicle("attacker-halftrack")
-            }, CloseCombat).Reasons);
+            }, CloseCombat, null).Reasons);
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public sealed class ScenarioA1Pass11Tests
     {
         var facts = new VehicleCloseCombatFacts("CCPh", At, Vehicle("attacker-tank"),
             [Unit("ru-s", "defender-squad", "russian")], [], ["ru-s"], true, false, new VehicleCloseCombatRolls([5, 6]));
-        Assert.Null(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).VehicleBreakdowns);
+        Assert.Null(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null).VehicleBreakdowns);
         var current = facts with
         {
             VehicleBreakdown = new(new Dictionary<string, VehicleBreakdownUseFacts>
@@ -228,13 +228,13 @@ public sealed class ScenarioA1Pass11Tests
                 ["cmg"] = new(VehicleBreakdownWeapon.CoaxialMg, null, null, false, false, false, true)
             })
         };
-        var eleven = ScenarioA1VehicleCloseCombat.Resolve(current, CloseCombat);
+        var eleven = ScenarioA1VehicleCloseCombat.Resolve(current, CloseCombat, null);
         Assert.Equal(CloseCombatResolution.Resolved, eleven.Disposition);
         Assert.Equal(VehicleBreakdownOutcome.None, eleven.VehicleBreakdowns!["cmg"].Outcome);
         var twelve = ScenarioA1VehicleCloseCombat.Resolve(current with
         {
             Rolls = new VehicleCloseCombatRolls([6, 6])
-        }, CloseCombat);
+        }, CloseCombat, null);
         Assert.Equal(VehicleBreakdownOutcome.Malfunction, twelve.VehicleBreakdowns!["cmg"].Outcome);
         Assert.Equal(5m, twelve.AttackFirepower);
         var disabled = current with
@@ -267,7 +267,7 @@ public sealed class ScenarioA1Pass11Tests
                 UnavailableWeapons = current ? [] : null
             };
             var result = ScenarioA1VehicleCloseCombat.Resolve(Attack(vehicle,
-                [Unit("ru-s", "defender-squad", "russian")], ["ru-s"], [4, 4]), CloseCombat);
+                [Unit("ru-s", "defender-squad", "russian")], ["ru-s"], [4, 4]), CloseCombat, null);
             Assert.Equal(CloseCombatResolution.Resolved, result.Disposition);
             Assert.Contains(result.Drm, item => item.Name == "vs-no-manned-mg" && item.Value == -1);
             Assert.Empty(ScenarioA1VehicleCloseCombat.Weapons(vehicle, CloseCombat.Definitions[definition]));
@@ -279,7 +279,7 @@ public sealed class ScenarioA1Pass11Tests
                 UnavailableWeapons = ["ma", "bmg", "cmg"]
             };
             Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(Attack(disabled,
-                [Unit("ru-s", "defender-squad", "russian")], ["ru-s"], [4, 4]), CloseCombat).Drm,
+                [Unit("ru-s", "defender-squad", "russian")], ["ru-s"], [4, 4]), CloseCombat, null).Drm,
                 item => item.Name == "vs-no-manned-mg");
         }
     }
@@ -326,7 +326,7 @@ public sealed class ScenarioA1Pass11Tests
                 ["aamg"] = new(VehicleBreakdownWeapon.AntiAircraftMg, null, null, false, false, false, false)
             })
         };
-        var missing = ScenarioA1VehicleCloseCombat.Resolve(facts, reference);
+        var missing = ScenarioA1VehicleCloseCombat.Resolve(facts, reference, null);
         Assert.Equal(CloseCombatResolution.Indeterminate, missing.Disposition);
         Assert.Contains("asl.a1.cc-vehicle.roll-missing:randomSelection:de-v:cmg,de-v:aamg", missing.Reasons);
         foreach (var second in new[] { 1, 6 })
@@ -337,7 +337,7 @@ public sealed class ScenarioA1Pass11Tests
                 {
                     RandomSelection = new Dictionary<string, int> { ["de-v:cmg"] = 6, ["de-v:aamg"] = second }
                 }
-            }, reference);
+            }, reference, null);
             Assert.Equal(CloseCombatResolution.Resolved, result.Disposition);
             Assert.Equal(VehicleBreakdownOutcome.Malfunction, result.VehicleBreakdowns!["cmg"].Outcome);
             Assert.Equal(second == 6 ? VehicleBreakdownOutcome.Malfunction : VehicleBreakdownOutcome.None, result.VehicleBreakdowns["aamg"].Outcome);
@@ -361,7 +361,7 @@ public sealed class ScenarioA1Pass11Tests
                 StunRecovery = stunRecovery ? true : null
             };
         VehicleCloseCombatResolution ByTank(VehicleCloseCombatVehicle tank) =>
-            ScenarioA1VehicleCloseCombat.Resolve(new VehicleCloseCombatFacts("CCPh", At, tank, units, [], ["de-s"], true, false, new VehicleCloseCombatRolls([3, 3])), CloseCombat);
+            ScenarioA1VehicleCloseCombat.Resolve(new VehicleCloseCombatFacts("CCPh", At, tank, units, [], ["de-s"], true, false, new VehicleCloseCombatRolls([3, 3])), CloseCombat, null);
         Assert.Equal(4m, ByTank(Russian(false)).AttackFirepower);
         Assert.Contains("asl.a1.cc-vehicle.no-cc-armament", ByTank(Russian(true)).Reasons);
 

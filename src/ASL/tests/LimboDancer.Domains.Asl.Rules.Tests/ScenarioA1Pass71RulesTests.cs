@@ -662,7 +662,7 @@ public sealed class ScenarioA1Pass71RulesTests
             LeaderCreation = true,
             AfvDrm = afv,
         };
-        var creation = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).LeaderCreation!;
+        var creation = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, null).LeaderCreation!;
         Assert.Equal(created, creation.LeaderDefinitionId);
         Assert.Equal(vehicle == "attacker-tank" && afv == true, creation.Drm.Any(item => item.Name == "cc-vs-afv" && item.Value == -1m && item.Rule == "A18.2"));
     }

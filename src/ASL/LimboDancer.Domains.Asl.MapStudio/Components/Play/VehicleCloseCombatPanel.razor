@@ -16,9 +16,13 @@
 @foreach (var location in Locations)
 {
     // Pass 35: the Locations share one draft, so each shows and proposes only what was chosen among its own units.
-    var attacker = location.Attackers.Contains(Attacker, StringComparer.Ordinal) ? Attacker : string.Empty;
-    var leader = location.Leaders.Contains(Leader, StringComparer.Ordinal) ? Leader : string.Empty;
     var chosen = location.Vehicles.Any(vehicle => vehicle.Id == Vehicle) ? Vehicle : string.Empty;
+    var targetsVehicle = location.Vehicles.Any(vehicle => vehicle.Id == chosen && vehicle.Side != location.NextSide);
+    bool Admitted(string id) => !targetsVehicle || location.VehicleAttackers is null || location.VehicleAttackers.GetValueOrDefault(id)?.Contains(chosen, StringComparer.Ordinal) == true;
+    var attackers = location.Attackers.Where(Admitted).ToArray();
+    var leaders = location.Leaders.Where(Admitted).ToArray();
+    var attacker = attackers.Contains(Attacker, StringComparer.Ordinal) ? Attacker : string.Empty;
+    var leader = leaders.Contains(Leader, StringComparer.Ordinal) ? Leader : string.Empty;
     var anyDefender = location.Defenders.Any(unit => Defenders.Contains(unit) && !location.Riders.ContainsKey(unit) && !location.Passengers.ContainsKey(unit));
     // Pass 70 (rulings R70.30, R70.34): an Infantry attack needs a checked defender no Infantry has attacked this CCPh; a Passenger is attacked only to capture it.
     var infantryReady = attacker.Length > 0 && location.Defenders.Any(unit => Defenders.Contains(unit) && !location.InfantryAttacked.Contains(unit) && !location.Passengers.ContainsKey(unit));
@@ -29,14 +33,14 @@
             Attacker
             <select class="vehicle-cc-attacker" value="@attacker" @onchange="@(args => OnAttacker.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">choose</option>
-                <UnitOptions Units="@([.. location.Attackers.Select(unit => new PlayChoice(unit, Label(location, unit)))])" Text="@Say" />
+                <UnitOptions Units="@([.. attackers.Select(unit => new PlayChoice(unit, Label(location, unit)))])" Text="@Say" />
             </select>
         </label>
         <label>
             With SMC
             <select class="vehicle-cc-leader" value="@leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none</option>
-                <UnitOptions Units="@([.. location.Leaders.Select(unit => new PlayChoice(unit, unit))])" Text="@Say" />
+                <UnitOptions Units="@([.. leaders.Select(unit => new PlayChoice(unit, unit))])" Text="@Say" />
             </select>
         </label>
         <label>
@@ -92,6 +96,9 @@
     public sealed record CcLocation(string Location, string NextSide, IReadOnlyList<string> Attackers, IReadOnlyList<string> Leaders,
         IReadOnlyList<VehicleChoice> Vehicles, IReadOnlyList<string> Defenders)
     {
+        /// <summary>The vehicles each unit may attack, gathered through the command's Rules refusal.</summary>
+        public IReadOnlyDictionary<string, IReadOnlyList<string>>? VehicleAttackers { get; init; }
+
         /// <summary>The Riders among the units offered, each with the vehicle it rides (A11.611; pass 70, ruling R70.31).</summary>
         public IReadOnlyDictionary<string, string> Riders { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 

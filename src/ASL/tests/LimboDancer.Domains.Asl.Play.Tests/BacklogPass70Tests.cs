@@ -1572,6 +1572,103 @@ public sealed class BacklogPass70Tests : IDisposable
     }
 
     [Fact]
+    public async Task SearchAndItsCasualtyDrReadEachSidesStealthSsr()
+    {
+        ssrs = ["stealthy:german", "lax:russian"];
+        await SetupAt(2, "german", Squad("g1", "E5", "german"), Squad("r1", "E7", "russian", Conditions.Concealed));
+        await MoveAndClose(GermanSquad, "E6");
+        var before = Revision;
+        Committed(await Do(GameActions.Search, Once(1, 6), new
+        {
+            unitIds = GermanSquad,
+            hexes = new[] { L("E7") },
+        }));
+        var search = Assert.Single(Since(before).Select(item => item.Payload).OfType<UnitsSearched>());
+        Assert.Equal(-2, search.Drm);
+        Assert.Equal(0, search.CasualtyDrm);
+        Assert.Equal(InstanceStatus.Active, Current.Unit("g1")!.Status);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnUnknownSearchedDefenderRefusesTheSearchBeforeItsProposalWithAPublicReason()
+    {
+        // The review of PR 80 (item 27): the Stealth facts of every active unit are checked before any searcher or "?" is read, so the refusal comes at the
+        // proposal, draws no dice, and names no unit.
+        var leader = Unit("rl", "asl:leader", "defender-leader", "E7", "russian", Conditions.Concealed);
+        ((Dictionary<string, bool>)leader["conditions"]).Remove(Conditions.Broken);
+        await SetupAt(2, "german", Squad("g1", "E5", "german"),
+            Unit("r1", "asl:squad", "american-green-squad", "E7", "russian", Conditions.Concealed), leader);
+        Assert.Equal(ConditionState.Unknown, Experience.Inexperienced(Current, Current.Unit("r1")!, [Catalog], Vocabulary));
+        await MoveAndClose(GermanSquad, "E6");
+        var before = Revision;
+        var original = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var play = Play(NoRoll());
+        var arguments = JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "unknown-search",
+            expectedRevision = before,
+            unitIds = GermanSquad,
+            hexes = new[] { L("E7") },
+        });
+        var proposal = await play.ProposeAsync(GameActions.Search, arguments, Player);
+        Assert.NotEqual(PlayOutcome.NeedsConfirmation, proposal.Outcome);
+        Assert.NotEqual(PlayOutcome.Committed, proposal.Outcome);
+        var reason = Assert.Single(proposal.Reasons, reason => reason.Contains("play.stealth-facts", StringComparison.Ordinal));
+        Assert.DoesNotContain("r1", reason, StringComparison.Ordinal);
+        Assert.DoesNotContain("rl", reason, StringComparison.Ordinal);
+        Assert.Equal(before, Revision);
+        Assert.Equal(original, GameEventWriter.Write(Scope, store.Read(Scope)!));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnUnknownDefenderOutsideTheSearchedHexesRefusesTheSearchWithTheSameReason()
+    {
+        // The review of PR 80 (item 27): the refusal does not depend on what is searched, so it says nothing about the hexes searched.
+        var otherHex = N("E6", HexsideDirection.NorthWest);
+        var leader = Unit("rl", "asl:leader", "defender-leader", otherHex, "russian", Conditions.Concealed);
+        ((Dictionary<string, bool>)leader["conditions"]).Remove(Conditions.Broken);
+        await SetupAt(2, "german", Squad("g1", "E5", "german"),
+            Unit("r1", "asl:squad", "american-green-squad", otherHex, "russian", Conditions.Concealed), leader);
+        await MoveAndClose(GermanSquad, "E6");
+        var before = Revision;
+        var result = await Do(GameActions.Search, NoRoll(), new
+        {
+            unitIds = GermanSquad,
+            hexes = new[] { L("E7") },
+        });
+        Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
+        Assert.Contains(result.Reasons, reason => reason.Contains("play.stealth-facts", StringComparison.Ordinal));
+        Assert.Equal(before, Revision);
+        Assert.True(Is(Current.Unit("r1")!, Conditions.Concealed));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnUnknownMopUpDefenderWritesNoPrefixEvents()
+    {
+        RowhouseAtE7();
+        var leader = Unit("rl", "asl:leader", "defender-leader", "E6", "russian", Conditions.Hidden);
+        ((Dictionary<string, bool>)leader["conditions"]).Remove(Conditions.Broken);
+        await SetupAt(1, "german", Squad("g1", "E5", "german"),
+            Unit("r1", "asl:squad", "american-green-squad", "E6", "russian", Conditions.Hidden), leader);
+        var before = Revision;
+        var original = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var result = await Do(GameActions.MopUp, NoRoll(), new
+        {
+            building = "bd01:E5",
+            unitIds = GermanSquad,
+        });
+        Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
+        Assert.Contains(result.Reasons, reason => reason.Contains("play.stealth-facts", StringComparison.Ordinal));
+        Assert.Equal(before, Revision);
+        Assert.Equal(original, GameEventWriter.Write(Scope, store.Read(Scope)!));
+        NoReplayErrors();
+    }
+
+    [Fact]
     public async Task ASearchWaitsForTheDefendersWindowOnTheLastMfToClose()
     {
         // A12.152, A8.1 (ruling R70.24): the stack Searches as it ends its move, once the DEFENDER's window on its last MF is closed.
@@ -2281,7 +2378,7 @@ public sealed class BacklogPass70Tests : IDisposable
         var resolution = Rules.ScenarioA1VehicleCloseCombat.Resolve(facts with
         {
             Rolls = new Rules.VehicleCloseCombatRolls(SnakeEyesRoll)
-        }, new Rules.ScenarioA1CloseCombatPackage().Reference);
+        }, new Rules.ScenarioA1CloseCombatPackage().Reference, null);
         Assert.Null(resolution.LeaderCreation);
         events[index] = events[index] with
         {
