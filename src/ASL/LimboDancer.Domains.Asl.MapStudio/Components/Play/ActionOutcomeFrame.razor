@@ -1,0 +1,8 @@
+<section class="action-outcome">
+    <div class="action-outcome-context">@Context</div>
+    @ChildContent
+</section>
+@code {
+    [Parameter] public string Context { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

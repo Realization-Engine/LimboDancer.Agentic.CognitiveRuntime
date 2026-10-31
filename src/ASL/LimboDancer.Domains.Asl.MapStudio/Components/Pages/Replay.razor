@@ -142,8 +142,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                 }
             </div>;
             var panel = PanelNow(step);
-            RenderFragment stepBlock = @<ReplayStepPanel Step="@step" Count="@timeline.Steps.Count" When="@StepWhen(step)" Changes="@panel.Changes" Rolls="@panel.Rolls"
-                Fire="@panel.Fire" Ordnance="@panel.Ordnance" CloseCombat="@panel.CloseCombat" Night="@panel.Night" Snipers="@panel.Snipers" Actions="@panel.Actions" />;
+            RenderFragment stepBlock = @<ReplayStepPanel Outcomes="@panel.Outcomes" Step="@step" Count="@timeline.Steps.Count" When="@StepWhen(step)" Changes="@panel.Changes" Rolls="@panel.Rolls" />;
             RenderFragment between = @<text>
         @if (narrow)
         {
@@ -474,9 +473,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         : $"Turn {step.Turn}, {DisplayText.Side(step.PhasingSide)} {GameText.PhaseLabel(step.Phase)}.";
 
     /// <summary>What the step panel shows of a step: its rolls, its records, and what changed.</summary>
-    private sealed record StepPanel(IReadOnlyList<RollRow> Rolls, IReadOnlyList<FireView> Fire, IReadOnlyList<ActionRecordList.Entry> Ordnance,
-        IReadOnlyList<ActionRecordList.Entry> CloseCombat, IReadOnlyList<ActionRecordList.Entry> Night, IReadOnlyList<ActionRecordList.Entry> Snipers,
-        IReadOnlyList<ActionRecordList.Entry> Actions, IReadOnlyList<string> Changes);
+    private sealed record StepPanel(IReadOnlyList<RollRow> Rolls, IReadOnlyList<ActionOutcomeView> Outcomes, IReadOnlyList<string> Changes);
 
     // The step panel's content, read once per step and view rather than on every render (the UI review, pass 31b).
     private (long Revision, string Viewer, StepPanel? Panel) panelCache;
@@ -485,21 +482,12 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     {
         if (panelCache.Panel is null || panelCache.Revision != step.Last || panelCache.Viewer != viewAs)
         {
-            panelCache = (step.Last, viewAs, new StepPanel(records?.RollsIn(step.First, step.Last) ?? [], InStep(records?.Fire, step, fire => fire.EventId),
-                Entries(records?.Ordnance, step, "ordnance"), Entries(records?.CloseCombat, step, "cc"), Entries(records?.Night, step, "night"),
-                Entries(records?.Snipers, step, "sniper"),
-                [.. InStep(records?.RallyAndRepair, step, item => item.EventId).Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))], ChangeLines));
+            panelCache = (step.Last, viewAs, new StepPanel(records?.RollsIn(step.First, step.Last) ?? [],
+                records?.OutcomesIn(step.First, step.Last) ?? [], ChangeLines));
         }
 
         return panelCache.Panel!;
     }
-
-    /// <summary>The records of a list that belong to a step: those of the events of its attempt.</summary>
-    private static IReadOnlyList<T> InStep<T>(IReadOnlyList<T>? all, ReplayStep step, Func<T, string> eventId) =>
-        all is null ? [] : [.. all.Where(item => ReplaySteps.AttemptOf(eventId(item)) == step.Attempt)];
-
-    private static IReadOnlyList<ActionRecordList.Entry> Entries(IReadOnlyList<(string EventId, string Text)>? all, ReplayStep step, string kind) =>
-        [.. InStep(all, step, item => item.EventId).Select(item => new ActionRecordList.Entry(item.EventId, kind, item.Text))];
 
     /// <summary>A key pressed with the map or the timeline focused (design D5).</summary>
     [JSInvokable]

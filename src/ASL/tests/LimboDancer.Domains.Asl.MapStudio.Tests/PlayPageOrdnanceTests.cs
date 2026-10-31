@@ -106,7 +106,7 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         dice.Enqueue(5);
         Commit(page, "#propose-ordnance");
         Assert.Empty(dice);
-        var record = page.Find("#play-ordnance .ordnance-record").TextContent;
+        var record = page.OutcomeRecord(".ordnance-record").TextContent;
         Assert.StartsWith($"Gun G1 in {DisplayText.Place(1, hexes.One)} fires HE at {DisplayText.Place(1, hexes.Two)}: ", record, StringComparison.Ordinal);
         Assert.DoesNotContain("de-gun", record, StringComparison.Ordinal);
         Assert.Contains("Basic TH# 8 (black) = 8; DR 6 (colored), 5 = 11", record, StringComparison.Ordinal);
@@ -165,7 +165,7 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         // The table player's and the UI review of pass 55: the round that was not there is no miss, the Gun has not fired (C8.9), and the
         // number is the one the record itself names.
         Assert.Equal(8, fired.Resolution.GetProperty("depletionNumber").GetInt32());
-        var record = page.Find("#play-ordnance .ordnance-record").TextContent;
+        var record = page.OutcomeRecord(".ordnance-record").TextContent;
         Assert.Contains(": no shot: it had no HE; ", record, StringComparison.Ordinal);
         Assert.Contains("the Original DR is above the Depletion Number 8: it has none for the rest of the scenario (C8.9)", record, StringComparison.Ordinal);
         Assert.Contains("it has not fired and may fire other ammunition (C8.9)", record, StringComparison.Ordinal);
@@ -345,7 +345,7 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         Assert.Contains(fires, fire => !fire.Facts.GetProperty("canister").TryGetProperty("adjacentHexes", out _));
         Assert.All(fires, fire => Assert.Equal(fired.Rolls["canister"], fire.Rolls["attack"]));
 
-        var record = page.Find("#play-ordnance .ordnance-record").TextContent;
+        var record = page.OutcomeRecord(".ordnance-record").TextContent;
         Assert.Contains($"fires Canister at aim {aimId} of the CA facing {spot.Facing}: no To Hit DR; IFT DR 2 (colored), 4 = 6", record, StringComparison.Ordinal);
         Assert.Contains("the DR is below the Depletion Number 7: Canister fired (C8.9)", record, StringComparison.Ordinal);
         Assert.Contains("it may fire again this phase (C2.24)", record, StringComparison.Ordinal);

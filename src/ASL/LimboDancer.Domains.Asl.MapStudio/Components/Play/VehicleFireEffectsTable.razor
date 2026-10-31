@@ -8,8 +8,15 @@
         {
             <tr data-vehicle="@hit.VehicleId">
                 <td title="@hit.VehicleId">@Say(hit.VehicleId)</td>
-                <td class="fire-vehicle-result">@Say(FireText.VehicleLineText(hit))</td>
-                <td class="fire-vehicle-crew">@Say(FireText.CrewText(hit))</td>
+                <td class="fire-vehicle-result">@Say(FireText.VehicleLineText(hit))
+                    @if (hit.UnlikelyKillDr is { } unlikely) { <AslDice Roll="@AslRollView.Values("unlikely", "Unlikely Kill", [unlikely])" /> }
+                    @if (hit.RandomSelectionDr is { } selection) { <AslDice Roll="@AslRollView.Values("selection", "Random Selection", [selection])" /> }
+                </td>
+                <td class="fire-vehicle-crew">@Say(FireText.CrewText(hit))
+                    @if (hit.CrewCheck is { } crew) { <FireCheckDisplay Check="@crew" Say="@Say" /> }
+                    @if (hit.TaskCheck is { } task) { <FireCheckDisplay Check="@task" Say="@Say" /> }
+                    @if (hit.CrewSurvival is { } survival) { <AslDice Roll="@AslRollView.Values("crew-survival", "Crew survival", survival.Dice, coloredFirst: true)" /> }
+                </td>
             </tr>
             @* Pass 65 (rulings R65.7, R65.9): what the attack did to the vehicle's Passengers and Riders, a row each. *@
             @foreach (var line in FireText.PrcLines(hit))
@@ -17,6 +24,20 @@
                 <tr class="fire-vehicle-prc" data-vehicle="@hit.VehicleId">
                     <td colspan="3">@Say(line)</td>
                 </tr>
+            }
+            @if (hit.PrcAttacks is { } attacks)
+            {
+                @foreach (var attack in attacks)
+                {
+                    <tr><td colspan="3"><InfantryFireEffectsTable Effects="@attack.Effects" Say="@Say" /></td></tr>
+                }
+            }
+            @if (hit.PrcSurvival is { } survivors)
+            {
+                @foreach (var survivor in survivors)
+                {
+                    <tr><td colspan="3"><AslDice Roll="@AslRollView.Values("prc-survival", Say(survivor.UnitId) + " survival", survivor.Dice, coloredFirst: true)" /></td></tr>
+                }
             }
         }
     </tbody>

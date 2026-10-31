@@ -1,0 +1,11 @@
+@using LimboDancer.Domains.Asl.Rules
+<span class="fire-check-display">
+    <AslDice Roll="@AslRollView.Values(Key, Check.Kind, Check.Dice, coloredFirst: true)" />
+    @Say(FireText.ModifierText(Check.Drm)) = @Check.FinalDr against @FireText.MoraleWords(Check):
+    <strong>@(Check.Passed ? "passed" : "failed")</strong>
+</span>
+@code {
+    [Parameter, EditorRequired] public FireCheck Check { get; set; } = default!;
+    [Parameter] public string Key { get; set; } = "check";
+    [Parameter] public Func<string, string> Say { get; set; } = text => text;
+}

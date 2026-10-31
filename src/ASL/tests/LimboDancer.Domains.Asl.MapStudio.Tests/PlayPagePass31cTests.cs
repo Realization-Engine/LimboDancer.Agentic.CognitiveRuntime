@@ -168,19 +168,21 @@ public sealed class PlayPagePass31cTests : IDisposable
         Assert.True(dice.Enqueue([3, 4, 3, 4]));
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        var record = page.Find("#play-fires .fire-record");
+        var record = page.OutcomeRecord(".fire-record");
         Assert.Equal(firepower, record.QuerySelectorAll(".fire-fp").Select(item => item.TextContent.Trim()));
         Assert.Equal(column, record.QuerySelector(".fire-column")!.TextContent.Trim());
-        Assert.Contains("IFT DR 3, 4 = 7 + 3 (stone building TEM, A7.6) + 0 (leadership, 8-0 leader R1, A7.531):", record.QuerySelector(".fire-dr")!.TextContent, StringComparison.Ordinal);
+        Assert.Equal("Colored: 3", record.QuerySelector(".fire-dr .colored .asl-die-label")!.TextContent);
+        Assert.Equal("White: 4", record.QuerySelector(".fire-dr .white .asl-die-label")!.TextContent);
+        Assert.Contains("= 7 + 3 (stone building TEM, A7.6) + 0 (leadership, 8-0 leader R1, A7.531):", record.QuerySelector(".fire-dr")!.TextContent, StringComparison.Ordinal);
         Assert.Equal(("10", "NMC"), (record.QuerySelector(".fire-final-dr")!.TextContent, record.QuerySelector(".fire-result")!.TextContent));
         Assert.Empty(page.FindAll("#fire-preview"));
 
         var group = $"4-4-7 squad R1, 4-4-7 squad R2 in {Said(hexes.From)}, directed by 8-0 leader R1 fire at {Said(hexes.Building)}";
         Assert.Equal(group, record.QuerySelector(".fire-group")!.TextContent.Trim());
-        Assert.Equal($"Latest: Turn 1, Russian Prep Fire Phase: {group}: NMC; 4-6-7 squad in {Said(hexes.Building)}: pinned.", page.Find("#play-latest").TextContent);
+        Assert.Equal($"{group}: NMC; 4-6-7 squad in {Said(hexes.Building)}: pinned", page.Find("#play-latest-panel .action-outcome-toggle").TextContent.Trim());
 
         // The user, 2026-10-21: under the line, the fire's card (the Records tab's), its arithmetic and effects, in a box that scrolls.
-        var card = page.Find("#play-latest-tables .fire-latest-card .fire-record");
+        var card = page.Find("#play-latest-panel .fire-record");
         Assert.Equal(group, card.QuerySelector(".fire-group")!.TextContent.Trim());
     }
 
@@ -251,8 +253,8 @@ public sealed class PlayPagePass31cTests : IDisposable
         Assert.True(dice.Enqueue([6, 6]));
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Equal($"{group} fire at {Said(hexes.Building)}", page.Find("#play-fires .fire-group").TextContent.Trim());
-        Assert.Equal($"Latest: Turn 1, Russian Prep Fire Phase: {group} fire at {Said(hexes.Building)}: no effect.", page.Find("#play-latest").TextContent);
+        Assert.Equal($"{group} fire at {Said(hexes.Building)}", page.OutcomeRecord(".fire-record .fire-group").TextContent.Trim());
+        Assert.Equal($"{group} fire at {Said(hexes.Building)}: no effect", page.Find("#play-latest-panel .action-outcome-toggle").TextContent.Trim());
         Assert.Contains("prep-fire", page.Find("#play-units tr[data-unit='r1']").TextContent, StringComparison.Ordinal);
         Assert.Contains("prep-fire", page.Find("#play-units tr[data-unit='r2']").TextContent, StringComparison.Ordinal);
         Assert.False(live.History("village")!.HasErrors);
@@ -741,8 +743,9 @@ public sealed class PlayPagePass31cTests : IDisposable
         page.ViewAs("german");
         Assert.Equal("Since you last looked (1)", page.Find("#play-activity-since").TextContent);
         // In the German view the Russian firers read by their hex, said once (the user's ruling of 2026-10-22).
-        Assert.Equal([$"Turn 1, Russian Prep Fire Phase: 4-4-7 squad, 4-4-7 squad in {Said(hexes.From)} fire at {Said(hexes.Building)}: NMC; 4-6-7 squad G1: pinned"],
-            Texts(page, "#play-since li"));
+        Assert.Contains("Turn 1, Russian Prep Fire Phase", page.Find("#play-since-panel .action-outcome-context").TextContent, StringComparison.Ordinal);
+        Assert.Equal([$"4-4-7 squad, 4-4-7 squad in {Said(hexes.From)} fire at {Said(hexes.Building)}: NMC; 4-6-7 squad G1: pinned"],
+            Texts(page, "#play-since-panel .action-outcome-toggle"));
         Assert.False(page.Find("#play-since-panel").HasAttribute("hidden"));
 
         // Back to the Russian side, which did it: nothing happened while it was away.

@@ -1,6 +1,7 @@
 @* R01 (plan sections 13.4, 16.13): the review of a proposal. It shows only what the parent has already disclosed for the view: the outcome, the reasons,
    and the evidence; the parent keeps the attempt, the revision, the withholding, and the execution. *@
 <div id="play-proposal">
+    <ActionOutcomeFrame Context="@(Presentation?.Lifecycle ?? Outcome)">
     <h3 title="@Title">@DisplayText.Action(Title)</h3>
     @* Pass 31c (design D15; play test P-28): Confirm and Cancel sit at the head of the review, where no outcome or list of consequences moves
        them. Their label still says what a proposal with consequences does. *@
@@ -44,9 +45,13 @@
         }
     </ul>
     @Evidence
+    </ActionOutcomeFrame>
 </div>
 
 @code {
+    [Parameter]
+    public ProposalOutcomeView? Presentation { get; set; }
+
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }

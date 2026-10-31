@@ -1679,9 +1679,16 @@
         },
         {
           "kind": "button",
-          "label": "@(latestCollapsed ? \u0022\u25B8\u0022 : \u0022\u25BE\u0022)",
+          "label": "@(outcomePanelCollapsed ? \u0022Show latest outcome\u0022 : \u0022Hide latest outcome\u0022)",
           "dynamic": true,
-          "id": "play-latest-toggle",
+          "id": "play-outcome-panel-toggle",
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
+          "label": "Review required response",
+          "dynamic": false,
           "status": "needed",
           "strip": "Play"
         },
@@ -1948,6 +1955,47 @@
           "dynamic": false,
           "status": "needed",
           "strip": "Workbench"
+        }
+      ]
+    },
+    {
+      "name": "ActionOutcomeCard",
+      "path": "Components/Play/ActionOutcomeCard.razor",
+      "pages": [
+        "/games/play",
+        "/games/replay"
+      ],
+      "usedBy": [
+        "ActionOutcomeHistory",
+        "Play",
+        "ReplayStepPanel"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@DisplayText.Sentence(Outcome.Summary)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "ActionOutcomeCard"
+        }
+      ]
+    },
+    {
+      "name": "ActionOutcomeHistory",
+      "path": "Components/Play/ActionOutcomeHistory.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Show more actions",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "ActionOutcomeHistory"
         }
       ]
     },
@@ -3697,8 +3745,8 @@
       ]
     },
     {
-      "name": "AslDice",
-      "path": "Components/Shared/AslDice.razor",
+      "name": "DiceLabRoller",
+      "path": "Components/Shared/DiceLabRoller.razor",
       "pages": [
         "/lab/dice"
       ],
@@ -3711,14 +3759,14 @@
           "label": "Roll @(mode == 1 ? \u0022die\u0022 : \u0022dice\u0022)",
           "dynamic": true,
           "status": "needed",
-          "strip": "AslDice"
+          "strip": "DiceLabRoller"
         },
         {
           "kind": "button",
           "label": "Show 4 \u002B 2, modifier \u002B1",
           "dynamic": false,
           "status": "needed",
-          "strip": "AslDice"
+          "strip": "DiceLabRoller"
         }
       ]
     },

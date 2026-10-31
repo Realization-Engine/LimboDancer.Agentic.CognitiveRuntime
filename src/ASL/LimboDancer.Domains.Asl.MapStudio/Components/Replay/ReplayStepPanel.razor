@@ -22,19 +22,20 @@
         </ul>
     }
     <DiceRollHistory Rolls="@Rolls" Scripted="false" />
-    <ActionRecordList Heading="Ordnance" ListId="replay-ordnance" Records="@Ordnance" />
-    <FireHistory Records="@Fire" />
-    <ActionRecordList Heading="Close Combat" ListId="replay-close-combats" Records="@CloseCombat" />
-    <ActionRecordList Heading="Night and weather" ListId="replay-night" Records="@Night" />
-    <ActionRecordList Heading="Snipers" ListId="replay-snipers" Records="@Snipers" />
-    <ActionRecordList Heading="Rally, Rout, and other actions" ListId="replay-rallies" Records="@Actions" />
-    @if (Rolls.Count + Ordnance.Count + Fire.Count + CloseCombat.Count + Night.Count + Snipers.Count + Actions.Count == 0)
+    @foreach (var outcome in Outcomes)
+    {
+        <ActionOutcomeCard @key="outcome.Key" Outcome="@outcome" Expanded="true" />
+    }
+    @if (Rolls.Count + Outcomes.Count == 0)
     {
         <p id="replay-step-plain" class="muted">This step has no dice and no record of its own.</p>
     }
 </div>
 
 @code {
+    [Parameter]
+    public IReadOnlyList<ActionOutcomeView> Outcomes { get; set; } = [];
+
     [Parameter, EditorRequired]
     public ReplayStep Step { get; set; } = default!;
 
@@ -53,21 +54,4 @@
     [Parameter]
     public IReadOnlyList<RollRow> Rolls { get; set; } = [];
 
-    [Parameter]
-    public IReadOnlyList<FireView> Fire { get; set; } = [];
-
-    [Parameter]
-    public IReadOnlyList<ActionRecordList.Entry> Ordnance { get; set; } = [];
-
-    [Parameter]
-    public IReadOnlyList<ActionRecordList.Entry> CloseCombat { get; set; } = [];
-
-    [Parameter]
-    public IReadOnlyList<ActionRecordList.Entry> Night { get; set; } = [];
-
-    [Parameter]
-    public IReadOnlyList<ActionRecordList.Entry> Snipers { get; set; } = [];
-
-    [Parameter]
-    public IReadOnlyList<ActionRecordList.Entry> Actions { get; set; } = [];
 }

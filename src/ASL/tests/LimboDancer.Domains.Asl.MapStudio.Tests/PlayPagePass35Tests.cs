@@ -179,13 +179,13 @@ public sealed class PlayPagePass35Tests : IDisposable
         Assert.Contains("2-4-7 half-squad G1a", units, StringComparison.Ordinal);
         Assert.Contains("2-4-7 half-squad G1b", units, StringComparison.Ordinal);
         Assert.DoesNotContain("4-6-7 squad G1", units, StringComparison.Ordinal);
-        Assert.Contains($"4-6-7 squad G1 in {Said(WideBoards.At(5))} becomes the HS 2-4-7 half-squad G1a and 2-4-7 half-squad G1b (A1.31)", Text(page, "#play-latest"), StringComparison.Ordinal);
+        Assert.Contains($"4-6-7 squad G1 in {Said(WideBoards.At(5))} becomes the HS 2-4-7 half-squad G1a and 2-4-7 half-squad G1b (A1.31)", Text(page, "#play-latest-panel"), StringComparison.Ordinal);
 
         page.ViewAs("russian");
         units = Text(page, "#play-units tr");
         Assert.Contains($"2-4-7 half-squad in {Said(WideBoards.At(5))}", units, StringComparison.Ordinal);
         Assert.DoesNotContain("G1", units, StringComparison.Ordinal);
-        Assert.Contains($"4-6-7 squad becomes the HS 2-4-7 half-squad and 2-4-7 half-squad in {Said(WideBoards.At(5))} (A1.31)", Text(page, "#play-latest"), StringComparison.Ordinal);
+        Assert.Contains($"4-6-7 squad becomes the HS 2-4-7 half-squad and 2-4-7 half-squad in {Said(WideBoards.At(5))} (A1.31)", Text(page, "#play-latest-panel"), StringComparison.Ordinal);
 
         // The next German RPh: the two HS Recombine. The review names no identifier: the squad is not in the game yet, and is "their squad".
         for (var phase = 0; phase < 16; phase++)
@@ -212,7 +212,7 @@ public sealed class PlayPagePass35Tests : IDisposable
             // The German view by tag, the Russian view by counter and hex.
             var squad = view == "german" ? "4-6-7 squad G1" : $"4-6-7 squad in {Said(WideBoards.At(5))}";
             Assert.Contains(squad, units, StringComparison.Ordinal);
-            Assert.Contains($"Recombine into {squad} (A1.32)", Text(page, "#play-latest"), StringComparison.Ordinal);
+            Assert.Contains($"Recombine into {squad} (A1.32)", Text(page, "#play-latest-panel"), StringComparison.Ordinal);
         }
     }
 
@@ -275,21 +275,22 @@ public sealed class PlayPagePass35Tests : IDisposable
         Commit(page, "#propose-move");
 
         // Read in the German view: the Russian squad by its hex, which "moves from" says once (the user's ruling of 2026-10-22).
-        var moved = $"Turn 1, Russian Movement Phase: 4-4-7 squad moves from {Said(WideBoards.At(1))} to {Said(WideBoards.At(2))}";
+        var moved = $"4-4-7 squad moves from {Said(WideBoards.At(1))} to {Said(WideBoards.At(2))}";
         page.ViewAs("german");
         Assert.Equal("Since you last looked (1)", Text(page, "#play-activity-since"));
-        Assert.Equal(moved, Text(page, "#play-since li"));
+        Assert.Contains("Turn 1, Russian Movement Phase", Text(page, "#play-since-panel .action-outcome-context"), StringComparison.Ordinal);
+        Assert.Equal(moved, Text(page, "#play-since-panel .action-outcome-toggle"));
 
         // The German side declines First Fire: its own pass is the latest record, and is not something it missed.
         Commit(page, "#propose-pass");
-        Assert.Contains("The German side, the DEFENDER, declines First Fire", Text(page, "#play-latest"), StringComparison.Ordinal);
+        Assert.Contains("The German side, the DEFENDER, declines First Fire", Text(page, "#play-latest-panel"), StringComparison.Ordinal);
         Assert.Equal("Since you last looked (1)", Text(page, "#play-activity-since"));
-        Assert.Equal(moved, Text(page, "#play-since li"));
+        Assert.Equal(moved, Text(page, "#play-since-panel .action-outcome-toggle"));
 
         // The Russian side missed the pass, and not its own move.
         page.ViewAs("russian");
         Assert.Equal("Since you last looked (1)", Text(page, "#play-activity-since"));
-        Assert.Equal("Turn 1, Russian Movement Phase: The German side, the DEFENDER, declines First Fire", Text(page, "#play-since li"));
+        Assert.Equal("The German side, the DEFENDER, declines First Fire", Text(page, "#play-since-panel .action-outcome-toggle"));
     }
 
     // Pass 31d's row (A6.11; pass 31's warning): a shot whose LOS the hill blocks is reviewed with its consequence, confirmed by a button that
@@ -314,15 +315,15 @@ public sealed class PlayPagePass35Tests : IDisposable
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
 
-        var record = $"4-6-7 squad G1 in {Said(from)} fires at {Said(to)}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11).";
-        Assert.Contains(record, Text(page, "#play-latest"), StringComparison.Ordinal);
+        var record = $"4-6-7 squad G1 in {Said(from)} fires at {Said(to)}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11)";
+        Assert.Contains(record, Text(page, "#play-latest-panel"), StringComparison.Ordinal);
         Assert.Contains("prep-fire", Text(page, "#play-units tr[data-unit='g1']"), StringComparison.Ordinal);
         // The user's ruling of 2026-10-22: the German view names the Russian squad by its hex.
         Assert.Contains($"4-4-7 squad in {Said(to)} unaffected", Text(page, ".fire-record"), StringComparison.Ordinal);
         // The Russian view names the German firer by its hex, said once (the user's ruling of 2026-10-22).
         page.ViewAs("russian");
-        Assert.Contains($"4-6-7 squad in {Said(from)} fires at {Said(to)}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11).",
-            Text(page, "#play-latest"), StringComparison.Ordinal);
+        Assert.Contains($"4-6-7 squad in {Said(from)} fires at {Said(to)}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11)",
+            Text(page, "#play-latest-panel"), StringComparison.Ordinal);
     }
 
     // Pass 31d's row (design D9; ruling R31d.6; A20.5): where the package would refuse the Ambush, the due list says why in the package's own

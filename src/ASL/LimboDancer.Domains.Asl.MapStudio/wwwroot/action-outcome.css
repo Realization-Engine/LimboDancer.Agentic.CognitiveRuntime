@@ -1,0 +1,39 @@
+.asl-roll { display:inline-flex; flex-wrap:wrap; align-items:center; gap:.5rem; vertical-align:middle; }
+.asl-roll.expanded { display:flex; gap:1rem; margin-block:1rem; }
+.asl-roll-purpose { font-weight:600; }
+.asl-die { display:inline-flex; align-items:center; gap:.25rem; }
+.asl-die svg { width:2rem; height:2rem; flex:none; }
+.asl-die rect { fill:#fff; stroke:#343434; stroke-width:3; }
+.asl-die circle, .asl-die text { fill:#161616; }
+.asl-die.colored rect { fill:#a62323; }
+.asl-die.colored circle { fill:#fff; }
+.asl-die.subsequent { border-inline-start:1px solid #888; padding-inline-start:.7rem; }
+.expanded .asl-die { flex-direction:column; }
+.expanded .asl-die svg { width:4rem; height:4rem; }
+.asl-die-label { font-size:.85em; }
+.asl-die-new { animation:asl-die-appear .24s ease-out; }
+@keyframes asl-die-appear { from { transform:translateY(-.3rem) rotate(-8deg); opacity:.4; } to { transform:none; opacity:1; } }
+@media (prefers-reduced-motion:reduce) { .asl-die-new { animation:none; } }
+.action-outcome { border:1px solid #8886; border-radius:.4rem; padding:.75rem; margin-block:.6rem; }
+.action-outcome summary { cursor:pointer; }
+.action-outcome summary strong { display:block; }
+.action-outcome-context { font-size:.85em; color:var(--muted, #666); }
+.action-outcome-resolution { display:grid; gap:.6rem; padding-inline-start:1.2rem; min-width:0; }
+.action-outcome-resolution > li { min-width:0; }
+.action-outcome .library { display:block; max-width:100%; overflow-x:auto; }
+.action-outcome-resolution > li { padding-block:.4rem; }
+.action-outcome-toggle { text-align:start; white-space:normal; max-width:100%; }
+.action-outcome .cc-result-scroll { max-height:none; overflow-x:auto; }
+#play-latest-panel .action-outcome { max-height:none; }
+.dice-history { padding-inline-start:1.25rem; }
+.dice-history > li { padding-block:.5rem; }
+.dice-history-purpose { margin-bottom:.35rem; }
+.dice-history-source, .dice-history-details { font-size:.8em; margin-top:.3rem; }
+.dice-history .asl-die { flex-direction:column; align-items:flex-start; }
+.dice-history .asl-roll { align-items:flex-start; gap:.75rem; }
+.play-outcome-bar { display:flex; align-items:center; gap:1rem; }
+.play-outcome-bar button { flex-shrink:0; padding:.15rem .4rem; font-size:.85rem; }
+.play-outcome-summary { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; text-align:right; font-size:.85rem; color:#b3261e; font-weight:700; }
+#play-outcome-panel-content[hidden] { display:none; }
+.play-activity.outcome-collapsed { padding-block:.25rem; }
+#play-latest-panel { padding-left:0; }

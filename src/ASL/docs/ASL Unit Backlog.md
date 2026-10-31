@@ -1666,3 +1666,12 @@ Written on 2026-10-31. What the Wiring 003 Rules adapter supplement leaves out (
 | DC Placement into a Cave | The A23.3 claim (Wiring 003 supplement; review of PR 75, item 17) | A23.3, p. 90 ("[EXC: Cave; G11.8331]"); G11.8331 | A claim of G11.83 (Caves) and a Cave fact on the Placement Location | The Cave-aware `ScenarioA1DemolitionChargeRules.PlacementRefusal` overload refuses every Placement into a Cave, including the out-of-LOS Placement G11.8331 permits; no board in use has a Cave. |
 | Recombination of Assault Engineer and other units | The A11.5 claim, A25.01 (review of PR 75, item 17) | A25.01, p. 93; A1.32, p. 45 | A ruling on whether a squad recombined from an AE HS and a non-AE HS is an Assault Engineer (A1.32 does not settle it) | `ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage` returns no status and a "not resolved" reason for mixed ancestry; no counter in the catalog prints the AE trait. |
 | Stealth and Lax SSRs finer than an OB group | Review of PR 79, ruling RA11S.11 | A11.17, A11.18, p. 73 | A card field that names single units or unit types | `stealthy:` and `lax:` name a side or one of its OB groups (`SsrFlags`); an SSR naming one unit or a unit type is written as its own OB group, and any other form is refused at setup by `SsrRulesBar`. |
+
+## 90. Shared outcome presentation follow-up
+
+Written on 2026-10-31 for the approved [shared action-outcome design](<Designs/ASL Shared Action Outcome and Dice Integration Design.md>).
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Unrolled dice in Turn Guide and Rule Workbench requests | Approved dice/outcome design | Presentation only | Explicit count, sides, grouping, roles, and subject metadata in the request contracts | Existing required-roll prose remains. The UI does not infer pending faces or roll roles from prose. |
+| Subject labels for older independent roll collections | Approved neutral-fallback contract | Presentation only | A disclosed, ordered subject list associated with the recorded roll ID | Disclosed `RandomSelection.Subjects` supplies historical names when present. Other collections retain numbered dice. No hidden event or positional guess supplies a subject. |

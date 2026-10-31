@@ -8,6 +8,10 @@
     <button id="scripted-dice-add" @onclick="Add">Add</button>
     <button id="scripted-dice-clear" class="link" @onclick="Clear">clear</button>
     <span id="scripted-dice-queued">Queued: @(Queued.Count == 0 ? "none" : string.Join(" ", Queued))</span>
+    @if (Queued.Count > 0)
+    {
+        <AslDice Roll="@(AslRollView.Values("queue", "", Queued) with { State = AslRollState.Queued })" />
+    }
     @if (Problem is { } problem)
     {
         <span class="warning">@problem</span>

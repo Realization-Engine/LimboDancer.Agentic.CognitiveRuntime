@@ -1,0 +1,82 @@
+<ActionOutcomeFrame Context="@(Category + " · " + Outcome.Context + " · Recorded")">
+    <button type="button" class="link action-outcome-toggle" aria-expanded="@(isExpanded ? "true" : "false")" aria-controls="@detailsId" @onclick="Toggle">
+        <strong>@DisplayText.Sentence(Outcome.Summary)</strong>
+    </button>
+    @if (isExpanded)
+    {
+        <div id="@detailsId">
+        <ol class="action-outcome-resolution">
+            @foreach (var entry in Outcome.Entries)
+            {
+                <li @key="entry.EventId" data-event="@entry.EventId" class="@(entry.Kind + "-record")">
+                    @if (entry.Fire is { } fire)
+                    {
+                        <FireResolutionCard Record="@fire" ShowPrimaryDice="@entry.ShowPrimaryDice" />
+                    }
+                    else if (entry.Combat is { } combat)
+                    {
+                        <CloseCombatResultTable Table="@combat" />
+                    }
+                    else
+                    {
+                        <span class="record-text">@DisplayText.Sentence(entry.Text)</span>
+                    }
+                    @if (entry.Fire is not null || entry.Combat is not null)
+                    {
+                        <details class="record-explanation"><summary>Recorded explanation</summary><p class="record-text">@entry.Text</p></details>
+                    }
+                    @foreach (var roll in entry.Rolls)
+                    {
+                        <p @key="roll.Roll">@roll.Text
+                            @if (roll.Display is { } dice) { <AslDice Roll="@dice" /> }
+                        </p>
+                    }
+                </li>
+            }
+        </ol>
+        @if (Outcome.Rolls.Count > 0)
+        {
+            <div class="action-outcome-rolls" aria-label="Recorded rolls in order">
+                @foreach (var roll in Outcome.Rolls)
+                {
+                    <p @key="roll.Roll">@roll.Text
+                        @if (roll.Display is { } display) { <AslDice Roll="@display" /> }
+                    </p>
+                }
+            </div>
+        }
+        @if (Replay?.Invoke(Outcome.EventId) is { } destination)
+        {
+            <a href="@destination">Replay from here</a>
+        }
+        </div>
+    }
+    @LiveResponse
+</ActionOutcomeFrame>
+
+@code {
+    [Parameter, EditorRequired] public ActionOutcomeView Outcome { get; set; } = default!;
+    [Parameter] public bool Expanded { get; set; }
+    [Parameter] public EventCallback<bool> ExpandedChanged { get; set; }
+    [Parameter] public RenderFragment? LiveResponse { get; set; }
+    [Parameter] public Func<string, string?>? Replay { get; set; }
+    private readonly string detailsId = "outcome-" + Guid.NewGuid().ToString("N");
+    private bool isExpanded;
+    private bool? lastExpanded;
+    private string Category => (Outcome.Entries.FirstOrDefault(entry => entry.Kind != "action") ?? Outcome.Entries.FirstOrDefault())?.Kind is { } kind
+        ? kind == "cc" ? "Close combat" : DisplayText.Sentence(kind.Replace('-', ' '))
+        : "Dice";
+    private async Task Toggle()
+    {
+        isExpanded = !isExpanded;
+        await ExpandedChanged.InvokeAsync(isExpanded);
+    }
+    protected override void OnParametersSet()
+    {
+        if (lastExpanded != Expanded)
+        {
+            lastExpanded = Expanded;
+            isExpanded = Expanded;
+        }
+    }
+}

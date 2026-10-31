@@ -95,7 +95,12 @@ else
         <ol id="game-events" class="muted">
             @foreach (var item in view.Events)
             {
-                <li value="@item.Revision" class="@(item.Revision == revision ? "pass" : "")">@item.Type @GameText.EventText(item)</li>
+                <li value="@item.Revision" class="@(item.Revision == revision ? "pass" : "")">@item.Type @GameText.EventText(item)
+                    @if (item.Payload is DiceRolled dice)
+                    {
+                        <AslDice Roll="@(AslRollView.Recorded(dice.Roll, dice.Purpose, dice.Values, dice.Sides) with { Purpose = DisplayText.RollPurpose(dice.Purpose) })" />
+                    }
+                </li>
             }
         </ol>
     }

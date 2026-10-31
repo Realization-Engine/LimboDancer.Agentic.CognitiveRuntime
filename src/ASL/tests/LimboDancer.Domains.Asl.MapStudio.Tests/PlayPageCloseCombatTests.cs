@@ -143,17 +143,17 @@ public sealed class PlayPageCloseCombatTests : IDisposable
 
         Commit(page, "#propose-cc");
         Assert.Empty(dice);
-        var record = page.Find("#play-close-combats .cc-record").TextContent;
+        var record = page.OutcomeRecord(".cc-record").TextContent;
         // The Russian view names the German leader by his hex and its own squad by its tag (the user's ruling of 2026-10-22).
         Assert.Contains($"at 1-1, Kill Number 5: DR 6 (colored), 6 = 12 - 1 (leadership, 8-1 leader in {DisplayText.Place(1, hexes.Two)}, A11.141); 4-4-7 squad R1: 11 = Final DR 11: no effect",
             record, StringComparison.Ordinal);
         Assert.Contains("at 1-2, Kill Number 4", record, StringComparison.Ordinal);
 
         // The user, 2026-10-21: the activity strip shows the round as a table, an outcome line per attack and a row per defender.
-        var summaries = page.FindAll("#play-latest-tables .cc-result-summary").Select(item => item.TextContent.Trim()).ToArray();
+        var summaries = page.FindAll("#play-latest-panel .cc-result-summary").Select(item => item.TextContent.Trim()).ToArray();
         Assert.Equal(2, summaries.Length);
         Assert.True(summaries[0].Contains("1-1, Kill Number 5; DR 6 (colored) + 6 = 12, modified 11): no effect", StringComparison.Ordinal), summaries[0]);
-        var row = page.FindAll("#play-latest-tables .cc-result-defenders tbody tr")[0].TextContent;
+        var row = page.FindAll("#play-latest-panel .cc-result-defenders tbody tr")[0].TextContent;
         Assert.Contains("4-4-7 squad R1", row, StringComparison.Ordinal);
         Assert.Contains("no effect", row, StringComparison.Ordinal);
 
@@ -197,7 +197,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         dice.Enqueue(2);
         dice.Enqueue(3);
         Commit(page, "#propose-cc");
-        var record = page.Find("#play-close-combats .cc-record").TextContent;
+        var record = page.OutcomeRecord(".cc-record").TextContent;
         Assert.Contains("capture, A20.22", record, StringComparison.Ordinal);
         // Read in the Russian view, which resolved the round: its HS by its tag, the German Guard by his hex.
         Assert.Contains($"2-3-7 half-squad R1 is captured and guarded by 4-6-7 squad in {DisplayText.Place(1, hexes.Two)} (A20.22)", record, StringComparison.Ordinal);
@@ -312,9 +312,9 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         dice.Enqueue(6);
         dice.Enqueue(6);
         Commit(page, "#propose-cc");
-        Assert.Contains($"; 4-4-7 squad in {DisplayText.Place(1, hexes.Two)} withdraws to {DisplayText.Place(1, hexes.One)} (A11.2)", page.Find("#play-close-combats .cc-record").TextContent,
+        Assert.Contains($"; 4-4-7 squad in {DisplayText.Place(1, hexes.Two)} withdraws to {DisplayText.Place(1, hexes.One)} (A11.2)", page.OutcomeRecord(".cc-record").TextContent,
             StringComparison.Ordinal);
-        Assert.Contains("12 - 2 (against a withdrawing unit, A11.2)", page.Find("#play-close-combats .cc-record").TextContent, StringComparison.Ordinal);
+        Assert.Contains("12 - 2 (against a withdrawing unit, A11.2)", page.OutcomeRecord(".cc-record").TextContent, StringComparison.Ordinal);
         Assert.False(live.History("village")!.HasErrors);
     }
 }

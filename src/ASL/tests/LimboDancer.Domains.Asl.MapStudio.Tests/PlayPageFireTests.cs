@@ -184,7 +184,7 @@ public sealed class PlayPageFireTests : IDisposable
         foreach (var perspective in Perspectives)
         {
             page.ViewAs(perspective);
-            var record = page.Find("#play-fires .fire-record");
+            var record = page.OutcomeRecord(".fire-record");
             Assert.Equal(("10", "NMC"), (record.QuerySelector(".fire-final-dr")!.TextContent, record.QuerySelector(".fire-result")!.TextContent));
             // r1 by its tag in its own side's view and the adjudicator's, by its hex in the German view (the user's ruling of 2026-10-22).
             var r1 = record.QuerySelector(".fire-fp[data-unit='r1']")!.TextContent;
@@ -194,7 +194,10 @@ public sealed class PlayPageFireTests : IDisposable
             Assert.Contains("+ 3 (stone building TEM, A7.6)", record.QuerySelector(".fire-dr")!.TextContent, StringComparison.Ordinal);
             Assert.Equal("pinned", record.QuerySelector(".fire-effects tr[data-unit='g1'] .fire-effect")!.TextContent);
             Assert.Equal("broken", record.QuerySelector(".fire-effects tr[data-unit='gh'] .fire-effect")!.TextContent);
-            Assert.Contains("MC 4, 4 = 8 against 7: failed", record.QuerySelector(".fire-effects tr[data-unit='gh']")!.TextContent, StringComparison.Ordinal);
+            var check = record.QuerySelector(".fire-effects tr[data-unit='gh'] .fire-check-display")!;
+            Assert.Equal(["Colored: 4", "White: 4"], check.QuerySelectorAll(".asl-die-label").Select(label => label.TextContent));
+            Assert.Contains("= 8 against 7:", check.TextContent, StringComparison.Ordinal);
+            Assert.Equal("failed", check.QuerySelector("strong")!.TextContent);
 
             // The units table and the drawn counters show the markers and the effects.
             Assert.All(FireGroup, id =>
@@ -345,7 +348,7 @@ public sealed class PlayPageFireTests : IDisposable
         Confirm(page);
 
         page.ViewAs("russian");
-        var fires = page.Find("#play-fires");
+        var fires = page.OutcomeRecord(".fire-record");
         Assert.Equal("no effect", fires.QuerySelector(".fire-result")!.TextContent);
         Assert.NotNull(fires.QuerySelector(".fire-withheld"));
         Assert.Null(fires.QuerySelector(".fire-effects"));
@@ -354,7 +357,7 @@ public sealed class PlayPageFireTests : IDisposable
         Assert.Equal(2, page.FindAll("#play-units tr[data-sealed]").Count(row => row.TextContent.Contains(DisplayText.Place(1, hexes.Building), StringComparison.Ordinal)));
 
         page.ViewAs("german");
-        Assert.Equal("unaffected", page.Find("#play-fires .fire-effects tr[data-unit='g1'] .fire-effect").TextContent);
-        Assert.Null(page.Find("#play-fires").QuerySelector(".fire-withheld"));
+        Assert.Equal("unaffected", page.OutcomeRecord(".fire-record .fire-effects tr[data-unit='g1'] .fire-effect").TextContent);
+        Assert.Null(page.OutcomeRecord(".fire-record").QuerySelector(".fire-withheld"));
     }
 }

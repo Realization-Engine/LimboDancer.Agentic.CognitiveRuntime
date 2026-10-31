@@ -21,6 +21,10 @@
                 </tr>
                 <tr><th>Sole enemy</th><td id="case-sole">@GameText.SoleText(snapshot)</td></tr>
                 <tr><th>Events this phase</th><td>@string.Join("; ", snapshot.Events.Select(item => $"r{item.Revision} {item.Type}{GameText.EventText(item)}{(snapshot.Reveals.Contains(item) ? " (reveal)" : string.Empty)}").DefaultIfEmpty("none"))</td></tr>
+                @foreach (var dice in snapshot.Events.Select(item => item.Payload).OfType<DiceRolled>())
+                {
+                    <tr><th>@DisplayText.RollPurpose(dice.Purpose)</th><td><AslDice Roll="@AslRollView.Recorded(dice.Roll, dice.Purpose, dice.Values, dice.Sides)" /></td></tr>
+                }
             </tbody>
         </table>
     }
