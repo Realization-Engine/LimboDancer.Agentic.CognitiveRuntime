@@ -1999,7 +1999,7 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: unloading, a Passen
 
 **Pass 105: Armored combat IV: equipment and formations** (new; 68 rows of the inventory). Counters: an armored car; a non-turreted AFV; an AFV with Secondary Armament; a partially armored AFV; a vehicle FT; an AA Gun with IFE of 40mm or less; an AFV with a G and one with Sz; a radioless trait on the T-34 M41. Needs first: 50, 55, 65, 100 (Armored Assault for D14.33).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 2 built with a deviation, 69 partly, 4 refused, 48 not built. Claims: 118 open, 5 built (owners: A11.5 (Codex), D3.7 (Codex), D5.34 (Claude)). A rule decided outside Rules on 6 rows. A Turns calculator on 1 row. Wiring: 0 of 123. Minigames: 3.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 2 built with a deviation, 69 partly, 4 refused, 48 not built. Claims: 118 open, 3 built, 2 reviewed (owners: A11.5 (Codex), D3.7 (Codex), D5.34 (Claude)). A rule decided outside Rules on 6 rows. A Turns calculator on 1 row. Wiring: 0 of 123. Minigames: 3.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2139,7 +2139,7 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: a stream read from 
 
 **Pass 130: Terrain II: the refused ground terrain** (new; 63 rows of the inventory; pass 135 until 2026-10-16). Counters: a Shellhole counter; Climb markers; overlay art and data (no source for it is in the repository). Needs first: 35, 40; 125 (the wadis and streams an overlay joins, A2.76; shellholes in a gully, B2.4).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 77 rows: 1 built with a deviation, 29 partly, 21 refused, 26 not built. Claims: 77 open. A rule decided outside Rules on 3 rows. Wiring: 0 of 77. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 77 rows: 1 built with a deviation, 29 partly, 21 refused, 26 not built. Claims: 76 open, 1 built (owners: A9.222 (Codex)). A rule decided outside Rules on 3 rows. Wiring: 0 of 77. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
