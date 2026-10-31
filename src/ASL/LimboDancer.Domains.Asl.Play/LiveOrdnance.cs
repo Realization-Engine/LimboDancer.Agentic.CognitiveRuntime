@@ -124,7 +124,7 @@ public static class LiveOrdnance
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
         string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false, bool legacySpotterUse = false,
         bool currentSpotterAssignment = true, bool legacyNonQualifiedUse = false, bool legacyVehicleBreakdown = false,
-        string? secondFirer = null, bool legacyParticipation = false)
+        string? secondFirer = null, bool legacyParticipation = false, bool legacyParticipationUseHistory = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
@@ -376,13 +376,21 @@ public static class LiveOrdnance
         int? useMultiple = null;
         if (!legacyNonQualifiedUse && gun is EquipmentInstance crewServed && (crewServed.Kind == "asl:gun" || participation is not null))
         {
-            var use = ScenarioA1NonQualifiedUseCalculator.Use(UseFacts(state, crewServed, crew, definition, phase, smcCount));
+            var useFacts = UseFacts(state, crewServed, crew, definition, phase, smcCount);
+            var use = ScenarioA1NonQualifiedUseCalculator.Use(useFacts);
             if (use.Refusal is { } useRefusal)
             {
                 return (null, UseRefusalPrefix + useRefusal);
             }
 
             useMultiple = use.Multiple;
+            if (participation is not null && !legacyParticipationUseHistory)
+            {
+                participation = participation with
+                {
+                    UseHistory = new(useFacts.Captured!.Value, useFacts.FiredThisGameTurn!.Value),
+                };
+            }
         }
         else if (!legacyNonQualifiedUse && gun is UnitInstance penalizedVehicle)
         {
@@ -1049,7 +1057,8 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true,
             recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true, recorded.SpotterUseVersion is null,
             fired.SpotterWiringVersion == 1, legacyNonQualifiedUse: recorded.UseMultiple is null, legacyVehicleBreakdown: recorded.VehicleBreakdown is null,
-            secondFirer: recorded.Participation?.Second?.Crew?.UnitId, legacyParticipation: recorded.Participation is null);
+            secondFirer: recorded.Participation?.Second?.Crew?.UnitId, legacyParticipation: recorded.Participation is null,
+            legacyParticipationUseHistory: recorded.Participation?.UseHistory is null);
         if (expected is null)
         {
             return reason;

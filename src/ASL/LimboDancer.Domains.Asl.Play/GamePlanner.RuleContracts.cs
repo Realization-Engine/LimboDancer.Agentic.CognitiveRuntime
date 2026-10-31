@@ -38,7 +38,10 @@ public sealed partial class GamePlanner
 
     private static Dictionary<string, JsonNode?> OrdnanceParticipationContractFacts(GameState state, IReadOnlyDictionary<string, string> picks, GameView view)
     {
-        var facts = new Dictionary<string, JsonNode?>(StringComparer.Ordinal);
+        var facts = new Dictionary<string, JsonNode?>(StringComparer.Ordinal)
+        {
+            ["phase"] = ScenarioA1OrdnanceEligibility.FirePhase(state.Phase),
+        };
         var primary = picks.TryGetValue("firerId", out var firerId) ? view.Units.FirstOrDefault(unit => unit.Id == firerId) : null;
         var second = picks.TryGetValue("secondId", out var secondId) ? view.Units.FirstOrDefault(unit => unit.Id == secondId) : null;
         var primaryKnown = primary is not null && (view.Perspective.IsAdjudicator || primary.Side == view.Perspective.Name);
@@ -78,6 +81,7 @@ public sealed partial class GamePlanner
         facts["usedOther"] = read.UsedOtherWeapon;
         facts["directed"] = read.DirectedFire;
         facts["spotted"] = read.Spotted;
+        facts["opportunityFire"] = read.OpportunityFireDeclared;
         return facts;
     }
 

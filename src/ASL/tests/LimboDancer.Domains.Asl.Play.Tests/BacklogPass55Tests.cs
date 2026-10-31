@@ -716,6 +716,8 @@ public sealed class BacklogPass55Tests : IDisposable
         var shot = LastShot(before);
         Assert.Equal("us-second", shot.Facts.GetProperty("participation").GetProperty("second").GetProperty("crew").GetProperty("unitId").GetString());
         Assert.Equal(1, shot.Facts.GetProperty("useMultiple").GetInt32());
+        Assert.False(shot.Facts.GetProperty("participation").GetProperty("useHistory").GetProperty("captured").GetBoolean());
+        Assert.False(shot.Facts.GetProperty("participation").GetProperty("useHistory").GetProperty("firedThisGameTurn").GetBoolean());
         Assert.Contains(Current.GunCrewsFired, id => id == "us-second");
         Assert.Contains(Current.PhaseFirers, item => item.Unit == "us-second" && item.Weapon == "us-gun");
         NoReplayErrors();
