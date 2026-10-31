@@ -14,11 +14,12 @@ public static class ScenarioA1CrewSurvivalRules
     /// D5.6 (p. 204): "There is a +1 DRM to the CS DR if the crew had been broken or under the effects of Shock/Stun at the time of the vehicle
     /// elimination." A Recall is treated as a Stun (D5.341), an Unconfirmed Kill is still Shocked (C7.42), and a "+1" counter after a Stun keeps its +1
     /// (D5.34). Where the record carries the pass's PRC fact (<paramref name="apart"/>; the referee's review of pass 65) the "+1" counter adds its own +1
-    /// to D5.6's, since D5.34 lists Crew Survival among the DR it modifies; an older record keeps the one +1 it was resolved with.
+    /// to D5.6's, since D5.34 lists Crew Survival among the DR it modifies; an older record keeps the one +1 it was resolved with. The "+1" counter's term is
+    /// <see cref="ScenarioA1StunCalculator.Drm"/> (the D5.34 claim).
     /// </summary>
     public static int SurvivalDrm(bool broken, bool stunned, bool shocked, bool stunRecovery, bool apart = false) =>
-        apart ? (broken || stunned || shocked ? 1 : 0) + (stunRecovery ? 1 : 0)
-            : broken || stunned || shocked || stunRecovery ? 1 : 0;
+        apart ? (broken || stunned || shocked ? 1 : 0) + ScenarioA1StunCalculator.Drm(StunDr.CrewSurvival, stunRecovery)
+            : broken || stunned || shocked || ScenarioA1StunCalculator.Drm(StunDr.CrewSurvival, stunRecovery) > 0 ? 1 : 0;
 
     /// <summary>
     /// The CS# a crew rolls against when its vehicle is eliminated without burning (D5.6, D9.2): none for a cs# printed in lower case, which serves only
@@ -40,12 +41,13 @@ public static class ScenarioA1CrewSurvivalRules
 
     /// <summary>
     /// The Immobilization TC (D5.5): the crew's 2d6 plus the "+1" of a Stun's recovery (D5.34) against its Morale Level; failure Abandons the vehicle.
-    /// <paramref name="recordedMorale"/> is the Armor Leader's or an Inexperienced Crew's Morale Level when it is the crew's (D3.42, D3.45).
+    /// <paramref name="recordedMorale"/> is the Armor Leader's or an Inexperienced Crew's Morale Level when it is the crew's (D3.42, D3.45). The "+1" is
+    /// <see cref="ScenarioA1StunCalculator.Drm"/> (the D5.34 claim).
     /// </summary>
     public static FireCheck TaskCheck(IReadOnlyList<int> dice, int morale, bool stunRecovery, int? recordedMorale)
     {
         ArgumentNullException.ThrowIfNull(dice);
-        var plusOne = stunRecovery ? 1 : 0;
+        var plusOne = ScenarioA1StunCalculator.Drm(StunDr.TaskCheck, stunRecovery);
         IReadOnlyList<FireModifier> drm = plusOne == 0 ? [] : [new FireModifier("stun", 1, "D5.34")];
         var total = dice[0] + dice[1];
         var passed = total + plusOne <= morale;

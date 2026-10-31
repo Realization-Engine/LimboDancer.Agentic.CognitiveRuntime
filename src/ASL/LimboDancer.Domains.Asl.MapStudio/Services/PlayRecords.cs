@@ -73,6 +73,11 @@ public sealed partial class PlayRecords
     /// </summary>
     private static string In(GameState? before, string? id) => id is not null && before?.Location(id)?.Location is { } at ? $" in {at}" : string.Empty;
 
+    private string ParticipantWords(OrdnanceShot? shot, GameState? before) =>
+        shot?.Crew?.UnitId is { } primary && shot.Participation?.Second?.Crew?.UnitId is { } second
+        && (viewer.IsAdjudicator || (before?.Unit(primary)?.Side == viewer.Name && before.Unit(second)?.Side == viewer.Name))
+            ? $" (firers {primary} and {second})" : string.Empty;
+
     private static string From(GameState? before, string? id) => id is not null && before?.Location(id)?.Location is { } at ? $" from {at}" : string.Empty;
 
     /// <summary>
@@ -819,7 +824,7 @@ public sealed partial class PlayRecords
                         + ", each with its own TEM and Hindrance, and at half FP again against concealed units (C8.4)";
                     string?[] canisterParts =
                     [
-                        $"{canisterShot.Gun}{In(history.At(item.Revision - 1), canisterShot.Gun)} fires Canister at {ScenarioA1CanisterCalculator.AimWords(canister.Aim, canister.Facing)}"
+                        $"{canisterShot.Gun}{In(history.At(item.Revision - 1), canisterShot.Gun)}{ParticipantWords(fact, history.At(item.Revision - 1))} fires Canister at {ScenarioA1CanisterCalculator.AimWords(canister.Aim, canister.Facing)}"
                             + (canisterShot.Facing is { } turned ? $", turning to {UnitFacings.Name(turned)}: Case A +{canister.CaseA} on the IFT DR (D3.52)" : "")
                             + $": no To Hit DR; IFT DR {string.Join(", ", canister.Dice.Select((die, index) => index == 0 ? $"{die} (colored)" : $"{die}"))} = {canister.OriginalDr}, "
                             + "which is also its Depletion, malfunction, and ROF check (C8.4)",
@@ -864,7 +869,7 @@ public sealed partial class PlayRecords
                 var check = resolution.PanzerfaustCheck is { } pf ? $"PF Check dr {pf.Dr}{ModifierText(pf.Drm)} = {pf.FinalDr}: a shot; " : "";
                 var parts = new List<string>
                 {
-                    check + $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)} fires {aim}" + (shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire ? " as Bounding First Fire (D3.3)" : "")
+                    check + $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)}{ParticipantWords(shot, history.At(item.Revision - 1))} fires {aim}" + (shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire ? " as Bounding First Fire (D3.3)" : "")
                         + (shot?.GunDuel == true ? ", first in a Gun Duel (C2.2401)" : "")
                         + (fired.Facing is { } facing ? $", turning to {UnitFacings.Name(facing)}" : "")
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"

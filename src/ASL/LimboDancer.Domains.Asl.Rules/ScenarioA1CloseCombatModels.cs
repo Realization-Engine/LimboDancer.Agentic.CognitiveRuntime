@@ -270,6 +270,19 @@ public sealed record CloseCombatFacts(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The A20.54 claim (A20.55, p. 88; rulings RA20.8, RA20.10): the reading switch of a round recorded from the claim's wiring on. When true, an escape
+    /// attack in the prisoners' round need not take in a Guard that an attack resolved before it in the round eliminates
+    /// (<see cref="ScenarioA1PrisonerCalculator.EscapeTargetsRefusal"/>); a prisoner in Melee with its Guard may declare Withdrawal from Melee
+    /// (<see cref="ScenarioA1PrisonerCalculator.MayWithdrawFromMelee"/>), may be attacked as a withdrawing unit, and escapes when it withdraws
+    /// (<see cref="ScenarioA1PrisonerCalculator.EscapeSucceeds"/>). Null in a record made before, which reads every escape as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? PrisonerEscapeReading
+    {
+        get; init;
+    }
 }
 
 /// <summary>A defending unit's Final DR in one attack, with its own DRM (A11.16), and the result for it.</summary>

@@ -9,6 +9,38 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 /// </summary>
 public sealed class ScenarioA1FinalFireCalculatorTests
 {
+    [Fact]
+    public void AnAvailableMaFinalFireKeepsTheVehicleInTheFirePicker()
+    {
+        var spent = new FireSpentFacts("dfph", true, false, true, () => false, () => false, () => false)
+        {
+            VehicleMgUnfired = () => false,
+        };
+        var ma = new FinalFireFacts(FinalFireWeapon.Mg, FireMarker.FirstFire, null, false, true, true, false, false, true);
+        Assert.True(ScenarioA1FireEligibility.FireSpent(spent));
+        Assert.False(ScenarioA1FireEligibility.FireSpent(spent, ma));
+        Assert.True(ScenarioA1FireEligibility.FireSpent(spent, ma with
+        {
+            Marker = FireMarker.FinalFire
+        }));
+        Assert.True(ScenarioA1FireEligibility.FireSpent(spent with
+        {
+            Phase = "pfph"
+        }, ma));
+    }
+
+    [Fact]
+    public void VehicleMaKeepsItsOwnCounterWhenAnotherWeaponChangesTheUnitCounter()
+    {
+        Assert.Equal(FireMarker.FirstFire, ScenarioA1FinalFireCalculator.VehicleMarker("first-fire", true, false, true, false));
+        Assert.Equal(FireMarker.FinalFire, ScenarioA1FinalFireCalculator.VehicleMarker("final-fire", true, true, false, false));
+        Assert.Equal(FireMarker.None, ScenarioA1FinalFireCalculator.VehicleMarker("none", true, true, true, false));
+        Assert.Equal(FireMarker.None, ScenarioA1FinalFireCalculator.VehicleMarker("first-fire", true, true, false, true));
+        Assert.Equal(FireMarker.None, ScenarioA1FinalFireCalculator.VehicleMarker(null, false, true, true, false));
+        Assert.Equal(FireMarker.FirstFire, ScenarioA1FinalFireCalculator.VehicleMarker(null, true, true, false, false));
+        Assert.Equal(FireMarker.FinalFire, ScenarioA1FinalFireCalculator.VehicleMarker(null, true, false, true, false));
+    }
+
     private const string Contract = "a8.41-final-fire";
 
     private static readonly bool[] Both = [false, true];
@@ -101,7 +133,7 @@ public sealed class ScenarioA1FinalFireCalculatorTests
     [Fact]
     public void AFirstFireMarkedGunFiresOnceMoreAsIntensiveFireOnlyAdjacent()
     {
-        Assert.Equal(new FinalFireVerdict(FinalFireUse.OnceMore, true, false, true, 0, null),
+        Assert.Equal(new FinalFireVerdict(FinalFireUse.OnceMore, false, false, true, 0, null),
             ScenarioA1FinalFireCalculator.Verdict(Facts(FinalFireWeapon.Gun, FireMarker.FirstFire, 1)));
         Assert.Equal("marked First Fire: it fires again only at an ADJACENT or same-hex target (A8.4, A8.41)",
             ScenarioA1FinalFireCalculator.FinalFireRefusal(Facts(FinalFireWeapon.Gun, FireMarker.FirstFire, 5)));

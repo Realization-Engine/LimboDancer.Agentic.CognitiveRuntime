@@ -69,7 +69,9 @@ internal static class ScenarioA1CloseCombatValueContract
 
         var guard = facts.Flag("guard");
         var legacyGuard = facts.Flag("guardOutnumbered");
-        if (guard is null && legacyGuard is null)
+        // A20.52 (p. 87): the halving does not depend on US#, so a false "outnumbered" input does not show the attacker is no Guard. Evaluate only
+        // when the full fact is known, or when the outnumbered input already proves the penalty (the review of PR 75, item 15).
+        if (guard is null && legacyGuard != true)
         {
             return new(ContractVerdict.NotEvaluated, [new("whether an attacker is a Guard is not known", "A20.52", 87)], []);
         }

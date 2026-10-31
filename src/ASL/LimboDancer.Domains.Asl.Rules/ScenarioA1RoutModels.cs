@@ -40,7 +40,17 @@ public sealed record RoutArcWeapon(int Range, int Facing);
 /// Gun work; the MA Gun's printed maximum range, if any; and its MA Type.
 /// </summary>
 public sealed record RoutVehicleFacts(bool Abandoned, bool Motion, bool Stunned, bool Shocked, bool Unarmored, bool OpenTopped, bool CrewExposed, int? Hull, int? Turret,
-    bool Bmg, bool Cmg, bool Aamg, bool MainMg, bool MainGun, int? MainGunRange, string? MaType);
+    bool Bmg, bool Cmg, bool Aamg, bool MainMg, bool MainGun, int? MainGunRange, string? MaType)
+{
+    /// <summary>
+    /// Whether the AFV is under a "+1" counter after a Stun or Recall (D5.34, D5.341, pp. 203 and 204; the D5.34 claim, ruling RD5.14): its armament is
+    /// "currently penalized by the ... +1 Stun DRM", so it may not Interdict (A10.532, p. 68). Null is false, the reading before the claim.
+    /// </summary>
+    public bool? StunRecovery
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// What keeps one enemy unit from applying the FFMO DRM to a Location (A10.531; pass 35, task 35.4), beyond the LOS itself: the map Hindrance along

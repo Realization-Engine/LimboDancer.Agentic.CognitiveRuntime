@@ -24,12 +24,11 @@ public static class ScenarioA1NightAndWeather
     private static readonly IReadOnlyList<string> Moons = ScenarioA1Definitions.Moons;
     private static readonly IReadOnlyList<string> Axis = ScenarioA1Definitions.AxisNationalities;
 
-    /// <summary>The markers that make a Gunflash (E1.8; ruling R16.2): Prep, First, Final, Bounding, or Intensive Fire, or a Melee.</summary>
-    public static IReadOnlyList<UnitCondition> GunflashMarkers
-    {
-        get;
-    } =
-        [UnitCondition.PrepFire, UnitCondition.FirstFire, UnitCondition.FinalFire, UnitCondition.BoundingFire, UnitCondition.IntensiveFire, UnitCondition.Melee];
+    /// <summary>
+    /// The markers that make a Gunflash (E1.8; ruling R16.2): Prep, First, Final, Bounding, or Intensive Fire, or a Melee. Forwards to
+    /// <see cref="ScenarioA1GunflashCalculator.Markers"/>, the same list in the same order (the E1.8 claim, RE1.13).
+    /// </summary>
+    public static IReadOnlyList<UnitCondition> GunflashMarkers => ScenarioA1GunflashCalculator.Markers;
 
     /// <summary>The Base NVR an SSR <c>night:n</c> names, or null (E1.1; ruling R16.1).</summary>
     public static int? NightRule(IReadOnlyList<string> rules)
@@ -199,7 +198,9 @@ public static class ScenarioA1NightAndWeather
 
     /// <summary>
     /// Whether a Location is Illuminated at night (E1.9, E1.923, E1.94; ruling R16.8): within three hexes of a Starshell, or within two hexes of a Blaze
-    /// (a burning wreck), over the distances to each, read as they are asked for. Shadows (E1.941) are not built.
+    /// (a burning wreck), over the distances to each, read as they are asked for. Shadows (E1.941) are not built. For a Starshell, replaced by
+    /// <see cref="ScenarioA1Starshells.StarshellIlluminates"/> (the E1.8 claim, RE1.8, RE1.13), which keeps this answer: that one lights no Interior
+    /// Building Hex or subterranean Location (E1.921, E1.923), where this one lights every Location within three hexes. A Blaze stays E1.94's.
     /// </summary>
     public static bool Illuminated(bool night, IEnumerable<int?> starshellDistances, IEnumerable<int?> blazeDistances)
     {
@@ -215,7 +216,10 @@ public static class ScenarioA1NightAndWeather
 
     /// <summary>
     /// Whether a Location is marked by a Gunflash (E1.8; ruling R16.2): one of its active occupants holds a Prep, First, Final, Bounding, or Intensive
-    /// Fire counter, or a Melee; each occupant answers whether it has a marker.
+    /// Fire counter, or a Melee; each occupant answers whether it has a marker. Replaced by <see cref="ScenarioA1GunflashCalculator.Marked"/> over the
+    /// Location's marks (the E1.8 claim, RE1.2, RE1.13), which keeps this answer: a mark belongs to the Location until the end of the AFPh, so that one stays
+    /// true after the firer moves away or is eliminated, and for a MG that kept its ROF; it is false for a counter placed by dismantling at night (E1.89) or
+    /// by a Rider's bail-out (D6.24), which this one reads as a Gunflash.
     /// </summary>
     public static bool Gunflash(IEnumerable<Func<UnitCondition, bool>> activeOccupants)
     {

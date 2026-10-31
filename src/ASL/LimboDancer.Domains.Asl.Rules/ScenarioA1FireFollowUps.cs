@@ -12,17 +12,47 @@ public static class ScenarioA1FireFollowUps
     /// A Fire Lane's attack on the moving stack in one of its Locations (A9.22, A9.222; ruling R12.7): Residual FP, never reduced, with no CX, leader, or
     /// hero DRM and no Cowering, taking the Hindrance of the LOS from its MG added to the Location's own.
     /// </summary>
-    public static FireAttack FireLaneAttack(FireAttack facts, int laneHindranceDrm)
+    public static FireAttack FireLaneAttack(FireAttack facts, int laneHindranceDrm, FireLaneWreckFacts? wrecks = null)
     {
         ArgumentNullException.ThrowIfNull(facts);
         return facts with
         {
             FireLane = true,
+            FireLaneWrecks = wrecks,
             Los = (facts.Los ?? new FireLos(false, 0, true, false)) with
             {
                 HindranceDrm = (facts.Los?.HindranceDrm ?? 0) + laneHindranceDrm
             },
         };
+    }
+
+    /// <summary>
+    /// A9.222 (p. 63), D9.4 (p. 210), B25.2 (p. 143): count distinct eligible hard-wreck ranges, independently of ignored soft Hindrances. A wreck in the
+    /// MG's own hex (range 0), in the attacked Location, or beyond it is not between firer and target (A6.7, p. 54), so such facts are refused.
+    /// </summary>
+    public static int? FireLaneWreckHindrance(FireLaneWreckFacts? facts)
+    {
+        if (facts is null)
+        {
+            return 0;
+        }
+        if (string.IsNullOrWhiteSpace(facts.LaneWeaponId) || string.IsNullOrWhiteSpace(facts.SourceLocation) || facts.Candidates is null
+            || facts.TargetRange < 1
+            || facts.Candidates.Any(item => item is null || string.IsNullOrWhiteSpace(item.WreckId) || string.IsNullOrWhiteSpace(item.Location)
+                || item.Range < 1 || item.Range >= facts.TargetRange || item.BypassOtherHex is null)
+            || facts.Candidates.Select(item => item.WreckId).Distinct(StringComparer.Ordinal).Count() != facts.Candidates.Count)
+        {
+            return null;
+        }
+        // A constant: the call is there only to cite B25.2's exception (an established Fire Lane takes the Wreck Hindrance, not the +2 SMOKE), so
+        // the lane reads the same calculator as other fire through a burning wreck (the review of PR 75, item 49).
+        if (!facts.SameLevel || !ScenarioA1BlazeSmokeCalculator.WreckBlazeLos(true, WindForce.None)!.WreckHindrance)
+        {
+            return 0;
+        }
+        return facts.Candidates.Where(item => item.AtLosElevation && item.Standing && item.VisibleFromSource && item.VisibleFromTarget
+                && ScenarioA1VehicleSightRules.BypassHinders(item.BypassOtherHex.Length > 0, () => item.CrossesBypassOtherHex))
+            .Select(item => item.Range).Distinct().Count();
     }
 
     /// <summary>A9.22, A9.223: a Fire Lane attacks the moving stack still in its Location, once the other attacks there are made, while the lane is in place.</summary>
@@ -813,12 +843,11 @@ public static class ScenarioA1FireFollowUps
             ? (new RecordRefusal("UNIT-STATE-040", "An Encirclement is placed by a fire record of a fire phase at a Location holding units of the Encircled side (A7.7)."), false)
             : (null, !exists);
 
-    /// <summary>A7.7 (ruling R12.11): an Encirclement stands while an active, uncaptured, non-Dummy unit it Encircles is left in its Location.</summary>
-    public static bool EncirclementStands(IEnumerable<EncircledLocationUnitFacts> unitsThere)
-    {
-        ArgumentNullException.ThrowIfNull(unitsThere);
-        return unitsThere.Any(unit => unit.Active && !unit.Dummy && !unit.Captured && unit.Encircled);
-    }
+    /// <summary>
+    /// A7.7 (ruling R12.11): an Encirclement stands while an active, uncaptured, non-Dummy unit it Encircles is left in its Location. Decided by
+    /// <see cref="ScenarioA1EncirclementCalculator.Stands"/> (the D5.34 claim, ruling RD5.16), to which it forwards with the same answer.
+    /// </summary>
+    public static bool EncirclementStands(IEnumerable<EncircledLocationUnitFacts> unitsThere) => ScenarioA1EncirclementCalculator.Stands(unitsThere);
 
     /// <summary>A Fire Lane (A9.22; ruling R12.7): placed in the MPh by its MG's fire record, for an active MG and operator, every entry with FP, one per MG.</summary>
     public static RecordRefusal? VerifyFireLane(string? phase, bool recordKnown, bool weaponActive, bool operatorActive, IEnumerable<int> entryFps, bool laneExists)

@@ -20,6 +20,66 @@ public sealed class ScenarioA1Pass8Tests
             Captors = [],
         };
 
+    [Fact]
+    public void CurrentFinalFireGunUsesRangeAndNoIfWhileLegacyKeepsItsAnswer()
+    {
+        var shot = German("DFPh") with
+        {
+            IntensiveFire = true,
+            Gun = German().Gun! with
+            {
+                FirstFire = true
+            },
+        };
+        Assert.Equal(OrdnanceResolution.Resolved, Resolve(shot, [5, 6]).Disposition);
+        var current = shot with
+        {
+            FinalFireVersion = 1
+        };
+        Assert.Contains(ScenarioA1OrdnanceCalculator.Precheck(current, Reference),
+            reason => reason.StartsWith("asl.a1.ordnance.final-fire:", StringComparison.Ordinal));
+        current = current with
+        {
+            Range = 1
+        };
+        Assert.Equal(OrdnanceResolution.Resolved, Resolve(current, [5, 6]).Disposition);
+        var noIf = Reference.WithGun(Reference.Guns["attacker-inf-gun"] with
+        {
+            NoIntensiveFire = true
+        });
+        Assert.Contains(ScenarioA1OrdnanceCalculator.Precheck(current, noIf),
+            reason => reason.StartsWith("asl.a1.ordnance.final-fire:", StringComparison.Ordinal));
+        Assert.Contains("asl.a1.ordnance.final-fire-version-outside", ScenarioA1OrdnanceCalculator.Precheck(current with
+        {
+            FinalFireVersion = 99
+        }, Reference));
+        Assert.DoesNotContain("FinalFireVersion", System.Text.Json.JsonSerializer.Serialize(shot), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CurrentFinalFireGivesAFirstFireLightMortarNoSecondShot()
+    {
+        // C5.6 (p. 172): no SW Intensive Fires; A9.3 (p. 63): no weapon sustains "if firing as ordnance" (the review of PR 75, item 48).
+        var mortar = German("DFPh", range: 1) with
+        {
+            Gun = new OrdnanceGun("de-mortar", "attacker-light-mortar", false, 0, false, false) { FirstFire = true },
+            Crew = new OrdnanceCrew("de-squad", "attacker-squad", false, false, false, false, false),
+            TargetType = OrdnanceTargetTypes.Area,
+            FinalFireVersion = 1,
+        };
+        var facts = ScenarioA1FinalFireCalculator.OrdnanceFacts(mortar, Reference.Guns["attacker-light-mortar"], Reference);
+        Assert.Equal(FinalFireWeapon.OrdnanceSw, facts.Weapon);
+        Assert.Contains(ScenarioA1OrdnanceCalculator.Precheck(mortar, Reference),
+            reason => reason.StartsWith("asl.a1.ordnance.final-fire:", StringComparison.Ordinal) && reason.Contains("neither", StringComparison.Ordinal));
+        Assert.DoesNotContain(ScenarioA1OrdnanceCalculator.Precheck(mortar with
+        {
+            Gun = mortar.Gun! with
+            {
+                FirstFire = false
+            }
+        }, Reference), reason => reason.StartsWith("asl.a1.ordnance.final-fire:", StringComparison.Ordinal));
+    }
+
     private static FireAttack Hit(string phase, string side, string terrain, FireTarget[] targets) =>
         new(phase, side, null, null, At, [], null, null, true, new FireLos(false, 0, true, false), 7, terrain, targets, 2, null);
 

@@ -52,7 +52,21 @@ public sealed record LosHindrance(int Range, double Value)
 }
 
 /// <summary>A hex an LOS passes through: its board and hex name, and its range from the LOS's source hex.</summary>
-public sealed record LosCrossedHex(BoardRef? Board, HexName? Hex, int Range);
+public sealed record LosCrossedHex(BoardRef? Board, HexName? Hex, int Range)
+{
+    /// <summary>The independent hex distance to the target, not total range minus source range.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? RangeToTarget
+    {
+        get; init;
+    }
+}
+
+/// <summary>Resolved endpoint map facts. Consumers decide which elevation adjustments their rule uses.</summary>
+public sealed record LosElevationEnd(int Elevation, double RooftopAdjustment, bool Cellar, bool Hillock, bool Upslope,
+    double EmbankmentAdjustment);
+
+public sealed record LosElevations(LosElevationEnd Source, LosElevationEnd Target);
 
 /// <summary>
 /// Where LOS first meets a map hindrance (<c>LOSResult.firstHindranceAt</c>): the point on the map's grid and the hex
@@ -72,6 +86,13 @@ public sealed record LosHindranceAt(GridPoint Point, BoardRef? Board, HexName? H
 /// </summary>
 public sealed record LosResult(LosStatus Status, bool? IsBlocked, int Range, int Hindrance, LosBlockedAt? BlockedAt, string Reason)
 {
+    /// <summary>The resolved vertical endpoint context; absent in older or externally supplied LOS results. Not part of VASL result equality.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public LosElevations? Elevations
+    {
+        get; init;
+    }
+
     /// <summary>Whether the result answers the question: Clear or Blocked, definitive or not.</summary>
     public bool IsAnswered => IsBlocked is not null;
 

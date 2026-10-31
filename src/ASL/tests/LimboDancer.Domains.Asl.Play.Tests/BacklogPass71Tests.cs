@@ -85,7 +85,10 @@ public sealed class BacklogPass71Tests : IDisposable
         {
             var range = Board01Fixture.Handle().Distance(from.Hex, target.Hex) ?? 1;
             var shut = blocked.Contains((from.Hex.ToString(), target.Hex.ToString())) || blocked.Contains((target.Hex.ToString(), from.Hex.ToString()));
-            return shut ? new(LosStatus.Blocked, true, range, 0, null, string.Empty) : new(LosStatus.Clear, false, range, 0, null, string.Empty);
+            return new(shut ? LosStatus.Blocked : LosStatus.Clear, shut, range, 0, null, string.Empty)
+            {
+                Elevations = new(new(from.Level, 0, from.Level < 0, false, false, 0), new(target.Level, 0, target.Level < 0, false, false, 0)),
+            };
         }
     }
 
@@ -1795,8 +1798,11 @@ public sealed class BacklogPass71Tests : IDisposable
         Assert.False(History.HasErrors);
     }
 
-    [Fact]
-    public async Task ASnipersOwnLlmcAttackWaitsOnItsOwnForfeitThenTheFirstAttacksSniperCheckFollows()
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task ASnipersOwnLlmcAttackWaitsOnItsOwnForfeitThenTheFirstAttacksSniperCheckFollows(bool legacy, bool legacyQueuedCheck)
     {
         // Ruling R71.25, R5's finding 1 (A14.3, A14.4): as above, the Russian Sniper's dr 1 eliminates the 8-0 and the 4-6-7's LLMC, 3 + 3, calls the Sniper
         // again in the same commit; its dr 2 waits on the Russian side's choice under its own key (an answered Sniper choice and then a non-fire trigger), and
@@ -1809,17 +1815,28 @@ public sealed class BacklogPass71Tests : IDisposable
             target = L("E4"),
         }));
         var first = Current.Choice!.Resume.GetProperty("trigger").GetString()!;
+        if (legacy)
+        {
+            RewritePendingSmokeVersion(null);
+        }
         Committed(await Choose(ScenarioA1Sniper.Attack, Then(4, 1, 1, 6, 1, 3, 3, 2)));
         var trigger = Since(before).Select(item => item.Payload).OfType<MoraleCheckResolved>().Single().Rolls.Single().Value;
         var waiting = Current.Choice!;
         Assert.Equal(ForfeitKey("rs", trigger), waiting.Key);
         var owed = Assert.Single(waiting.Resume.GetProperty("rest").EnumerateArray());
         Assert.Equal((first, L("E6")), (owed.GetProperty("roll").GetString(), owed.GetProperty("check").GetString()));
+        Assert.Equal(!legacy, owed.TryGetProperty("smokeVersion", out _));
         Assert.Equal(("de-l", ScenarioA1Sniper.Eliminated), (Assert.Single(Sniped(before)).Unit, Sniped(before)[0].Result));
+
+        if (legacyQueuedCheck)
+        {
+            RewritePendingSmokeVersion(1, clearQueuedVersions: true);
+        }
 
         await Reposition();
         var check = Current.Choice!;
         Assert.Equal((ChoicePending.SniperCheck, $"{ChoicePending.SniperCheck}:rs:{first}"), (check.Kind, check.Key));
+        Assert.Equal(!legacy && !legacyQueuedCheck, check.Resume.TryGetProperty("smokeVersion", out _));
         Committed(await Choose(ChoicePending.Decline, NoRoll()));
         Assert.Equal(ScenarioA1Sniper.Forfeited, Sniped(before)[^1].Result);
         Assert.Null(Current.Choice);
@@ -1933,14 +1950,16 @@ public sealed class BacklogPass71Tests : IDisposable
         Assert.False(History.HasErrors);
     }
 
-    [Fact]
-    public async Task SmokeCountsInItsOwnLocationAloneInTheTemComparison()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SniperSmokeHeightChangesNewChoicesButPreservesLegacyContinuations(bool legacy)
     {
         // A14.21 (p. 82; R1's finding 5): "the lowest ... in-hex TEM/SMOKE DRM applicable to any eligible target". In the German MPh de-s enters the
         // north-east hex beside E6 and places SMOKE in its ground level (A24.1, dr 1); de-b is on that hex's level 1, de-c in the north-west hex, all Open
         // Ground. g1 then enters E2, and its check, 3 + 3, after r1's First Fire calls the Russian Sniper, whose Random Location DR finds E6, empty. The SMOKE
-        // does not raise de-b's TEM, so both hexes are of TEM 0 and the Russian side chooses. Before the fix round the SMOKE counted for the whole hex, and the
-        // north-west hex was the target unasked.
+        // raises de-b's TEM under A24.4 (p. 92), so the north-west hex is selected. A recorded choice without smokeVersion keeps the former exact-Location
+        // count through both the forfeit answer and the resulting hex choice.
         var (east, west) = (Beside(HexsideDirection.NorthEast), Beside(HexsideDirection.NorthWest));
         upstairs.Add(east);
         var above = Squad("de-b", east, "german");
@@ -1982,10 +2001,73 @@ public sealed class BacklogPass71Tests : IDisposable
             firers = R1,
             target = L("E2"),
         }));
+        Assert.Equal(1, Current.Choice!.Resume.GetProperty("smokeVersion").GetInt32());
+        if (legacy)
+        {
+            RewritePendingSmokeVersion(null);
+        }
+        var beforeAttack = Revision;
         await Attack(1, 1);
-        var choice = Current.Choice!;
-        Assert.Equal(ScenarioA1Sniper.HexStep, choice.Resume.GetProperty("step").GetString());
-        Assert.Equal(new[] { L(east), L(west) }.Order(StringComparer.Ordinal), choice.Options);
+        if (legacy)
+        {
+            var choice = Current.Choice!;
+            Assert.Equal(ScenarioA1Sniper.HexStep, choice.Resume.GetProperty("step").GetString());
+            Assert.Equal(new[] { L(east), L(west) }.Order(StringComparer.Ordinal), choice.Options);
+            Assert.False(choice.Resume.TryGetProperty("smokeVersion", out _));
+            Committed(await Choose(L(west), NoRoll()));
+        }
+        Assert.Equal("de-c", Assert.Single(Sniped(beforeAttack)).Unit);
+        Assert.False(History.HasErrors);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(2)]
+    public async Task UnknownSniperSmokeVersionIsRefusedBeforeDice(int version)
+    {
+        await Setup(null);
+        await FireToTheForfeit(1);
+        RewritePendingSmokeVersion(version);
+        var before = Revision;
+        var result = await Choose(ScenarioA1Sniper.Attack, NoRoll());
+        Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
+        Assert.Contains(result.Reasons, reason => reason.Contains("play.sniper-smoke-version", StringComparison.Ordinal));
+        Assert.Equal(before, Revision);
+    }
+
+    private void RewritePendingSmokeVersion(int? version, bool clearQueuedVersions = false)
+    {
+        var record = store.Read(Scope)!;
+        var pending = Current.Choice!;
+        var resume = pending.Resume.Deserialize<Dictionary<string, JsonElement>>()!;
+        if (version is null)
+        {
+            resume.Remove("smokeVersion");
+        }
+        else
+        {
+            resume["smokeVersion"] = JsonSerializer.SerializeToElement(version.Value);
+        }
+        if (clearQueuedVersions)
+        {
+            var rest = resume["rest"].Deserialize<Dictionary<string, JsonElement>[]>()!;
+            foreach (var queued in rest)
+            {
+                queued.Remove("smokeVersion");
+            }
+            resume["rest"] = JsonSerializer.SerializeToElement(rest);
+        }
+        var events = record.Events.Select(item => item.Payload is ChoicePending choice && choice.Key == pending.Key ? item with
+        {
+            Payload = choice with
+            {
+                Resume = JsonSerializer.SerializeToElement(resume),
+            },
+        } : item).ToArray();
+        File.WriteAllText(Path.Combine(root, Tenant.ToString("N"), Scope.Game + ".game.json"), GameEventWriter.Write(Scope, record with
+        {
+            Events = events,
+        }), new System.Text.UTF8Encoding(false));
     }
 
     [Fact]

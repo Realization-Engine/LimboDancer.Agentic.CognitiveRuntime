@@ -15,7 +15,9 @@ public enum NationalCcv
 /// whether it is an Assault Engineer (<see cref="ScenarioA1CloseCombatValueCalculator.AssaultEngineer"/>) and Inexperienced; the SMC combining with it, or
 /// failing one the leader an Original 2 created (A18.12); and each halving penalty, once per kind (ruling RA11C.2): pinned (A7.8), D7.213's First or
 /// Final Fire counter in Reaction Fire, a concealed vehicle (A11.19), a Guard attacking non-prisoners (A20.52); and the main unit's national case.
-/// GuardOutnumbered retains the earlier input; Guard supplies the full rule without changing the existing constructor.
+/// <see cref="Guard"/> is the full reading of A20.52 (p. 87): a Guard's FP is halved for attack against non-prisoners in CC, whatever its US#.
+/// GuardOutnumbered is the earlier input, kept so the existing constructor and its callers keep their answer; alone it is the narrower reading that
+/// halves only a Guard whose US# is below its prisoners'. Either one, or both, gives one -1.
 /// </summary>
 public readonly record struct CcvAttackFacts(
     string MainUnitId,
