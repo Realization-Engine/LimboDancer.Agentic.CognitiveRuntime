@@ -109,3 +109,33 @@ Studio on port 6680 now runs the gate build from this worktree, whose assembly v
 Evidence is under `E:/Archive/GitHub/dlandi/asl-gate-work-codex`: `gate-fire3-review-{strict,baseline,build,proofs}.log`, `before-wire-fire-3`, `after-wire-fire-3`, and `test-classes/PR68-review-{rules,play}-8a8c8e21.{log,trx}`. Disposable registered build outputs were removed after CI and the proofs; the current Studio runs from its in-worktree build. The results, logs and baseline cache remain.
 
 The review corrections are ready for Claude's separate Rules and wiring review. PR 81 remains open as the Rules review copy until PR 68 merges. The user gives the word for that merge; only then does PR 85 take main and continue the chain. Formal per-action allocation measurements from section 7 are still outstanding, so this report makes no performance or final acceptance claim and does not promote the wiring claim to wired. The proposed upgrade of an old game's copy is recorded separately in the backlog and is not implemented here.
+
+## 11. Final nine-item review completion, 2026-10-31
+
+This report supersedes section 10's outstanding measurement and fixture items. Implementation `db32441e` addresses the final prompt's nine items; Claude's recheck and the user's merge instruction remain separate. No later PR was advanced.
+
+1. `MannedMg` honors both malfunction flags and the unavailable list, including the MA AAMG, with null-list and present-list tests.
+2. `CanAttack` and Precheck share the positive firepower calculation, including eligible CE halftrack Passengers. Turn choices gather those same Passengers and retain Captured, Recall and Unconfirmed Kill bars. The old unconditional Passenger fallback is removed.
+3. Focused tests cover inherent-crew refusal, two failed CC weapons, missing Random Selection, highest/tied selection, and the 1 through 6 die range.
+4. Unknown OVR Disabled weapon names are refused. Permanent disablement is reported before the missing inherent-crew refusal.
+5. W-D3.7 names the removed `ScenarioA1VehicleCloseCombatRules.VehicleCcArmament`.
+6. RD3.12 and backlog 85 explicitly record the permitted OVR limit: its participating weapon list and printed BMG/CMG FP still depend on the embedded reference. A future reference change must preserve or separately version that composition.
+7. Recorded evidence overlays its sixteen scoped front-face fields, including recorded absence, while retaining unrelated definition values. The catalog-change replay test checks this.
+8. The allocation probe and raw paired results are in `code-builders/pass-history/wire-fire-3/MEASUREMENT.md` and its `measurements` folder. Two initial pairs found 4,360 bytes per repeated active-Sniper preflight, above the 4 KiB investigation threshold. Reusing the completed public-fact check for the same state and planner reduced that to 40 bytes. Weak keys retain no discarded state or history. Both final pairs pass every unchanged allocation and timing threshold, and all 26 workload answers agree. The largest added helper allocation is 22,971.4 bytes cold, below 32 KiB. Fire adds 600 bytes and repair 39,696 bytes per complete proposal and rolled batch, below 64 KiB. This is not a whole-game or browser speedup claim.
+9. The `village` fixture is explained and the gate restored as described below.
+
+### Corrected proof-store provenance
+
+The record named `village` was a fresh **Minigame: C9 Mortars**, created on 2026-10-30 at 23:54:08.6722927 UTC (19:54 EDT), first event `setup-8838d6327781-1`. It carries the later Wire2/PR 85 two-SMC `participation` field. It came from the shared live/proof inputs used with that later build, not from PR 68's four owned games. Studio 6680 had been running the Wire2 artifact before it was replaced for PR 68. This was a new game, not an upgrade of an old recorded game.
+
+The earlier PR 68 baseline cache `6ff45e469bba9079`, made at 17:46 EDT, has no such game and contains 132 games after the four owned fixtures. The September 25 archived `village`, first event `setup-d4a983558336-1`, is a different game and is not a valid substitute. Restoring the pre-PR-85 proof-store state therefore means restoring the absence of the newly added C9 fixture. Its full record is preserved at `E:/Archive/GitHub/dlandi/asl-gate-work-codex/late-pr85-proof-games/village.game.json`; the live game and the September archive are untouched. The corrected gate again has 132 games and reuses the earlier baseline cache. No cut or unrelated game is presented as a complete replay.
+
+### Final local validation
+
+The final strict build has zero warnings and errors. Only changed-behavior tests were run locally: ten Rules cases, three Play cases, then four Sniper live/replay cases for the measured reuse change. All seventeen pass. The allocation probes append no game events.
+
+Against `ee967f71`, all 10,296 early sweep lines and all 55,839 full sweep lines match. Replay has 3,560 baseline lines and 3,576 current lines. The only differing game is owned `wire-ma-low-ammo`, at the same 17 comparison keys: its new Low Ammo, Disabled and Recall evidence is reconstructable only on the current side. The 32 source-text differences are the previously documented D3.7 and SMOKE refusals/occurrence counts plus the explicit unknown Disabled weapon refusal. No reconstructable older replay differs.
+
+Two historical fixtures remain incomplete and are not claimed as successful evidence: `p71-sniper-residual` stops at revision 2 because [P11] is not on bd03, and `wire-stealth-ambush` stops at revision 14 because its Ambush facts disagree. Section 10's focused Sniper tests remain the reviewer's permitted alternative.
+
+Evidence is retained under `E:/Archive/GitHub/dlandi/asl-gate-work-codex`: `pr68-final-{baseline,build,proofs}.log`, `before-wire-fire-3`, `after-wire-fire-3`, and `test-classes/PR68-final-{rules,play,sniper}.{log,trx}`. The code is wired; Claude sets its reviewed state after the nine-item recheck. CI and the user's merge instruction still govern reaching main. PR 81 stays open until PR 68 merges; the later chain and the game-upgrade proposal remain parked.

@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 // Read-only paired probe of the actual SMOKE helpers. Build this same source against each Studio.
 // Arguments: repository, proof store, output JSON. DOTNET_TieredCompilation=0 for both processes.
 var repository = args[0];
+var startedUtc = DateTimeOffset.UtcNow;
 var options = new StudioOptions
 {
     BoardsRoot = repository + "/src/ASL/boards",
@@ -165,7 +166,8 @@ foreach (var game in new[] { "wire-smoke-fire", "wire-vehicle-repair" })
 File.WriteAllText(args[2], JsonSerializer.Serialize(new
 {
     playVersion = typeof(GamePlanner).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion,
-    build = "Debug", runtime = Environment.Version.ToString(), view = "Viewer-independent physical facts; commands use the recorded phasing side.",
+    startedUtc, build = "Debug", runtime = Environment.Version.ToString(), serverGc = System.Runtime.GCSettings.IsServerGC,
+    processorCount = Environment.ProcessorCount, view = "Viewer-independent physical facts; commands use the recorded phasing side.",
     inputs = new[] { "dl-tractor-works-02", "wire-smoke-strength", "wire-smoke-fire", "wire-vehicle-repair" }.Select(game => new
     {
         game, sha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(args[1], LivePlay.Tenant.ToString("N"), game + ".game.json"))))
