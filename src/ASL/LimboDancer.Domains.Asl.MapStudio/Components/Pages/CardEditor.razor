@@ -28,6 +28,10 @@ else
             <CardPicker Id="edit-source" Cards="@choices" Value="@source" ValueChanged="@ChooseSource" EmptyLabel="a minimal card" />
         </label>
     </div>
+    @if (minigameRefusal is { } refusal && source.Length == 0)
+    {
+        <p class="diagnostic warning" id="edit-minigame-refused">@refusal</p>
+    }
 
     <CardEditorForm Draft="@draft" Catalog="@catalog" Sides="@sides" BoardNames="@boardNames" SavedMaps="@savedMaps" Map="@map" MapProblems="@mapProblems"
                     Json="@json" Changed="@Check" />
@@ -56,6 +60,9 @@ else
     private IReadOnlyList<string> games = [];
     private IReadOnlyList<string> diagnostics = [];
     private string? note;
+
+    // Why the card the address named was not loaded: it is a minigame's (the minigame cards design).
+    private string? minigameRefusal;
     private IReadOnlyList<CardPicker.Choice> choices = [];
 
     // The user card being edited; null for a new card or a copy of a built-in card. Read from the library when the card changes, not on every render.
@@ -70,7 +77,12 @@ else
         sides = [.. Library.Vocabulary.Sides.Select(side => (side.Name, side.Label))];
         boardNames = Maps.BoardNames();
         savedMaps = Maps.Saved();
-        if (Card is { Length: > 0 } named && catalog is not null && Live.Cards.Read(named, catalog)?.Card is { } card)
+        // The minigame cards design: a minigame's card is never the source of a scenario card, so no copy of it joins the user's cards.
+        if (Minigames.BundleOfCard(Card) is { } bundle)
+        {
+            minigameRefusal = $"'{Card}' is the card of the minigame {Minigames.Find(bundle)?.Title ?? bundle}; a minigame's card is not copied into a scenario card, so the editor starts from a minimal card.";
+        }
+        else if (Card is { Length: > 0 } named && catalog is not null && Live.Cards.Read(named, catalog)?.Card is { } card)
         {
             source = named;
             draft = CardDraft.From(card, Live.Cards.IsUser(named));

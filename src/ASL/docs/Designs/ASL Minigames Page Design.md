@@ -33,3 +33,16 @@ The Workbench reads one position and asks one contract; it neither starts nor pl
 
 - p70/p71/p72 live games carry no `minigame` field, so they stay in the real lists; the user is clearing old games in a parallel session.
 - `a23-placed-dc/games/wire-dc-*.game.json` lack the field; a follow-up can add it.
+
+## Second step: the minigames' cards (approved by the user, 2026-10-31)
+
+After PR 89 a minigame's card still opened on the Scenario cards page (from the Minigames page's "Its card" and from Play's "The whole card"), and
+its "Copy this card to edit it" made a copy that the card editor saved as one of the user's scenario cards, without the minigame's link.
+
+1. The Minigames page shows each minigame's card in its own section: "Show its card" draws it, only while open. `games/minigames?open=<bundle>`
+   opens that card with the page and brings its section to the top (`wwwroot/js/minigames.js`; at a narrow width it follows the menu's collapse).
+2. Play's "The whole card" links to that address for a minigame's game, and to the Scenario cards page for any other.
+3. The Scenario cards page never shows a minigame's card: an address that names one keeps the scenario cards and adds a line pointing to the
+   Minigames page.
+4. The card editor takes no minigame's card as its source: an address that names one starts from a minimal card and says why. A deliberate
+   "make a scenario from this minigame" can be added later as its own action.

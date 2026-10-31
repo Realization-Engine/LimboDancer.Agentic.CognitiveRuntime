@@ -33,7 +33,8 @@
                                   IfEndedNow="@(KnownTo is null && Ended is null ? victory.AtEnd.Winner is { } leader ? $"{DisplayText.Side(leader)} would win" : "it would be a draw" : null)" />
         }
         <CardSpecialRulesList Id="play-card-ssr" Rules="@card.SpecialRules" />
-        <a id="play-card-whole" href="units/scenarios?card=@Scenario.Id">The whole card</a>
+        @* The minigame cards design: a minigame's card is shown whole on the Minigames page, never among the scenario cards. *@
+        <a id="play-card-whole" href="@(Minigames.BundleOfCard(Scenario.Id) is { } bundle ? $"games/minigames?open={Uri.EscapeDataString(bundle)}" : $"units/scenarios?card={Uri.EscapeDataString(Scenario.Id)}")">The whole card</a>
         <button type="button" id="play-card-close" class="link" @onclick="@(() => OnClose.InvokeAsync())">Close the card</button>
         @if (Provenance is { } provenance)
         {

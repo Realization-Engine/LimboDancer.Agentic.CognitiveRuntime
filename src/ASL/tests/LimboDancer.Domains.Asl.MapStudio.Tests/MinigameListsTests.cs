@@ -1,11 +1,13 @@
 using System.Text.Json;
 using Bunit;
+using LimboDancer.Domains.Asl.MapStudio.Components.Play;
 using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using CardEditorPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.CardEditor;
 using MinigameListPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.MinigameList;
 using PlayPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.Play;
 using ReplayPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.Replay;
@@ -169,13 +171,55 @@ public sealed class MinigameListsTests : IDisposable
     }
 
     [Fact]
-    public void ScenariosListsAMinigamesCardAloneAndOnlyByItsLink()
+    public void ScenariosNeverShowsAMinigamesCardAndPointsToTheMinigamesPage()
     {
         var page = Open<ScenariosPage>("units/scenarios");
         Assert.DoesNotContain(Card, Options(page, "#card-choice"));
+        Assert.Empty(page.FindAll("#card-minigame"));
 
+        // The minigame cards design: the address names the minigame's card; the list and the card shown are the scenario cards', and a line points
+        // to the card on the Minigames page.
         page = Open<ScenariosPage>($"units/scenarios?card={Uri.EscapeDataString(Card)}");
-        Assert.Equal([Card], Options(page, "#card-choice"));
-        Assert.Single(page.FindAll("#card-minigame"));
+        Assert.DoesNotContain(Card, Options(page, "#card-choice"));
+        Assert.NotEqual(Card, page.Find("#card-choice").GetAttribute("value"));
+        Assert.Equal($"games/minigames?open={Bundle}", page.Find("#card-minigame a").GetAttribute("href"));
+    }
+
+    [Fact]
+    public void TheMinigamesPageShowsAMinigamesCardOnlyWhenOpened()
+    {
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        var page = Open<MinigameListPage>("games/minigames");
+        Assert.Empty(page.FindAll(".minigame-card"));
+        page.Find($"#minigame-{Bundle}-card-toggle").Click();
+        Assert.Single(page.FindAll(".minigame-card"));
+        Assert.Contains(Minigames.Find(Bundle)!.Title, page.Find($"#minigame-{Bundle}-card").TextContent, StringComparison.Ordinal);
+        page.Find($"#minigame-{Bundle}-card-toggle").Click();
+        Assert.Empty(page.FindAll(".minigame-card"));
+
+        // Play's "The whole card" link names the bundle: its card opens with the page.
+        page = Open<MinigameListPage>($"games/minigames?open={Bundle}");
+        Assert.Single(page.FindAll($"#minigame-{Bundle}-card"));
+    }
+
+    [Fact]
+    public void TheCardEditorTakesNoMinigameCardAsItsSource()
+    {
+        var page = Open<CardEditorPage>($"units/cards/edit?card={Uri.EscapeDataString(Card)}");
+        Assert.Single(page.FindAll("#edit-minigame-refused"));
+        Assert.Equal(string.Empty, page.Find("#edit-source").GetAttribute("value") ?? string.Empty);
+        Assert.DoesNotContain(Card, Options(page, "#edit-source"));
+    }
+
+    [Fact]
+    public void PlaysWholeCardLinkOpensAMinigamesCardOnTheMinigamesPage()
+    {
+        var catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, context.Services.GetRequiredService<UnitLibrary>().Vocabulary)!.Catalog!;
+        var minigame = context.Render<PlayCardPanel>(parameters => parameters
+            .Add(panel => panel.Scenario, new ScenarioCardReference(Card, "sha", "Minigame")).Add(panel => panel.Card, ScenarioCards.Read(Card, catalog)!.Card));
+        var scenario = context.Render<PlayCardPanel>(parameters => parameters
+            .Add(panel => panel.Scenario, new ScenarioCardReference("gambit", "sha", "Gambit")).Add(panel => panel.Card, ScenarioCards.Read("gambit", catalog)!.Card));
+        Assert.Equal($"games/minigames?open={Bundle}", minigame.Find("#play-card-whole").GetAttribute("href"));
+        Assert.Equal("units/scenarios?card=gambit", scenario.Find("#play-card-whole").GetAttribute("href"));
     }
 }
