@@ -517,6 +517,65 @@ public sealed partial class BacklogPass9Tests : IDisposable
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task AMortarNamedAtAVehicleIsRefusedWithoutDiceOrEvents(bool heavy)
+    {
+        // C9.1 (p. 179), C1.55: a mortar never uses the To Kill Tables, so a Vehicle Target Type shot is refused; its hits on vehicles are IFT attacks.
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            heavy ? Gun("m1", "campaign-german-81mm-mortar", "bd01:B10:0", "west", "g1", "german") : Mortar("m1", "attacker-light-mortar", "g1", "german"),
+            Vehicle("ru-tank", "defender-tank", "bd01:B6:0", "russian", "east"));
+        await Advance();
+        var before = Revision;
+        Refused(await FireAt("m1", "bd01:B6:0", "ru-tank", null), "To Kill Tables");
+        Assert.Equal(before, Revision);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The81mmMortarBelowItsMinimumRangeIsRefusedWithoutDiceOrEvents(bool paired)
+    {
+        // C9.4 (p. 179): a mortar may not fire at a target nearer than its minimum range; the 81mm's is 3, and [B9] is one hex from [B10].
+        await Setup("german", 7, 1942,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Gun("m1", "campaign-german-81mm-mortar", "bd01:B10:0", "west", "g1", "german"), Squad("r1", "bd01:B9:0", "russian"));
+        await Advance();
+        var before = Revision;
+        var arguments = new Dictionary<string, object> { ["gunId"] = "m1", ["target"] = "bd01:B9:0" };
+        if (paired)
+        {
+            arguments["secondFirer"] = "g2";
+        }
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), arguments), "play.ordnance-out-of-range: A mortar may not fire at a target nearer than its minimum range of 3");
+        Assert.Equal(before, Revision);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ASecondFirerOnAnMgOrLatwIsRefusedWithoutDiceOrEvents(bool latw)
+    {
+        // A21.13 (p. 88), C9.2: a second participating SMC is for a Gun or a light mortar only.
+        await Setup("german", 7, 1944,
+            Unit("g1", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            latw ? Latw("w1", "attacker-psk", "g1", "german") : Weapon("w1", "attacker-lmg", "g1", "german"),
+            Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        var before = Revision;
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), new
+        {
+            gunId = "w1",
+            target = "bd01:B6:0",
+            secondFirer = "g2"
+        }), "requires a Gun or light mortar");
+        Assert.Equal(before, Revision);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task TwoSmcSecondFirerLosesConcealmentOnlyWhenSeenByGoodOrderEnemy(bool enemyGoodOrder)
     {
         await Setup("german", 7, 1942,
