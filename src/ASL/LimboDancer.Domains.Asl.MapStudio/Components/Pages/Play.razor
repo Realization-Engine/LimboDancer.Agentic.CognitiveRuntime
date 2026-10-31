@@ -8312,17 +8312,23 @@ else if (state is not null)
         ordnanceSecondFirer.Length == 0 ? null : ordnanceSecondFirer);
 
     /// <summary>The units that may spot for the chosen mortar, as the C9.3 calculator says, or null for another weapon.</summary>
-    private IReadOnlyList<PlayChoice>? OrdnanceSpotters(string side) => state is not null && state.Find(ordnanceGun) is EquipmentInstance mortar && OrdnanceMortar
-        ? [.. ActingUnits.Where(unit => ScenarioA1SpotterCalculator.CandidateRefusal(new SpotterCandidateFacts(unit.Status == InstanceStatus.Active, unit.Side == side,
-                ScenarioA1SpotterCalculator.Personnel(unit.Kind), GameState.GoodOrder(unit, Library.Vocabulary) == ConditionState.True,
-                GameState.Condition(unit, Conditions.Captured) == ConditionState.True, GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
-                unit.Id == mortar.Holding?.Holder || unit.Id == ordnanceSecondFirer)) is null).OrderBy(unit => unit.Id, StringComparer.Ordinal)
-            .Select(unit => new PlayChoice(unit.Id, $"{unit.Id} ({state.Location(unit.Id)?.Location})"))]
-        : null;
+    private IReadOnlyList<PlayChoice>? OrdnanceSpotters(string side)
+    {
+        if (state is null || !OrdnanceMortar)
+        {
+            return null;
+        }
+        BoardLocation.TryParse(ordnanceTarget, out var target);
+        return [.. ActingUnits.Where(unit => unit.Side == side && unit.Id != ordnanceSecondFirer
+                && LiveOrdnance.SupportCandidateRefusal(state, ordnanceGun, unit.Id, null, target) is null)
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal)
+            .Select(unit => new PlayChoice(unit.Id, $"{unit.Id} ({state.Location(unit.Id)?.Location})"))];
+    }
 
     /// <summary>The leaders who may direct a light mortar, a LATW, or a Panzerfaust (A7.531), or null for a Gun or MA.</summary>
     private IReadOnlyList<PlayChoice>? OrdnanceDirectors(string side) => state is not null && (OrdnanceLightMode || state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:latw" } || OrdnancePanzerfaust)
-        ? [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Kind == "asl:leader" && unit.Id != ordnanceSecondFirer).OrderBy(unit => unit.Id, StringComparer.Ordinal)
+        ? [.. ActingUnits.Where(unit => unit.Side == side && unit.Id != ordnanceSecondFirer
+                && LiveOrdnance.SupportCandidateRefusal(state, ordnanceGun, null, unit.Id) is null).OrderBy(unit => unit.Id, StringComparer.Ordinal)
             .Select(leader => new PlayChoice(leader.Id, $"{leader.Id} ({state.Location(leader.Id)?.Location})"))]
         : null;
 

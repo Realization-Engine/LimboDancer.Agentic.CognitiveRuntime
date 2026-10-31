@@ -632,12 +632,31 @@ public static class LiveOrdnance
     }
 
     /// <summary>
-    /// A light mortar's Spotter and directing leader (C9.3, A7.531; rulings R9.2, R9.4): the Spotter is an active unit of the firer's side, the one
-    /// already spotting for the mortar while it is Good Order, unless it is the firer; the leader is an active leader in the firer's Location.
-    /// Adjacency and LOS are the planner's map reads.
+    /// The selected weapon's support candidates use the command's state facts and Rules refusals.
+    /// Before a target is selected, sharing is checked by Location only; target sharing and LOS remain pending.
     /// </summary>
+    public static string? SupportCandidateRefusal(GameState state, string gun, string? spotter, string? director, BoardLocation? target = null)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var firer = gun.EndsWith(":pf", StringComparison.Ordinal) ? state.Unit(gun[..^3])
+            : state.Find(gun) is EquipmentInstance { Holding: { } holding } ? state.Unit(holding.Holder) : null;
+        if (firer is not { Definition: not null })
+        {
+            return "play.ordnance-crew: select a manned weapon first";
+        }
+
+        var (support, reason) = MortarSupport(state, gun, firer, spotter, director, state.Phase, target);
+        if (reason is not null)
+        {
+            return reason;
+        }
+
+        return support?.Director is { } candidate ? ScenarioA1OrdnanceCalculator.DirectorRefusal(candidate, firer.Id,
+            Reference.Value.Fire.Definitions.GetValueOrDefault(firer.Definition!.Definition)?.Nationality, Reference.Value.Fire) : null;
+    }
+
     private static ((OrdnanceSpotter? Spotter, FireDirector? Director)? Support, string? Reason) MortarSupport(GameState state, string gun, UnitInstance firer, string? spotter,
-        string? director, string phase, BoardLocation target, bool legacySpotterUse = false, bool currentSpotterAssignment = true)
+        string? director, string phase, BoardLocation? target, bool legacySpotterUse = false, bool currentSpotterAssignment = true)
     {
         var assignment = state.MortarSpotters.FirstOrDefault(item => item.Gun == gun);
         var recordedLoss = currentSpotterAssignment
@@ -656,7 +675,7 @@ public static class LiveOrdnance
             () => DirectorFacts(state, gun, firer, director!), phase);
     }
 
-    private static OrdnanceSpotterFacts SpotterFacts(GameState state, string gun, UnitInstance firer, string spotter, BoardLocation target, bool legacySpotterUse)
+    private static OrdnanceSpotterFacts SpotterFacts(GameState state, string gun, UnitInstance firer, string spotter, BoardLocation? target, bool legacySpotterUse)
     {
         if (state.Unit(spotter) is not { Status: InstanceStatus.Active, Definition: not null } unit)
         {
@@ -668,6 +687,8 @@ public static class LiveOrdnance
         return new OrdnanceSpotterFacts(unit.Id, true, unit.Definition.Definition, unit.Side == firer.Side, Is(unit, Conditions.Captured), Is(unit, Conditions.Melee),
             Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), unit.Kind == "asl:squad", LiveFire.Fired(unit) || Is(unit, Conditions.FirstFire),
             legacySpotterUse ? state.SpottedThisPhase.Any(item => item.Spotter == unit.Id && item.Gun != gun)
+                : target is null ? ScenarioA1SpotterCalculator.SharesLocation(state.Location(gun)?.Location.ToString(),
+                    [.. state.MortarSpotterUses.Where(item => item.Spotter == unit.Id && item.Gun != gun).Select(item => item.Location?.ToString())]) == false
                 : !ScenarioA1SpotterCalculator.SharesWith([.. state.MortarSpotterUses.Where(item => item.Spotter == unit.Id)
                 .Select(item => new SpotterUse(item.Gun, item.Location?.ToString(), item.Target.ToString()))],
                 gun, state.Location(gun)?.Location.ToString(), target.ToString()), state.SpottedThisPhase.Any(item => item.Spotter == unit.Id),

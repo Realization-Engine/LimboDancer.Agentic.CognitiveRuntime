@@ -542,6 +542,22 @@ public sealed partial class BacklogPass9Tests : IDisposable
     }
 
     [Fact]
+    public async Task ContinuingMortarDirectorRemainsAnOfferedSupportCandidate()
+    {
+        await Setup("german", 7, 1942,
+            Squad("g1", "bd01:B10:0", "german"),
+            Unit("g2", "asl:leader", "attacker-leader-8-0", "bd01:B10:0", "german"),
+            Mortar("m1", "attacker-light-mortar", "g1", "german"), Squad("r1", "bd01:B6:0", "russian"));
+        await Advance();
+        Assert.Null(LiveOrdnance.SupportCandidateRefusal(Current, "m1", null, "g2"));
+        Assert.Null(LiveOrdnance.SupportCandidateRefusal(Current, "g1:pf", null, "g2"));
+        var before = Revision;
+        Committed(await Shoot("m1", "bd01:B6:0", null, "g2", 2, 6));
+        Assert.True(LastShot(before).Gun!.RateOfFireKept);
+        Assert.Null(LiveOrdnance.SupportCandidateRefusal(Current, "m1", null, "g2"));
+    }
+
+    [Fact]
     public async Task TwoSmcRetainedRofDoesNotLetTheSecondUseOrDirectAnotherWeapon()
     {
         await Setup("german", 7, 1942,
@@ -559,6 +575,9 @@ public sealed partial class BacklogPass9Tests : IDisposable
             secondFirer = "g2"
         }));
         Assert.True(LastShot(before).Gun!.RateOfFireKept);
+        Assert.NotNull(LiveOrdnance.SupportCandidateRefusal(Current, "m1", "g2", null));
+        Assert.NotNull(LiveOrdnance.SupportCandidateRefusal(Current, "m1", null, "g2"));
+        Assert.NotNull(LiveOrdnance.SupportCandidateRefusal(Current, "m3", null, "g2"));
         before = Revision;
         Refused(await Do(GameActions.FireOrdnance, NoRoll(), new
         {
@@ -649,6 +668,8 @@ public sealed partial class BacklogPass9Tests : IDisposable
         var shot = LastShot(before);
         Assert.Contains(shot.ToHit!.Drm, item => item.Name == "spotted" && item.Value == 2);
         Assert.Equal(2, shot.Gun!.RateOfFire);
+        Assert.Null(LiveOrdnance.SupportCandidateRefusal(Current, "de-mtr", "g2", null));
+        Assert.Null(LiveOrdnance.SupportCandidateRefusal(Current, "de-mtr", "g2", null, At("bd01:B6:0")));
         Assert.Contains(Current.MortarSpotters, item => item.Gun == "de-mtr" && item.Spotter == "g2");
         Assert.True(Is(Current.Unit("g2")!, Conditions.PrepFire));
         Refused(await Shoot("de-mtr", "bd01:B6:0", "g3", null, 2, 6), "play.ordnance-spotter-kept");
