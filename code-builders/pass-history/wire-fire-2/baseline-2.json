@@ -1,0 +1,1152 @@
+{
+  "sourceCommit": "ba97f7d3edd0c6304cdcc186ebef21bff4ee5d7f",
+  "startedUtc": "2026-10-31T06:34:00.9061793+00:00",
+  "build": "Debug",
+  "runtime": "10.0.14",
+  "serverGc": false,
+  "processorCount": 16,
+  "supportsPair": false,
+  "playVersion": "1.0.0",
+  "playAssemblySha256": "784764CEB506A01D3F09265E88E34C596606542356B75511A41F3D05669EA3CD",
+  "inputs": [
+    {
+      "workload": "gun",
+      "game": "wire-c9-gun-review",
+      "revision": 8,
+      "Map": {
+        "Reference": "bd01",
+        "Version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317",
+        "Boards": [
+          {
+            "Board": {
+              "Kind": 0,
+              "Value": "bd01",
+              "VaslBoardName": "01"
+            },
+            "Version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317",
+            "Slot": null
+          }
+        ],
+        "IsPlaced": false
+      },
+      "secondFirer": null,
+      "sha256": "05925FB2D6297C4B5A9D81C1857AAFBF96C905BC82A1B098B20188A2114CB2EC"
+    },
+    {
+      "workload": "canister",
+      "game": "wire-c9-gun-review",
+      "revision": 8,
+      "Map": {
+        "Reference": "bd01",
+        "Version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317",
+        "Boards": [
+          {
+            "Board": {
+              "Kind": 0,
+              "Value": "bd01",
+              "VaslBoardName": "01"
+            },
+            "Version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317",
+            "Slot": null
+          }
+        ],
+        "IsPlaced": false
+      },
+      "secondFirer": null,
+      "sha256": "05925FB2D6297C4B5A9D81C1857AAFBF96C905BC82A1B098B20188A2114CB2EC"
+    },
+    {
+      "workload": "mortar-solo",
+      "game": "wire-c9-light-review",
+      "revision": 7,
+      "Map": {
+        "Reference": "bd03",
+        "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+        "Boards": [
+          {
+            "Board": {
+              "Kind": 0,
+              "Value": "bd03",
+              "VaslBoardName": "03"
+            },
+            "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+            "Slot": null
+          }
+        ],
+        "IsPlaced": false
+      },
+      "secondFirer": null,
+      "sha256": "42AA0A7A8C1C3147FCCE80F6FAC351FEA9F715C4D80A88019DD3A693A4BC2EE4"
+    },
+    {
+      "workload": "mortar-pair",
+      "game": "wire-c9-light-review",
+      "revision": 7,
+      "Map": {
+        "Reference": "bd03",
+        "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+        "Boards": [
+          {
+            "Board": {
+              "Kind": 0,
+              "Value": "bd03",
+              "VaslBoardName": "03"
+            },
+            "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+            "Slot": null
+          }
+        ],
+        "IsPlaced": false
+      },
+      "secondFirer": null,
+      "sha256": "42AA0A7A8C1C3147FCCE80F6FAC351FEA9F715C4D80A88019DD3A693A4BC2EE4"
+    }
+  ],
+  "results": [
+    {
+      "workload": "gun",
+      "game": "wire-c9-gun-review",
+      "operation": "from-state",
+      "cold": false,
+      "answer": "type=;use=0;participants=1",
+      "iterations": 400,
+      "bytes": 9928,
+      "medianUs": 21.718000000000004,
+      "p90Us": 27.53675,
+      "samples": [
+        {
+          "Bytes": 9928,
+          "Microseconds": 25.88925
+        },
+        {
+          "Bytes": 9928,
+          "Microseconds": 20.177
+        },
+        {
+          "Bytes": 9928,
+          "Microseconds": 20.39425
+        },
+        {
+          "Bytes": 9928,
+          "Microseconds": 18.33775
+        },
+        {
+          "Bytes": 9928,
+          "Microseconds": 19.09225
+        },
+        {
+          "Bytes": 9928,
+          "Microseconds": 27.53675
+        },
+        {
+          "Bytes": 9928,
+          "Microseconds": 22.776750000000003
+        },
+        {
+          "Bytes": 9928,
+          "Microseconds": 21.718000000000004
+        },
+        {
+          "Bytes": 9928,
+          "Microseconds": 27.369
+        }
+      ]
+    },
+    {
+      "workload": "gun",
+      "game": "wire-c9-gun-review",
+      "operation": "target-advice",
+      "cold": false,
+      "answer": "range 2, in its CA",
+      "iterations": 400,
+      "bytes": 856,
+      "medianUs": 3.6752499999999997,
+      "p90Us": 4.2005,
+      "samples": [
+        {
+          "Bytes": 856,
+          "Microseconds": 4.2005
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.9675
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.6752499999999997
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.86125
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.3227499999999996
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.33075
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.31525
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.95725
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.55
+        }
+      ]
+    },
+    {
+      "workload": "gun",
+      "game": "wire-c9-gun-review",
+      "operation": "from-state",
+      "cold": true,
+      "answer": "type=;use=0;participants=1",
+      "iterations": 40,
+      "bytes": 10776,
+      "medianUs": 25.6025,
+      "p90Us": 28.380000000000003,
+      "samples": [
+        {
+          "Bytes": 10776,
+          "Microseconds": 28.380000000000003
+        },
+        {
+          "Bytes": 10776,
+          "Microseconds": 27.232499999999998
+        },
+        {
+          "Bytes": 10776,
+          "Microseconds": 28.32
+        },
+        {
+          "Bytes": 10776,
+          "Microseconds": 22.192500000000003
+        },
+        {
+          "Bytes": 10776,
+          "Microseconds": 22.085
+        },
+        {
+          "Bytes": 10776,
+          "Microseconds": 26.52
+        },
+        {
+          "Bytes": 10776,
+          "Microseconds": 22.1475
+        },
+        {
+          "Bytes": 10776,
+          "Microseconds": 25.6025
+        },
+        {
+          "Bytes": 10776,
+          "Microseconds": 24.317500000000003
+        }
+      ]
+    },
+    {
+      "workload": "gun",
+      "game": "wire-c9-gun-review",
+      "operation": "target-advice",
+      "cold": true,
+      "answer": "range 2, in its CA",
+      "iterations": 40,
+      "bytes": 18082.6,
+      "medianUs": 15.2075,
+      "p90Us": 18.835,
+      "samples": [
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 18.835
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 12.2075
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 16.2575
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 15.41
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 15.365
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 14.0725
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 15.2075
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 12.385
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 12.415000000000001
+        }
+      ]
+    },
+    {
+      "workload": "gun",
+      "game": "wire-c9-gun-review",
+      "operation": "fire-command",
+      "cold": false,
+      "answer": {
+        "events": 7,
+        "participants": 1,
+        "useMultiple": 0,
+        "RateOfFireKept": false,
+        "Acquisition": -1
+      },
+      "eventTypes": [
+        "DiceRolled",
+        "DiceRolled",
+        "DiceRolled",
+        "OrdnanceFired",
+        "ConditionsChanged",
+        "ConditionsChanged",
+        "AcquisitionChanged"
+      ],
+      "iterations": 20,
+      "bytes": 310842.4,
+      "medianUs": 1350.7649999999999,
+      "p90Us": 1658.05,
+      "samples": [
+        {
+          "Bytes": 310842.4,
+          "Microseconds": 1658.05
+        },
+        {
+          "Bytes": 310842.4,
+          "Microseconds": 1351.3600000000001
+        },
+        {
+          "Bytes": 310842.4,
+          "Microseconds": 1368.915
+        },
+        {
+          "Bytes": 310842.4,
+          "Microseconds": 1350.7649999999999
+        },
+        {
+          "Bytes": 310842.4,
+          "Microseconds": 1339.0149999999999
+        },
+        {
+          "Bytes": 310842.4,
+          "Microseconds": 1379.16
+        },
+        {
+          "Bytes": 310842.4,
+          "Microseconds": 1348.825
+        },
+        {
+          "Bytes": 310842.4,
+          "Microseconds": 1328.81
+        },
+        {
+          "Bytes": 310842.4,
+          "Microseconds": 1324.975
+        }
+      ]
+    },
+    {
+      "workload": "canister",
+      "game": "wire-c9-gun-review",
+      "operation": "from-state",
+      "cold": false,
+      "answer": "type=;use=0;participants=1",
+      "iterations": 400,
+      "bytes": 8896,
+      "medianUs": 15.752,
+      "p90Us": 16.7705,
+      "samples": [
+        {
+          "Bytes": 8896,
+          "Microseconds": 16.7705
+        },
+        {
+          "Bytes": 8896,
+          "Microseconds": 16.27225
+        },
+        {
+          "Bytes": 8896,
+          "Microseconds": 16.27025
+        },
+        {
+          "Bytes": 8896,
+          "Microseconds": 14.540750000000001
+        },
+        {
+          "Bytes": 8896,
+          "Microseconds": 15.752
+        },
+        {
+          "Bytes": 8896,
+          "Microseconds": 15.345
+        },
+        {
+          "Bytes": 8896,
+          "Microseconds": 16.10975
+        },
+        {
+          "Bytes": 8896,
+          "Microseconds": 15.064749999999998
+        },
+        {
+          "Bytes": 8896,
+          "Microseconds": 15.1755
+        }
+      ]
+    },
+    {
+      "workload": "canister",
+      "game": "wire-c9-gun-review",
+      "operation": "target-advice",
+      "cold": false,
+      "answer": "range 2, in its CA",
+      "iterations": 400,
+      "bytes": 856,
+      "medianUs": 3.3045,
+      "p90Us": 6.08075,
+      "samples": [
+        {
+          "Bytes": 856,
+          "Microseconds": 2.9964999999999997
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.218
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.6664999999999996
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 6.08075
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.363
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.53875
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.17325
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.3045
+        },
+        {
+          "Bytes": 856,
+          "Microseconds": 3.3027499999999996
+        }
+      ]
+    },
+    {
+      "workload": "canister",
+      "game": "wire-c9-gun-review",
+      "operation": "from-state",
+      "cold": true,
+      "answer": "type=;use=0;participants=1",
+      "iterations": 40,
+      "bytes": 9744,
+      "medianUs": 23.375,
+      "p90Us": 26.892500000000002,
+      "samples": [
+        {
+          "Bytes": 9744,
+          "Microseconds": 20.155
+        },
+        {
+          "Bytes": 9744,
+          "Microseconds": 20.5425
+        },
+        {
+          "Bytes": 9744,
+          "Microseconds": 24.205000000000002
+        },
+        {
+          "Bytes": 9744,
+          "Microseconds": 23.7025
+        },
+        {
+          "Bytes": 9744,
+          "Microseconds": 23.85
+        },
+        {
+          "Bytes": 9744,
+          "Microseconds": 23.29
+        },
+        {
+          "Bytes": 9744,
+          "Microseconds": 23.375
+        },
+        {
+          "Bytes": 9744,
+          "Microseconds": 26.892500000000002
+        },
+        {
+          "Bytes": 9744,
+          "Microseconds": 22.994999999999997
+        }
+      ]
+    },
+    {
+      "workload": "canister",
+      "game": "wire-c9-gun-review",
+      "operation": "target-advice",
+      "cold": true,
+      "answer": "range 2, in its CA",
+      "iterations": 40,
+      "bytes": 18082.6,
+      "medianUs": 16.0075,
+      "p90Us": 21.3425,
+      "samples": [
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 21.3425
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 17.302500000000002
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 15.477500000000001
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 15.225
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 15.315000000000001
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 16.4025
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 16.0075
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 16.625
+        },
+        {
+          "Bytes": 18082.6,
+          "Microseconds": 13.372499999999999
+        }
+      ]
+    },
+    {
+      "workload": "canister",
+      "game": "wire-c9-gun-review",
+      "operation": "fire-command",
+      "cold": false,
+      "answer": {
+        "events": 14,
+        "participants": 1,
+        "useMultiple": 0,
+        "RateOfFireKept": false,
+        "Acquisition": 0
+      },
+      "eventTypes": [
+        "DiceRolled",
+        "OrdnanceFired",
+        "ConditionsChanged",
+        "ConditionsChanged",
+        "DiceRolled",
+        "FireResolved",
+        "ConditionsChanged",
+        "DiceRolled",
+        "FireResolved",
+        "ConditionsChanged",
+        "DiceRolled",
+        "FireResolved",
+        "ConditionsChanged",
+        "FireResolved"
+      ],
+      "iterations": 20,
+      "bytes": 1789013.2,
+      "medianUs": 7811.3,
+      "p90Us": 8262.395,
+      "samples": [
+        {
+          "Bytes": 1789013.2,
+          "Microseconds": 8262.395
+        },
+        {
+          "Bytes": 1789013.2,
+          "Microseconds": 7876.110000000001
+        },
+        {
+          "Bytes": 1789013.2,
+          "Microseconds": 8023.315
+        },
+        {
+          "Bytes": 1789013.2,
+          "Microseconds": 7774.214999999999
+        },
+        {
+          "Bytes": 1789013.2,
+          "Microseconds": 7773.31
+        },
+        {
+          "Bytes": 1789013.2,
+          "Microseconds": 7705.655000000001
+        },
+        {
+          "Bytes": 1789013.2,
+          "Microseconds": 7672.914999999999
+        },
+        {
+          "Bytes": 1789013.2,
+          "Microseconds": 7811.3
+        },
+        {
+          "Bytes": 1789013.2,
+          "Microseconds": 8003.0199999999995
+        }
+      ]
+    },
+    {
+      "workload": "mortar-solo",
+      "game": "wire-c9-light-review",
+      "operation": "from-state",
+      "cold": false,
+      "answer": "type=area;use=null;participants=1",
+      "iterations": 400,
+      "bytes": 11288,
+      "medianUs": 20.7395,
+      "p90Us": 29.0565,
+      "samples": [
+        {
+          "Bytes": 11288,
+          "Microseconds": 22.26025
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 20.42875
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 20.35375
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 20.83425
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 29.0565
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 20.70575
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 20.25425
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 21.351750000000003
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 20.7395
+        }
+      ]
+    },
+    {
+      "workload": "mortar-solo",
+      "game": "wire-c9-light-review",
+      "operation": "target-advice",
+      "cold": false,
+      "answer": "null",
+      "iterations": 400,
+      "bytes": 272,
+      "medianUs": 0.53325,
+      "p90Us": 0.8292499999999999,
+      "samples": [
+        {
+          "Bytes": 272,
+          "Microseconds": 0.8292499999999999
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.4415
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.44525
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.48350000000000004
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.44725000000000004
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.5935
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.5379999999999999
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.5425
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.53325
+        }
+      ]
+    },
+    {
+      "workload": "mortar-solo",
+      "game": "wire-c9-light-review",
+      "operation": "from-state",
+      "cold": true,
+      "answer": "type=area;use=null;participants=1",
+      "iterations": 40,
+      "bytes": 12136,
+      "medianUs": 29.985000000000003,
+      "p90Us": 48.052499999999995,
+      "samples": [
+        {
+          "Bytes": 12136,
+          "Microseconds": 27.422500000000003
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 29.985000000000003
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 29.192500000000003
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 29.2175
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 27.857499999999998
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 31.630000000000003
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 35.565
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 48.052499999999995
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 37.2125
+        }
+      ]
+    },
+    {
+      "workload": "mortar-solo",
+      "game": "wire-c9-light-review",
+      "operation": "target-advice",
+      "cold": true,
+      "answer": "null",
+      "iterations": 40,
+      "bytes": 1120,
+      "medianUs": 1.725,
+      "p90Us": 2.1350000000000002,
+      "samples": [
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.2974999999999999
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.285
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.3175000000000001
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 2.1350000000000002
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.905
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.81
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.725
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.8199999999999998
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.6925000000000001
+        }
+      ]
+    },
+    {
+      "workload": "mortar-solo",
+      "game": "wire-c9-light-review",
+      "operation": "fire-command",
+      "cold": false,
+      "answer": {
+        "events": 6,
+        "participants": 1,
+        "useMultiple": null,
+        "RateOfFireKept": false,
+        "Acquisition": -1
+      },
+      "eventTypes": [
+        "DiceRolled",
+        "DiceRolled",
+        "DiceRolled",
+        "OrdnanceFired",
+        "ConditionsChanged",
+        "ConditionsChanged"
+      ],
+      "iterations": 20,
+      "bytes": 304426.4,
+      "medianUs": 1578.4299999999998,
+      "p90Us": 2685.04,
+      "samples": [
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1524.6100000000001
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1262.44
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 2685.04
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1648.7150000000001
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1833.52
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1739.1
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1578.4299999999998
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1563.425
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1289
+        }
+      ]
+    },
+    {
+      "workload": "mortar-pair",
+      "game": "wire-c9-light-review",
+      "operation": "from-state",
+      "cold": false,
+      "answer": "type=area;use=null;participants=1",
+      "iterations": 400,
+      "bytes": 11288,
+      "medianUs": 22.655749999999998,
+      "p90Us": 30.745250000000002,
+      "samples": [
+        {
+          "Bytes": 11288,
+          "Microseconds": 30.745250000000002
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 21.250500000000002
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 22.655749999999998
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 22.625
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 22.55625
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 25.170749999999998
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 21.16575
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 23.557
+        },
+        {
+          "Bytes": 11288,
+          "Microseconds": 23.502
+        }
+      ]
+    },
+    {
+      "workload": "mortar-pair",
+      "game": "wire-c9-light-review",
+      "operation": "target-advice",
+      "cold": false,
+      "answer": "null",
+      "iterations": 400,
+      "bytes": 272,
+      "medianUs": 0.5305,
+      "p90Us": 0.722,
+      "samples": [
+        {
+          "Bytes": 272,
+          "Microseconds": 0.49975
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.49075
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.5305
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.4975
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.47775
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.5742499999999999
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.602
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.639
+        },
+        {
+          "Bytes": 272,
+          "Microseconds": 0.722
+        }
+      ]
+    },
+    {
+      "workload": "mortar-pair",
+      "game": "wire-c9-light-review",
+      "operation": "from-state",
+      "cold": true,
+      "answer": "type=area;use=null;participants=1",
+      "iterations": 40,
+      "bytes": 12136,
+      "medianUs": 31.425,
+      "p90Us": 38.36,
+      "samples": [
+        {
+          "Bytes": 12136,
+          "Microseconds": 29.085
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 32.489999999999995
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 32.325
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 38.36
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 31.425
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 31.4175
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 32.7675
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 31.264999999999997
+        },
+        {
+          "Bytes": 12136,
+          "Microseconds": 24.955000000000002
+        }
+      ]
+    },
+    {
+      "workload": "mortar-pair",
+      "game": "wire-c9-light-review",
+      "operation": "target-advice",
+      "cold": true,
+      "answer": "null",
+      "iterations": 40,
+      "bytes": 1120,
+      "medianUs": 1.345,
+      "p90Us": 1.8675000000000002,
+      "samples": [
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.4675
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.29
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.3275000000000001
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.6149999999999998
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.345
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.3225
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.1724999999999999
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.6774999999999998
+        },
+        {
+          "Bytes": 1120,
+          "Microseconds": 1.8675000000000002
+        }
+      ]
+    },
+    {
+      "workload": "mortar-pair",
+      "game": "wire-c9-light-review",
+      "operation": "fire-command",
+      "cold": false,
+      "answer": {
+        "events": 6,
+        "participants": 1,
+        "useMultiple": null,
+        "RateOfFireKept": false,
+        "Acquisition": -1
+      },
+      "eventTypes": [
+        "DiceRolled",
+        "DiceRolled",
+        "DiceRolled",
+        "OrdnanceFired",
+        "ConditionsChanged",
+        "ConditionsChanged"
+      ],
+      "iterations": 20,
+      "bytes": 304426.4,
+      "medianUs": 1517.34,
+      "p90Us": 1751.3400000000001,
+      "samples": [
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1517.34
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1381.865
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1550.375
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1751.3400000000001
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1739.35
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1450.29
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1365.48
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1655.77
+        },
+        {
+          "Bytes": 304426.4,
+          "Microseconds": 1343.105
+        }
+      ]
+    }
+  ]
+}
