@@ -1,14 +1,14 @@
 using System.Text.Json;
 using Bunit;
+using LimboDancer.Domains.Asl.MapStudio.Components.Play;
 using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using LimboDancer.Domains.Asl.MapStudio.Components.Play;
 using CardEditorPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.CardEditor;
-using MinigameListPage =LimboDancer.Domains.Asl.MapStudio.Components.Pages.MinigameList;
+using MinigameListPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.MinigameList;
 using PlayPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.Play;
 using ReplayPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.Replay;
 using ScenariosPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.Scenarios;
