@@ -109,6 +109,12 @@ public sealed partial class GamePlanner
         || resume.GetProperty("rest").EnumerateArray().Any(item => SniperSmokeVersion(item) is not (null or 1))
         ? "play.sniper-smoke-version: unknown SMOKE reading" : null;
 
+    // Geometry is immutable for this state and this planner's map context. Weak keys retain no discarded game history;
+    // concurrent first reads may compute the same public-fact refusal, and either result may be kept.
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameState, SniperSmokeCheck> sniperSmokeChecks = new();
+
+    private sealed record SniperSmokeCheck(string? Reason);
+
     /// <summary>Read public SMOKE/map facts before dice, including Locations newly exposed by a bailout or casualty result.</summary>
     private string? SniperSmokeBar(GameState state)
     {
@@ -129,10 +135,19 @@ public sealed partial class GamePlanner
         {
             return null;
         }
+        if (sniperSmokeChecks.TryGetValue(state, out var kept))
+        {
+            return kept.Reason;
+        }
+        return sniperSmokeChecks.GetValue(state, GatherSniperSmokeCheck).Reason;
+    }
+
+    private SniperSmokeCheck GatherSniperSmokeCheck(GameState state)
+    {
         var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
         if (snapshot.Unknown.Count > 0)
         {
-            return "play.sniper-smoke-facts: establish SMOKE source, chemical, and strength before a roll that may trigger a Sniper (A24.5)";
+            return new("play.sniper-smoke-facts: establish SMOKE source, chemical, and strength before a roll that may trigger a Sniper (A24.5)");
         }
         var visited = new HashSet<BoardLocation>();
         foreach (var (source, columns) in snapshot.Columns)
@@ -143,7 +158,7 @@ public sealed partial class GamePlanner
             }
             if (ReadLocation(state, source) is not { } read)
             {
-                return "play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)";
+                return new("play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)");
             }
             var locations = read.Hex.Locations.Select(level => new BoardLocation(source.Board, source.Hex, level.Level))
                 .Concat(read.Hex.Hexsides.Where(side => side.OnMap).Select(side => new BoardLocation(source.Board, source.Hex, 0, side.Side)));
@@ -151,11 +166,11 @@ public sealed partial class GamePlanner
             {
                 if (SmokeHindrancesAt(state, location).Reason is not null)
                 {
-                    return "play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)";
+                    return new("play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)");
                 }
             }
         }
-        return null;
+        return new(null);
     }
 
     /// <summary>The queue a pending Sniper choice's resume keeps; an item with no "check", as every one recorded before ruling R71.25, is an attack.</summary>
