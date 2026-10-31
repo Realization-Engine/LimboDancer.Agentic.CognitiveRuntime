@@ -29,6 +29,7 @@ public sealed partial class BacklogPass15Tests : IDisposable
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
     private static readonly string[] Bd01 = ["bd01"];
     private static readonly string[] G1 = ["g1"];
+    private static readonly string[] G2 = ["g2"];
     private static readonly string[] G1G2 = ["g1", "g2"];
     private static readonly string[] R1 = ["r1"];
     private static readonly string[] Gi = ["gi"];
@@ -555,6 +556,48 @@ public sealed partial class BacklogPass15Tests : IDisposable
             Payload = new ConditionsChanged("g1", new Dictionary<string, ConditionState> { [Conditions.Pinned] = ConditionState.True }),
         };
         Assert.True(Planner().Replay([.. store.Read(Scope)!.Events, pinned]).Current!.PlacedCharges.Single().Operable);
+    }
+
+    [Fact]
+    public async Task AStackedPlacersDcStaysPendingThroughItsOwnStacksMove()
+    {
+        // A8.1 (p. 59): Defensive First Fire affects "only the moving unit/stack"; A23.3 (p. 90): the placer must survive all enemy Defensive First
+        // Fire in the Placement Hex. g2 moves with the placer g1 in one stack, so its MF is the stack's own move, not another unit beginning movement:
+        // the Placement stays pending, and a pin on g1 before the stack's move ends leaves the DC with g1.
+        await SetupAt(2, "german", Unit("g1", "attacker-squad", "E3", "german"), Weapon("dc", "asl:dc", "attacker-dc", "g1", "german"),
+            Unit("g2", "attacker-squad", "E3", "german"), Unit("r1", "defender-squad", "E4", "russian"));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1G2,
+            to = L("E3"),
+            placeDc = "dc",
+            placeDcAt = L("E4"),
+        }));
+        Assert.Contains("g2", ((MovementStepped)store.Read(Scope)!.Events.Single(item => item.Payload is MovementStepped { DcPlacement: not null }).Payload).Movers);
+        Assert.False(Current.PlacedCharges.Single().Operable);
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Assert.False(Current.PlacedCharges.Single().Operable);
+
+        // g2 moves on apart from the placer: still the stack's own move (A4.2), not another unit beginning movement.
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = L("D3"),
+        }));
+        Assert.False(Current.PlacedCharges.Single().Operable);
+        var history = store.Read(Scope)!.Events;
+        var pin = history[^1] with
+        {
+            EventId = "pin-in-placement-hex",
+            Revision = Revision + 1,
+            Type = "conditions-changed",
+            Payload = new ConditionsChanged("g1", new Dictionary<string, ConditionState> { [Conditions.Pinned] = ConditionState.True }),
+        };
+        var pinned = Planner().Replay([.. history, pin]).Current!;
+        Assert.Empty(pinned.PlacedCharges);
+        Assert.Equal("g1", ((EquipmentInstance)pinned.Find("dc")!).Holding!.Holder);
     }
 
     [Fact]
