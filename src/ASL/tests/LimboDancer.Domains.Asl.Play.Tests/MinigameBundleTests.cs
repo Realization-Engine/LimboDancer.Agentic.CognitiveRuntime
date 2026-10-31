@@ -61,6 +61,25 @@ public sealed class MinigameBundleTests : IDisposable
     }
 
     [Fact]
+    public void EveryGameInABundlesFolderNamesItsBundle()
+    {
+        // The Minigames page design (2026-10-31): a game kept in a bundle's games folder is that minigame's, so its record's header names the bundle
+        // before its events (the lists read the header only). A game without it would be listed with the user's games.
+        var minigames = Path.Combine(RepositoryRoot(), "src", "ASL", "units", "minigames");
+        var games = Directory.GetFiles(minigames, "*.game.json", SearchOption.AllDirectories);
+        Assert.NotEmpty(games);
+        Assert.All(games, path =>
+        {
+            var bundle = Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(path)))!;
+            using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllBytes(path));
+            var names = document.RootElement.EnumerateObject().Select(property => property.Name).ToList();
+            Assert.True(names.Contains("minigame") && names.IndexOf("minigame") < names.IndexOf("events"),
+                $"{Path.GetRelativePath(minigames, path)}: its header names no minigame before its events");
+            Assert.Equal(bundle, document.RootElement.GetProperty("minigame").GetString());
+        });
+    }
+
+    [Fact]
     public void EveryBundleIsSound()
     {
         // Every bundle folder of the repository is embedded and read (the C9.3 claim: no claim edits this count when it adds its bundle).
