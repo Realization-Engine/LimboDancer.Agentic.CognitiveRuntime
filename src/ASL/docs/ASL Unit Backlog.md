@@ -1633,6 +1633,12 @@ Written on 2026-10-30. What the five claims left out that no rule sends to anoth
 | A Factory Infantry step between hexes of different base levels (a Factory on a hillside) | The B23.74 claim (ruling RB23F.15, from the build review) | B23.742, pp. 139 and 140; A4.13; B10.4 | A reading of B23.742 for a Factory whose hexes stand at different base levels (the rule is silent on elevation) | `ScenarioA1FactoryCalculator.BaseLevelRefusal` refuses the 1 MF Factory step and the Entrance step between different base levels as not reviewed; no board in use has such a Factory. |
 | Hooking up or unhooking a Gun with the vehicle in Bypass | The C10.3 claim (its build; ruling RC10.7) | C10.3, p. 181; C10.11, p. 180 | A claim of C10.11 (the hook-up checks live in `ScenarioA1GunCalculator.cs`, which no claim holds) | `PlanHookGun` and the unhooking do not check Bypass; the C10.11 row lists it as missing. |
 
+## Dice Lab follow-up (2026-10-31)
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Use AslDice in live play and display contextual combat outcomes | Dice Lab's approved standalone scope | Applicable action calculators | A separately approved integration design preserving recorded game dice | `/lab/dice` rolls independently and displays dice and modifier arithmetic only. |
+
 ## 87. Added by Claude's review of PR 85 (W-C9)
 
 Written on 2026-10-31. What the review of PR 85 (wire-fire-2, carrying PR 84) left out; the W-C9 design's section 10, "Claude's review settlements", records the rest.
