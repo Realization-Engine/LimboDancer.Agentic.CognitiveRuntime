@@ -152,6 +152,11 @@ public static class GameEventWriter
                             writer.WriteStartObject();
                             writer.WriteString("id", group.Id);
                             writer.WriteString("name", group.Name);
+                            if (group.StealthDesignation is { } designation)
+                            {
+                                writer.WriteString("stealthDesignation", designation);
+                            }
+
                             if (group.Elr is { } groupElr)
                             {
                                 writer.WriteNumber("elr", groupElr);
@@ -322,6 +327,10 @@ public static class GameEventWriter
                 break;
             case LineageRecorded lineage:
                 writer.WriteString("action", lineage.Action.ToString().ToLowerInvariant());
+                if (lineage.AssaultEngineerLoss is { } engineerLoss)
+                {
+                    writer.WriteBoolean("assaultEngineerLoss", engineerLoss);
+                }
                 if (lineage.SpotterSuccessor is { } successor)
                 {
                     writer.WriteString("spotterSuccessor", successor);
@@ -474,6 +483,11 @@ public static class GameEventWriter
                 }
                 break;
             case VehicleCloseCombatResolved vehicleCombat:
+                if (vehicleCombat.CcvVersion is { } ccvVersion)
+                {
+                    writer.WriteNumber("ccvVersion", ccvVersion);
+                }
+
                 ArmamentEvidence(writer, vehicleCombat.VehicleArmamentEvidence);
                 writer.WriteString("location", vehicleCombat.Location.ToString());
                 writer.WriteString("vehicle", vehicleCombat.Vehicle);
@@ -565,6 +579,11 @@ public static class GameEventWriter
                 if (moving.DcPlacement is { } placement)
                 {
                     writer.WriteString("dcBy", placement.Unit);
+                    if (placement.SettlementVersion is { } settlementVersion)
+                    {
+                        writer.WriteNumber("dcSettlementVersion", settlementVersion);
+                    }
+
                     if (placement.OwnerSide is { } ownerSide)
                     {
                         writer.WriteString("dcOwnerSide", ownerSide);
@@ -1100,6 +1119,11 @@ public static class GameEventWriter
 
                 break;
             case AmbushRolled ambush:
+                if (ambush.StealthVersion is { } stealthVersion)
+                {
+                    writer.WriteNumber("stealthVersion", stealthVersion);
+                }
+
                 writer.WriteString("location", ambush.Location.ToString());
                 writer.WriteStartObject("rolls");
                 foreach (var (key, roll) in ambush.Rolls.OrderBy(entry => entry.Key, StringComparer.Ordinal))

@@ -140,22 +140,11 @@ public static class ScenarioA1AdvanceCalculator
     }
 
     /// <summary>
-    /// A12.14 (ruling R14.2), E1.31 (ruling R16.4): concealed advancers lose their "?" entering Open Ground in the LOS of a Good Order enemy within 16
-    /// hexes, not at night; the LOS is read lazily. This member keeps its answer: it reads Open Ground as the terrain name "open-ground". The overload
-    /// <see cref="LosesConcealment(bool, Func{bool})"/>, with A10.531's answer, replaces it (the A10.531 claim, rulings RA10.2, RA10.5), and differs:
-    /// an advancer loses its "?" entering out-of-season grain, and keeps it entering Open Ground with SMOKE, a wreck, or an AFV there.
-    /// </summary>
-    public static bool LosesConcealment(bool night, string terrain, Func<bool> enemyGoodOrderInLosWithin16)
-    {
-        ArgumentNullException.ThrowIfNull(enemyGoodOrderInLosWithin16);
-        return !night && terrain == "open-ground" && enemyGoodOrderInLosWithin16();
-    }
-
-    /// <summary>
     /// A12.14 (p. 78; ruling R14.2), E1.31 (ruling R16.4) with A10.531's Open Ground (p. 67; the A10.531 claim, ruling RA10.5): concealed advancers lose
     /// their "?" by day when <paramref name="entersOpenGroundSeen"/>, the Location is Open Ground to a Good Order enemy ground unit within 16 hexes with
     /// a clear LOS to it (<see cref="ScenarioA1OpenGroundCalculator.OpenGroundToAny"/> over those seers, for <see cref="OpenGroundPurpose.Concealment"/>).
-    /// It is read only by day. An unknown answer (grain with no month) is the caller's to refuse before it asks (ruling RA10.7).
+    /// It is read only by day. An unknown answer (grain with no month) is the caller's to refuse before it asks (ruling RA10.7). The old member that
+    /// read Open Ground as the terrain name "open-ground" was removed by W-A10.531.
     /// </summary>
     public static bool LosesConcealment(bool night, Func<bool> entersOpenGroundSeen)
     {

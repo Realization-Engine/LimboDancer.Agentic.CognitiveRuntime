@@ -1583,7 +1583,7 @@ public sealed class ScenarioA1Pass55RulesTests
         var units = new[] { new CloseCombatUnit("ru-s", "defender-squad", "russian", false, false, false, false, false, false, false, false, false, false, false) { Inexperienced = false } };
         VehicleCloseCombatResolution ByTank(int? leadership) => ScenarioA1VehicleCloseCombat.Resolve(new VehicleCloseCombatFacts("CCPh", At,
             new VehicleCloseCombatVehicle("de-v", "attacker-tank", "german", false, false, false, false, false, false, false, false, false) { ArmorLeadership = leadership },
-            units, [], ["ru-s"], true, false, new VehicleCloseCombatRolls([6, 5])), CloseCombat);
+            units, [], ["ru-s"], true, false, new VehicleCloseCombatRolls([6, 5])), CloseCombat, null);
         var plain = Assert.Single(ByTank(null).Defending!);
         foreach (var given in Leaderships)
         {

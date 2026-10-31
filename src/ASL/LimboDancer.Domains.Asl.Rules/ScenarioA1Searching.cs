@@ -2,17 +2,18 @@ namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>
 /// A unit that would Search (A12.152; pass 70, ruling R70.24), as the planner reads it: active on the map, of the phasing side, a member of the moving stack,
-/// Infantry on foot (Personnel, not aboard a vehicle), a MMC, a leader, broken, berserk, pinned, a prisoner or Unarmed, a hero, heroic, its HS-equivalents,
-/// a leader's leadership, wounded, Lax, and CX.
+/// Infantry on foot (Personnel, not aboard a vehicle), a MMC, a leader, broken, berserk, pinned, a prisoner or Unarmed, its HS-equivalents, a leader's
+/// leadership, wounded, CX, and its Stealth status.
 /// </summary>
 public sealed record SearcherFacts(string Id, bool Active, bool OfSide, bool Member, bool Infantry, bool Mmc, bool Leader, bool Broken, bool Berserk, bool Pinned,
-    bool Captured, bool Unarmed, bool Hero, bool Heroic, int HalfSquads, int? Leadership, bool Wounded, bool Lax, bool Cx)
+    bool Captured, bool Unarmed, int HalfSquads, int? Leadership, bool Wounded, bool Cx)
 {
     /// <summary>
-    /// Its status as <see cref="ScenarioA1StealthCalculator.Status"/> gives it for the Searching dr (the A11.17 claim, ruling RA11S.7): when set,
-    /// <see cref="ScenarioA1Searching.Drm"/> counts it in place of the hero test and <see cref="Lax"/>. Null, as before the claim, reads them.
+    /// Its status as <see cref="ScenarioA1StealthCalculator.Status"/> gives it for the Searching dr (the A11.17 claim, ruling RA11S.7), which
+    /// <see cref="ScenarioA1Searching.Drm"/> counts. Required (the review of PR 80, item 28): the old hero test and Lax fact are removed, and a caller
+    /// refuses an unknown status with <see cref="ScenarioA1StealthCalculator.FactsRefusal"/> before it builds the facts.
     /// </summary>
-    public StealthStatus? Stealth
+    public required StealthStatus Stealth
     {
         get; init;
     }
@@ -91,19 +92,17 @@ public static class ScenarioA1Searching
     }
 
     /// <summary>
-    /// A12.152: the Search dr's drm and its notes: -1 per Stealthy searching unit (a hero, or a heroic leader), -1 per HS-equivalent beyond one HS, the
-    /// leadership of the best participating leader (a wounded one's one worse), +1 per Lax or CX searching unit, for each condition. The +2 against the
-    /// Japanese (G1.63) is not built. A searcher whose <see cref="SearcherFacts.Stealth"/> is null keeps the old answer (the A11.17 claim, ruling
-    /// RA11S.7): <see cref="ScenarioA1StealthCalculator.PerUnitStealthy"/> and <see cref="ScenarioA1StealthCalculator.PerUnitLax"/> replace the hero
-    /// test and the Lax fact, and differ in that Elite and 1st Line Finns, designated forces, and SSR Stealth are Stealthy, Green and Conscript never,
-    /// SSR Lax and non-elite Italians are Lax, and a Lax unit is never also Stealthy.
+    /// A12.152: the Search dr's drm and its notes: -1 per Stealthy searching unit, -1 per HS-equivalent beyond one HS, the leadership of the best
+    /// participating leader (a wounded one's one worse), +1 per Lax or CX searching unit, for each condition. The +2 against the Japanese (G1.63) is not
+    /// built. Each searcher's <see cref="SearcherFacts.Stealth"/> says whether it is Stealthy or Lax (A11.17, A11.18, p. 73; the A11.17 claim, ruling
+    /// RA11S.7); the hero-only reading it replaced is removed (the review of PR 80, item 28).
     /// </summary>
     public static (int Drm, IReadOnlyList<string> Notes) Drm(IReadOnlyList<SearcherFacts> units)
     {
         ArgumentNullException.ThrowIfNull(units);
         var drm = 0;
         var notes = new List<string>();
-        var stealthy = units.Count(unit => unit.Stealth is { } status ? status == StealthStatus.Stealthy : unit.Hero || (unit.Leader && unit.Heroic));
+        var stealthy = units.Count(unit => unit.Stealth == StealthStatus.Stealthy);
         if (stealthy > 0)
         {
             drm -= stealthy;
@@ -123,7 +122,7 @@ public static class ScenarioA1Searching
             notes.Add($"{leadership:+0;-0} leadership");
         }
 
-        var lax = units.Count(unit => unit.Stealth is { } status ? status == StealthStatus.Lax : unit.Lax);
+        var lax = units.Count(unit => unit.Stealth == StealthStatus.Lax);
         if (lax > 0)
         {
             drm += lax;

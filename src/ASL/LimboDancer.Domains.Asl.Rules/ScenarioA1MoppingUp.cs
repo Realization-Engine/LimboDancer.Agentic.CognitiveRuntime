@@ -1,13 +1,14 @@
 namespace LimboDancer.Domains.Asl.Rules;
 
-/// <summary>A concealed armed Good Order enemy unit as the Casualty dr reads it (A12.154): a hero or a heroic leader is Stealthy, a leader's leadership counts, a Lax unit adds.</summary>
-public sealed record MopUpDefenderFacts(bool Hero, bool Leader, bool Heroic, int HalfSquads, int? Leadership, bool Wounded, bool Lax)
+/// <summary>A concealed armed Good Order enemy unit as the Casualty dr reads it (A12.154): a Stealthy unit subtracts, a leader's leadership counts, a Lax unit adds.</summary>
+public sealed record MopUpDefenderFacts(bool Leader, int HalfSquads, int? Leadership, bool Wounded)
 {
     /// <summary>
-    /// Its status as <see cref="ScenarioA1StealthCalculator.Status"/> gives it for the Search Casualties dr (the A11.17 claim, ruling RA11S.7): when
-    /// set, <see cref="ScenarioA1MoppingUp.CasualtyDrm"/> counts it in place of the hero test and <see cref="Lax"/>. Null, as before the claim, reads them.
+    /// Its status as <see cref="ScenarioA1StealthCalculator.Status"/> gives it for the Search Casualties dr (the A11.17 claim, ruling RA11S.7), which
+    /// <see cref="ScenarioA1MoppingUp.CasualtyDrm"/> counts. Required (the review of PR 80, item 28): the old hero test and Lax fact are removed, and a
+    /// caller refuses an unknown status with <see cref="ScenarioA1StealthCalculator.FactsRefusal"/> before it builds the facts.
     /// </summary>
-    public StealthStatus? Stealth
+    public required StealthStatus Stealth
     {
         get; init;
     }
@@ -132,17 +133,15 @@ public static class ScenarioA1MoppingUp
 
     /// <summary>
     /// A12.154: the Casualty dr's drm and its notes: -1 per Stealthy unit, -1 per HS-equivalent beyond one, the best leader's leadership unless alone, +1
-    /// per Lax unit. A defender whose <see cref="MopUpDefenderFacts.Stealth"/> is null keeps the old answer (the A11.17 claim, ruling RA11S.7):
-    /// <see cref="ScenarioA1StealthCalculator.PerUnitStealthy"/> and <see cref="ScenarioA1StealthCalculator.PerUnitLax"/> replace the hero test and the Lax
-    /// fact, and differ in that Elite and 1st Line Finns, designated forces, and SSR Stealth are Stealthy, Green and Conscript never, SSR Lax and
-    /// non-elite Italians are Lax, and a Lax unit is never also Stealthy.
+    /// per Lax unit. Each defender's <see cref="MopUpDefenderFacts.Stealth"/> says whether it is Stealthy or Lax (A11.17, A11.18, p. 73; the A11.17
+    /// claim, ruling RA11S.7); the hero-only reading it replaced is removed (the review of PR 80, item 28).
     /// </summary>
     public static (int Drm, IReadOnlyList<string> Notes) CasualtyDrm(IReadOnlyList<MopUpDefenderFacts> defenders)
     {
         ArgumentNullException.ThrowIfNull(defenders);
         var drm = 0;
         var notes = new List<string>();
-        var stealthy = defenders.Count(unit => unit.Stealth is { } status ? status == StealthStatus.Stealthy : unit.Hero || (unit.Leader && unit.Heroic));
+        var stealthy = defenders.Count(unit => unit.Stealth == StealthStatus.Stealthy);
         if (stealthy > 0)
         {
             drm -= stealthy;
@@ -163,7 +162,7 @@ public static class ScenarioA1MoppingUp
             notes.Add($"{leadership:+0;-0} leadership");
         }
 
-        var lax = defenders.Count(unit => unit.Stealth is { } status ? status == StealthStatus.Lax : unit.Lax);
+        var lax = defenders.Count(unit => unit.Stealth == StealthStatus.Lax);
         if (lax > 0)
         {
             drm += lax;

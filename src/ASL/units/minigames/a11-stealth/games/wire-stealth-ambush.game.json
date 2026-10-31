@@ -1,0 +1,371 @@
+{
+  "schemaVersion": 1,
+  "tenant": "5a7d1f00-0000-4000-8000-0000000057d0",
+  "game": "wire-stealth-ambush",
+  "label": "Minigame: A11.17 Stealth and Lax",
+  "synthetic": false,
+  "minigame": "a11-stealth",
+  "events": [
+    {
+      "eventId": "setup-346aad443e56-1",
+      "revision": 1,
+      "time": "2026-10-30T16:29:23.5381954Z",
+      "source": "map-studio",
+      "type": "game-started",
+      "visibility": "all",
+      "payload": {
+        "sides": [
+          {
+            "id": "finnish",
+            "nationality": "finnish",
+            "elr": 3,
+            "friendlyEdge": "bottom"
+          },
+          {
+            "id": "russian",
+            "nationality": "russian",
+            "elr": 3
+          }
+        ],
+        "map": {
+          "reference": "bd04",
+          "version": "4fd9b95d82318c3da7a85a5a4d1f60c14b123078",
+          "boards": [
+            {
+              "board": "bd04",
+              "version": "4fd9b95d82318c3da7a85a5a4d1f60c14b123078"
+            }
+          ]
+        },
+        "catalog": "asl-scenario-a1@1.18.0",
+        "turn": 1,
+        "phase": "rph",
+        "phasingSide": "finnish",
+        "synthetic": false,
+        "scenarioMonth": 7,
+        "scenario": {
+          "id": "a11-stealth",
+          "sha256": "82003ea89878cbfca216c53b15490cd3c6669e4e95d546c7c774600ca9cef197",
+          "title": "Minigame: A11.17 Stealth and Lax"
+        }
+      }
+    },
+    {
+      "eventId": "setup-346aad443e56-2",
+      "revision": 2,
+      "time": "2026-10-30T16:29:23.5382001Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "finnish-squad-1",
+          "kind": "asl:squad",
+          "definition": "finnish-squad",
+          "side": "finnish",
+          "position": {
+            "at": "bd04:E5:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "setup-346aad443e56-3",
+      "revision": 3,
+      "time": "2026-10-30T16:29:23.5382010Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": [
+        "russian"
+      ],
+      "payload": {
+        "instance": {
+          "id": "r-squad",
+          "kind": "asl:squad",
+          "definition": "defender-squad",
+          "side": "russian",
+          "position": {
+            "at": "bd04:F4:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": true,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "advance-65eae7189d82-1",
+      "revision": 4,
+      "time": "2026-10-30T16:30:18.7296670Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "pfph",
+        "phasingSide": "finnish"
+      }
+    },
+    {
+      "eventId": "advance-c6fc0f5f491d-1",
+      "revision": 5,
+      "time": "2026-10-30T16:30:38.5586214Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "mph",
+        "phasingSide": "finnish"
+      }
+    },
+    {
+      "eventId": "advance-33099789704c-1",
+      "revision": 6,
+      "time": "2026-10-30T16:30:52.5859413Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "dfph",
+        "phasingSide": "finnish"
+      }
+    },
+    {
+      "eventId": "advance-7baed30b5789-1",
+      "revision": 7,
+      "time": "2026-10-30T16:31:21.9023750Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "afph",
+        "phasingSide": "finnish"
+      }
+    },
+    {
+      "eventId": "advance-10af40949432-1",
+      "revision": 8,
+      "time": "2026-10-30T16:31:23.8054265Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "rtph",
+        "phasingSide": "finnish"
+      }
+    },
+    {
+      "eventId": "advance-f46961572d6e-1",
+      "revision": 9,
+      "time": "2026-10-30T16:31:25.3588120Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "aph",
+        "phasingSide": "finnish"
+      }
+    },
+    {
+      "eventId": "adv-17619aee8132-1",
+      "revision": 10,
+      "time": "2026-10-30T16:32:01.3091342Z",
+      "source": "map-studio",
+      "type": "advanced",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-close-combat, Version = sha256:d5fd3783e6c8987a92a737b974105e0150bdd38500cc0062ca8b124e95f0905f }",
+      "visibility": "all",
+      "payload": {
+        "units": [
+          "finnish-squad-1"
+        ],
+        "to": "bd04:F4:0"
+      }
+    },
+    {
+      "eventId": "advance-4f859a7884cd-1",
+      "revision": 11,
+      "time": "2026-10-30T16:32:13.7434950Z",
+      "source": "map-studio",
+      "type": "phase-changed",
+      "visibility": "all",
+      "payload": {
+        "turn": 1,
+        "phase": "ccph",
+        "phasingSide": "finnish"
+      }
+    },
+    {
+      "eventId": "amb-28697b418b46-1",
+      "revision": 12,
+      "time": "2026-10-30T16:33:40.1015617Z",
+      "source": "map-studio",
+      "type": "dice-rolled",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-close-combat, Version = sha256:d5fd3783e6c8987a92a737b974105e0150bdd38500cc0062ca8b124e95f0905f }",
+      "visibility": "all",
+      "payload": {
+        "roll": "amb-28697b418b46-roll-1",
+        "purpose": "cc-ambush",
+        "count": 1,
+        "sides": 6,
+        "values": [
+          2
+        ],
+        "source": "system",
+        "actor": "studio-user"
+      }
+    },
+    {
+      "eventId": "amb-28697b418b46-2",
+      "revision": 13,
+      "time": "2026-10-30T16:33:40.1065582Z",
+      "source": "map-studio",
+      "type": "dice-rolled",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-close-combat, Version = sha256:d5fd3783e6c8987a92a737b974105e0150bdd38500cc0062ca8b124e95f0905f }",
+      "visibility": "all",
+      "payload": {
+        "roll": "amb-28697b418b46-roll-2",
+        "purpose": "cc-ambush",
+        "count": 1,
+        "sides": 6,
+        "values": [
+          6
+        ],
+        "source": "system",
+        "actor": "studio-user"
+      }
+    },
+    {
+      "eventId": "amb-28697b418b46-3",
+      "revision": 14,
+      "time": "2026-10-30T16:33:40.1323214Z",
+      "source": "map-studio",
+      "type": "ambush-rolled",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-close-combat, Version = sha256:d5fd3783e6c8987a92a737b974105e0150bdd38500cc0062ca8b124e95f0905f }",
+      "visibility": "all",
+      "payload": {
+        "stealthVersion": 1,
+        "location": "bd04:F4:0",
+        "rolls": {
+          "finnish": "amb-28697b418b46-roll-1",
+          "russian": "amb-28697b418b46-roll-2"
+        },
+        "ambusher": "finnish",
+        "facts": {
+          "phase": "CCPh",
+          "locationId": "bd04:F4:0",
+          "terrain": "woods",
+          "attackerSide": "finnish",
+          "units": [
+            {
+              "unitId": "finnish-squad-1",
+              "definitionId": "finnish-squad",
+              "side": "finnish",
+              "broken": false,
+              "pinned": false,
+              "wounded": false,
+              "disrupted": false,
+              "berserk": false,
+              "fanatic": false,
+              "heroic": false,
+              "concealed": false,
+              "captured": false,
+              "advanced": true,
+              "inMelee": false,
+              "inexperienced": false
+            },
+            {
+              "unitId": "r-squad",
+              "definitionId": "defender-squad",
+              "side": "russian",
+              "broken": false,
+              "pinned": false,
+              "wounded": false,
+              "disrupted": false,
+              "berserk": false,
+              "fanatic": false,
+              "heroic": false,
+              "concealed": true,
+              "captured": false,
+              "advanced": false,
+              "inMelee": false,
+              "inexperienced": false
+            }
+          ],
+          "rolls": null
+        },
+        "resolution": {
+          "disposition": "resolved",
+          "reasons": [],
+          "sides": [
+            {
+              "side": "finnish",
+              "dr": 2,
+              "drm": [
+                {
+                  "name": "stealthy",
+                  "value": -1,
+                  "rule": "A11.17"
+                }
+              ],
+              "finalDr": 1
+            },
+            {
+              "side": "russian",
+              "dr": 6,
+              "drm": [
+                {
+                  "name": "concealed",
+                  "value": -2,
+                  "rule": "A11.4"
+                }
+              ],
+              "finalDr": 4
+            }
+          ],
+          "ambusher": "finnish"
+        }
+      }
+    },
+    {
+      "eventId": "amb-28697b418b46-4",
+      "revision": 15,
+      "time": "2026-10-30T16:33:40.1346117Z",
+      "source": "map-studio",
+      "type": "conditions-changed",
+      "rulePackage": "DomainPackageRef { DomainId = asl, PackageId = scenario-a1-close-combat, Version = sha256:d5fd3783e6c8987a92a737b974105e0150bdd38500cc0062ca8b124e95f0905f }",
+      "causes": [
+        "amb-28697b418b46-3"
+      ],
+      "visibility": "all",
+      "payload": {
+        "id": "r-squad",
+        "conditions": {
+          "asl:concealed": false,
+          "asl:hidden": false
+        }
+      }
+    }
+  ]
+}

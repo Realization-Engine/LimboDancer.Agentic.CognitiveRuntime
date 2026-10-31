@@ -213,6 +213,13 @@ public enum LineageAction
 /// <summary><c>lineage</c>: instances consumed and the instances produced from them.</summary>
 public sealed record LineageRecorded(LineageAction Action, IReadOnlyList<string> Consumed, IReadOnlyList<NewInstance> Produced) : EventPayload
 {
+    /// <summary>Whether this lineage replaces by lower quality for AE loss; null retains the earlier lineage reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AssaultEngineerLoss
+    {
+        get; init;
+    }
+
     /// <summary>Chosen HS that retains an active Spotter assignment on Deployment. Absent in legacy records.</summary>
     public string? SpotterSuccessor
     {

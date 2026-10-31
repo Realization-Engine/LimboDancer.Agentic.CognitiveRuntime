@@ -34,7 +34,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.dc-placer: {chargeId} is not a DC possessed by a unit of the moving stack (A23.3)");
         }
 
-        if (Is(placer, Conditions.Berserk) || Is(placer, Conditions.PrepFire) || Is(placer, Conditions.Unarmed))
+        if (Is(placer, Conditions.Berserk) || Is(placer, Conditions.Unarmed))
         {
             return Refused(scope, label, expected, $"play.dc-placer: {placer.Id} fired in the PFPh, is berserk, or is Unarmed, and Places no DC (A23.3, A15.431, A20.5)");
         }
@@ -49,9 +49,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.dc-placed: {chargeId} is already Placed (A23.3)");
         }
 
-        if (target == from || !IsAdjacent(state, from, target))
+        var adjacent = IsAdjacent(state, from, target);
+        var placementFacts = new DcPlacementFacts(true, vocabulary.IsA(placer.Kind, "asl:personnel"), state.Phase,
+            adjacent, adjacent, Is(placer, Conditions.PrepFire), Is(placer, Conditions.Pinned));
+        if (ScenarioA1DemolitionChargeRules.PlacementRefusal(placementFacts,
+            ReadLocation(state, target) is { } caveRead && TerrainKey(caveRead) == "cave") is { } placementBar)
         {
-            return Refused(scope, label, expected, $"play.dc-target: a DC is Placed in an ADJACENT Location in the placer's LOS, not {target} (A23.3, A23.61)");
+            return Refused(scope, label, expected, placementBar);
         }
 
         // A23.3, A23.5 (pass 60, ruling R60.16): a DC is Placed where an enemy AFV is once its placer passes a PAATC; Rules says where it is not.
@@ -61,7 +65,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, RefusalReasons.Explain(vehicleBar));
         }
 
-        var afv = vehicles.FirstOrDefault(unit => NeedsPaatc(state, placer, unit));
+        var afv = vehicles.FirstOrDefault(unit => ScenarioA1DemolitionChargeRules.PlacementNeedsPaatc(
+            unit.Side != placer.Side && NeedsPaatc(state, placer, unit), PaatcExempt(placer)));
 
         if (ReadLocation(state, target) is not { } targetRead || TerrainKey(targetRead) is not { } targetTerrain || !ScenarioA1FireReference.Tem.ContainsKey(targetTerrain))
         {
@@ -72,6 +77,8 @@ public sealed partial class GamePlanner
         {
             return Refused(scope, label, expected, $"play.dc-target: the MF to enter {target} are not reviewed, so no DC is Placed there (A23.3)");
         }
+
+        halfMf = ScenarioA1DemolitionChargeRules.PlacementCost(halfMf);
 
         foreach (var unit in movers)
         {
@@ -99,6 +106,7 @@ public sealed partial class GamePlanner
         var placement = new DcPlacement(placer.Id, charge.Id, target, doubleTime || Is(placer, Conditions.Cx), concealed)
         {
             OwnerSide = placer.Side,
+            SettlementVersion = 1,
             Facings = facings.Length > 0 ? facings : null,
         };
         var placing = Event(scope, attemptId, 1, expected, "movement-step", new MovementStepped(ids, from, halfMf, current?.Assault ?? assault, step)
@@ -106,7 +114,7 @@ public sealed partial class GamePlanner
             DoubleTime = doubleTime,
             DcPlacement = placement,
         }, package, null);
-        var summary = $"play.place-dc: {placer.Id} Places {charge.Id} in {target} for {halfMf / 2m} MF of the stack; it is operably Placed once {placer.Id} leaves {from} or ends its move neither broken nor pinned, and detonates in the AFPh with 30 FP (A23.3, A23.4)";
+        var summary = $"play.place-dc: {placer.Id} Places {charge.Id} in {target} for {halfMf / 2m} MF of the stack; it settles when {placer.Id} leaves {from}, another unit begins movement, or the MPh ends, provided its placer was not broken, pinned, or eliminated before then; it detonates in the AFPh with 30 FP (A23.3, A23.4)";
         if (afv is null)
         {
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [placing], [summary]);
@@ -151,7 +159,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.guide-window: stale or unavailable Placed DC route");
         }
 
-        if (state.Phase != "afph")
+        if (!ScenarioA1DemolitionChargeRules.DetonationWindow(state.Phase,
+            placed.OwnerSide is null || placed.OwnerSide == state.PhasingSide, placed.Operable, placed.OriginGameTurn == state.Turn))
         {
             return Refused(scope, label, expected, "play.dc-detonate: a Placed DC detonates in its side's AFPh (A23.4)");
         }

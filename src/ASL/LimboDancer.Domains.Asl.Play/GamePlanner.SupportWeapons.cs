@@ -402,6 +402,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.recombine-unit: the catalog has no squad for {one.Definition.Definition}");
         }
 
+        if (ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(false,
+            [LiveCloseCombat.AssaultEngineerState(one, CloseCombatReference.Value), LiveCloseCombat.AssaultEngineerState(two, CloseCombatReference.Value)], FireReference.Value.Definitions[squad].AssaultEngineer).Reason is { } engineerBar)
+        {
+            return Refused(scope, label, expected, engineerBar);
+        }
+
         // Pass 40 (A1.32): "at the start of any RPh"; and Guards and Unarmed HS "do not need leader presence".
         if (ScenarioA1SupportWeaponRules.RecombineStartBar(SideActedThisRph(state, existing, one.Side)) is { } startBar)
         {

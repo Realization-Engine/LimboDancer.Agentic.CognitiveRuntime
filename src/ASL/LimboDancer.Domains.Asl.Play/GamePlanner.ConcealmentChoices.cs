@@ -113,10 +113,25 @@ public sealed partial class GamePlanner
     /// The concealed Loss seers of the viewing side at the nearest Location within 16 hexes with a clear LOS to a Location (A12.14; ruling R70.21): the
     /// units that would forfeit their "?" for a moment to force the loss. Read once, when the option is offered.
     /// </summary>
-    private string[] ConcealedLossSeers(GameState state, string watchedSide, BoardLocation at)
+    private int? NearestQualifiedLossSeer(GameState state, string watchedSide, BoardLocation at, SightPurpose purpose, IReadOnlySet<int>? qualifying)
+    {
+        if (qualifying is null)
+        {
+            return NearestSeer(state, watchedSide, at, purpose, SightLosReading.Clear);
+        }
+        var table = SightOf(state);
+        return ScenarioA1Sight.NearestSeer([.. SeerLocations(state, watchedSide, purpose).Where(qualifying.Contains)], table.IndexOf(at),
+            new SightLos(this, state, MemoOf(state), table, at), SightLosReading.Clear);
+    }
+
+    private string[] ConcealedLossSeers(GameState state, string watchedSide, BoardLocation at, IReadOnlySet<int>? qualifying = null)
     {
         var table = SightOf(state);
-        return [.. ScenarioA1Sight.ConcealedLossSeers(table.Units, watchedSide, table.IndexOf(at), new SightLos(this, state, MemoOf(state), table, at))
+        var units = qualifying is null ? table.Units : table.Units.Select(unit => unit.Location is { } location && qualifying.Contains(location) ? unit : unit with
+        {
+            Location = null
+        }).ToArray();
+        return [.. ScenarioA1Sight.ConcealedLossSeers(units, watchedSide, table.IndexOf(at), new SightLos(this, state, MemoOf(state), table, at))
             .Select(position => state.Units[position].Id).Order(StringComparer.Ordinal)];
     }
 
@@ -124,7 +139,8 @@ public sealed partial class GamePlanner
     /// The viewer's pending choice (A12.14; ruling R70.21): the side whose concealed units alone see the stack forces its "?" loss or declines. The choice
     /// is recorded for that side only, so the moving side learns nothing of it unless the loss is forced.
     /// </summary>
-    private GameEvent LossChoiceEvent(GameScope scope, string attemptId, int index, long expected, GameState state, string movingSide, BoardLocation at, IReadOnlyList<string> movers)
+    private GameEvent LossChoiceEvent(GameScope scope, string attemptId, int index, long expected, GameState state, string movingSide, BoardLocation at, IReadOnlyList<string> movers,
+        IReadOnlySet<int>? qualifying = null)
     {
         var viewing = state.Sides.First(side => side.Id != movingSide).Id;
         var resume = new JsonObject
@@ -132,7 +148,7 @@ public sealed partial class GamePlanner
             ["record"] = ChoicePending.ConcealmentLoss,
             ["location"] = at.ToString(),
             ["movers"] = new JsonArray([.. movers.Select(id => (JsonNode)id)]),
-            ["seers"] = new JsonArray([.. ConcealedLossSeers(state, movingSide, at).Select(id => (JsonNode)id)]),
+            ["seers"] = new JsonArray([.. ConcealedLossSeers(state, movingSide, at, qualifying).Select(id => (JsonNode)id)]),
         };
         return Event(scope, attemptId, index, expected, "choice-pending", new ChoicePending($"{ChoicePending.ConcealmentLoss}:{at}", ChoicePending.ConcealmentLoss, viewing,
             [ChoicePending.Take, ChoicePending.Decline], JsonSerializer.SerializeToElement(resume)), null, [viewing]);

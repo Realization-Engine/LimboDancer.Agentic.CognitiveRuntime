@@ -51,7 +51,15 @@ public sealed record ScenarioCardUnit(string Definition, int Count, string? Area
 /// (A12.11, A12.12; ruling R17.12).
 /// </summary>
 public sealed record ScenarioCardGroup(string Name, int Elr, IReadOnlyList<ScenarioCardSetup> Areas, IReadOnlyList<ScenarioCardUnit> Units,
-    int? SetupOrder = null, int? Dummies = null);
+    int? SetupOrder = null, int? Dummies = null)
+{
+    /// <summary>The explicit force designation given to Rules; absent retains the earlier card reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? StealthDesignation
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// A side: its SAN (A14.1), Battlefield Integrity total (A16.1), Friendly Board Edge, Balance (A26.4), and OB groups; the counters its Balance adds
@@ -303,7 +311,15 @@ public static class ScenarioCards
             }
 
             node["groups"] = new JsonArray([.. side.Groups.Select((group, index) =>
-                (JsonNode)new JsonObject { ["id"] = GroupId(side.Side, index), ["name"] = group.Name, ["elr"] = group.Elr })]);
+            {
+                var recorded = new JsonObject { ["id"] = GroupId(side.Side, index), ["name"] = group.Name, ["elr"] = group.Elr };
+                if (group.StealthDesignation is { } designation)
+                {
+                    recorded["stealthDesignation"] = designation;
+                }
+
+                return (JsonNode)recorded;
+            })]);
             sides.Add(node);
         }
 
@@ -374,6 +390,19 @@ public static class ScenarioCards
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(catalog);
         var found = new List<string>();
+        foreach (var group in card.Sides.SelectMany(side => side.Groups))
+        {
+            if (ScenarioA1StealthCalculator.Designation(group.StealthDesignation) is null)
+            {
+                found.Add($"card.stealth-designation: '{group.StealthDesignation}' is not a supported explicit force designation");
+            }
+        }
+
+        if (ScenarioA1StealthCalculator.SsrRulesBar(card.Tokens, [.. card.Sides.Select(side => side.Side)]) is { } stealthRefusal)
+        {
+            found.Add(stealthRefusal);
+        }
+
         void Check(bool valid, string diagnostic)
         {
             if (!valid)

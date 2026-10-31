@@ -191,6 +191,61 @@ public sealed class CloseCombatRecordTests
         Assert.Equal("german", Assert.IsType<AmbushRolled>(read.Record!.Events[^3].Payload).Ambusher);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData(1)]
+    public void NullableCombatReadingsRoundTripAndAreOmittedForOldRecords(int? version)
+    {
+        var ambush = new AmbushRolled(E4, new Dictionary<string, string>(), null, Facts, Facts) { StealthVersion = version };
+        var vehicle = new VehicleCloseCombatResolved(E4, "tank", G1, [], false, false, new Dictionary<string, string>(), Facts, Facts)
+        {
+            CcvVersion = version,
+        };
+        var events = With(8, ("ambush", "ambush-rolled", ambush), ("vehicle", "vehicle-close-combat-resolved", vehicle));
+        var text = GameEventWriter.Write(events[0].Scope, new GameRecord("live", true, events));
+        Assert.Equal(version is not null, text.Contains("stealthVersion", StringComparison.Ordinal));
+        Assert.Equal(version is not null, text.Contains("ccvVersion", StringComparison.Ordinal));
+        var read = GameEventReader.Read(Encoding.UTF8.GetBytes(text));
+        Assert.False(read.HasErrors, string.Join(" ", read.Diagnostics));
+        Assert.Equal(version, Assert.IsType<AmbushRolled>(read.Record!.Events[^2].Payload).StealthVersion);
+        Assert.Equal(version, Assert.IsType<VehicleCloseCombatResolved>(read.Record.Events[^1].Payload).CcvVersion);
+        Assert.Equal(text, GameEventWriter.Write(events[0].Scope, read.Record));
+    }
+
+    [Fact]
+    public void AssaultEngineerLineageRetainsTheHalfSquadAndKeepsReplacementLossAfterHardening()
+    {
+        var engineerCatalog = Catalog.Value with
+        {
+            Definitions = [.. Catalog.Value.Definitions.Select(definition => definition.Id == "attacker-squad" ? definition with
+            {
+                Values = [.. definition.Values.Select(value => value.Name == "asl:assault-engineer" ? value with { TraitPresent = true } : value)],
+            } : definition)],
+        };
+        Assert.True(engineerCatalog.Definition("attacker-squad")!.Printed("front", "asl:assault-engineer")!.TraitPresent);
+        static NewInstance Half(string id, string definition) => new(id, "asl:half-squad", definition, "german", null, null, new Dictionary<string, ConditionState>());
+        var reduction = new LineageRecorded(LineageAction.Reduced, G1, [Half("half", "attacker-half-squad")]) { AssaultEngineerLoss = false };
+        var events = With(8, ("reduction", "lineage", reduction));
+        GameHistory Read(IReadOnlyList<GameEvent> records) => GameProjector.Project(records, UnitsTestData.Asl.Value, [engineerCatalog], new FakeChains());
+        var reduced = Read(events);
+        Assert.False(reduced.HasErrors, string.Join(" ", reduced.Diagnostics));
+        Assert.True(reduced.Current!.Unit("half")!.AssaultEngineer);
+
+        events = Next(events,
+            ("replacement", "lineage", new LineageRecorded(LineageAction.Replaced, ["half"], [Half("lesser", "attacker-2nd-line-half-squad")]) { AssaultEngineerLoss = true }),
+            ("hardening", "lineage", new LineageRecorded(LineageAction.Replaced, ["lesser"], [Half("hardened", "attacker-half-squad")]) { AssaultEngineerLoss = false }));
+        var hardened = Read(events);
+        Assert.False(hardened.HasErrors, string.Join(" ", hardened.Diagnostics));
+        Assert.False(hardened.Current!.Unit("hardened")!.AssaultEngineer);
+
+        var legacy = Read(With(8, ("legacy", "lineage", reduction with
+        {
+            AssaultEngineerLoss = null,
+        })));
+        Assert.False(legacy.HasErrors, string.Join(" ", legacy.Diagnostics));
+        Assert.Null(legacy.Current!.Unit("half")!.AssaultEngineer);
+    }
+
     private static List<GameEvent> Next(List<GameEvent> events, params (string Id, string Type, EventPayload Payload)[] added)
     {
         List<GameEvent> next = [.. events];

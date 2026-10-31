@@ -300,13 +300,15 @@ public sealed class ScenarioA1CloseCombatRulesTests
     {
         var (drm, notes) = ScenarioA1MoppingUp.CasualtyDrm(
         [
-            new MopUpDefenderFacts(false, false, false, 2, null, false, false),
-            new MopUpDefenderFacts(false, true, false, 0, -1, true, false),
-            new MopUpDefenderFacts(true, false, false, 0, null, false, true),
+            new MopUpDefenderFacts(false, 2, null, false) { Stealth = StealthStatus.Normal },
+            new MopUpDefenderFacts(true, 0, -1, true) { Stealth = StealthStatus.Normal },
+            new MopUpDefenderFacts(false, 0, null, false) { Stealth = StealthStatus.Stealthy },
+            new MopUpDefenderFacts(false, 0, null, false) { Stealth = StealthStatus.Lax },
         ]);
         Assert.Equal(-1, drm);
         Assert.Equal(["-1 Stealthy", "-1 for 2 HS-equivalents", "+1 Lax"], notes);
-        var (ledDrm, ledNotes) = ScenarioA1MoppingUp.CasualtyDrm([new MopUpDefenderFacts(false, false, false, 2, null, false, false), new MopUpDefenderFacts(false, true, false, 0, -1, false, false)]);
+        var (ledDrm, ledNotes) = ScenarioA1MoppingUp.CasualtyDrm([new MopUpDefenderFacts(false, 2, null, false) { Stealth = StealthStatus.Normal },
+            new MopUpDefenderFacts(true, 0, -1, false) { Stealth = StealthStatus.Normal }]);
         Assert.Equal(-2, ledDrm);
         Assert.Equal(["-1 for 2 HS-equivalents", "-1 leadership"], ledNotes);
         Assert.Equal("is not armed", ScenarioA1MoppingUp.UnitWhy(false, false, false, true, false, false, false, false));

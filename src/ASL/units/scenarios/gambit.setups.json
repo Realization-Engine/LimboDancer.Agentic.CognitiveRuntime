@@ -4,7 +4,7 @@
   "plans": [
     {
       "id": "farmhouse",
-      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "cardSha256": "944ff9e92300a2b8cbc754b456c644e76f7ef3cd5c360f1d72b72f07129316dd",
       "side": "british",
       "name": "The farmhouse",
       "idea": "Two squads with both LMG and the 9-1 hold the upper floor of the farmhouse O6-P6 in the centre, on the road to the middle exit: a fire base that sees most of the German setup area and draws the Germans toward it while the battalion enters behind.",
@@ -154,7 +154,7 @@
     },
     {
       "id": "west-woods",
-      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "cardSha256": "944ff9e92300a2b8cbc754b456c644e76f7ef3cd5c360f1d72b72f07129316dd",
       "side": "british",
       "name": "West woods",
       "idea": "A squad with an LMG at the south edge of the woods H5-H6-I5-I6 and a squad with a 2-in. mortar and an 8-0 deeper in them cover the western route, by the dirt road I1-I2-I3-H3 toward the exit below 4I10; the mortar may fire Smoke for the crossing (SSR 3).",
@@ -304,7 +304,7 @@
     },
     {
       "id": "two-posts",
-      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "cardSha256": "944ff9e92300a2b8cbc754b456c644e76f7ef3cd5c360f1d72b72f07129316dd",
       "side": "british",
       "name": "Two posts",
       "idea": "One squad with an LMG watches from the upper floor of the farmhouse and one with an LMG and an 8-0 from the woods at H6, eight hexes apart: between them they see the German setup area from A9 to GG10, and the Germans cannot tell which route the battalion will take.",
@@ -455,7 +455,7 @@
     },
     {
       "id": "storm-the-farmhouse",
-      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "cardSha256": "944ff9e92300a2b8cbc754b456c644e76f7ef3cd5c360f1d72b72f07129316dd",
       "side": "german",
       "answers": {
         "plan": "farmhouse",
@@ -542,7 +542,7 @@
     },
     {
       "id": "seal-the-west-road",
-      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "cardSha256": "944ff9e92300a2b8cbc754b456c644e76f7ef3cd5c360f1d72b72f07129316dd",
       "side": "german",
       "answers": {
         "plan": "west-woods",
@@ -631,7 +631,7 @@
     },
     {
       "id": "both-posts",
-      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "cardSha256": "944ff9e92300a2b8cbc754b456c644e76f7ef3cd5c360f1d72b72f07129316dd",
       "side": "german",
       "answers": {
         "plan": "two-posts",
@@ -719,7 +719,7 @@
     },
     {
       "id": "three-roads",
-      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "cardSha256": "944ff9e92300a2b8cbc754b456c644e76f7ef3cd5c360f1d72b72f07129316dd",
       "side": "german",
       "name": "Three roads",
       "idea": "One group stands in a building on each way south, whatever the five British counters show: three squads and the 9-2 in the house at P8 on the centre road, two squads and the 8-1 in the house at I10 where the west road leaves board 4, two squads and the 9-1 in the house at X8 and a squad in the house at Y9 where the east road leaves board 4.",

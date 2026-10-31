@@ -198,7 +198,7 @@ public sealed partial class GamePlanner
     /// Concealment dr modifier it needs, or null when it gains "?" with no dr. Rules decides it (pass 32.c) as a search through a fact reader over the
     /// map (the design, D4); the units cross as facts, their costlier reads made when asked.
     /// </summary>
-    private List<(UnitInstance Unit, int? Drm, IReadOnlyList<string> With)> ConcealmentGains(GameState state, out string? smokeReason)
+    private (List<(UnitInstance Unit, int? Drm, IReadOnlyList<string> With)>? Gains, string? Reason) ConcealmentGains(GameState state)
     {
         string? missingSmoke = null;
         var smoke = new Dictionary<BoardLocation, bool>();
@@ -260,23 +260,22 @@ public sealed partial class GamePlanner
                 HoldsEmplacedGun = emplaced,
                 VehicleConcealmentTerrain = vehicle ? () => VehicleConcealmentTerrain(state, index.Location(unit.Id)!.Location) : null,
                 Aboard = index.VehicleOf(unit.Id) is not null,
-                // A1.6, A19.36, A15.21: the sizes, Inexperience, and heroism Rules reads for the US#, Lax, and Stealthy (the boundary review, finding 4).
+                // A1.6: the sizes Rules reads for the US# (the boundary review, finding 4); A11.17, A11.18: the Stealth status, read only for a unit
+                // that needs a dr (the review of PR 80, item 30).
                 VehicleSize = vehicle ? FireReference.Value.Armor.GetValueOrDefault(unit.Definition?.Definition ?? string.Empty)?.TargetSize : null,
                 GunSize = gun is null ? null : OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty)?.TargetSize,
-                Inexperienced = () => Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True,
-                Heroic = Is(unit, Conditions.Heroic),
+                Stealth = () => StealthStatusOf(state, unit, StealthPurpose.Concealment),
                 Shared = vehicle ? () => [.. index.Aboard(unit.Id).Select(rider => (rider.Id, GoodOrder(rider)))]
                     : emplaced ? () => [(gun!.Id, true)]
                     : null,
             };
         }
 
-        var gains = ScenarioA1FireFollowUps.ConcealmentGains(units.Select(Candidate),
+        var (gains, reason) = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth(units.Select(Candidate),
             units.Select((unit, position) => new WatchingEnemyFacts(position, unit.Side != state.PhasingSide, sight.Units[position] with { Location = LocationIndex(unit) })),
             state.Night, state.ScenarioMonth, map);
-        var result = gains.Select(gain => (index.Unit(gain.Id)!, gain.Drm, gain.With)).ToList();
-        smokeReason = missingSmoke;
-        return result;
+        return gains is null ? (null, reason) : missingSmoke is not null ? (null, missingSmoke)
+            : ([.. gains.Select(gain => (index.Unit(gain.Id)!, gain.Drm, gain.With))], null);
     }
 
     /// <summary>The map and the night as the concealment gain's search reads them: a table of Locations by index, the hex distance and LOS between two, a unit's NVR, and Illumination.</summary>

@@ -102,16 +102,22 @@ public static class ScenarioA1Dash
         return firingLocations.Any(location => !location.OriginOpenGround && !location.DestinationOpenGround);
     }
 
-    /// <summary>
-    /// Whether a Location is Open Ground to a firer, as Interdiction reads it (A10.531; ruling R35.1): Open Ground terrain, a clear LOS, no Hindrance
-    /// along it, and no TEM the unit there could claim against that firer. The cover test is
-    /// <see cref="ScenarioA1OpenGroundCalculator.NoFfmoCover"/>'s (the A10.531 claim, ruling RA10.9). The terrain's part is the caller's, and its
-    /// caller reads out-of-season grain as not Open Ground: <see cref="ScenarioA1OpenGroundCalculator.OpenGroundTo"/> with
-    /// <see cref="OpenGroundPurpose.Dash"/> replaces this member, with the season and SMOKE in the Location (W-A10.531).
-    /// </summary>
-    public static bool OpenGroundTo(bool openGroundTerrain, bool losClear, int losHindrance, RoutCoverFacts cover)
+    /// <summary>A4.63, A7.52: one certain qualifying member settles the group; otherwise a seasonal fact may leave its answer unknown.</summary>
+    public static bool? QualifiesAgainstViews(IEnumerable<(bool? OriginOpenGround, bool? DestinationOpenGround)> firingLocations)
     {
-        ArgumentNullException.ThrowIfNull(cover);
-        return openGroundTerrain && losClear && ScenarioA1OpenGroundCalculator.NoFfmoCover(cover, losHindrance);
+        ArgumentNullException.ThrowIfNull(firingLocations);
+        var unknown = false;
+        foreach (var (origin, destination) in firingLocations)
+        {
+            if (origin == false && destination == false)
+            {
+                return true;
+            }
+            if (origin != true && destination != true)
+            {
+                unknown = true;
+            }
+        }
+        return unknown ? null : false;
     }
 }

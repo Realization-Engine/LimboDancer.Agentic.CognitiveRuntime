@@ -432,18 +432,6 @@ public sealed record ConcealmentCandidateFacts(
         get; init;
     }
 
-    /// <summary>Whether it is Inexperienced (A19.2, A19.36), read when asked; null for not.</summary>
-    public Func<bool>? Inexperienced
-    {
-        get; init;
-    }
-
-    /// <summary>Whether it is heroic (A15.21).</summary>
-    public bool Heroic
-    {
-        get; init;
-    }
-
     /// <summary>
     /// Whether it, or the Emplaced Gun it holds, is a large or very large 5/8" counter, US# 5 (A1.6): a vehicle by its own size, a crew by its Gun's (the
     /// boundary review of pass 70, finding 4: the planner decided it).
@@ -451,25 +439,12 @@ public sealed record ConcealmentCandidateFacts(
     public bool Large => (Vehicle ? VehicleSize : HoldsEmplacedGun ? GunSize : null) is "large" or "very-large";
 
     /// <summary>
-    /// Whether it is Lax: an Inexperienced unit (A19.36), not a vehicle, +1 to its Concealment dr (A12.122; ruling R70.22). Read only while
-    /// <see cref="Stealth"/> is null; it keeps its answer (the A11.17 claim, ruling RA11S.7): <see cref="ScenarioA1StealthCalculator.ConcealmentDrm"/>
-    /// replaces it, and differs in that SSR Lax and non-elite Italians (A25.64) are Lax and a Lax unit is never also Stealthy.
+    /// Its status as <see cref="ScenarioA1StealthCalculator.Status"/> gives it for the Concealment dr (A12.122, p. 77; A11.17, A11.18, p. 73; the A11.17
+    /// claim, ruling RA11S.7), read when asked: only a unit that needs a dr reads it, so a Player Turn's end gathers no unit's Stealth it does not use (the
+    /// review of PR 80, item 30). Null from the read is an unknown status, which the gain refuses. Required (item 28): the old Lax, Stealthy, Heroic, and
+    /// Inexperienced members it replaced are removed.
     /// </summary>
-    public bool Lax => !Vehicle && Inexperienced?.Invoke() == true;
-
-    /// <summary>
-    /// Whether it is Stealthy: a hero or a heroic leader (A15.24, A15.21), -1 to its Concealment dr (A12.122; ruling R70.22). Read only while
-    /// <see cref="Stealth"/> is null; it keeps its answer (the A11.17 claim, ruling RA11S.7): <see cref="ScenarioA1StealthCalculator.ConcealmentDrm"/>
-    /// replaces it, and differs in that Elite and 1st Line Finns, designated forces, and SSR Stealth are Stealthy, Green and Conscript never, and a Lax
-    /// unit is not ("Stealthy unless Lax", A11.17).
-    /// </summary>
-    public bool Stealthy => Kind == "asl:hero" || (Kind == "asl:leader" && Heroic);
-
-    /// <summary>
-    /// Its status as <see cref="ScenarioA1StealthCalculator.Status"/> gives it for the Concealment dr (the A11.17 claim, ruling RA11S.7): when set, its
-    /// drm is read in place of <see cref="Lax"/> and <see cref="Stealthy"/>. Null, as before the claim, reads them.
-    /// </summary>
-    public StealthStatus? Stealth
+    public required Func<StealthStatus?> Stealth
     {
         get; init;
     }

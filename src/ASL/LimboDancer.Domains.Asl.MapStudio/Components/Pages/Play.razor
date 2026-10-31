@@ -4188,6 +4188,9 @@ else if (state is not null)
             Riders = rides,
             Passengers = aboard,
             InfantryAttacked = [.. infantryAttacked],
+            VehicleAttackers = here.Where(unit => !LiveFire.IsVehicle(unit)).ToDictionary(unit => unit.Id,
+                unit => (IReadOnlyList<string>)[.. here.Where(LiveFire.IsVehicle).Where(vehicle => LiveCloseCombat.VehicleAttackerRefusal(unit, vehicle) is null)
+                    .Select(vehicle => vehicle.Id)], StringComparer.Ordinal),
         };
     })];
 
@@ -4204,6 +4207,10 @@ else if (state is not null)
 
         string[] attackers = byVehicle || !row.Attackers.Contains(vehicleCcAttacker, StringComparer.Ordinal) ? []
             : [vehicleCcAttacker, .. (row.Leaders.Contains(vehicleCcLeader, StringComparer.Ordinal) && vehicleCcLeader != vehicleCcAttacker ? new[] { vehicleCcLeader } : [])];
+        if (!byVehicle && attackers.Any(id => row.VehicleAttackers?.GetValueOrDefault(id)?.Contains(vehicleCcVehicle, StringComparer.Ordinal) != true))
+        {
+            return Task.CompletedTask;
+        }
         // Pass 70 (rulings R70.31, R70.34): a vehicle attacks the Infantry on foot; a Rider or a Passenger is attacked by Infantry alone (A11.611, A11.52).
         string[] defenders = byVehicle ? [.. row.Defenders.Where(id => vehicleCcDefenders.Contains(id) && !row.Riders.ContainsKey(id) && !row.Passengers.ContainsKey(id))] : [];
         return attackers.Length == 0 && defenders.Length == 0 ? Task.CompletedTask : ProposeVehicleCc(at, attackers, vehicleCcVehicle, defenders, false, capture);

@@ -350,7 +350,7 @@ public static partial class GameProjector
             next = KeepEncirclements(next);
             next = KeepFireLanes(next);
             next = KeepGuards(next);
-            next = KeepPlacedCharges(next, gameEvent.Payload);
+            next = KeepPlacedCharges(previous, next, gameEvent.Payload);
             next = KeepMelee(next);
             next = KeepCx(next);
             next = KeepAcquisitions(previous, next, gameEvent.Payload);
@@ -515,6 +515,11 @@ public static partial class GameProjector
             // is the ELR its groups share.
             foreach (var side in started.Sides.Where(side => side.Groups.Count > 0))
             {
+                if (side.Groups.Any(group => Rules.ScenarioA1StealthCalculator.Designation(group.StealthDesignation) is null))
+                {
+                    return Fail<GameState>("UNIT-STEALTH-DESIGNATION", "The recorded force designation is not supported.");
+                }
+
                 if (Rules.ScenarioA1SequenceProjection.GroupsRefusal(side.Id, side.Groups.Select(group => group.Id).Distinct(StringComparer.Ordinal).Count() == side.Groups.Count,
                     side.Groups.Any(group => !VocabularyNames.IsSlug(group.Id)), [.. side.Groups.Select(group => group.Elr)], side.Elr) is { } groupsRefusal)
                 {
@@ -1191,6 +1196,18 @@ public static partial class GameProjector
             {
                 var verifier = Rules.ScenarioA1CloseCombatProjection.VerifierRefusal(reason);
                 return Fail<GameState>(verifier.Code, verifier.Text);
+            }
+
+            if (combat.CcvVersion is not null && combat.Resolution.TryGetProperty("vehicleResult", out var vehicleResult)
+                && vehicleResult.ValueKind == JsonValueKind.String && Rules.ScenarioA1CloseCombatValueCalculator.PrcEliminated(vehicleResult.GetString()!))
+            {
+                var prc = state.Units.Where(unit => unit.Status == InstanceStatus.Active
+                    && unit.Position is ContainedPosition { Container: var container, Role: ContainmentRole.Passenger or ContainmentRole.Rider or ContainmentRole.Crew }
+                    && container == combat.Vehicle).Select(unit => unit.Id).ToArray();
+                foreach (var id in prc)
+                {
+                    state = Eliminate(state, id)!;
+                }
             }
 
             if (combat.Resolution.TryGetProperty("vehicleBreakdowns", out var breakdowns)
@@ -4830,8 +4847,21 @@ public static partial class GameProjector
                 next = DropHeldBy(next, ids);
             }
 
+            bool? PrintedEngineer(UnitInstance parent) => parent.Definition is { } source
+                && catalogs.FirstOrDefault(item => item.Identity == source.Catalog)?.Definition(source.Definition)?.Printed("front", "asl:assault-engineer") is { State: PrintedState.Printed } printed
+                ? printed.TraitPresent : null;
+            bool?[] parents = [.. consumed.Select(parent => parent.AssaultEngineer
+                ?? (Rules.ScenarioA1CloseCombatValueCalculator.AssaultEngineer(PrintedEngineer(parent), false, false) ? true : (bool?)null))];
             foreach (var produced in lineage.Produced)
             {
+                var engineer = Rules.ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(lineage.AssaultEngineerLoss, parents,
+                    produced.Definition is { } destination && catalog?.Definition(destination)?.Printed("front", "asl:assault-engineer") is { State: PrintedState.Printed } printed
+                        ? printed.TraitPresent : null);
+                if (engineer.Reason is { } engineerBar)
+                {
+                    return Fail<GameState>("UNIT-AE-LINEAGE", engineerBar);
+                }
+
                 var instance = produced with
                 {
                     Side = produced.Side ?? consumed[0].Side,
@@ -4853,6 +4883,7 @@ public static partial class GameProjector
                         DoubleTimeMf = consumed.Max(item => item.DoubleTimeMf),
                         OffRoad = consumed.Any(item => item.OffRoad),
                         MovedWith = consumed.Select(item => item.MovedWith).FirstOrDefault(item => item is not null),
+                        AssaultEngineer = engineer.Status,
                     })
                     : created;
             }
@@ -5133,10 +5164,10 @@ public static partial class GameProjector
 
         /// <summary>
         /// A23.3 (backlog pass 15, ruling R15.2): a DC Placement is recorded with its step; it is operably Placed, and its DC left in its target Location,
-        /// once its placer leaves the Placement Location or ends its move neither broken, pinned, captured, nor eliminated; a placer so affected first keeps
-        /// its DC. A DC no longer in play is gone. Every Placement ends with its Player Turn's CCPh.
+        /// under the recorded settlement reading. New placements wait until departure, another unit's movement, or phase end; legacy placements settle
+        /// at end-move too. A DC no longer in play is gone. Every Placement ends with its Player Turn's CCPh.
         /// </summary>
-        private GameState KeepPlacedCharges(GameState next, EventPayload payload)
+        private GameState KeepPlacedCharges(GameState? previous, GameState next, EventPayload payload)
         {
             var charges = next.PlacedCharges;
             if (payload is MovementStepped { DcPlacement: { } placed } step)
@@ -5148,6 +5179,7 @@ public static partial class GameProjector
                     OriginEventId = eventId,
                     OwnerSide = placed.OwnerSide,
                     OriginGameTurn = next.Turn,
+                    SettlementVersion = placed.SettlementVersion,
                 }];
             }
 
@@ -5156,10 +5188,35 @@ public static partial class GameProjector
                 return next;
             }
 
+            HashSet<string>? spentMovement = null;
+            if (previous?.Phase == "mph" && next.Phase == "mph" && !ReferenceEquals(previous.Units, next.Units)
+                && charges.Any(charge => charge.SettlementVersion is not null && !charge.Operable))
+            {
+                var beforeUnits = previous.Units.ToDictionary(unit => unit.Id, StringComparer.Ordinal);
+                foreach (var unit in next.Units)
+                {
+                    // New lineage instances inherit expenditure; they have not begun a different unit's movement.
+                    if (unit.Side == next.PhasingSide && beforeUnits.TryGetValue(unit.Id, out var before)
+                        && unit.MfSpent * 2 + (unit.HalfMfSpent ? 1 : 0) > before.MfSpent * 2 + (before.HalfMfSpent ? 1 : 0))
+                    {
+                        (spentMovement ??= new(StringComparer.Ordinal)).Add(unit.Id);
+                    }
+                }
+            }
+
+            // A8.1 (p. 59): Defensive First Fire affects "only the moving unit/stack", so the units moving with the placer are its own move, not
+            // another unit beginning movement (A23.3, p. 90): the step's movers with the placer, and the members of the placer's current move, even
+            // when they move on apart from it (A4.2: no other unit moves until the ATTACKER ends them all).
+            bool InPlacersStack(string id, string placer) =>
+                payload is MovementStepped { Movers: var movers } && movers.Contains(placer) && movers.Contains(id)
+                || previous?.Movement is { } before && before.Members.Contains(placer) && before.Members.Contains(id)
+                || next.Movement is { } now && now.Members.Contains(placer) && now.Members.Contains(id);
+
             var kept = new List<PlacedCharge>();
             var equipment = next.Equipment;
-            foreach (var charge in charges)
+            foreach (var recordedCharge in charges)
             {
+                var charge = recordedCharge;
                 if (next.Find(charge.Charge) is not EquipmentInstance { Status: InstanceStatus.Active } dc)
                 {
                     continue;
@@ -5171,16 +5228,69 @@ public static partial class GameProjector
                     continue;
                 }
 
-                if (next.Unit(charge.Unit) is not { Status: InstanceStatus.Active } placer || GameState.Condition(placer, Conditions.Broken) == ConditionState.True
-                    || GameState.Condition(placer, Conditions.Pinned) == ConditionState.True || GameState.Condition(placer, Conditions.Captured) == ConditionState.True)
+                if (charge.SettlementVersion is not null)
                 {
-                    continue;
-                }
+                    var currentPlacer = next.Unit(charge.Unit);
+                    if (currentPlacer is { Status: InstanceStatus.Consumed }
+                        && dc.Holding is { } holding
+                        && next.Unit(holding.Holder) is { Status: InstanceStatus.Active } successor
+                        && successor.From.Contains(charge.Unit))
+                    {
+                        charge = charge with
+                        {
+                            Unit = successor.Id
+                        };
+                        currentPlacer = successor;
+                    }
 
-                if (next.Movement is { } moving && moving.Movers.Contains(charge.Unit) && moving.Location == charge.From && !placer.MovementEnded)
+                    var eliminated = currentPlacer is not { Status: InstanceStatus.Active };
+                    var failed = Rules.ScenarioA1DemolitionChargeRules.PlacementFailed(
+                        currentPlacer is not null && GameState.Condition(currentPlacer, Conditions.Broken) == ConditionState.True,
+                        currentPlacer is not null && GameState.Condition(currentPlacer, Conditions.Pinned) == ConditionState.True, eliminated);
+                    if (failed)
+                    {
+                        var captured = currentPlacer is not null && GameState.Condition(currentPlacer, Conditions.Captured) == ConditionState.True;
+                        if (Rules.ScenarioA1DemolitionChargeRules.UnplacedDcStays(eliminated || captured) == Rules.DcHeldBy.Location)
+                        {
+                            var fallenAt = previous?.Location(charge.Unit)?.Location ?? charge.From;
+                            equipment = [.. equipment.Select(item => item.Id == dc.Id ? item with
+                            {
+                                Holding = null,
+                                Position = new MapPosition(fallenAt)
+                            } : item)];
+                        }
+                        // Removing the pending placement latches failure, even if the placer later rallies.
+                        continue;
+                    }
+
+                    var settled = Rules.ScenarioA1DemolitionChargeRules.PlacementSettled(
+                        next.Location(charge.Unit)?.Location is { } at && at != charge.From,
+                        next.Phase == "mph" && (payload is VehicleStepped
+                            || payload is MovementStepped other && !other.Movers.Contains(charge.Unit) && !other.Movers.All(id => InPlacersStack(id, charge.Unit))
+                            || payload is InstanceMoved { Mf: not null } entered && entered.Id != charge.Unit
+                            || payload is EntryAttempted attempted && attempted.Id != charge.Unit
+                            || payload is ManhandlingRolled push && previous?.Find(push.Gun) is EquipmentInstance { Holding: { Role: HoldingRole.Manned } crew }
+                                && crew.Holder != charge.Unit
+                            || spentMovement?.Any(id => id != charge.Unit && !InPlacersStack(id, charge.Unit)) == true), next.Phase != "mph");
+                    if (Rules.ScenarioA1DemolitionChargeRules.PlacementOperable(settled, failed) != true)
+                    {
+                        kept.Add(charge);
+                        continue;
+                    }
+                }
+                else
                 {
-                    kept.Add(charge);
-                    continue;
+                    if (next.Unit(charge.Unit) is not { Status: InstanceStatus.Active } placer || GameState.Condition(placer, Conditions.Broken) == ConditionState.True
+                        || GameState.Condition(placer, Conditions.Pinned) == ConditionState.True || GameState.Condition(placer, Conditions.Captured) == ConditionState.True)
+                    {
+                        continue;
+                    }
+
+                    if (next.Movement is { } moving && moving.Movers.Contains(charge.Unit) && moving.Location == charge.From && !placer.MovementEnded)
+                    {
+                        kept.Add(charge);
+                        continue;
+                    }
                 }
 
                 kept.Add(charge with

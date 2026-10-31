@@ -893,10 +893,13 @@ public sealed class ScenarioA1Pass70RulesTests
 
     private static ConcealmentCandidateFacts Candidate(string id, string kind = "asl:squad", bool vehicle = false, string terrain = "open-ground", bool gun = false) =>
         new(id, kind, true, true, vehicle, !vehicle, false, true, kind == "asl:squad", kind == "asl:half-squad", 0, false, false, false, false, false, false,
-            () => gun, () => false, () => terrain, () => false, () => 0);
+            () => gun, () => false, () => terrain, () => false, () => 0)
+        {
+            Stealth = () => StealthStatus.Normal
+        };
 
     private static List<ConcealmentGain> Gains(int range, bool los, params ConcealmentCandidateFacts[] units) =>
-        ScenarioA1FireFollowUps.ConcealmentGains(units, [new WatchingEnemyFacts(0, true, Seer(at: 1, side: "russian"))], false, 7, new GainMap(range, los));
+        ScenarioA1FireFollowUps.ConcealmentGainsWithStealth(units, [new WatchingEnemyFacts(0, true, Seer(at: 1, side: "russian"))], false, 7, new GainMap(range, los)).Gains!;
 
     private static readonly string[] GunOfTheCrew = ["de-gun"];
     private static readonly string[] PassengerOfTheTruck = ["de-p"];
@@ -972,21 +975,16 @@ public sealed class ScenarioA1Pass70RulesTests
     public void TheConcealmentDrTakesLaxAndStealthy()
     {
         // A12.122 (p. 77): +1 Lax, -1 Stealthy, with the US# (the example's Hero: "6 [dr] +1 [US#] -1 [Leadership] -1 [Stealthy] = 5").
-        // The boundary review (finding 4): Rules reads Lax from Inexperience and Stealthy from the kind and the heroic state.
+        // The A11.17 claim (ruling RA11S.7; the review of PR 80, item 28): the candidate's Stealth status gives Lax and Stealthy.
         Assert.Equal(4, Gains(10, false, Candidate("de-s") with
         {
-            Inexperienced = () => true
+            Stealth = () => StealthStatus.Lax
         }).Single().Drm);
-        Assert.Equal(0, Gains(10, false, Candidate("de-h", "asl:hero")).Single().Drm);
+        Assert.Equal(0, Gains(10, false, Candidate("de-h", "asl:hero") with
+        {
+            Stealth = () => StealthStatus.Stealthy
+        }).Single().Drm);
         Assert.Equal(3, Gains(10, false, Candidate("de-s")).Single().Drm);
-        Assert.True((Candidate("de-l", "asl:leader") with
-        {
-            Heroic = true
-        }).Stealthy);
-        Assert.False((Candidate("de-s") with
-        {
-            Heroic = true
-        }).Stealthy);
     }
 
     private static readonly string?[] OrchardRoad = ["Orchard", "Dirt Road", null, "Orchard", "Orchard", "Dirt Road"];
@@ -1224,7 +1222,10 @@ public sealed class ScenarioA1Pass70RulesTests
     // Increment 3g (task 70.9): Searching (A12.152, A12.154; ruling R70.24) and Mopping Up in any building (A12.153; ruling R70.25).
     private static SearcherFacts Searcher(string id = "g1", bool mmc = true, bool leader = false, int halfSquads = 2, int? leadership = null, bool member = true, bool pinned = false,
         bool broken = false, bool infantry = true, bool hero = false, bool lax = false, bool cx = false, bool wounded = false) =>
-        new(id, true, true, member, infantry, mmc, leader, broken, false, pinned, false, false, hero, false, halfSquads, leadership, wounded, lax, cx);
+        new(id, true, true, member, infantry, mmc, leader, broken, false, pinned, false, false, halfSquads, leadership, wounded, cx)
+        {
+            Stealth = lax ? StealthStatus.Lax : hero ? StealthStatus.Stealthy : StealthStatus.Normal
+        };
 
     private static readonly string[] TwoHexes = ["bd01:L4:0", "bd01:M4:0"];
     private static readonly string[] SameHexTwice = ["bd01:L4:0", "bd01:L4:0"];
@@ -1307,7 +1308,7 @@ public sealed class ScenarioA1Pass70RulesTests
         Assert.False(ScenarioA1Searching.CasualtyTrigger(false, true, false, false, false));
         Assert.True(ScenarioA1Searching.CasualtyDue(false, true));
         Assert.False(ScenarioA1Searching.CasualtyDue(false, false));
-        var (drm, _) = ScenarioA1MoppingUp.CasualtyDrm([new MopUpDefenderFacts(false, false, false, 2, null, false, false)]);
+        var (drm, _) = ScenarioA1MoppingUp.CasualtyDrm([new MopUpDefenderFacts(false, 2, null, false) { Stealth = StealthStatus.Normal }]);
         Assert.True(ScenarioA1MoppingUp.CasualtyReduces(2, drm));
         Assert.False(ScenarioA1MoppingUp.CasualtyReduces(3, drm));
         Assert.Equal("searching", ScenarioA1MoraleCheck.Searching);
@@ -1560,15 +1561,15 @@ public sealed class ScenarioA1Pass70RulesTests
         {
             Ambusher = ambusher
         };
-        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On("russian"), CloseCombat).Drm, item => item.Name == "ambush" && item.Value == -1m);
-        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On("german"), CloseCombat).Drm, item => item.Name == "vs-ambush" && item.Value == 1m);
-        Assert.DoesNotContain(ScenarioA1VehicleCloseCombat.Resolve(On(null), CloseCombat).Drm, item => item.Name.Contains("ambush", StringComparison.Ordinal));
+        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On("russian"), CloseCombat, null).Drm, item => item.Name == "ambush" && item.Value == -1m);
+        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On("german"), CloseCombat, null).Drm, item => item.Name == "vs-ambush" && item.Value == 1m);
+        Assert.DoesNotContain(ScenarioA1VehicleCloseCombat.Resolve(On(null), CloseCombat, null).Drm, item => item.Name.Contains("ambush", StringComparison.Ordinal));
         VehicleCloseCombatFacts By(string? ambusher) => new("CCPh", "bd03:F8:0", CcTank(), units, [], ["ru-1"], true, false, new VehicleCloseCombatRolls(Sevens))
         {
             Ambusher = ambusher
         };
-        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By("german"), CloseCombat).Defending!).Drm, item => item.Name == "ambush" && item.Value == -1m);
-        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By("russian"), CloseCombat).Defending!).Drm, item => item.Name == "vs-ambush" && item.Value == 1m);
+        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By("german"), CloseCombat, null).Defending!).Drm, item => item.Name == "ambush" && item.Value == -1m);
+        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By("russian"), CloseCombat, null).Defending!).Drm, item => item.Name == "vs-ambush" && item.Value == 1m);
     }
 
     [Fact]
@@ -1590,12 +1591,12 @@ public sealed class ScenarioA1Pass70RulesTests
                 CrewExposed = false
             }
         }, CloseCombat));
-        var joined = ScenarioA1VehicleCloseCombat.Resolve(Facts([CcUnit("de-p", "attacker-squad", "german")]), CloseCombat);
+        var joined = ScenarioA1VehicleCloseCombat.Resolve(Facts([CcUnit("de-p", "attacker-squad", "german")]), CloseCombat, null);
         Assert.Equal(CloseCombatResolution.Resolved, joined.Disposition);
-        var withPassenger = joined.AttackFirepower!.Value - ScenarioA1VehicleCloseCombat.Resolve(Facts(null), CloseCombat).AttackFirepower!.Value;
+        var withPassenger = joined.AttackFirepower!.Value - ScenarioA1VehicleCloseCombat.Resolve(Facts(null), CloseCombat, null).AttackFirepower!.Value;
         Assert.Equal(4m, withPassenger);
-        Assert.Equal(2m, ScenarioA1VehicleCloseCombat.Resolve(Facts([CcUnit("de-p", "attacker-squad", "german") with { Pinned = true }]), CloseCombat).AttackFirepower!.Value
-            - ScenarioA1VehicleCloseCombat.Resolve(Facts(null), CloseCombat).AttackFirepower!.Value);
+        Assert.Equal(2m, ScenarioA1VehicleCloseCombat.Resolve(Facts([CcUnit("de-p", "attacker-squad", "german") with { Pinned = true }]), CloseCombat, null).AttackFirepower!.Value
+            - ScenarioA1VehicleCloseCombat.Resolve(Facts(null), CloseCombat, null).AttackFirepower!.Value);
 
         // A11.611, A11.62: a Rider attacks apart; a CE halftrack's Passenger joins; a BU one does nothing; an unarmored vehicle's always join.
         Assert.Equal(ScenarioA1PassengerActionRules.Apart, ScenarioA1PassengerActionRules.CloseCombat(FirePrc.Rider, true, false, true).Part);
@@ -1708,20 +1709,20 @@ public sealed class ScenarioA1Pass70RulesTests
             Ambusher = ambusher,
             StreetFighters = RussianSquad,
         };
-        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On(null), CloseCombat).Drm, item => item.Name == "street-fighting" && item.Value == -1m && item.Rule == "A11.8");
-        var ambushed = ScenarioA1VehicleCloseCombat.Resolve(On("russian"), CloseCombat).Drm;
+        Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(On(null), CloseCombat, null).Drm, item => item.Name == "street-fighting" && item.Value == -1m && item.Rule == "A11.8");
+        var ambushed = ScenarioA1VehicleCloseCombat.Resolve(On("russian"), CloseCombat, null).Drm;
         Assert.DoesNotContain(ambushed, item => item.Name == "street-fighting");
         Assert.Contains(ambushed, item => item.Name == "ambush");
         Assert.DoesNotContain(ScenarioA1VehicleCloseCombat.Resolve(On(null) with
         {
             StreetFighters = null
-        }, CloseCombat).Drm, item => item.Name == "street-fighting");
+        }, CloseCombat, null).Drm, item => item.Name == "street-fighting");
         VehicleCloseCombatFacts By(IReadOnlyList<string>? fighters) => new("CCPh", "bd03:F4:0", CcTank(), units, [], RussianSquad, true, false, new VehicleCloseCombatRolls(Sevens))
         {
             StreetFighters = fighters,
         };
-        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By(RussianSquad), CloseCombat).Defending!).Drm, item => item.Name == "vs-street-fighting" && item.Value == 1m);
-        Assert.Empty(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By(null), CloseCombat).Defending!).Drm);
+        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By(RussianSquad), CloseCombat, null).Defending!).Drm, item => item.Name == "vs-street-fighting" && item.Value == 1m);
+        Assert.Empty(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(By(null), CloseCombat, null).Defending!).Drm);
     }
 
     [Fact]
@@ -1758,8 +1759,8 @@ public sealed class ScenarioA1Pass70RulesTests
                 Passengers = [units[1] with { PassengerOf = null }],
                 Captors = captors
             };
-        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(ByTruck(RussianSquad), CloseCombat).Defending!).Drm, item => item.Name == "vs-passenger-captor" && item.Value == 2m);
-        Assert.Empty(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(ByTruck(null), CloseCombat).Defending!).Drm);
+        Assert.Contains(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(ByTruck(RussianSquad), CloseCombat, null).Defending!).Drm, item => item.Name == "vs-passenger-captor" && item.Value == 2m);
+        Assert.Empty(Assert.Single(ScenarioA1VehicleCloseCombat.Resolve(ByTruck(null), CloseCombat, null).Defending!).Drm);
 
         // "If all the Passengers are captured, so is the vehicle", once no enemy Personnel is left; an unarmored stationary vehicle's only.
         Assert.True(ScenarioA1CapturedVehicleRules.CapturedWithPassengers(1, false, 0, false));
@@ -1792,8 +1793,8 @@ public sealed class ScenarioA1Pass70RulesTests
             {
                 LeaderCreation = planned
             };
-        Assert.Equal(["asl.a1.cc-vehicle.roll-missing:leaderCreation"], ScenarioA1VehicleCloseCombat.Resolve(Attack(RussianSquad, null), CloseCombat).Reasons);
-        var created = ScenarioA1VehicleCloseCombat.Resolve(Attack(RussianSquad, 5), CloseCombat);
+        Assert.Equal(["asl.a1.cc-vehicle.roll-missing:leaderCreation"], ScenarioA1VehicleCloseCombat.Resolve(Attack(RussianSquad, null), CloseCombat, null).Reasons);
+        var created = ScenarioA1VehicleCloseCombat.Resolve(Attack(RussianSquad, 5), CloseCombat, null);
         Assert.Equal(("defender-leader-6-plus-1", 6), (created.LeaderCreation!.LeaderDefinitionId, created.LeaderCreation.FinalDr));
         Assert.Equal((6, 3), (created.KillNumber!.Value, created.FinalDr));
         Assert.Contains(created.KillNumberModifiers, item => item.Name.StartsWith("created-leader-combining:", StringComparison.Ordinal) && item.Rule == "A18.12");
@@ -1801,7 +1802,7 @@ public sealed class ScenarioA1Pass70RulesTests
 
         // With a leader in the attack ("No more than two units") the created leader adds his leadership only, in the combining leader's place (A10.7;
         // ruling R70.46); the Unlikely Kill still follows.
-        var withLeader = ScenarioA1VehicleCloseCombat.Resolve(Attack(SquadAndLeader, 5), CloseCombat);
+        var withLeader = ScenarioA1VehicleCloseCombat.Resolve(Attack(SquadAndLeader, 5), CloseCombat, null);
         Assert.DoesNotContain(withLeader.KillNumberModifiers, item => item.Name.StartsWith("created-leader", StringComparison.Ordinal));
         Assert.Contains(withLeader.Drm, item => item.Name.StartsWith("created-leader:", StringComparison.Ordinal));
         Assert.DoesNotContain(withLeader.Drm, item => item.Name.StartsWith("leadership:", StringComparison.Ordinal));
@@ -1812,12 +1813,12 @@ public sealed class ScenarioA1Pass70RulesTests
             new VehicleCloseCombatRolls(SnakeEyes) { LeaderCreation = 5 })
         {
             LeaderCreation = true
-        }, CloseCombat);
+        }, CloseCombat, null);
         Assert.DoesNotContain(heroic.Drm, item => item.Name.StartsWith("created-leader", StringComparison.Ordinal));
         Assert.Contains(heroic.Drm, item => item.Name == "heroic:ru-l");
 
         // A record made before the pass declares no Leader Creation: its Original 2 rolls none.
-        var older = ScenarioA1VehicleCloseCombat.Resolve(Attack(RussianSquad, null, null), CloseCombat);
+        var older = ScenarioA1VehicleCloseCombat.Resolve(Attack(RussianSquad, null, null), CloseCombat, null);
         Assert.Equal((CloseCombatResolution.Resolved, (LeaderCreationOutcome?)null), (older.Disposition, older.LeaderCreation));
     }
 
