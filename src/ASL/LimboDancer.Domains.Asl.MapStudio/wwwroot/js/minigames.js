@@ -1,11 +1,20 @@
-// The Minigames page: a link that opens a minigame's card (Play's "The whole card") brings its section to the top. No styles are written here.
-// At a narrow width the Studio's menu collapses just after the page becomes interactive and moves the content up, so for a moment after the
-// page opens the section is brought back to the top whenever the page's height changes.
+// The Minigames page: when the page opens on a minigame further down its list, the list (which scrolls on its own) shows that minigame's entry.
+// The page itself does not move. No styles are written here.
 
-export function showSection(id) {
-    const show = () => document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "auto" });
-    show();
-    const observer = new ResizeObserver(show);
-    observer.observe(document.body);
-    setTimeout(() => observer.disconnect(), 1500);
+export function showChosen(listId) {
+    const list = document.getElementById(listId);
+    const chosen = list?.querySelector("a.active");
+    if (!list || !chosen) {
+        return;
+    }
+
+    const pane = list.closest(".minigame-index");
+    if (!pane) {
+        return;
+    }
+
+    const top = chosen.getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop;
+    if (top < pane.scrollTop || top + chosen.offsetHeight > pane.scrollTop + pane.clientHeight) {
+        pane.scrollTop = Math.max(0, top - pane.clientHeight / 3);
+    }
 }

@@ -46,3 +46,16 @@ its "Copy this card to edit it" made a copy that the card editor saved as one of
    Minigames page.
 4. The card editor takes no minigame's card as its source: an address that names one starts from a minimal card and says why. A deliberate
    "make a scenario from this minigame" can be added later as its own action.
+
+## Third step: one minigame at a time (the user, 2026-10-31)
+
+The user found the page an endless scroll of minigames, and the Workbench's picker unclear about working only on minigames.
+
+1. The Minigames page lists every minigame at the left, in rule order (`MinigameOrder`: the section number as a number, the digits after the point
+   one by one, so A7.7, A10.531, A10.6, A11.17, A11.5), with a filter by title, id, or rule and each one's count of games. The list scrolls on its own
+   and fits the window below the page's header. Only the chosen minigame is shown beside it; the address names it (`?minigame=<bundle>`; `?open=`
+   also opens its card, for Play's link), and the page opens with its entry in the list's view (`wwwroot/js/minigames.js`). Under 1024px the list
+   gives way to a dropdown.
+2. The Rule Workbench's picker is labelled "Minigame", its first entry reads "choose a minigame", and each game sits under its minigame's title. A
+   game of the user's opened by a Play or Replay link turns it back to "Game". The introduction and the empty page say the workbench works on
+   minigames.

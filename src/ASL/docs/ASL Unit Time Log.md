@@ -1870,3 +1870,4 @@ One session under the user's word of 2026-10-27 ("Run Pass 72 without my interve
 | W-C9 PR 85: Claude settles its review findings | 08:35 | 09:04 | 0:29 | | Armor C2.5, three Play tests, 81mm target-advice measurement, Case A and F shared, Studio light-mode read, W-C9 rulings RC9P.7 and RC9P.8, backlog 87, clutter removed. Start estimated from the first commit (08:42). |
 | Minigames page (separate the minigames from the user's games) | 12:38 | 13:05 | 0:27 | | design approved, built, 6 page tests, Studio checked at 1440 and 375 |
 | Minigame cards off the Scenario cards page | 15:27 | 15:39 | 0:12 | | cards on the Minigames page, Scenarios and the card editor refuse them, 4 page tests, Studio checked at 1440 and 375 |
+| Minigames page: one at a time; Workbench picker says minigames | 16:26 | 17:11 | 0:45 | | side list in rule order with a filter, dropdown under 1024px; Studio checked at 1440 and 375 |

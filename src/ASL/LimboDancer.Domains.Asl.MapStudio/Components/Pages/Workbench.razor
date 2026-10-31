@@ -14,21 +14,39 @@
 <PageTitle>Rule Workbench - ASL Map Studio</PageTitle>
 
 <PageHeader Title="Rule Workbench">
-    <RuleHelp Id="workbench-intro" DetailLabel="How this works" Summary="Ask one rule about a position of a game, as one viewer sees it. Nothing is rolled or written.">
-        The workbench evaluates a rule's calculator through its wiring contract on a game at a revision, from a side's view or the adjudicator's
+    <RuleHelp Id="workbench-intro" DetailLabel="How this works" Summary="Ask one rule about a position of a minigame, as one viewer sees it. Nothing is rolled or written.">
+        The workbench works on minigames: choose one of their games, then a revision, a viewer, and a rule. Play's and Replay's Workbench links
+        also open one of your own games here. The workbench evaluates a rule's calculator through its wiring contract on a game at a revision, from a side's view or the adjudicator's
         (the Rules-first plan, section 6). A fact Play can read is gathered from the game; one it cannot yet read is entered by hand and marked so; one
         the viewer may not know under the rules reaches the calculator as unknown. The events shown are a preview: the workbench never changes a game.
     </RuleHelp>
 </PageHeader>
 
 <div class="toolbar" id="workbench-toolbar">
+    @* The user, 2026-10-31: the picker says plainly that the workbench works on minigames; their games are grouped under each minigame's title. A game
+       of the user's opened by a Play or Replay link is listed with the user's other games instead. *@
     <label>
-        Game
+        @(RealGameOpen ? "Game" : "Minigame")
         <select id="workbench-game" value="@gameId" @onchange="@(args => Choose(args.Value as string ?? string.Empty))">
-            <option value="">choose a game</option>
-            @foreach (var game in GameList)
+            <option value="">@(RealGameOpen ? "choose a game" : "choose a minigame")</option>
+            @if (RealGameOpen)
             {
-                <option value="@game">@GameText(game)</option>
+                @foreach (var game in Live.GameNames())
+                {
+                    <option value="@game">@game</option>
+                }
+            }
+            else
+            {
+                @foreach (var (bundle, games) in MinigameGroups)
+                {
+                    <optgroup label="@bundle.Title">
+                        @foreach (var game in games)
+                        {
+                            <option value="@game">@game</option>
+                        }
+                    </optgroup>
+                }
             }
         </select>
     </label>
@@ -69,15 +87,17 @@
     {
         <span class="muted" id="workbench-real-game">A game that is not a minigame's, opened from Play or Replay; the list holds such games. <a href="games/workbench">Minigames' games</a></span>
     }
-    else
+    else if (Live.MinigameOf(gameId) is { } open)
     {
-        <MinigameNote Id="workbench-minigame" Bundle="@Live.MinigameOf(gameId)" />
+        <a id="workbench-minigame" href="@($"games/minigames?minigame={Uri.EscapeDataString(open)}")">About @(Minigames.Find(open)?.Title ?? open)</a>
     }
 </div>
 
 @if (history is null)
 {
-    <p class="muted" id="workbench-empty">Choose a minigame's game, or start one on the <a href="games/minigames">Minigames</a> page.</p>
+    <p class="muted" id="workbench-empty">
+        The workbench works on minigames: choose one above. A minigame with no game yet is started on the <a href="games/minigames">Minigames</a> page.
+    </p>
 }
 else
 {
@@ -242,10 +262,16 @@ else
     // not a minigame's (ruling RPS.11); then the games that are not. A list never holds both kinds.
     private bool RealGameOpen => gameId.Length > 0 && Live.MinigameOf(gameId) is null;
 
-    private IReadOnlyList<string> GameList => RealGameOpen ? Live.GameNames() : [.. Live.MinigameGameNames().OrderBy(game => Live.MinigameOf(game), StringComparer.Ordinal)
-        .ThenBy(game => game, StringComparer.Ordinal)];
-
-    private string GameText(string game) => Live.MinigameOf(game) is { } bundle ? $"{game} ({Minigames.Find(bundle)?.Title ?? bundle})" : game;
+    // Each minigame that has a game, in rule order, with its games by name.
+    private IEnumerable<(MinigameManifest Bundle, List<string> Games)> MinigameGroups
+    {
+        get
+        {
+            var byBundle = Live.MinigameGameNames().GroupBy(game => Live.MinigameOf(game)!, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.Order(StringComparer.Ordinal).ToList(), StringComparer.Ordinal);
+            return MinigameOrder.All.Where(bundle => byBundle.ContainsKey(bundle.Id)).Select(bundle => (bundle, byBundle[bundle.Id]));
+        }
+    }
 
     // The game's minigame's contracts, or every contract when asked or when the game is not a minigame.
     private IReadOnlyList<RuleContract> Contracts => allContracts || Live.MinigameOf(gameId) is not { } bundle || Minigames.Find(bundle) is not { } manifest

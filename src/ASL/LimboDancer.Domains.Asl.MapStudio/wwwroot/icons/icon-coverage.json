@@ -1329,6 +1329,7 @@
           "kind": "button",
           "label": "@(cardOpen ? \u0022Hide its card\u0022 : \u0022Show its card\u0022)",
           "dynamic": true,
+          "id": "minigame-card-toggle",
           "status": "needed",
           "strip": "MinigameList"
         }
