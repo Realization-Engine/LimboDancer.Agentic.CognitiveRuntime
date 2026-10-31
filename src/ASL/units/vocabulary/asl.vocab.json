@@ -245,6 +245,7 @@
     { "name": "asl:field-phone", "label": "Field phone", "short": "PHONE", "rule": "C1.2 to C1.23, p. 163" },
     { "name": "asl:no-ap", "label": "Cannot fire AP", "short": "AP NA", "rule": "C2.21, p. 167" },
     { "name": "asl:no-he", "label": "Cannot fire HE", "short": "HE NA", "rule": "C2.21, p. 167" },
+    { "name": "asl:no-intensive-fire", "label": "Cannot Intensive Fire", "short": "No IF", "rule": "C5.63, p. 173" },
     { "name": "asl:mount-360", "label": "360° Mount", "short": "360", "rule": "C2.3, p. 168" },
     { "name": "asl:qsu", "label": "Quick Set-Up", "short": "QSU", "rule": "C2.4, p. 168" },
     { "name": "asl:nm", "label": "No Movement", "short": "NM", "rule": "C2.4, p. 168" },
@@ -376,7 +377,7 @@
       "name": "asl:gun", "label": "Gun", "extends": "asl:equipment", "faces": ["front", "malfunctioned", "limbered"], "facing": true, "rule": "C2.2 to C2.29, pp. 167 to 168",
       "attributes": ["asl:designation", "asl:gun-type", "asl:caliber", "asl:caliber-suffix", "asl:rate-of-fire", "asl:ife", "asl:range-minimum", "asl:range-maximum",
         "asl:special-ammo", "asl:manhandling", "asl:target-size", "asl:breakdown", "asl:repair", "asl:removal", "asl:identity", "asl:bpv", "asl:dates"],
-      "traits": ["asl:no-ap", "asl:no-he", "asl:mount-360", "asl:qsu", "asl:nm", "asl:rfnm", "asl:animal-pack"],
+      "traits": ["asl:no-ap", "asl:no-he", "asl:no-intensive-fire", "asl:mount-360", "asl:qsu", "asl:nm", "asl:rfnm", "asl:animal-pack"],
       "accessibleName": {
         "default": "{side} {caliber}{caliber-suffix?} {gun-type} {designation} {identity}, ROF {rate-of-fire}, M{manhandling}",
         "limbered": "{side} limbered {caliber}{caliber-suffix?} {gun-type} {designation} {identity}, M{manhandling}",
@@ -392,7 +393,7 @@
         "asl:bmg", "asl:cmg", "asl:aamg", "asl:hull-rear-mg", "asl:turret-rear-mg",
         "asl:vehicle-ft-mount", "asl:vehicle-ft-firepower", "asl:vehicle-ft-removal", "asl:crew-survival", "asl:vehicle-class"],
       "traits": ["asl:mechanically-unreliable", "asl:unarmored", "asl:partially-armored", "asl:rear-turret-unarmored", "asl:open-topped",
-        "asl:breakdown-circled", "asl:breakdown-note-extends", "asl:no-ap", "asl:no-he", "asl:fixed-bmg", "asl:vehicle-ft-range-2", "asl:cs-passengers-only", "asl:cs-red"],
+        "asl:breakdown-circled", "asl:breakdown-note-extends", "asl:no-ap", "asl:no-he", "asl:no-intensive-fire", "asl:fixed-bmg", "asl:vehicle-ft-range-2", "asl:cs-passengers-only", "asl:cs-red"],
       "accessibleName": {
         "default": "{side} {designation} {movement-type} {kind} {identity}, {movement-points} MP, AF {af-front}/{af-side}, MA {caliber}{caliber-suffix?} {ma-weapon} {ma-type}",
         "wreck": "{side} wrecked {designation} {kind} {identity}, {survival-label} {crew-survival}"
