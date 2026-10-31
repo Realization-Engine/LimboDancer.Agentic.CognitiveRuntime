@@ -278,10 +278,8 @@ public static class ScenarioA1CanisterCalculator
 
         // A21.12 (W-A21.13): the penalty multiple lowers the Multiple ROF one each; a shot recorded before the wiring was not lowered.
         var rof = ScenarioA1OrdnanceCalculator.UnloweredRateOfFire(shot, gun);
-        if (shot.HexspinesToTurn > 0 && shot.Vehicle is null)
-        {
-            rof--;
-        }
+        var conditional = ScenarioA1OrdnanceParticipationCalculator.ConditionalRof(shot, gun, reference, rof);
+        rof = conditional.Rof;
 
         if (ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) || ScenarioA1OrdnanceCalculator.AfphFire(shot)
             || ScenarioA1OrdnanceParticipationCalculator.HeroGunLimited(shot, gun, reference))
@@ -289,7 +287,7 @@ public static class ScenarioA1CanisterCalculator
             rof = 0;
         }
 
-        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0]);
+        var (kept, counter) = ScenarioA1OrdnanceCalculator.Counter(shot, failed, rof, dice[0], conditional.IntensiveFireCounter);
         OrdnanceCanisterAttack[] attacks = use == "none" ? [] : [.. canister.Locations!.Select(location =>
         {
             var multipliers = Multipliers(AttackFact(shot, gun, location));

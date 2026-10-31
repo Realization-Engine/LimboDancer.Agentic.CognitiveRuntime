@@ -37,4 +37,15 @@ public sealed record OrdnanceAdditionalFirer(
 /// Opt-in participation evidence. Version 1 records either a lone primary crew or its real second SMC. A null property on OrdnanceShot
 /// keeps the earlier single-crew reading; a non-null record with no second firer explicitly selects the new solo reading.
 /// </summary>
-public sealed record OrdnanceParticipation(int Version, OrdnanceAdditionalFirer? Second);
+public sealed record OrdnanceParticipation(int Version, OrdnanceAdditionalFirer? Second)
+{
+    /// <summary>Capture and prior Game Turn use from the firing revision. Null retains the earlier state-verifier evidence boundary.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceParticipationUseHistory? UseHistory
+    {
+        get; init;
+    }
+}
+
+/// <summary>Facts which cannot be recovered from a weapon's nationality or the current phase's shot count.</summary>
+public sealed record OrdnanceParticipationUseHistory(bool Captured, bool FiredThisGameTurn);

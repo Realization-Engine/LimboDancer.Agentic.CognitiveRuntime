@@ -21,6 +21,7 @@
       "viewer": "german",
       "contract": "c9-ordnance-participation",
       "facts": {
+        "phase": "PFPh", "opportunityFire": false,
         "firerId": "g-leader", "secondId": "g-second",
         "primaryKind": "asl:leader", "secondKind": "asl:leader",
         "active": true, "sameSide": true, "sameLocation": true,
@@ -36,6 +37,7 @@
       "viewer": "german",
       "contract": "c9-ordnance-participation",
       "facts": {
+        "phase": "PFPh", "opportunityFire": false,
         "firerId": "g-leader", "secondId": "g-leader",
         "primaryKind": "asl:leader", "secondKind": "asl:leader",
         "active": true, "sameSide": true, "sameLocation": true,
@@ -51,6 +53,7 @@
       "viewer": "german",
       "contract": "c9-ordnance-participation",
       "facts": {
+        "phase": "PFPh", "opportunityFire": false,
         "firerId": "g-leader", "secondId": "g-second",
         "primaryKind": "asl:leader", "secondKind": "asl:leader",
         "active": true, "sameSide": true, "sameLocation": true,
@@ -66,6 +69,7 @@
       "viewer": "german",
       "contract": "c9-ordnance-participation",
       "facts": {
+        "phase": "PFPh", "opportunityFire": false,
         "firerId": "g-leader", "secondId": "g-second",
         "primaryKind": "asl:leader", "secondKind": "asl:leader",
         "active": true, "sameSide": true, "sameLocation": false,
@@ -81,6 +85,7 @@
       "viewer": "german",
       "contract": "c9-ordnance-participation",
       "facts": {
+        "phase": "PFPh", "opportunityFire": false,
         "firerId": "g-leader", "secondId": "g-second",
         "primaryKind": "asl:leader", "secondKind": "asl:leader",
         "active": true, "sameSide": true, "sameLocation": true,
@@ -236,6 +241,17 @@
           "loses its Multiple ROF"
         ]
       }
+    },
+    {
+      "name": "The pair fires the same 81mm mortar as a Gun and keeps Multiple ROF",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c9-mortar-shot",
+      "facts": {
+        "firerId": "g-leader", "weapon": "mtr", "caliber": 81, "minimumRange": 3, "range": 3,
+        "areaTargetType": true, "namesVehicle": false, "loneSmc": false, "hero": false
+      },
+      "expect": { "outcome": "may-fire", "reasons": ["keeps its Multiple ROF"] }
     },
     {
       "name": "A lone leader does not fire a mortar larger than 82mm (A21.13)",
