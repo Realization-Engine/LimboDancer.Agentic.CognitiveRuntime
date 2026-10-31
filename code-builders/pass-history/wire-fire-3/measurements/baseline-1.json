@@ -1,0 +1,398 @@
+{
+  "playVersion": "1.0.0",
+  "startedUtc": "2026-10-31T04:30:47.6569024+00:00",
+  "build": "Debug",
+  "runtime": "10.0.14",
+  "serverGc": false,
+  "processorCount": 16,
+  "view": "Viewer-independent physical facts; commands use the recorded phasing side.",
+  "inputs": [
+    {
+      "game": "dl-tractor-works-02",
+      "sha256": "8530FB6E59220269A3A8AFEADD31F7C02DEF7291A77246498DE21E4BBA28FD43"
+    },
+    {
+      "game": "wire-smoke-strength",
+      "sha256": "8529A4A251F54A7705D61A3EBEE0294E18D837BDD50A023E48DFE5192241EEE6"
+    },
+    {
+      "game": "wire-smoke-fire",
+      "sha256": "36EBE50486FC458C9D2BABC73116D58948BC4C38BD0C1CA52EB0FD42B7DE4FA3"
+    },
+    {
+      "game": "wire-vehicle-repair",
+      "sha256": "47BA2BCB4D561CC8CD2EFDA81AED757309229F79B38B51FF2041043315F0D6B7"
+    }
+  ],
+  "maps": [
+    {
+      "Reference": "bd01",
+      "Version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317",
+      "Boards": [
+        {
+          "Board": {
+            "Kind": 0,
+            "Value": "bd01",
+            "VaslBoardName": "01"
+          },
+          "Version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317",
+          "Slot": null
+        }
+      ],
+      "IsPlaced": false
+    },
+    {
+      "Reference": "bd02",
+      "Version": "d4d3abd91995f955ae067edaf8dd97c36bd0e16c",
+      "Boards": [
+        {
+          "Board": {
+            "Kind": 0,
+            "Value": "bd02",
+            "VaslBoardName": "02"
+          },
+          "Version": "d4d3abd91995f955ae067edaf8dd97c36bd0e16c",
+          "Slot": null
+        }
+      ],
+      "IsPlaced": false
+    }
+  ],
+  "source": "Exact synchronous CLR allocation totals: per-thread for helper reads, process-wide for complete commands; nine batches, GC outside timed regions; clone included for cold state.",
+  "results": [
+    {
+      "fixture": "reference",
+      "revision": 1441,
+      "units": 126,
+      "smoke": 0,
+      "operation": "fire-los",
+      "cold": false,
+      "answer": 0,
+      "iterations": 400,
+      "bytes": 824,
+      "medianUs": 3.52,
+      "p90Us": 5.36875
+    },
+    {
+      "fixture": "reference",
+      "revision": 1441,
+      "units": 126,
+      "smoke": 0,
+      "operation": "fire-los",
+      "cold": true,
+      "answer": 0,
+      "iterations": 40,
+      "bytes": 17602.6,
+      "medianUs": 16.802500000000002,
+      "p90Us": 26.6675
+    },
+    {
+      "fixture": "reference",
+      "revision": 1441,
+      "units": 126,
+      "smoke": 0,
+      "operation": "overrun-smoke",
+      "cold": false,
+      "answer": 0,
+      "iterations": 400,
+      "bytes": 552,
+      "medianUs": 3.0065,
+      "p90Us": 5.06875
+    },
+    {
+      "fixture": "reference",
+      "revision": 1441,
+      "units": 126,
+      "smoke": 0,
+      "operation": "overrun-smoke",
+      "cold": true,
+      "answer": 0,
+      "iterations": 40,
+      "bytes": 1376,
+      "medianUs": 3.905,
+      "p90Us": 6.467499999999999
+    },
+    {
+      "fixture": "reference",
+      "revision": 1441,
+      "units": 126,
+      "smoke": 0,
+      "operation": "sniper-tem",
+      "cold": false,
+      "answer": 0,
+      "iterations": 400,
+      "bytes": 552,
+      "medianUs": 2.77125,
+      "p90Us": 3.471
+    },
+    {
+      "fixture": "reference",
+      "revision": 1441,
+      "units": 126,
+      "smoke": 0,
+      "operation": "sniper-tem",
+      "cold": true,
+      "answer": 0,
+      "iterations": 40,
+      "bytes": 1376,
+      "medianUs": 3.6225,
+      "p90Us": 5.0575
+    },
+    {
+      "fixture": "reference",
+      "revision": 1441,
+      "units": 126,
+      "smoke": 0,
+      "operation": "sniper-preflight",
+      "cold": false,
+      "answer": 0,
+      "iterations": 400,
+      "bytes": 0,
+      "medianUs": 0.009000000000000001,
+      "p90Us": 0.0125
+    },
+    {
+      "fixture": "reference",
+      "revision": 1441,
+      "units": 126,
+      "smoke": 0,
+      "operation": "sniper-preflight",
+      "cold": true,
+      "answer": 0,
+      "iterations": 40,
+      "bytes": 824,
+      "medianUs": 0.5549999999999999,
+      "p90Us": 1.2349999999999999
+    },
+    {
+      "fixture": "smoke",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "fire-los",
+      "cold": false,
+      "answer": 2,
+      "iterations": 400,
+      "bytes": 1120,
+      "medianUs": 2.4532499999999997,
+      "p90Us": 3.17825
+    },
+    {
+      "fixture": "smoke",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "fire-los",
+      "cold": true,
+      "answer": 2,
+      "iterations": 40,
+      "bytes": 17898.6,
+      "medianUs": 15.35,
+      "p90Us": 25.7725
+    },
+    {
+      "fixture": "smoke",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "overrun-smoke",
+      "cold": false,
+      "answer": 3,
+      "iterations": 400,
+      "bytes": 584,
+      "medianUs": 0.74675,
+      "p90Us": 0.8497499999999999
+    },
+    {
+      "fixture": "smoke",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "overrun-smoke",
+      "cold": true,
+      "answer": 3,
+      "iterations": 40,
+      "bytes": 1408,
+      "medianUs": 2.48,
+      "p90Us": 6.87
+    },
+    {
+      "fixture": "smoke",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "sniper-tem",
+      "cold": false,
+      "answer": 2,
+      "iterations": 400,
+      "bytes": 584,
+      "medianUs": 0.81825,
+      "p90Us": 1.5605000000000002
+    },
+    {
+      "fixture": "smoke",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "sniper-tem",
+      "cold": true,
+      "answer": 2,
+      "iterations": 40,
+      "bytes": 1408,
+      "medianUs": 1.875,
+      "p90Us": 3.2350000000000003
+    },
+    {
+      "fixture": "smoke",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "sniper-preflight",
+      "cold": false,
+      "answer": 0,
+      "iterations": 400,
+      "bytes": 0,
+      "medianUs": 0.0095,
+      "p90Us": 0.0125
+    },
+    {
+      "fixture": "smoke",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "sniper-preflight",
+      "cold": true,
+      "answer": 0,
+      "iterations": 40,
+      "bytes": 824,
+      "medianUs": 0.3375,
+      "p90Us": 0.7075
+    },
+    {
+      "fixture": "smoke-with-sniper",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "fire-los",
+      "cold": false,
+      "answer": 2,
+      "iterations": 400,
+      "bytes": 1120,
+      "medianUs": 1.65,
+      "p90Us": 2.45925
+    },
+    {
+      "fixture": "smoke-with-sniper",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "fire-los",
+      "cold": true,
+      "answer": 2,
+      "iterations": 40,
+      "bytes": 17898.6,
+      "medianUs": 13.569999999999999,
+      "p90Us": 25.16
+    },
+    {
+      "fixture": "smoke-with-sniper",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "overrun-smoke",
+      "cold": false,
+      "answer": 3,
+      "iterations": 400,
+      "bytes": 584,
+      "medianUs": 0.7302500000000001,
+      "p90Us": 1.29975
+    },
+    {
+      "fixture": "smoke-with-sniper",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "overrun-smoke",
+      "cold": true,
+      "answer": 3,
+      "iterations": 40,
+      "bytes": 1408,
+      "medianUs": 2.15,
+      "p90Us": 2.6350000000000002
+    },
+    {
+      "fixture": "smoke-with-sniper",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "sniper-tem",
+      "cold": false,
+      "answer": 2,
+      "iterations": 400,
+      "bytes": 584,
+      "medianUs": 1.04675,
+      "p90Us": 1.5485
+    },
+    {
+      "fixture": "smoke-with-sniper",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "sniper-tem",
+      "cold": true,
+      "answer": 2,
+      "iterations": 40,
+      "bytes": 1408,
+      "medianUs": 3.1075,
+      "p90Us": 3.5375
+    },
+    {
+      "fixture": "smoke-with-sniper",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "sniper-preflight",
+      "cold": false,
+      "answer": 0,
+      "iterations": 400,
+      "bytes": 0,
+      "medianUs": 0.01325,
+      "p90Us": 0.01625
+    },
+    {
+      "fixture": "smoke-with-sniper",
+      "revision": 9,
+      "units": 3,
+      "smoke": 1,
+      "operation": "sniper-preflight",
+      "cold": true,
+      "answer": 0,
+      "iterations": 40,
+      "bytes": 824,
+      "medianUs": 0.5375,
+      "p90Us": 1.4925000000000002
+    },
+    {
+      "fixture": "wire-smoke-fire",
+      "revision": 9,
+      "operation": "fire-command",
+      "cold": false,
+      "answer": 3,
+      "iterations": 20,
+      "bytes": 223853.6,
+      "medianUs": 1475.8200000000002,
+      "p90Us": 1935.2450000000001
+    },
+    {
+      "fixture": "wire-vehicle-repair",
+      "revision": 6,
+      "operation": "repair-command",
+      "cold": false,
+      "answer": 2,
+      "iterations": 20,
+      "bytes": 25513.2,
+      "medianUs": 115.85499999999999,
+      "p90Us": 134.60999999999999
+    }
+  ]
+}

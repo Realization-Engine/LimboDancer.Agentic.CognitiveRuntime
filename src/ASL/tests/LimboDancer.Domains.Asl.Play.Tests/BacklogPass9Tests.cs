@@ -66,12 +66,19 @@ public sealed partial class BacklogPass9Tests : IDisposable
 
         public Dictionary<(string From, string To), LosHindrance[]> Hindrances { get; } = [];
 
+        public LosElevations? Elevations
+        {
+            get;
+            set;
+        }
+
         public LosResult? Read(GameState state, BoardLocation from, BoardLocation target) => Blocked.Contains(target) || Blocked.Contains(from)
             ? new(LosStatus.Blocked, true, Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty)
             : new(LosStatus.Clear, false, Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty)
             {
                 Crossed = Crossed.GetValueOrDefault((from.Hex.ToString(), target.Hex.ToString())) ?? [],
                 Hindrances = Hindrances.GetValueOrDefault((from.Hex.ToString(), target.Hex.ToString())) ?? [],
+                Elevations = Elevations,
             };
     }
 
@@ -423,6 +430,13 @@ public sealed partial class BacklogPass9Tests : IDisposable
         Committed(await Shoot("de-mtr", "bd01:B6:0", null, null, 2, 3, 5, 6));
         var facts = LastFacts(before);
         var shot = LastShot(before);
+        var fired = Since(before).Select(item => item.Payload).OfType<OrdnanceFired>().Single();
+        Assert.Equal(1, fired.SmokeWiringVersion);
+        Assert.Equal("Unknown SMOKE wiring version.", OrdnanceRecordVerifier.Shared.Verify(Current,
+            fired with
+            {
+                SmokeWiringVersion = 99
+            }, new Dictionary<string, DiceRolled>()));
         Assert.Equal((OrdnanceTargetTypes.Area, 4, 7), (facts.TargetType, facts.Range, shot.ToHit!.ModifiedToHit));
         Assert.True(shot.AreaTargets!.Single().Hit);
         Assert.Contains(shot.Hit!.Arithmetic!.Drm, item => item.Name == "air-burst" && item.Value == -1);
@@ -987,7 +1001,20 @@ public sealed partial class BacklogPass9Tests : IDisposable
         Committed(await Move(G1, "bd01:B8:0"));
         await Pass();
         Committed(await Smoke(G1, "bd01:B8:0", "g1", "bd01:B8:0", 1));
-        Assert.Single(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
+        var grenade = Assert.Single(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
+        Assert.Equal(grenade.Id, Assert.Single(Current.VerifiedSmokeGrenades));
+        var smokeAt = BoardLocation.Parse("bd01:B8:0");
+        var above = BoardLocation.Parse("bd01:B8:1");
+        var unclassified = Current with
+        {
+            Entities = [.. Current.Entities, grenade with { Id = "unknown-source", Position = new MapPosition(above) }],
+        };
+        var (values, reason) = GamePlanner.SmokeStrengthsAt(unclassified, smokeAt);
+        Assert.Null(reason);
+        Assert.Equal(2, Assert.Single(values!));
+        Assert.Same(values, GamePlanner.SmokeStrengthsAt(unclassified, smokeAt).Hindrances);
+        Assert.Null(GamePlanner.SmokeStrengthsAt(unclassified, above).Hindrances);
+        Assert.Contains("play.smoke-facts", GamePlanner.SmokeStrengthsAt(unclassified, above).Reason!);
         Assert.Equal(G1, Current.SmokeAttempts);
         var smokeRevision = Revision;
         var smokeGuide = await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "mph", profile);
@@ -1001,6 +1028,12 @@ public sealed partial class BacklogPass9Tests : IDisposable
         var before = Revision;
         Committed(await Fire(R1, "bd01:B8:0", 6, 6));
         var record = LastFire(before);
+        Assert.Equal(1, record.SmokeWiringVersion);
+        Assert.Equal("Unknown SMOKE wiring version.", FireRecordVerifier.Shared.Verify(Current,
+            record with
+            {
+                SmokeWiringVersion = 99
+            }, new Dictionary<string, DiceRolled>()));
         Assert.True(HasDrm(record, "los-hindrance", 2));
         Assert.False(HasDrm(record, "ffmo", -1));
         await Pass();
@@ -1013,6 +1046,7 @@ public sealed partial class BacklogPass9Tests : IDisposable
         await EndMove();
         await Advance();
         Assert.DoesNotContain(Current.Entities, item => item.Kind == "asl:smoke" && item.Status == InstanceStatus.Active);
+        Assert.Empty(Current.VerifiedSmokeGrenades);
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
         var afterSmoke = (await Planner().ReadTurnGuideProfileAsync(Scope, Perspective.Side("german"), "dfph", profile)).Atmosphere!;
         Assert.Equal(TurnSmokeState.RemovedAtMovementEnd, Assert.Single(afterSmoke.Grenades).State);
@@ -1043,6 +1077,67 @@ public sealed partial class BacklogPass9Tests : IDisposable
         Assert.Single(incomplete.UnclassifiedSmoke);
         Assert.Equal(TurnSmokeState.NotEvaluated, Assert.Single((await legacyReader.ReadTurnGuideProfileAsync(Scope,
             Perspective.Side("german"), "dfph", profile)).Atmosphere!.Grenades).State);
+    }
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(2, false)]
+    public async Task CrossedSmokeUsesTheLosHeightAndReplaysItsRecordedHindrance(int elevation, bool hindered)
+    {
+        await Setup("german", 7, 1942, Squad("g1", "bd01:A8:0", "german"), Squad("g2", "bd01:A7:0", "german"),
+            Squad("r1", "bd01:B10:0", "russian"));
+        await Advance(2);
+        Committed(await Smoke(G1, "bd01:A8:0", "g1", "bd01:B8:0", 1));
+        await Pass();
+        await EndMove();
+        Committed(await Move(G2, "bd01:B7:0"));
+        los.Crossed[("B10", "B7")] = [Crossing("B8", 2) with { RangeToTarget = 1 }];
+        los.Elevations = new(new(elevation, 0, false, false, false, 0), new(elevation, 0, false, false, false, 0));
+        var before = Revision;
+        Committed(await Fire(R1, "bd01:B7:0", 6, 6));
+        Assert.Equal(hindered, HasDrm(LastFire(before), "los-hindrance", 2));
+
+        // Replaying consumes the recorded map verdict, even when today's map reader would answer differently.
+        los.Elevations = null;
+        los.Crossed.Clear();
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+        var written = GameEventWriter.Write(Scope, store.Read(Scope)!);
+        var loaded = GameEventReader.Read(Encoding.UTF8.GetBytes(written)).Record!;
+        Assert.False(Planner().Replay(loaded.Events).HasErrors);
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(2, false)]
+    [InlineData(-1, false)]
+    public async Task SmokeOccupancyUsesTheCompleteLocationAndRequiresHeightFacts(int level, bool occupied)
+    {
+        // A24.4 (PDF p.92): a ground-level conventional grenade reaches level 1, not level 2 or the cellar.
+        await Setup("german", 7, 1942, Squad("g1", "bd01:A8:0", "german"), Squad("r1", "bd01:B10:0", "russian"));
+        await Advance(2);
+        Committed(await Smoke(G1, "bd01:A8:0", "g1", "bd01:B8:0", 1));
+        var state = Current;
+        var at = new BoardLocation(BoardRef.Parse("bd01"), HexName.Parse("B8"), level);
+        los.Elevations = new(new(level, 0, level == -1, false, false, 0), new(level, 0, level == -1, false, false, 0));
+        var (values, reason) = Planner().SmokeHindrancesAt(state, at);
+        Assert.Null(reason);
+        if (occupied)
+        {
+            Assert.Equal(2, Assert.Single(values!));
+        }
+        else
+        {
+            Assert.Empty(values!);
+        }
+        los.Elevations = null;
+        Assert.Null(Planner().SmokeHindrancesAt(state, at).Hindrances);
+        Assert.Contains("play.smoke-height", Planner().SmokeHindrancesAt(state, at).Reason!);
+        Assert.Empty(Planner().SmokeHindrancesAt(state, BoardLocation.Parse("bd01:B7:0")).Hindrances!);
+        var unknown = state with
+        {
+            VerifiedSmokeGrenades = []
+        };
+        Assert.Contains("play.smoke-facts", Planner().SmokeHindrancesAt(unknown, at).Reason!);
     }
 
     [Fact]

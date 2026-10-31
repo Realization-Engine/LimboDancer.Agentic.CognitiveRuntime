@@ -85,16 +85,97 @@ public sealed partial class GamePlanner
     /// What is still to resolve after a Sniper attack (A14.1, A14.3, A14.4): the attack its <see cref="Roll"/> calls for, or, with <see cref="Check"/>, the
     /// Sniper Check the attack that roll called offers in that Location, owed once the attacks its own LLMC DRs called are resolved (pass 71, ruling R71.25).
     /// </summary>
-    private readonly record struct SniperQueued(string Roll, string Sniper, BoardLocation? Check = null);
+    private readonly record struct SniperQueued(string Roll, string Sniper, BoardLocation? Check = null, int? SmokeVersion = 1);
 
     /// <summary>A queue as a pending Sniper choice's resume keeps it, "rest": each item its roll and Sniper, and an owed Sniper Check its Location.</summary>
-    private static JsonArray QueueJson(IEnumerable<SniperQueued> queue) => new([.. queue.Select(item => (JsonNode)(item.Check is { } at
-        ? new JsonObject { ["roll"] = item.Roll, ["sniper"] = item.Sniper, ["check"] = at.ToString() }
-        : new JsonObject { ["roll"] = item.Roll, ["sniper"] = item.Sniper }))]);
+    private static JsonArray QueueJson(IEnumerable<SniperQueued> queue) => new([.. queue.Select(item =>
+    {
+        var entry = new JsonObject { ["roll"] = item.Roll, ["sniper"] = item.Sniper };
+        if (item.Check is { } at)
+        {
+            entry["check"] = at.ToString();
+        }
+        if (item.SmokeVersion is { } version)
+        {
+            entry["smokeVersion"] = version;
+        }
+        return (JsonNode)entry;
+    })]);
+
+    private static int? SniperSmokeVersion(JsonElement resume) => resume.TryGetProperty("smokeVersion", out var version)
+        && version.ValueKind != JsonValueKind.Null ? version.ValueKind == JsonValueKind.Number && version.TryGetInt32(out var value) ? value : -1 : null;
+
+    private static string? SniperSmokeVersionBar(JsonElement resume) => SniperSmokeVersion(resume) is not (null or 1)
+        || resume.GetProperty("rest").EnumerateArray().Any(item => SniperSmokeVersion(item) is not (null or 1))
+        ? "play.sniper-smoke-version: unknown SMOKE reading" : null;
+
+    // Geometry is immutable for this state and this planner's map context. Weak keys retain no discarded game history;
+    // concurrent first reads may compute the same public-fact refusal, and either result may be kept.
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameState, SniperSmokeCheck> sniperSmokeChecks = new();
+
+    private sealed record SniperSmokeCheck(string? Reason);
+
+    /// <summary>Read public SMOKE/map facts before dice, including Locations newly exposed by a bailout or casualty result.</summary>
+    private string? SniperSmokeBar(GameState state)
+    {
+        if (state.Choice is { Kind: ChoicePending.Sniper or ChoicePending.SniperCheck } pending)
+        {
+            if (SniperSmokeVersionBar(pending.Resume) is { } versionBar)
+            {
+                return versionBar;
+            }
+            if (SniperSmokeVersion(pending.Resume) is null
+                && pending.Resume.GetProperty("rest").EnumerateArray().All(item => SniperSmokeVersion(item) is null))
+            {
+                return null;
+            }
+        }
+        if (!ScenarioA1Sniper.TriggerPhase(state.Phase)
+            || !MemoOf(state).Snipers(state).Values.Any(sniper => ScenarioA1Sniper.Attacks(Is(sniper, Conditions.Pinned))))
+        {
+            return null;
+        }
+        if (sniperSmokeChecks.TryGetValue(state, out var kept))
+        {
+            return kept.Reason;
+        }
+        return sniperSmokeChecks.GetValue(state, GatherSniperSmokeCheck).Reason;
+    }
+
+    private SniperSmokeCheck GatherSniperSmokeCheck(GameState state)
+    {
+        var snapshot = SmokeSnapshots.GetValue(state, static value => GatherSmoke(value));
+        if (snapshot.Unknown.Count > 0)
+        {
+            return new("play.sniper-smoke-facts: establish SMOKE source, chemical, and strength before a roll that may trigger a Sniper (A24.5)");
+        }
+        var visited = new HashSet<BoardLocation>();
+        foreach (var (source, columns) in snapshot.Columns)
+        {
+            if (columns.All(column => column.Height is null) || !visited.Add(source.AtGroundLevel()))
+            {
+                continue;
+            }
+            if (ReadLocation(state, source) is not { } read)
+            {
+                return new("play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)");
+            }
+            var locations = read.Hex.Locations.Select(level => new BoardLocation(source.Board, source.Hex, level.Level))
+                .Concat(read.Hex.Hexsides.Where(side => side.OnMap).Select(side => new BoardLocation(source.Board, source.Hex, 0, side.Side)));
+            foreach (var location in locations)
+            {
+                if (SmokeHindrancesAt(state, location).Reason is not null)
+                {
+                    return new("play.sniper-smoke-height: establish SMOKE's vertical extent before a roll that may trigger a Sniper (A24.4)");
+                }
+            }
+        }
+        return new(null);
+    }
 
     /// <summary>The queue a pending Sniper choice's resume keeps; an item with no "check", as every one recorded before ruling R71.25, is an attack.</summary>
     private static List<SniperQueued> QueueOf(JsonElement resume) => [.. resume.GetProperty("rest").EnumerateArray().Select(item => new SniperQueued(item.GetProperty("roll").GetString()!,
-        item.GetProperty("sniper").GetString()!, item.TryGetProperty("check", out var check) ? BoardLocation.Parse(check.GetString()!) : null))];
+        item.GetProperty("sniper").GetString()!, item.TryGetProperty("check", out var check) ? BoardLocation.Parse(check.GetString()!) : null, SniperSmokeVersion(item)))];
 
     /// <summary>A pending Sniper choice's resume with the triggers still to resolve added after its own, those it already keeps or answers left out.</summary>
     private static void KeepTriggers(List<GameEvent> events, int at, ChoicePending choice, (string Roll, string Sniper)[] triggers)
@@ -105,7 +186,12 @@ public sealed partial class GamePlanner
         var added = false;
         foreach (var (roll, sniper) in triggers.Where(item => !kept.Contains(item.Roll)))
         {
-            rest.Add(new JsonObject { ["roll"] = roll, ["sniper"] = sniper });
+            var queued = new JsonObject { ["roll"] = roll, ["sniper"] = sniper };
+            if (SniperSmokeVersion(choice.Resume) is { } version)
+            {
+                queued["smokeVersion"] = version;
+            }
+            rest.Add(queued);
             added = true;
         }
 
@@ -275,7 +361,7 @@ public sealed partial class GamePlanner
             var next = rest[0];
             rest.RemoveAt(0);
             if (next.Check is { } at ? OfferSniperCheck(scope, attemptId, expected, existing, events, next, at, rest)
-                : Snipe(scope, attemptId, expected, actor, existing, events, draw, next.Sniper, next.Roll, rest))
+                : Snipe(scope, attemptId, expected, actor, existing, events, draw, next.Sniper, next.Roll, rest, smokeVersion: next.SmokeVersion))
             {
                 return;
             }
@@ -312,6 +398,11 @@ public sealed partial class GamePlanner
     /// </summary>
     private sealed record SniperResume(BoardLocation From, string SniperRoll, string? LocationRoll, string? SelectionRoll, bool Moved, IReadOnlyDictionary<string, string> Answers)
     {
+        public int? SmokeVersion
+        {
+            get; init;
+        }
+
         public string? StackRoll
         {
             get; init;
@@ -330,8 +421,12 @@ public sealed partial class GamePlanner
     /// <paramref name="rest"/> (ruling R71.25).
     /// </summary>
     private bool Snipe(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
-        Func<RollRequest, RollResult> draw, string sniperId, string trigger, List<SniperQueued> rest, SniperResume? resumed = null)
+        Func<RollRequest, RollResult> draw, string sniperId, string trigger, List<SniperQueued> rest, SniperResume? resumed = null, int? smokeVersion = 1)
     {
+        if (resumed is not null)
+        {
+            smokeVersion = resumed.SmokeVersion;
+        }
         // Pass 71 (design section 5, item 4): the state after the commit's events so far is taken once, and every Location is read from its index; the
         // replay is not kept (R5's finding 13).
         if (ReplayInCommit([.. existing, .. events]).Current is not { } state || state.Find(sniperId) is not EntityInstance { Status: InstanceStatus.Active } sniper
@@ -425,6 +520,10 @@ public sealed partial class GamePlanner
                 ["answers"] = answered,
                 ["rest"] = QueueJson(rest),
             };
+            if (smokeVersion is { } version)
+            {
+                resume["smokeVersion"] = version;
+            }
             if (place is not null)
             {
                 resume["place"] = place.ToString();
@@ -483,10 +582,24 @@ public sealed partial class GamePlanner
         }
 
         // A14.21 (ruling R71.7): the target hex, or the closest hex holding an eligible target or the enemy Sniper counter; ties go to the lowest TEM with the
-        // Location's SMOKE (Rules orders them), and the equidistant hexes still tied are the Sniper player's choice (ruling R71.12). R1's finding 5: SMOKE is
-        // counted in its own Location ("in-hex TEM/SMOKE DRM applicable to any eligible target"), not in every Location of its hex.
-        var smoke = SmokeSources(state).GroupBy(place => place).ToDictionary(group => group.Key, group => group.Count());
-        int Tem(BoardLocation location) => ScenarioA1Sniper.TargetTem(ReadLocation(state, location) is { } read ? TerrainKey(read) : null, smoke.GetValueOrDefault(location));
+        // Location's SMOKE (Rules orders them), and the equidistant hexes still tied are the Sniper player's choice (ruling R71.12). New continuations ask
+        // A24.4 which Locations the column occupies; legacy continuations retain their recorded exact-Location count.
+        var smoke = smokeVersion is null ? SmokeSources(state).GroupBy(place => place).ToDictionary(group => group.Key,
+            group => (IReadOnlyList<int>)[.. group.Select(_ => ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance)]) : null;
+        var tems = new Dictionary<BoardLocation, int>();
+        int Tem(BoardLocation location)
+        {
+            if (tems.TryGetValue(location, out var known))
+            {
+                return known;
+            }
+            var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
+            var tem = smoke is not null ? ScenarioA1Sniper.TargetTem(terrain, smoke.GetValueOrDefault(location) ?? [])
+                : ScenarioA1Sniper.TargetTem(terrain, SmokeHindrancesAt(state, location).Hindrances
+                    ?? throw new InvalidOperationException("Sniper SMOKE facts changed after preflight."));
+            tems.Add(location, tem);
+            return tem;
+        }
         var hexes = eligible.GroupBy(target => (target.At.Board, target.At.Hex))
             .Select((group, position) => (At: new BoardLocation(group.Key.Board, group.Key.Hex, 0), Facts: new SniperTargetHex(position, Distance(state, board, hex, group.Key.Board, group.Key.Hex),
                 group.Min(target => Tem(target.At)), group.Key.Hex.ToString()))).ToArray();
@@ -746,10 +859,10 @@ public sealed partial class GamePlanner
 
         // A14.4 (pass 71, ruling R71.10): the attack resolved, it owes a Sniper Check when the target Location held a unit of the attacked side before it.
         // Ruling R71.25: the attacks its own LLMC DRs called come first, then the check, then what was still to resolve.
-        var owed = called.Select(item => new SniperQueued(item.Roll, item.Sniper)).ToList();
+        var owed = called.Select(item => new SniperQueued(item.Roll, item.Sniper, SmokeVersion: smokeVersion)).ToList();
         if (index.At(location).OfType<UnitInstance>().Any(unit => unit.Side == attacked))
         {
-            owed.Add(new SniperQueued(trigger, sniper.Id, location));
+            owed.Add(new SniperQueued(trigger, sniper.Id, location, smokeVersion));
         }
 
         rest.InsertRange(0, owed);
@@ -783,6 +896,10 @@ public sealed partial class GamePlanner
             ["location"] = location.ToString(),
             ["rest"] = QueueJson(rest),
         };
+        if (owed.SmokeVersion is { } version)
+        {
+            resume["smokeVersion"] = version;
+        }
 
         // R5's finding 1: the key names the attack's trigger, so the checks of two attacks of one Sniper on one Location never share one.
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", new ChoicePending($"{ChoicePending.SniperCheck}:{sniper.Id}:{owed.Roll}",
@@ -865,6 +982,10 @@ public sealed partial class GamePlanner
         GameState state, PendingChoice pending, GameEvent made, string option, string summary)
     {
         var resume = pending.Resume;
+        if (SniperSmokeVersionBar(resume) is { } versionBar)
+        {
+            return Refused(scope, label, expected, versionBar);
+        }
         var sniperId = resume.GetProperty("sniper").GetString()!;
         var at = BoardLocation.Parse(resume.GetProperty("location").GetString()!);
         var stillToResolve = QueueOf(resume).Count;
@@ -944,6 +1065,10 @@ public sealed partial class GamePlanner
         PendingChoice pending, GameEvent made, string option, string summary)
     {
         var resume = pending.Resume;
+        if (SniperSmokeVersionBar(resume) is { } versionBar)
+        {
+            return Refused(scope, label, expected, versionBar);
+        }
         var answers = resume.GetProperty("answers").EnumerateObject().ToDictionary(item => item.Name, item => item.Value.GetString()!, StringComparer.Ordinal);
         answers[resume.GetProperty("step").GetString()!] = option;
         var rolls = resume.GetProperty("rolls");
@@ -952,6 +1077,7 @@ public sealed partial class GamePlanner
             resume.GetProperty("moved").GetBoolean(), answers)
         {
             StackRoll = RollOf("stack"),
+            SmokeVersion = SniperSmokeVersion(resume),
             AgainRolls = rolls.TryGetProperty("again", out var again) ? [.. again.EnumerateArray().Select(roll => roll.GetString()!)] : [],
         };
         var sniperId = resume.GetProperty("sniper").GetString()!;

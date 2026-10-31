@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and six more nationalities, for the reviewed Scenario A1 cases and the scenario cards",
   "vocabulary": ["asl@1.3.0"],
   "source": {

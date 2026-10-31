@@ -160,6 +160,12 @@ public static class ScenarioA1RiderRules
         morale is not null && brokenMorale is not null ? null
             : $"{unitId}'s definition is incomplete: the catalog gives it no {(morale is null ? "Morale Level" : "broken Morale Level")}, which a Rider's Bail Out NMC is taken against (D6.24)";
 
+    /// <summary>A15.2 (PDF p. 83): a Hero has a wounded side instead of a broken side; D6.24 uses his current morale.</summary>
+    public static string? MoraleBar(string unitId, int? morale, int? brokenMorale, bool hero, int? woundedMorale) =>
+        !hero ? MoraleBar(unitId, morale, brokenMorale)
+            : morale is not null && woundedMorale is not null ? null
+            : $"{unitId}'s definition needs both Hero Morale Levels for a Rider's Bail Out NMC (A15.2, D6.24)";
+
     /// <summary>
     /// D6.21 (p. 205; ruling R65.17): "A Rider on a turreted AFV must Bail Out if the AFV changes its TCA", whether by an MP expenditure, an ordnance shot, a
     /// Canister shot, its CMG's fire, or a Motion attempt (the referee's review).

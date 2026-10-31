@@ -670,7 +670,8 @@ else if (state is not null)
                 @if (state.Phase == "rph" && RepairChoices is { Count: > 0 } repairShown)
                 {
                     <ActionSection Title="Repair" Key="repair">
-                <RepairActionPanel Weapons="@repairShown" Weapon="@repairWeapon" OnWeapon="@(id => repairWeapon = id)" OnPropose="@ProposeRepair" />
+                <RepairActionPanel Weapons="@repairShown" Weapon="@repairWeapon" OnWeapon="@(id => { repairWeapon = id; repairHero = string.Empty; })"
+                    Heroes="@RepairHeroes" Hero="@repairHero" OnHero="@(id => repairHero = id)" Ready="@RepairReady" OnPropose="@ProposeRepair" />
                     </ActionSection>
                 }
                 @if (state.Phase == "rph" && DeployChoices is var deployShown && RecombineChoices is var recombineShown && (deployShown.Count > 0 || recombineShown.Count > 0))
@@ -4085,6 +4086,7 @@ else if (state is not null)
     private string rallyUnit = string.Empty;
     private string rallyLeader = string.Empty;
     private string repairWeapon = string.Empty;
+    private string repairHero = string.Empty;
     private string routUnit = string.Empty;
     private string routRoute = string.Empty;
     private bool routLowCrawl;
@@ -5673,7 +5675,8 @@ else if (state is not null)
 
         var afvSeen = new Lazy<bool>(() => EnemyAfvSeen(side));
         return state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side
-                && (LiveOrdnance.IsTank(unit) || (LiveFire.IsVehicle(unit) && LiveOrdnance.IsMachineGun(unit.Definition?.Definition) && afvSeen.Value)))
+                && (LiveOrdnance.IsTank(unit) || (LiveFire.IsVehicle(unit) && LiveOrdnance.IsMachineGun(unit.Definition?.Definition) && afvSeen.Value))
+                && LiveFire.MainArmamentUseRefusal(state, unit) is null)
             .OrderBy(unit => unit.Id, StringComparer.Ordinal);
     }
 
@@ -6614,6 +6617,7 @@ else if (state is not null)
         ? Propose(GameActions.Repair, JsonSerializer.SerializeToElement(new
         {
             gameId, attemptId = Attempt("repair"), expectedRevision = (long)history!.Events.Count, unitId = tankId, equipmentId = tankId, weapon = tankWeapon,
+            hero = repairHero.Length == 0 ? null : repairHero,
         }))
         : state?.Find(repairWeapon) switch
     {
@@ -7416,7 +7420,7 @@ else if (state is not null)
     /// </summary>
     private void ResetPanelChoices()
     {
-        rallyUnit = rallyLeader = repairWeapon = string.Empty;
+        rallyUnit = rallyLeader = repairWeapon = repairHero = string.Empty;
         ordnanceGun = ordnanceTarget = ordnanceVehicle = string.Empty;
         spotterDeclarationGun = spotterDeclarationUnit = string.Empty;
         spotterDeclarationCache = default;
@@ -8141,21 +8145,19 @@ else if (state is not null)
         .. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && Mine(item) && item.Holding is { Role: HoldingRole.Possessed }
                 && GameState.Condition(item, Conditions.Malfunctioned) == ConditionState.True)
             .Select(weapon => new PlayChoice(weapon.Id, $"{weapon.Id} (held by {weapon.Holding!.Holder})")),
-        .. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GamePlanner.HasVehicleMg(unit) && LiveFire.CrewExposed(unit)
-                && GameState.Condition(unit, Conditions.Malfunctioned) == ConditionState.True && GameState.Condition(unit, Conditions.Disabled) != ConditionState.True)
-            .Select(vehicle => new PlayChoice(vehicle.Id, $"{vehicle.Id}'s AAMG (a dr of 1 repairs it, a 6 disables it; D3.7)")),
-
-        // D3.7 (pass 50): a tank's Gun MA, BMG, and CMG, each by its own dr; a disabled MA Recalls a tank.
-        .. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && LiveOrdnance.IsTank(unit))
-            .SelectMany(tank => new[]
-            {
-                (Weapon: "ma", Name: "MA", Broken: Conditions.Malfunctioned, Gone: Conditions.Disabled),
-                (Weapon: "bmg", Name: "BMG", Broken: Conditions.BmgMalfunctioned, Gone: Conditions.BmgDisabled),
-                (Weapon: "cmg", Name: "CMG", Broken: Conditions.CmgMalfunctioned, Gone: Conditions.CmgDisabled),
-            }.Where(item => GameState.Condition(tank, item.Broken) == ConditionState.True && GameState.Condition(tank, item.Gone) != ConditionState.True)
-                .Select(item => new PlayChoice(tank.Id + "|" + item.Weapon,
-                    $"{tank.Id}'s {item.Name} (a dr of 1 repairs it, a 6 disables it{(item.Weapon == "ma" ? " and Recalls the tank" : "")}; D3.7)"))),
+        .. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && LiveFire.IsVehicle(unit))
+            .SelectMany(vehicle => GamePlanner.VehicleRepairWeapons(state!, vehicle)
+                .Select(weapon => new PlayChoice(vehicle.Id + "|" + weapon, $"{vehicle.Id}'s {weapon.ToUpperInvariant()}"))),
     ];
+
+    private IReadOnlyList<PlayChoice> RepairHeroes => state is not null && repairWeapon.Split('|') is [var vehicleId, var weapon]
+        && state.Unit(vehicleId) is { } vehicle
+        ? [.. GamePlanner.VehicleRepairHeroes(state, vehicle, weapon).Select(Labelled)] : [];
+
+    private bool RepairReady => repairWeapon.Split('|') is [var vehicleId, var weapon]
+        ? state?.Unit(vehicleId) is { } vehicle
+            && GamePlanner.VehicleRepairRefusal(state, vehicle, weapon, repairHero.Length == 0 ? null : repairHero) is null
+        : repairWeapon.Length > 0;
 
     private IReadOnlyList<PlayChoice> DeployChoices => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:squad" && (state.Location(unit.Id) is not null || WaitsToEnter(unit))

@@ -151,13 +151,13 @@ public sealed class ScenarioA1Pass71RulesTests
     public void SmokeInATargetsHexCountsInTheTemComparison()
     {
         // A14.21 (ruling R71.7): "the lowest (to a minimum of zero) in-hex TEM/SMOKE DRM": +2 a source, at most +3 (A24.2).
-        Assert.Equal(0, ScenarioA1Sniper.TargetTem("open-ground", 0));
-        Assert.Equal(2, ScenarioA1Sniper.TargetTem("open-ground", 1));
-        Assert.Equal(4, ScenarioA1Sniper.TargetTem("woods", 2));
+        Assert.Equal(0, ScenarioA1Sniper.TargetTem("open-ground", []));
+        Assert.Equal(2, ScenarioA1Sniper.TargetTem("open-ground", [2]));
+        Assert.Equal(4, ScenarioA1Sniper.TargetTem("woods", [2, 2]));
 
         // Two equidistant hexes: the woods (+1) is chosen over the Open Ground with a SMOKE grenade (+2).
-        Assert.Equal([1], ScenarioA1Sniper.TargetHexes([new SniperTargetHex(0, 2, ScenarioA1Sniper.TargetTem("open-ground", 1), "B3"),
-            new SniperTargetHex(1, 2, ScenarioA1Sniper.TargetTem("woods", 0), "C3")]));
+        Assert.Equal([1], ScenarioA1Sniper.TargetHexes([new SniperTargetHex(0, 2, ScenarioA1Sniper.TargetTem("open-ground", [2]), "B3"),
+            new SniperTargetHex(1, 2, ScenarioA1Sniper.TargetTem("woods", []), "C3")]));
     }
 
     [Fact]
