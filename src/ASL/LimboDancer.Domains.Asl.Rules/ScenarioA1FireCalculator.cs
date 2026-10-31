@@ -31,7 +31,10 @@ public static class ScenarioA1FireCalculator
     private static readonly FireDefinition DummyDefinition = new("dummy", "asl:dummy", string.Empty, null, null, null, null, null, null, null);
 
     public static FireResolution Resolve(FireAttack attack, ScenarioA1FireReference reference)
-        => ResolveCore(attack, reference, null);
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        return ResolveCore(attack, reference, attack.VehicleBreakdown);
+    }
 
     /// <summary>D3.7/D3.71 opt-in vehicle breakdown reading. The recorded FireAttack and the legacy entry point remain unchanged.</summary>
     public static FireResolution Resolve(FireAttack attack, ScenarioA1FireReference reference, FireVehicleBreakdownFacts vehicleBreakdown)
@@ -70,6 +73,10 @@ public static class ScenarioA1FireCalculator
 
         if (vehicleBreakdown is not null)
         {
+            if (vehicleBreakdown.Weapons is null || vehicleBreakdown.Weapons.Values.Any(facts => facts is null))
+            {
+                return Refused(FireResolution.Indeterminate, ["asl.a1.fire.vehicle-breakdown: supply the participating vehicle weapon facts"]);
+            }
             var use = attack.Overrun is not null ? VehicleBreakdownUse.Overrun : VehicleBreakdownUse.MachineGun;
             foreach (var facts in vehicleBreakdown.Weapons.Values)
             {
@@ -1280,7 +1287,7 @@ public static class ScenarioA1FireCalculator
             weapons.Add((FireOverrunEffect.CoaxialMg, cmg));
         }
 
-        return weapons;
+        return overrun.DisabledWeapons is null ? weapons : [.. weapons.Where(item => !overrun.DisabledWeapons.Contains(item.Item1, StringComparer.Ordinal))];
     }
 
     private static bool Malformed(FireRolls rolls) =>
@@ -3287,30 +3294,16 @@ public static class ScenarioA1FireCalculator
 
         private Dictionary<string, VehicleBreakdownResolved>? VehicleBreakdowns(string vehicleId, VehicleBreakdownUse use, int originalDr, bool sustained = false)
         {
-            var outcomes = vehicleBreakdown!.Weapons.ToDictionary(item => item.Key,
-                item => ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(item.Value, use, originalDr, sustained && item.Key == FireOverrunEffect.MainArmament), StringComparer.Ordinal);
-            // A9.71 (p.65): select among malfunction/disable candidates only. D3.71 Low Ammo is independent.
-            var failed = outcomes.Where(item => item.Value.Failed).Select(item => item.Key).ToArray();
-            if (failed.Length > 1)
+            var outcomes = ScenarioA1VehicleBreakdownResolutionCalculator.ResolveWeapons(vehicleId, vehicleBreakdown!.Weapons, use, originalDr,
+                attack.Rolls!.WeaponSelection, out var keys, sustainedMainArmament: sustained);
+            if (outcomes is null)
             {
-                var keys = failed.Select(name => vehicleId + ":" + name).ToArray();
-                foreach (var key in keys)
-                {
-                    if (attack.Rolls!.WeaponSelection?.ContainsKey(key) != true)
-                    {
-                        undecided.Add("asl.a1.fire.roll-missing:weaponSelection:" + string.Join(",", keys));
-                        return null;
-                    }
-                    usedRolls.Add("weaponSelection:" + key);
-                }
-                var highest = keys.Max(key => attack.Rolls!.WeaponSelection![key]);
-                foreach (var name in failed.Where(name => attack.Rolls!.WeaponSelection![vehicleId + ":" + name] != highest))
-                {
-                    outcomes[name] = outcomes[name] with
-                    {
-                        Outcome = VehicleBreakdownOutcome.None
-                    };
-                }
+                undecided.Add("asl.a1.fire.roll-missing:weaponSelection:" + string.Join(",", keys));
+                return null;
+            }
+            foreach (var key in keys)
+            {
+                usedRolls.Add("weaponSelection:" + key);
             }
             return outcomes;
         }

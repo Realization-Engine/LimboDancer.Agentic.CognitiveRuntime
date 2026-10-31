@@ -12,8 +12,18 @@ public enum VehicleBreakdownUse
 /// These facts are supplemental to shot/attack records. Mounted weapons do not acquire SW inexperience penalties.
 /// The resolver separately takes the Final Fire calculator's Sustained Fire verdict for a vehicle MA MG (A9.3's exception).
 /// </summary>
-public sealed record VehicleBreakdownUseFacts(VehicleBreakdownWeapon Weapon, int? PrintedB, int? PrintedX, bool Circled, bool NoteExtends,
-    bool LowAmmo, bool AmmunitionShortage, bool Captured = false, bool NonQualified = false, int WinterReduction = 0, bool IntensiveFire = false);
+public sealed record VehicleBreakdownUseFacts(
+    [property: System.Text.Json.Serialization.JsonRequired] VehicleBreakdownWeapon Weapon,
+    [property: System.Text.Json.Serialization.JsonRequired] int? PrintedB,
+    [property: System.Text.Json.Serialization.JsonRequired] int? PrintedX,
+    [property: System.Text.Json.Serialization.JsonRequired] bool Circled,
+    [property: System.Text.Json.Serialization.JsonRequired] bool NoteExtends,
+    [property: System.Text.Json.Serialization.JsonRequired] bool LowAmmo,
+    [property: System.Text.Json.Serialization.JsonRequired] bool AmmunitionShortage,
+    [property: System.Text.Json.Serialization.JsonRequired] bool Captured = false,
+    [property: System.Text.Json.Serialization.JsonRequired] bool NonQualified = false,
+    [property: System.Text.Json.Serialization.JsonRequired] int WinterReduction = 0,
+    [property: System.Text.Json.Serialization.JsonRequired] bool IntensiveFire = false);
 
 /// <summary>The numbers and outcome of this use. Low Ammo is distinct from a weapon failure.</summary>
 public sealed record VehicleBreakdownResolved(VehicleBreakdownNumbers Numbers, VehicleBreakdownOutcome Outcome)
@@ -36,4 +46,4 @@ public sealed record VehicleRepairHeroFacts(string UnitId, bool Active, bool IsH
 /// The caller gathers the per-weapon attempt and condition facts in WeaponFacts. A true legacy HeroRider flag is not identity evidence.
 /// </summary>
 public sealed record VehicleRepairUseFacts(VehicleRepairFacts WeaponFacts, bool WeaponExists, bool IsSecondaryArmament = false,
-    VehicleRepairHeroFacts? Hero = null);
+    VehicleRepairHeroFacts? Hero = null, bool InherentCrew = true);

@@ -6,6 +6,36 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// </summary>
 public static class ScenarioA1VehicleBreakdownResolutionCalculator
 {
+    /// <summary>D3.7 (PDF p. 201): a Disabled armament cannot fire again.</summary>
+    public static string? WeaponUseRefusal(bool disabled) => disabled
+        ? "play.vehicle-weapon-disabled: the selected vehicle armament is permanently disabled (D3.7)" : null;
+
+    /// <summary>D3.7/D5.341: apply the weapon's Disabled result and, when ordered, the complete Recall transition.</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> DisabledChanges(string weapon, bool recalled) => recalled
+        ? [(ScenarioA1RallyRules.VehicleWeaponDisabled(weapon), true), (UnitCondition.Recalled, true), (UnitCondition.Stunned, false),
+            (UnitCondition.StunRecovery, false), (UnitCondition.ButtonedUp, true), (UnitCondition.Motion, false)]
+        : [(ScenarioA1RallyRules.VehicleWeaponDisabled(weapon), true)];
+
+    /// <summary>C8.9 (PDF p. 179): a vehicle's Low Ammo or breakdown result counts as firing despite absent special ammunition.</summary>
+    public static bool NeverFired(string? ammunitionUse, bool malfunctioned, bool eliminated, VehicleBreakdownResolved? current) =>
+        ScenarioA1OrdnanceProjection.NeverFired(ammunitionUse, malfunctioned, eliminated || current?.CountsAsFiredOnDepletionFailure == true);
+
+    /// <summary>D3.7/D5.341 (PDF pp. 201, 204): explicit printed capacity facts, with absence already distinguished from unknown by the caller.</summary>
+    public static bool Recalled(bool maDisabled, bool hasSecondary, bool? everySecondaryDisabled, int passengerCapacity, int towingCapacity) =>
+        ScenarioA1VehicleBreakdownCalculator.Recalled(maDisabled, hasSecondary, everySecondaryDisabled, passengerCapacity > 0 || towingCapacity > 0);
+
+    /// <summary>A21.22 (PDF pp. 88-89): preserve the existing Temporary crew penalty while distinguishing actual capture from the other use penalty.</summary>
+    public static VehicleBreakdownUseFacts WithVehicleCrew(VehicleBreakdownUseFacts facts, string? manning, bool captured)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        var multiple = ScenarioA1CapturedVehicleRules.WeaponPenalty(manning, captured) ?? 0;
+        return facts with
+        {
+            Captured = captured && multiple > 0,
+            NonQualified = multiple > (captured ? 1 : 0),
+        };
+    }
+
     /// <summary>A nonthrowing validation entry point for proposal/precheck, before any dice are requested.</summary>
     public static string? FactsRefusal(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use)
     {
@@ -49,6 +79,35 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
         var kind = use == VehicleBreakdownUse.OrdnanceToHit ? VehicleBreakdownDr.ToHit
             : use == VehicleBreakdownUse.CloseCombat ? VehicleBreakdownDr.CloseCombat : VehicleBreakdownDr.Ift;
         return new(numbers, ScenarioA1VehicleBreakdownCalculator.Outcome(originalDr, numbers, kind));
+    }
+
+    /// <summary>A9.71 (PDF p. 65): select among actual failed armaments; Low Ammo remains independent of Random Selection.</summary>
+    public static Dictionary<string, VehicleBreakdownResolved>? ResolveWeapons(string vehicleId,
+        IReadOnlyDictionary<string, VehicleBreakdownUseFacts> weapons, VehicleBreakdownUse use, int originalDr,
+        IReadOnlyDictionary<string, int>? selection, out IReadOnlyList<string> selectionKeys, bool sustainedMainArmament = false)
+    {
+        var outcomes = weapons.ToDictionary(item => item.Key, item => Resolve(item.Value, use, originalDr, sustainedMainArmament && item.Key == FireOverrunEffect.MainArmament), StringComparer.Ordinal);
+        var failed = outcomes.Where(item => item.Value.Failed).Select(item => item.Key).ToArray();
+        selectionKeys = failed.Length > 1 ? [.. failed.Select(name => vehicleId + ":" + name)] : [];
+        if (selectionKeys.Count == 0)
+        {
+            return outcomes;
+        }
+
+        if (selectionKeys.Any(key => selection?.TryGetValue(key, out var die) != true || die is < 1 or > 6))
+        {
+            return null;
+        }
+
+        var highest = selectionKeys.Max(key => selection![key]);
+        foreach (var name in failed.Where(name => selection![vehicleId + ":" + name] != highest))
+        {
+            outcomes[name] = outcomes[name] with
+            {
+                Outcome = VehicleBreakdownOutcome.None
+            };
+        }
+        return outcomes;
     }
 
     /// <summary>
@@ -115,6 +174,10 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
         {
             HeroRider = HeroRider(weapon.VehicleId, facts.Hero)
         };
+        if (!facts.InherentCrew && !authoritative.HeroRider)
+        {
+            return $"play.repair-unit: {weapon.VehicleId}'s armament needs an inherent crew or an eligible Hero Rider (D3.7)";
+        }
         if (!facts.IsSecondaryArmament)
         {
             return ScenarioA1VehicleBreakdownCalculator.RepairRefusal(authoritative);
