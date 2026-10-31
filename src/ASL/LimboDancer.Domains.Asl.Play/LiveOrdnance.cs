@@ -238,7 +238,7 @@ public static class LiveOrdnance
         OrdnanceParticipation? participation = null;
         if (!legacyParticipation && ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal(gun.Kind) is null)
         {
-            var primaryUse = ParticipantFacts(state, gun.Id, crew, crew.Id);
+            var primaryUse = ParticipantUse(state, gun.Id, crew.Id);
             if (ScenarioA1OrdnanceParticipationCalculator.PrimaryUseRefusal(crew.Kind, primaryUse.UsedOtherWeapon,
                 primaryUse.DirectedFire, primaryUse.Spotted) is { } primaryRefusal)
             {
@@ -570,9 +570,15 @@ public static class LiveOrdnance
             ParticipantFacts(state, gunId, second!, primary.Id), director, spotter, ScenarioA1OrdnanceEligibility.FirePhase(state.Phase));
     }
 
+    private static (bool UsedOtherWeapon, bool DirectedFire, bool Spotted) ParticipantUse(GameState state, string gunId, string unitId) =>
+        (state.SupportWeaponUses.Any(item => item.Unit == unitId && item.Weapon != gunId)
+            || state.PhaseFirers.Any(item => item.Unit == unitId && item.Weapon != gunId),
+            state.SupportWeaponDirectors.Any(item => item.Leader == unitId), state.SpottedThisPhase.Any(item => item.Spotter == unitId));
+
     internal static OrdnanceAdditionalFirer ParticipantFacts(GameState state, string gunId, UnitInstance other, string unitId)
     {
         var unit = state.Unit(unitId);
+        var use = ParticipantUse(state, gunId, unitId);
         var crew = unit is null ? null : new OrdnanceCrew(unit.Id, unit.Definition?.Definition,
             Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk),
             Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden),
@@ -586,9 +592,7 @@ public static class LiveOrdnance
         return new(crew, unit is { Status: InstanceStatus.Active, Definition: not null }, unit?.Side == other.Side,
             unit is { Position: MapPosition } && other.Position is MapPosition && state.Location(unitId)?.Location == state.Location(other.Id)?.Location,
             unit is null ? null : Is(unit, Conditions.Melee), unit is null ? null : Is(unit, Conditions.Captured), unit is null ? null : Is(unit, "asl:ti"),
-            state.SupportWeaponUses.Any(item => item.Unit == unitId && item.Weapon != gunId)
-                || state.PhaseFirers.Any(item => item.Unit == unitId && item.Weapon != gunId),
-            state.SupportWeaponDirectors.Any(item => item.Leader == unitId), state.SpottedThisPhase.Any(item => item.Spotter == unitId))
+            use.UsedOtherWeapon, use.DirectedFire, use.Spotted)
         {
             Heroic = unit is null ? null : unit.Kind == "asl:hero" || Is(unit, Conditions.Heroic),
             OpportunityFireDeclared = unit is null ? null : Is(unit, Conditions.BoundingFire),
