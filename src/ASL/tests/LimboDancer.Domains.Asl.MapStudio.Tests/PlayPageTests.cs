@@ -101,14 +101,16 @@ public sealed class PlayPageTests : IDisposable
     }
 
     // Pass 23 (rulings R23.2, R23.3; plan section 15.4): a new view waits behind the hand-over screen, which leaves the map, the units, and the board
-    // link out of the page until its viewer confirms; the board link then reads the game as that view, not as the adjudicator.
+    // view out of the page until its viewer confirms. The view selector lives in the header; the redundant board link is absent.
     [Fact]
     public void ANewViewWaitsForItsViewer()
     {
         var page = StartGame($"{Board}:A1:0");
         var first = page.Find("#play-perspective").GetAttribute("value")!;
         Assert.NotEqual(Perspective.AdjudicatorName, first);
-        Assert.Contains($"perspective={first}", page.Find("#play-view").GetAttribute("href"), StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#play-view"));
+        Assert.Empty(page.FindAll("#play-game"));
+        Assert.NotEmpty(page.FindAll("#play-context #play-perspective"));
 
         page.Find("#play-perspective").Change(Perspective.AdjudicatorName);
         Assert.Contains("Hand the screen to the adjudicator", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
@@ -117,7 +119,8 @@ public sealed class PlayPageTests : IDisposable
         Assert.Empty(page.FindAll("#play-view"));
         page.Find("#play-handover-confirm").Click();
         Assert.Empty(page.FindAll("#play-handover"));
-        Assert.Contains("perspective=adjudicator", page.Find("#play-view").GetAttribute("href"), StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#play-view"));
+        Assert.Equal(Perspective.AdjudicatorName, page.Find("#play-context #play-perspective").GetAttribute("value"));
         Assert.NotEmpty(page.FindAll("#play-units tr[data-unit='g1']"));
 
         // Choosing the view shown again drops a waiting hand-over.

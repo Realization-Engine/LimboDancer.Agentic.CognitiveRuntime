@@ -28,31 +28,20 @@
         Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
         the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
     </RuleHelp>;
-    // The game and view pickers: from 1024px with a game open, at the top of the Play tab (the user, 2026-10-17); in the lobby, on the
-    // hand-over screen, and under 1024px, where there is no Play tab, in the context above.
+    RenderFragment? headerView = state is not null && handOver is null
+        ? @<PerspectivePicker Id="play-perspective" Choices="@ViewChoices" Value="@viewAs" ValueChanged="ChangeView" Disabled="@busy" /> : null;
+    // Game selection remains in the lobby and hand-over screen; the active game's view picker lives beside its card link.
     RenderFragment pickers = @<text>
+        @if (state is null || handOver is not null)
+        {
         <LiveGameToolbar Games="@ListedGames" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
-                         ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
-                         BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, Viewer.IsAdjudicator || state.Ended is not null ? state.Revision : null, highlight?.ToString()) : null)" />
+                         ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" />
         @* The Minigames page design (ruling RPS.10): with a minigame's game or card open, the lists hold that minigame's alone. *@
         <MinigameNote Id="play-minigame" Bundle="@OpenMinigame" />
-        @if (state is not null && handOver is null)
-        {
-            @* Ruling RPS.11: the workbench opens on this game, at this revision, read from this view. *@
-            <a id="play-workbench" href="@($"games/workbench?game={Uri.EscapeDataString(gameId)}&revision={state.Revision}&viewer={Uri.EscapeDataString(Viewer.Name)}")"
-               title="Ask a rule about this position on the Rule Workbench">Rule Workbench</a>
         }
         @if (gameId.StartsWith("campaign-", StringComparison.Ordinal))
         {
             <CampaignContextPanel GameId="@gameId" />
-        }
-        @if (state is not null && handOver is null)
-        {
-            @* The Play streamlining plan, S2 (ruling Q4): routine actions commit on one click unless the player turns it off. *@
-            <label class="play-one-click" title="A pass, the end of a move or a phase, and a plain step commit when proposed; anything with dice or consequences still asks for Confirm.">
-                <input type="checkbox" id="play-one-click" checked="@oneClick" @onchange="@(args => oneClick = args.Value is true)" />
-                Commit routine actions on one click
-            </label>
         }
     </text>;
 }
@@ -79,7 +68,7 @@ else
     bannerNow = Compact ? BannerParts : null;
 }
 <PlayContextHeader Summary="@ContextSummary" Banner="@bannerNow" Revision="@(state is not null && history?.Current is not null && (Viewer.IsAdjudicator || state.Ended is not null) ? state.Revision : null)" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
-                   Result="@ResultTitle" ResultReason="@ResultReason" ResultWhy="@ResultWhy"
+                   Result="@ResultTitle" ResultReason="@ResultReason" ResultWhy="@ResultWhy" ViewPicker="@headerView"
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)" CardChanged="@(state?.Scenario is { } changedCard && !Live.Cards.Matches(changedCard.Id, changedCard.Sha256))"
                    PendingTitle="@(handOver is null && pending is { Result.Outcome: PlayOutcome.NeedsConfirmation } waitingProposal ? DisplayText.Action(waitingProposal.Action.Name) : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
                    AwaitingNote="@AwaitingNote" AwaitingDue="@AwaitingBlocks" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Reserve="@(!Compact)">
@@ -463,6 +452,24 @@ else if (state is not null)
             @* The actions: from 1024px the inspector's first tab, Play, kept rendered while another tab is open, so the map has the width the
                actions column had; under 1024px their own pane, as the Actions tab of the workspace. *@
             RenderFragment actionsBlock = @<section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
+            @if (state is { Ended: null } && history?.Current is not null && !(SetupOpen && SetupView is not null && SetupIncomplete))
+            {
+                <div class="toolbar" id="play-phase-end">
+                    @* Keep the phase-end action next to the turn and phase header, with the existing refusal and waiting gates. *@
+                    @if (MayEndPhase && PhaseEndBarNow is { } phaseEndBar)
+                    {
+                        <span id="advance-owed" class="toolbar-note">@phaseEndBar</span>
+                    }
+                    else if (MayEndPhase)
+                    {
+                        <button id="propose-advance" disabled="@WaitsOnAnswer" @onclick="ProposeAdvance">Propose: end the @Games.PhaseLabel(state.Phase)</button>
+                    }
+                    else
+                    {
+                        <span id="advance-other" class="toolbar-note">The @DisplayText.Side(GamePlanner.PhaseEndedBy(state, viewAs)) side ends the @Games.PhaseLabel(state.Phase).</span>
+                    }
+                </div>
+            }
             @if (Compact)
             {
                 <div class="play-tab-context" id="play-tab-context">@pickers</div>
@@ -505,13 +512,6 @@ else if (state is not null)
                         <p id="play-answer-first" class="muted">Every other action waits until the answer above is given (ruling R5.8).</p>
                     }
                 }
-                <button type="button" id="play-turn-guide-toggle" aria-expanded="@turnGuideOpen" @onclick="() => turnGuideOpen = !turnGuideOpen">Current phase guide</button>
-                @if (turnGuideOpen)
-                {
-                    <LiveTurnGuide @key="AskedBy" ScopeKey="@AskedBy" Revision="@state.Revision" ActualPhase="@state.Phase"
-                        PhaseTitle="@($"{DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}")"
-                        ReadGuide="ReadTurnGuide" ActionRequested="ProposeTurnDecision" ReviewRequested="ProposeOpeningReview" CanReviewOpening="Live.CanReviewOpening" CloseRequested="ProposeAdvance" Busy="@busy" />
-                }
             }
             @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
             <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
@@ -552,22 +552,6 @@ else if (state is not null)
             {
                 <h3 class="@PlayHeadingClass">Play</h3>
                 <fieldset class="plain" id="play-actions" disabled="@WaitsOnAnswer">
-                <div class="toolbar">
-                    @* Pass 31 (ruling R31.6; play test P-07): the phase is ended by the side that acts in it. *@
-                    @if (MayEndPhase && PhaseEndBarNow is { } phaseEndBar)
-                    {
-                        @* The Play streamlining plan, S4 (A10.5; ruling R31.6): the end of the phase is not offered while the gate would refuse it. *@
-                        <span id="advance-owed" class="toolbar-note">@phaseEndBar</span>
-                    }
-                    else if (MayEndPhase)
-                    {
-                        <button id="propose-advance" @onclick="ProposeAdvance">Propose: end the @Games.PhaseLabel(state.Phase)</button>
-                    }
-                    else
-                    {
-                        <span id="advance-other" class="toolbar-note">The @DisplayText.Side(GamePlanner.PhaseEndedBy(state, viewAs)) side ends the @Games.PhaseLabel(state.Phase).</span>
-                    }
-                </div>
                 @if (!SetupOpen && SpotterDeclarationChoices.Guns.Count > 0)
                 {
                     <SpotterDesignationPanel Guns="@SpotterDeclarationChoices.Guns" Candidates="@SpotterDeclarationChoices.Candidates"
@@ -1241,7 +1225,7 @@ else if (state is not null)
             <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
-                            Panel="@InspectorPanel" PanelChanged="@(tab => inspectorTab = tab)" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)" InspectorHeader="@(bannerNow is not null ? inspectorTurn : null)" InspectorPlanner="@PlannerBlock" InspectorAttacker="@state?.PhasingSide"
+                            Panel="@InspectorPanel" PanelChanged="SelectInspectorTab" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)" InspectorHeader="@(bannerNow is not null ? inspectorTurn : null)" InspectorPlanner="@PlannerBlock" InspectorAttacker="@state?.PhasingSide"
                             HoldPanel="@(AwaitingConfirm || SetupMode || InspectorPanel == PlayTab)" OnKey="@MapKey" InspectorLabel="Play, review, and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
                             InspectorClass="play-pane play-review inspector" InspectorAttributes="@ReviewAttributes"
                             StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">
@@ -7785,6 +7769,14 @@ else if (state is not null)
     }
 
     private bool turnGuideOpen;
+    private void SelectInspectorTab(string tab)
+    {
+        inspectorTab = tab;
+        if (tab == "phase-guide")
+        {
+            turnGuideOpen = true;
+        }
+    }
     private Task<TurnHostGuide> ReadTurnGuide(string phase) => Live.Planner.ReadTurnGuideProfileAsync(
         new GameScope(LivePlay.Tenant, gameId), Viewer, phase, "existing-engine-work-v1");
 
@@ -8524,7 +8516,7 @@ else if (state is not null)
         Refresh();
     }
 
-    /// <summary>Whether routine actions commit on one click (the plan's S2, ruling Q4): on by default, the Play tab's setting turns it off.</summary>
+    /// <summary>Routine actions commit on one click unless the host requires every action to be confirmed.</summary>
     private bool oneClick = true;
 
     /// <summary>
@@ -9448,9 +9440,19 @@ else if (state is not null)
         RenderFragment units, RenderFragment dice)
     {
         var review = new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null, Icon: "proposal"), proposal);
+        // Load only on first opening. Keep the guide mounted across proposal review, with its existing scope and revision refresh.
+        RenderFragment guide = @<text>
+            @if (turnGuideOpen && state is not null && handOver is null)
+            {
+                <LiveTurnGuide @key="AskedBy" ScopeKey="@AskedBy" Revision="@state.Revision" ActualPhase="@state.Phase"
+                    PhaseTitle="@($"{DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}")"
+                    ReadGuide="ReadTurnGuide" ActionRequested="ProposeTurnDecision" ReviewRequested="ProposeOpeningReview" CanReviewOpening="Live.CanReviewOpening" CloseRequested="ProposeAdvance" Busy="@busy" />
+            }
+        </text>;
+        var guideTab = new BoardInspector.ExtraTab(new("phase-guide", "Current phase guide", Icon: "evidence"), guide, Last: true, KeepMounted: true);
         if (narrow)
         {
-            return [review];
+            return [review, guideTab];
         }
 
         // The ids are written out, not PlayTab, so the Icon Lab's coverage, which reads the source, finds the tabs. Records, Units, and
@@ -9463,6 +9465,7 @@ else if (state is not null)
             new BoardInspector.ExtraTab(new("records", "Records", Icon: "records"), Region("play-history", "Records, latest first", records), Last: true, KeepMounted: true),
             new BoardInspector.ExtraTab(new("units", "Units", Icon: "units"), Region("play-units-panel", "Units", units), Last: true, KeepMounted: true),
             .. Scripted is null ? Array.Empty<BoardInspector.ExtraTab>() : [new BoardInspector.ExtraTab(new("dice", "Scripted dice", Icon: "scripted-dice"), Region("play-dice-panel", "Scripted dice", dice), Last: true, KeepMounted: true)],
+            guideTab,
         ];
     }
 

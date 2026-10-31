@@ -34,9 +34,17 @@ internal static class PlayViews
         record.QuerySelector(".record-text")?.TextContent.Trim()
             ?? string.Concat(record.ChildNodes.Where(node => node is not AngleSharp.Dom.IElement { ClassName: "record-replay" }).Select(node => node.TextContent)).Trim();
 
-    /// <summary>Opens a game from the picker; a game opened waits behind the hand-over (pass 28c), which its first viewer confirms here.</summary>
+    /// <summary>Opens a game from the lobby or hand-over picker, then confirms its first viewer.</summary>
     public static void OpenGame(this IRenderedComponent<PlayPage> page, string game)
     {
+        if (page.FindAll("#play-game").Count == 0)
+        {
+            // The active game has no game picker. Enter hand-over without confirming another view to reach it.
+            var perspective = page.Find("#play-perspective");
+            var shown = perspective.GetAttribute("value");
+            var other = page.FindAll("#play-perspective option").Select(option => option.GetAttribute("value")!).First(value => value != shown);
+            perspective.Change(other);
+        }
         page.Find("#play-game").Change(game);
         if (page.FindAll("#play-handover-confirm") is [var confirm])
         {

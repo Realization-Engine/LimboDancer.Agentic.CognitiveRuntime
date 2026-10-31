@@ -313,7 +313,7 @@ public sealed class PlayPagePass31cTests : IDisposable
         var hexes = Hexes();
         var page = FireGame(hexes, concealed: true);
         // The Play streamlining plan, S8 (ruling Q11): on Play, LOS and Range sit under the Unit Planner.
-        Assert.Equal(["Play", "Proposal", "Unit Planner", "Selection", "Evidence", "Records", "Units", "Scripted dice"], Texts(page, "[role=tablist][aria-label='Play, review, and inspector'] [role=tab]"));
+        Assert.Equal(["Play", "Proposal", "Unit Planner", "Selection", "Records", "Units", "Scripted dice", "Current phase guide"], Texts(page, "[role=tablist][aria-label='Play, review, and inspector'] [role=tab]"));
         page.Find("#play-inspector-tab-planner").Click();
         Assert.Equal(["LOS", "Range", "Movement Plan"], Texts(page, "[role=tablist][aria-label='Unit Planner'] [role=tab]"));
         page.Find("#play-inspector-planner-tab-range").Click();
@@ -671,7 +671,7 @@ public sealed class PlayPagePass31cTests : IDisposable
         page.WaitForAssertion(() => Assert.Contains(context.JSInterop.Invocations, invocation => invocation.Identifier == "openDetails" && invocation.Arguments is ["play-card"]));
         Assert.NotEmpty(page.FindAll("#play-card-close"));
 
-        // From 1024px the units, the records, and the scripted dice are inspector tabs after Evidence; the activity strip offers no panels.
+        // From 1024px the units, the records, and the scripted dice are inspector tabs after Selection; the activity strip offers no panels.
         Assert.Empty(page.FindAll(".play-activity-tabs button"));
         page.Find("#play-inspector-tab-units").Click();
         Assert.NotEmpty(page.FindAll("#play-panel-review #play-units-panel #play-units tr[data-unit='r1']"));
@@ -680,18 +680,18 @@ public sealed class PlayPagePass31cTests : IDisposable
         Assert.NotEmpty(page.FindAll("#play-panel-review #play-history"));
         page.Find("#play-inspector-tab-units").Click();
 
-        // No revision for a side: not in the header, the units table's note, or the board link. The adjudicator reads it in the units table's
-        // note and the board link; from 1024px the one-line banner names no revision for anyone.
+        // No revision for a side in the header or units note, and no redundant board link. The adjudicator reads the revision in the units
+        // note; from 1024px the one-line banner names no revision for anyone.
         var revision = live.History("village")!.Events.Count;
         Assert.Empty(page.FindAll("#play-revision"));
         Assert.Equal("As the Russian side sees them.", page.Find("#play-units-view").TextContent);
-        Assert.DoesNotContain("revision", page.Find("#play-view").GetAttribute("href"), StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#play-view"));
         Assert.DoesNotContain("revision", page.Find("#play-context").TextContent, StringComparison.OrdinalIgnoreCase);
         page.ViewAs(Perspective.AdjudicatorName);
         Assert.Empty(page.FindAll("#play-revision"));
         page.Find("#play-inspector-tab-units").Click();
         Assert.Equal($"As the adjudicator sees them: every unit, at revision {revision}.", page.Find("#play-units-view").TextContent);
-        Assert.Contains($"revision={revision}", page.Find("#play-view").GetAttribute("href"), StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#play-view"));
         Assert.Equal(["Audit"], Texts(page, ".play-activity-tabs button"));
         page.ViewAs("russian");
 

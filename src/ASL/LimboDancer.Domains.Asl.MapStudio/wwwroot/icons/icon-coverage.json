@@ -90,6 +90,14 @@
       ],
       "controls": [
         {
+          "kind": "button",
+          "label": "",
+          "dynamic": true,
+          "icon": "evidence",
+          "status": "icon",
+          "strip": "BoardInspector"
+        },
+        {
           "kind": "tab",
           "label": "Selection",
           "dynamic": false,
@@ -113,15 +121,6 @@
           "dynamic": false,
           "id": "range",
           "icon": "range",
-          "status": "icon",
-          "strip": "BoardInspector tabs"
-        },
-        {
-          "kind": "tab",
-          "label": "Evidence",
-          "dynamic": false,
-          "id": "evidence",
-          "icon": "evidence",
           "status": "icon",
           "strip": "BoardInspector tabs"
         }
@@ -1379,17 +1378,17 @@
         },
         {
           "kind": "button",
-          "label": "Hand the screen to the @DisplayText.Side(awaitedSide) side",
+          "label": "Propose: end the @Games.PhaseLabel(state.Phase)",
           "dynamic": true,
-          "id": "play-waiting-hand-over",
+          "id": "propose-advance",
           "status": "needed",
-          "strip": "Play"
+          "strip": "Play play-phase-end"
         },
         {
           "kind": "button",
-          "label": "Current phase guide",
-          "dynamic": false,
-          "id": "play-turn-guide-toggle",
+          "label": "Hand the screen to the @DisplayText.Side(awaitedSide) side",
+          "dynamic": true,
+          "id": "play-waiting-hand-over",
           "status": "needed",
           "strip": "Play"
         },
@@ -1400,14 +1399,6 @@
           "id": "play-picking-stop",
           "status": "needed",
           "strip": "Play"
-        },
-        {
-          "kind": "button",
-          "label": "Propose: end the @Games.PhaseLabel(state.Phase)",
-          "dynamic": true,
-          "id": "propose-advance",
-          "status": "needed",
-          "strip": "Play toolbar"
         },
         {
           "kind": "button",
@@ -1729,6 +1720,16 @@
           "dynamic": false,
           "id": "proposal",
           "icon": "proposal",
+          "status": "icon",
+          "strip": "BoardInspector tabs",
+          "rendersIn": "BoardInspector"
+        },
+        {
+          "kind": "tab",
+          "label": "Current phase guide",
+          "dynamic": false,
+          "id": "phase-guide",
+          "icon": "evidence",
           "status": "icon",
           "strip": "BoardInspector tabs",
           "rendersIn": "BoardInspector"
