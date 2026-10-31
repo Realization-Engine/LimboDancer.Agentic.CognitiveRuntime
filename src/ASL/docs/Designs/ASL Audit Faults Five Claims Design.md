@@ -177,6 +177,8 @@ Main inventory commit `00e9ddbd` adds the shared Fire and Ordnance model holds f
 
 Two focused checks passed with warnings as errors: a marked MG held by an unmarked squad is refused beyond range 1 under version 1, while an unmarked MG held by a marked squad fires at full FP; adjacent Sustained Fire still halves FP, loses ROF and places Final Fire. Both old answers are asserted in the same checks. Evidence: `FinalFire-Own-Marker-2.log` in Codex's gate folder. This is an infantry adapter checkpoint only. Vehicle MGs, Gun Intensive Fire, recorded-reader reconstruction, Play/UI use and the wiring replay gate remain pending; callers do not select this version yet.
 
+The MA MG adapter now records its own nullable `FinalFireMarker` under the opt-in version, asks `VehicleFacts` and the existing verdict, and passes that verdict's Sustained Fire into the shared vehicle-breakdown composition. A9.3 (PDF p. 63) and D3.5 (p. 200) were reread for the MA exception. The focused `CurrentFinalFireMaMgUsesSustainedNumbersAndForfeitsRof` check passed: adjacent fire has half FP and no ROF, B12 becomes B10/X12, and DR 10 versus 12 produces malfunction versus disablement; range 3 refuses and the null-version refusal stays intact. The fixture's normal-FP comparison uses a non-casualty roll so it needs no unrelated Random Selection. Evidence: `FinalFire-MA-MG-1.log`. Gun Intensive Fire and all new-version caller/replay wiring remain pending.
+
 ## 4. Claim A11.17: Stealth and Lax (rows A11.17, A11.18, A25.64)
 
 ### 4.1 The rule (A11.17, A11.18 p. 73; A15.21, A15.24 p. 83; A19.2, A19.3, A19.36 p. 86; A25.7 p. 97; A25.24 p. 95; A25.43, A25.44 p. 96; A25.64 p. 97; H1.24 p. 329; G17.111 p. 319; G1.6 p. 280; A1.123 p. 44; A11.4 p. 73; A12.122 p. 77; A12.152, A12.154 p. 79)

@@ -770,6 +770,13 @@ public sealed record FireVehicleFire(
     bool? FiredThisPlayerTurn,
     bool? RateOfFireShot)
 {
+    /// <summary>The MA MG's own fire counter for the opt-in A8.41 reading. Null is the reading before that wiring.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireMarker? FinalFireMarker
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The BMG and CMG this attack fires (D1.81, D1.82, D3.5, pp. 195 and 200; pass 50), each once a Player Turn, added together for one attack
     /// or fired apart. Null for an attack by the vehicle's MA MG, which is every record made before pass 50.

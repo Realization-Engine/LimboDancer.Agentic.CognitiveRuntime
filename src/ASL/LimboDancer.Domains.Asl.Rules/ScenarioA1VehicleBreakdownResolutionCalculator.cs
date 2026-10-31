@@ -20,7 +20,7 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
         }
     }
 
-    public static VehicleBreakdownNumbers Numbers(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use)
+    public static VehicleBreakdownNumbers Numbers(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use, bool sustained = false)
     {
         ArgumentNullException.ThrowIfNull(facts);
         if (!Enum.IsDefined(use))
@@ -39,12 +39,13 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
         // A21.11's shortage exception names captured Gun/SW, whereas its lowering explicitly also names vehicles.
         return ScenarioA1VehicleBreakdownCalculator.Numbers(new(facts.Weapon, facts.PrintedB, facts.PrintedX, facts.Circled,
             facts.NoteExtends, facts.LowAmmo, facts.AmmunitionShortage && use != VehicleBreakdownUse.CloseCombat,
-            facts.IntensiveFire ? 2 : 0, facts.WinterReduction + (facts.Captured ? 2 : 0) + (facts.NonQualified ? 2 : 0)));
+            facts.IntensiveFire ? 2 : sustained ? ScenarioA1FinalFireCalculator.SustainedBreakdownReduction : 0,
+            facts.WinterReduction + (facts.Captured ? 2 : 0) + (facts.NonQualified ? 2 : 0)));
     }
 
-    public static VehicleBreakdownResolved Resolve(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use, int originalDr)
+    public static VehicleBreakdownResolved Resolve(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use, int originalDr, bool sustained = false)
     {
-        var numbers = Numbers(facts, use);
+        var numbers = Numbers(facts, use, sustained);
         var kind = use == VehicleBreakdownUse.OrdnanceToHit ? VehicleBreakdownDr.ToHit
             : use == VehicleBreakdownUse.CloseCombat ? VehicleBreakdownDr.CloseCombat : VehicleBreakdownDr.Ift;
         return new(numbers, ScenarioA1VehicleBreakdownCalculator.Outcome(originalDr, numbers, kind));

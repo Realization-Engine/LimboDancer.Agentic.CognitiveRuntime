@@ -58,6 +58,11 @@ public static class ScenarioA1FinalFireCalculator
     /// <summary>A8.4, A8.41 (p. 61): a target in an ADJACENT or the same hex, range one or zero. An unknown range is not in reach.</summary>
     public static bool InReach(int? range) => range is >= 0 and <= 1;
 
+    /// <summary>The vehicle MA MG's own counter and crew facts for A8.4 and A9.3 (pp. 61, 63).</summary>
+    public static FinalFireFacts VehicleFacts(FireAttack attack, FireVehicleFire vehicle) =>
+        new(FinalFireWeapon.Mg, vehicle.FinalFireMarker ?? FireMarker.None, attack.Range, false, true, true, false, false,
+            vehicle.Pinned != true && vehicle.Stunned != true);
+
     /// <summary>A8.4, A8.41 (p. 61): facts for the selected inherent FP or held weapon, using that subject's own counter.</summary>
     public static FinalFireFacts InfantryFacts(FireAttack attack, FireFirer firer, FireWeapon? weapon, ScenarioA1FireReference reference)
     {
