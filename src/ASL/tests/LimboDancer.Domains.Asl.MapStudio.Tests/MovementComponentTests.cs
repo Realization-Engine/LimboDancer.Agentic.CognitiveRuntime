@@ -1,8 +1,10 @@
 using Bunit;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.MapStudio.Components.Play;
+using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Units.State;
+using Microsoft.AspNetCore.Components;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 
@@ -78,6 +80,73 @@ public sealed class MovementComponentTests : IDisposable
         Assert.True(smoke.Find("#propose-smoke").HasAttribute("disabled"));
         smoke.Render(parameters => parameters.Add(item => item.By, "bs9").Add(item => item.At, "bd04:E2:0"));
         Assert.False(smoke.Find("#propose-smoke").HasAttribute("disabled"));
+    }
+
+    [Fact]
+    public void RoutMapScopeFollowsInspectionAndLeavesRoutePickingAlone()
+    {
+        string? selected = null;
+        string? route = null;
+        var picking = new LocationPicking { Boards = () => ["bd01", "bd02"] };
+        picking.Arm = (id, label) => { picking.Armed = id; picking.ArmedLabel = label; };
+        var host = context.Render<CascadingValue<string>>(parameters => parameters
+            .AddCascadingValue("Picking", picking).Add(item => item.Name, "PickedLocation").Add(item => item.Value, "bd01:A1:0")
+            .AddChildContent<RoutActionPanel>(parameters => parameters
+            .Add(item => item.Units, [new("ground", "ground squad"), new("upper", "upper squad"), new("other", "other board squad"), new("second", "second hex squad")])
+            .Add(item => item.Obligations, [new("ground", "ground advice"), new("upper", "upper advice"), new("other", "other board advice"), new("second", "second hex advice", [new("bd01:B3:0", "bd01:B3:0")])])
+            .Add(item => item.Locations, new Dictionary<string, string?>
+            {
+                ["ground"] = "bd01:A1:0",
+                ["upper"] = "bd01:A1:1",
+                ["other"] = "bd02:A1:0",
+                ["second"] = "bd01:B2:0",
+            })
+            .Add(item => item.OnUnit, value => selected = value).Add(item => item.OnRoute, value => route = value)));
+        var rout = host.FindComponent<RoutActionPanel>();
+        var childContent = host.Instance.ChildContent;
+
+        void Pick(string hex)
+        {
+            picking.Picked = hex;
+            picking.Serial++;
+            host.Render(parameters => parameters.Add(item => item.Name, "PickedLocation")
+                .Add(item => item.Value, hex).Add(item => item.ChildContent, childContent));
+        }
+
+        Assert.Equal(["", "ground", "upper"], rout.FindAll("#rout-unit option").Select(option => option.GetAttribute("value")));
+        Assert.Equal(2, rout.FindAll(".rout-obligation").Count);
+        Assert.Null(selected);
+        Assert.True(rout.Find("#rout-route").HasAttribute("disabled"));
+
+        rout.Find("#rout-scope button").Click();
+        rout.Render();
+        Assert.Equal(5, rout.FindAll("#rout-unit option").Count);
+        Pick("bd01:A1:0");
+        Assert.Equal(3, rout.FindAll("#rout-unit option").Count);
+        rout.Render(parameters => parameters.Add(item => item.Unit, "upper"));
+        Pick("bd01:B2:0");
+        Assert.Equal(string.Empty, selected);
+        Assert.Equal(["", "second"], rout.FindAll("#rout-unit option").Select(option => option.GetAttribute("value")));
+        Assert.Equal("second", Assert.Single(rout.FindAll(".rout-obligation")).GetAttribute("data-unit"));
+
+        rout.Render(parameters => parameters.Add(item => item.Unit, "second"));
+        rout.Find("#rout-route-pick").Click();
+        Pick("bd01:A1:0");
+        Assert.Equal("bd01:A1:0", route);
+        Assert.Equal(["", "second"], rout.FindAll("#rout-unit option").Select(option => option.GetAttribute("value")));
+        rout.Find("#rout-each").Change(true);
+        rout.Find(".use-route").Click();
+        Assert.Null(picking.Armed);
+
+        Pick("bd01:C4:0");
+        Assert.Empty(rout.FindAll("#rout-scope"));
+        Assert.Equal(5, rout.FindAll("#rout-unit option").Count);
+        picking.Armed = "another-field";
+        rout.Find("#rout-unit").Change("ground");
+        Assert.Equal("another-field", picking.Armed);
+        rout.Render(parameters => parameters.Add(item => item.Units, []).Add(item => item.Obligations, []));
+        Assert.NotNull(rout.Find("#rout-empty"));
+        Assert.Empty(rout.FindAll("#rout-unit, #rout-route"));
     }
 
     // A13: the step's options come back as one draft; the push shows only for a crew with a Gun.

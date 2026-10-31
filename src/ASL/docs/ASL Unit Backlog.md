@@ -1703,4 +1703,5 @@ Written on 2026-10-31 during the user's review of `codex/action-form-design`.
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Apply the map-based acting-unit and destination workflow to Rout | The user's request to resume the phase-by-phase review and address Rout when reached | Presentation only; retain the existing Rout decisions and restrictions | Review the current Rout workflow with a suitable Studio position | Movement gains explicit movers from the inspected hex and exclusive map-input modes. Rout retains its existing workflow until its phase is reviewed. |
+| Apply the map-based acting-unit and destination workflow to Rout | The user's request to resume the phase-by-phase review and address Rout when reached | Presentation only; retain the existing Rout decisions and restrictions | User review before merge | Implemented automatic hex scoping, explicit release, release on a non-routable hex, ordered route picking and draft resets. Studio verified two eligible hexes in `ui-rout-demo-03`; implementation record holds the evidence. |
+| Review the remaining phase action workflows | The phase-by-phase demo review | No rule changes authorized by this UI review | User feedback on Rout | Advance, Close Combat and the next Rally workflow remain to be reviewed. Keep text concise; do not merge without approval. |

@@ -1,4 +1,4 @@
-param([switch]$Movement, [switch]$Fire)
+param([switch]$Movement, [switch]$Fire, [switch]$Rout, [string]$Only)
 $ErrorActionPreference = 'Stop'
 if (-not $env:ASL_GATE_WORK) { throw 'Set ASL_GATE_WORK first.' }
 $repoRoot = (Resolve-Path "$PSScriptRoot/../../..").Path
@@ -28,7 +28,20 @@ if ($Fire) {
     )
     $checkName = 'fire-presentation'
 }
+if ($Rout) {
+    $methods = @(
+        'MovementComponentTests.RoutMapScopeFollowsInspectionAndLeavesRoutePickingAlone',
+        'PlayPagePass31dTests.TheRoutPanelSaysWhatALadenUnitLeavesOffersAWayAndTheReviewSaysWhatIsLeft'
+    )
+    $checkName = 'rout-workflow'
+}
 $filter = ($methods | ForEach-Object { "FullyQualifiedName~$_" }) -join '|'
+if ($Only) {
+    $selectedMethods = @($methods | Where-Object { $_.EndsWith(".$Only", [StringComparison]::Ordinal) })
+    if ($selectedMethods.Count -ne 1) { throw 'Only must name one method from the selected check group.' }
+    $filter = "FullyQualifiedName~$($selectedMethods[0])"
+    $checkName += '-single'
+}
 $env:DOTNET_CLI_USE_MSBUILD_SERVER = '0'
 $env:MSBUILDDISABLENODEREUSE = '1'
 $ErrorActionPreference = 'Continue' # Let the test runner finish its report when a failure is written to stderr.

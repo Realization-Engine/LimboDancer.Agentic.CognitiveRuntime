@@ -1,7 +1,14 @@
 @* Plan A02 (pass 28b): a broken unit's rout in the RtPh. The page gives the obligations already written for the view and the units that may still
    rout (ruling R23.1); the planner decides the route, the Interdictions, and the Failure to Rout. A03 RoutObligations stays inline here: it is one list. *@
 <ActionSection Title="Rout" Key="rout">
-<RuleHelp Id="rout-help" Summary="Broken units that must rout, or are under DM, rout one at a time, the ATTACKER's first, toward the nearest woods or building; Low Crawl moves one Location and is never Interdicted. One that ends the RtPh ADJACENT to a Known unbroken armed enemy unit, or stays in the Open Ground hex it had to leave, is eliminated or surrenders (A10.5, A10.52, A20.21).">
+@if (scope is { } scoped)
+{
+    <div class="toolbar" id="rout-scope">
+        <strong>Routing from @Say(scoped)</strong>
+        <button type="button" class="link" disabled="@Busy" @onclick="ReleaseScope">Show all rout units</button>
+    </div>
+}
+<RuleHelp Id="rout-help" Summary="Choose a broken unit, then use a suggested route or pick each route hex on the map.">
     In the RtPh the ATTACKER's broken units rout first, one at a time, then the DEFENDER's (A10.5). A broken unit must rout when a Known unbroken
     armed enemy unit is ADJACENT or in its Location, or it is in Open Ground in the LOS and Normal Range of a Known enemy unit; it may rout under DM.
     It has six MF (a wounded SMC three) and must reach the nearest woods or building Location it can this RtPh, never moving closer to a Known armed
@@ -11,7 +18,7 @@
 </RuleHelp>
 @* Pass 70 (ruling R70.11): at the start of the RtPh, before any unit routs, the side's units a Known enemy unit allows to break voluntarily, by hex,
    leaders first; the planner decides which (A10.41). *@
-@if (BreakRows.Count > 0)
+@if (scope is null && BreakRows.Count > 0)
 {
     <div class="toolbar" id="voluntary-break">
         <UnitSelectionList Rows="@BreakRows" Selected="@BreakSelected" CssClass="voluntary-break-unit" Legend="Voluntary Break" OnToggle="@OnBreakToggle" />
@@ -25,11 +32,13 @@
 {
 @* The user, 2026-10-21: the broken units by hex, each hex first offered the routes open to all its units, each unit's own routes behind a
    checkbox; every unit named after its hex. Each rout is still its own, one at a time (A10.5). *@
-    var hexGroups = UnitGrouping.Groups(Obligations, item => item.Unit, PlaceOfUnit);
+    var shownUnits = ShownUnits;
+    var shownObligations = ShownObligations;
+    var hexGroups = UnitGrouping.Groups(shownObligations, item => item.Unit, PlaceOfUnit);
 <ul id="rout-obligations">
     @foreach (var group in hexGroups)
     {
-        var routing = group.Items.Where(item => Units.Any(unit => unit.Id == item.Unit)).ToArray();
+        var routing = group.Items.Where(item => shownUnits.Any(unit => unit.Id == item.Unit)).ToArray();
         var shared = Shared(routing);
         <li class="rout-hex" data-hex="@group.Hex">
             @if (group.Hex is { } hex)
@@ -56,7 +65,7 @@
                                 @foreach (var way in ways)
                                 {
                                     <li><button type="button" class="link use-route" data-unit="@item.Unit" data-route="@way.Route" title="Chooses this unit and fills its route; you may still change it."
-                                                @onclick="@(() => OnUseRoute.InvokeAsync((item.Unit, way.Route)))">@Prefix(item.Unit)@Say(item.Unit): use the route to @Say(way.Target)</button></li>
+                                                disabled="@Busy" @onclick="@(() => UseRoute(item.Unit, way.Route))">@Prefix(item.Unit)@Say(item.Unit): use the route to @Say(way.Target)</button></li>
                                 }
                             </ul>
                         }
@@ -78,26 +87,28 @@
             }
             else if (routing.Length > 1 && routing.All(item => item.Routes is { Count: > 0 }))
             {
-                <p class="toolbar-note">No route is open to all of them: tick "each unit's own routes" below.</p>
+                <p class="toolbar-note">No shared route. Show individual routes below.</p>
             }
         </li>
     }
 </ul>
-@if (Obligations.Any(item => item.Routes is { Count: > 0 }))
+@if (shownObligations.Any(item => item.Routes is { Count: > 0 }))
 {
     <label class="rout-each"><input type="checkbox" id="rout-each" checked="@EachUnit" @onchange="@(args => EachUnit = args.Value is true)" /> Show each unit's own routes</label>
 }
+@if (shownUnits.Count > 0)
+{
 <div class="action-form">
 <ActionFormGroup Legend="Unit and assistance">
     <label>
         Broken unit
-        <select id="rout-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
+        <select id="rout-unit" value="@Unit" disabled="@Busy" @onchange="@(args => SelectUnit(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
-            <UnitOptions Units="@Units" Text="@At" />
+            <UnitOptions Units="@shownUnits" Text="@At" />
         </select>
     </label>
     @* Pass 70 (ruling R70.12): an unbroken leader stacked with the unit may rout with it (A10.711); only the leaders the planner allows are offered. *@
-    @if (Leaders.Count > 0)
+    @if (HasUnit && Leaders.Count > 0)
     {
         <label title="He routs with the unit, takes no Interdiction NMC himself, adds his leadership DRM to its NMC, and is eliminated if it fails (A10.711).">
             Leader routing with it
@@ -108,7 +119,7 @@
         </label>
     }
     @* Pass 31d (design D2; A10.4): what a laden unit leaves and keeps, said only for a unit that carries more than its IPC. *@
-    @if (Load is { Length: > 0 })
+    @if (HasUnit && Load is { Length: > 0 })
     {
         <span id="rout-load" class="toolbar-note">@DisplayText.Sentence(Say(Load))</span>
         @if (Loads.Count > 1)
@@ -126,21 +137,78 @@
     }
 </ActionFormGroup>
 <ActionFormGroup Legend="Route">
-    <LocationField Id="rout-route" Label="Route (hexes in order)" Name="the rout route" Many="true" Placeholder="E6, E7" Size="24" Value="@Route" OnChange="@OnRoute" />
-    <label><input id="rout-low-crawl" type="checkbox" checked="@LowCrawl" @onchange="@(args => OnLowCrawl.InvokeAsync(args.Value is true))" /> Low Crawl</label>
+    <LocationField @key="Unit" Id="rout-route" Label="Route (hexes in order)" Name="route" Many="true" Placeholder="E6, E7" Size="24"
+                   Disabled="@(!HasUnit || Busy)" DescribedBy="rout-route-help" Value="@Route" OnChange="@OnRoute" />
+    @if (HasUnit)
+    {
+        <span id="rout-route-help" class="toolbar-note">Pick each hex in order, then cancel picking to inspect the map.</span>
+    }
+    <label><input id="rout-low-crawl" type="checkbox" checked="@LowCrawl" disabled="@(!HasUnit || Busy)" @onchange="@(args => OnLowCrawl.InvokeAsync(args.Value is true))" /> Low Crawl</label>
 </ActionFormGroup>
 <ActionProposalArea>
-    <button id="propose-rout" disabled="@(!Units.Any(unit => unit.Id == Unit) || Route.Trim().Length == 0)" aria-describedby="propose-rout-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rout</button>
-    @if (!Units.Any(unit => unit.Id == Unit) || Route.Trim().Length == 0)
+    <button id="propose-rout" disabled="@(Busy || !HasUnit || Route.Trim().Length == 0)" aria-describedby="propose-rout-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rout</button>
+    @if (!HasUnit || Route.Trim().Length == 0)
     {
-        <span id="propose-rout-ready" class="toolbar-note">Choose the unit that routs and give its route.</span>
+        <span id="propose-rout-ready" class="toolbar-note">@(!HasUnit ? "Choose a broken unit first." : "Enter a route or pick its hexes on the map.")</span>
     }
 </ActionProposalArea>
 </div>
 }
+else if (shownObligations.Count == 0)
+{
+    <p class="toolbar-note" id="rout-empty">No eligible broken units to rout.</p>
+}
+}
 </ActionSection>
 
 @code {
+    [CascadingParameter(Name = "PickedLocation")] public string? Picked { get; set; }
+    [CascadingParameter(Name = "Picking")] public LocationPicking? Picking { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string?> Locations { get; set; } = new Dictionary<string, string?>();
+    private string? scope;
+    private string? lastPicked;
+    private long seenPick = -1;
+    private bool HasUnit => Units.Any(unit => unit.Id == Unit && InScope(unit.Id));
+    private IReadOnlyList<PlayChoice> ShownUnits => scope is null ? Units : [.. Units.Where(unit => InScope(unit.Id))];
+    private IReadOnlyList<Obligation> ShownObligations => scope is null ? Obligations : [.. Obligations.Where(item => InScope(item.Unit))];
+    private bool InHex(string id, string hex) => BoardLocation.TryParse(hex, out var picked)
+        && BoardLocation.TryParse(Locations.GetValueOrDefault(id), out var at) && at.Board == picked.Board && at.Hex == picked.Hex;
+    private bool InScope(string id) => scope is null || InHex(id, scope);
+    private bool HasRouters(string hex) => Units.Any(unit => InHex(unit.Id, hex))
+        || Obligations.Any(item => item.Beneath is not null && InHex(item.Unit, hex));
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var serial = Picking?.Serial ?? 0;
+        var fresh = serial != seenPick || Picked != lastPicked;
+        (seenPick, lastPicked) = (serial, Picked);
+        if (!RoutsOffered) scope = null;
+        else if (fresh && Picking?.Armed is null)
+            scope = Picked is { } picked && HasRouters(picked) ? picked : null;
+        else if (scope is { } current && !HasRouters(current)) scope = null;
+        if (scope is not null && Unit.Length > 0 && !InScope(Unit)) await OnUnit.InvokeAsync(string.Empty);
+    }
+
+    private void ReleaseScope()
+    {
+        scope = null;
+        if (Picking?.Armed == "rout-route") Picking.Arm(null, null);
+    }
+
+    private Task SelectUnit(string id)
+    {
+        if (Busy || (id.Length > 0 && !Units.Any(unit => unit.Id == id && InScope(id)))) return Task.CompletedTask;
+        if (Picking?.Armed == "rout-route") Picking.Arm(null, null);
+        return OnUnit.InvokeAsync(id);
+    }
+
+    private Task UseRoute(string id, string route)
+    {
+        if (Busy) return Task.CompletedTask;
+        if (Picking?.Armed == "rout-route") Picking.Arm(null, null);
+        return OnUseRoute.InvokeAsync((id, route));
+    }
+
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
     [CascadingParameter(Name = "Say")]
     public Func<string, string>? Words { get; set; }

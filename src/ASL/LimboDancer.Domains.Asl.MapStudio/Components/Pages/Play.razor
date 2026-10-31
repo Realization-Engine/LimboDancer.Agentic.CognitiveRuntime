@@ -600,10 +600,11 @@ else if (state is not null)
                 @* Pass 70 (ruling R70.11): the Voluntary Break is offered to either side at the RtPh's start, before any unit routs, the DEFENDER's too. *@
                 @if (state.Phase == "rtph" && ((!DefenderRoutsWait && (RoutObligations.Count > 0 || RoutChoices.Count > 0)) || VoluntaryBreakRows.Count > 0))
                 {
-                    <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
+                    <RoutActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
+                        Locations="@(RoutChoices.Select(unit => unit.Id).Concat(RoutObligations.Select(item => item.Unit)).Distinct(StringComparer.Ordinal).ToDictionary(id => id, id => state.Location(id)?.Location.ToString(), StringComparer.Ordinal))"
                         Load="@RoutLoadText" Loads="@RoutLoads" Keep="@string.Join(",", RoutKept)" OnKeep="@(keep => routKeep = keep)"
-                        OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl, routLeader) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, routLowCrawl && !way.Route.Contains(','), way.Unit == routUnit ? routLeader : string.Empty))"
-                        OnUnit="@(id => (routUnit, routKeep, routRoute, routLeader) = (id, string.Empty, id == routUnit ? routRoute : string.Empty, id == routUnit ? routLeader : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout"
+                        OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl, routLeader) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, way.Unit == routUnit && routLowCrawl && !way.Route.Contains(','), way.Unit == routUnit ? routLeader : string.Empty))"
+                        OnUnit="@(id => (routUnit, routKeep, routRoute, routLeader, routLowCrawl) = (id, id == routUnit ? routKeep : string.Empty, id == routUnit ? routRoute : string.Empty, id == routUnit ? routLeader : string.Empty, id == routUnit && routLowCrawl))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout"
                         OnRoutGroup="@ProposeRoutGroup" OnBeneath="@ProposeRoutBeneath" Busy="@busy"
                         RoutsOffered="@(!DefenderRoutsWait)" BreakRows="@VoluntaryBreakRows" BreakSelected="@voluntaryBreak" OnBreakToggle="@(toggle => { if (toggle.On) { voluntaryBreak.Add(toggle.Id); } else { voluntaryBreak.Remove(toggle.Id); } })"
                         OnProposeBreak="@ProposeVoluntaryBreak" Leaders="@RoutLeaders" Leader="@routLeader" OnLeader="@(id => routLeader = id)" />
