@@ -28,7 +28,7 @@
             <option value="">choose a game</option>
             @foreach (var game in GameList)
             {
-                <option value="@game">@(Live.MinigameOf(game) is { } bundle ? $"{game} (minigame {bundle})" : game)</option>
+                <option value="@game">@GameText(game)</option>
             }
         </select>
     </label>
@@ -65,15 +65,19 @@
             All contracts
         </label>
     }
-    <label title="List the minigames' games too; they come first">
-        <input type="checkbox" id="workbench-show-minigames" checked="@showMinigames" @onchange="@(args => showMinigames = args.Value is true)" />
-        Show minigames
-    </label>
+    @if (RealGameOpen)
+    {
+        <span class="muted" id="workbench-real-game">A game that is not a minigame's, opened from Play or Replay; the list holds such games. <a href="games/workbench">Minigames' games</a></span>
+    }
+    else
+    {
+        <MinigameNote Id="workbench-minigame" Bundle="@Live.MinigameOf(gameId)" />
+    }
 </div>
 
 @if (history is null)
 {
-    <p class="muted" id="workbench-empty">Choose a game: a minigame, or any live game.</p>
+    <p class="muted" id="workbench-empty">Choose a minigame's game, or start one on the <a href="games/minigames">Minigames</a> page.</p>
 }
 else
 {
@@ -199,7 +203,6 @@ else
     private string viewer = Perspective.AdjudicatorName;
     private string contractId = string.Empty;
     private bool allContracts;
-    private bool showMinigames = true;
     private GameEntry? entry;
     private GameHistory? history;
     private BoardLocation? picked;
@@ -235,8 +238,14 @@ else
 
     private GameState? State => history is null || history.States.Count == 0 ? null : history.At(Math.Clamp(revision, 1, history.States.Count));
 
-    // The minigames' games first (the plan's section 6.3), then the rest; minigames only when shown.
-    private IReadOnlyList<string> GameList => [.. Live.GameNames(showMinigames).OrderBy(game => Live.MinigameOf(game) is null).ThenBy(game => game, StringComparer.Ordinal)];
+    // The Minigames page design (the plan's section 6.3; ruling RPS.10): the minigames' games, unless a link from Play or Replay opened a game that is
+    // not a minigame's (ruling RPS.11); then the games that are not. A list never holds both kinds.
+    private bool RealGameOpen => gameId.Length > 0 && Live.MinigameOf(gameId) is null;
+
+    private IReadOnlyList<string> GameList => RealGameOpen ? Live.GameNames() : [.. Live.MinigameGameNames().OrderBy(game => Live.MinigameOf(game), StringComparer.Ordinal)
+        .ThenBy(game => game, StringComparer.Ordinal)];
+
+    private string GameText(string game) => Live.MinigameOf(game) is { } bundle ? $"{game} ({Minigames.Find(bundle)?.Title ?? bundle})" : game;
 
     // The game's minigame's contracts, or every contract when asked or when the game is not a minigame.
     private IReadOnlyList<RuleContract> Contracts => allContracts || Live.MinigameOf(gameId) is not { } bundle || Minigames.Find(bundle) is not { } manifest
@@ -285,6 +294,14 @@ else
 
     protected override void OnParametersSet()
     {
+        // An address that names no game closes the one open, so its list goes back to the minigames' games.
+        if (GameQuery is not { Length: > 0 } && gameId.Length > 0)
+        {
+            (gameId, entry, history, handOver, contractId) = (string.Empty, null, null, null, string.Empty);
+            picks.Clear();
+            hand.Clear();
+        }
+
         if (GameQuery is { Length: > 0 } game && game != gameId)
         {
             Load(game);

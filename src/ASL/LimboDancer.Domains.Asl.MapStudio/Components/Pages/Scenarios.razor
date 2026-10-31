@@ -25,10 +25,11 @@ else
             Card
             <CardPicker Id="card-choice" Cards="@Choices" Value="@selected" ValueChanged="@Show" />
         </label>
-        <label title="List the minigames' cards too">
-            <input type="checkbox" id="card-show-minigames" checked="@showMinigames" @onchange="@(args => showMinigames = args.Value is true)" />
-            Show minigames
-        </label>
+        @if (minigameCard is not null)
+        {
+            <MinigameNote Id="card-minigame" Bundle="@Minigames.BundleOfCard(minigameCard)" What="card" />
+            <a id="card-scenarios" href="units/scenarios">Scenario cards</a>
+        }
         @if (selected is { } editable)
         {
             <a id="card-edit" href="@($"units/cards/edit?card={Uri.EscapeDataString(editable)}")">@(Live.Cards.IsUser(editable) ? "Edit this card" : "Copy this card to edit it")</a>
@@ -68,15 +69,16 @@ else
     // Referee, pass 18: the link picks its card whenever it is followed, even from this page.
     protected override void OnParametersSet()
     {
-        // A link to a minigame's card shows the minigames (ruling RPS.10).
-        showMinigames |= Card is { } minigame && ScenarioCards.MinigameNames.Contains(minigame, StringComparer.Ordinal);
-        Show(Card is { } named && Names.Contains(named, StringComparer.Ordinal) ? named : selected ?? Live.Cards.Names.FirstOrDefault());
+        // The Minigames page design (ruling RPS.10): a link to a minigame's card shows that card alone; any other address lists the scenario cards.
+        minigameCard = Card is { } minigame && ScenarioCards.MinigameNames.Contains(minigame, StringComparer.Ordinal) ? minigame : null;
+        Show(Card is { } named && Names.Contains(named, StringComparer.Ordinal) ? named
+            : selected is { } kept && Names.Contains(kept, StringComparer.Ordinal) ? kept : Names.FirstOrDefault());
     }
 
-    // The Rules-first proving slice (ruling RPS.10): the minigames' cards are listed only when shown.
-    private bool showMinigames;
+    // The minigame's card the address names, or null: the list holds it alone, never beside the scenario cards.
+    private string? minigameCard;
 
-    private IReadOnlyList<string> Names => [.. Live.Cards.Names, .. showMinigames ? ScenarioCards.MinigameNames : []];
+    private IReadOnlyList<string> Names => minigameCard is { } card ? [card] : Live.Cards.Names;
 
     private IReadOnlyList<CardPicker.Choice> Choices => [.. Names.Select(name => new CardPicker.Choice(name, Title(name), Live.Cards.IsUser(name)))];
 

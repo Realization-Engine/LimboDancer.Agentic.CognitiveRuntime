@@ -108,11 +108,23 @@ public sealed class LivePlay
     public IReadOnlyList<GameScope> Games() => Store.List(Tenant);
 
     /// <summary>
-    /// The live games a list shows (the Rules-first proving slice, ruling RPS.10): every game when minigames are shown, otherwise those that are not a
-    /// minigame's. A game's minigame is read from its file's header, kept while the file is unchanged.
+    /// The live games that are not a minigame's: what the game lists of Play, Replay, and the inspector hold (the Minigames page design; ruling
+    /// RPS.10). A game's minigame is read from its file's header, kept while the file is unchanged.
     /// </summary>
-    public IReadOnlyList<string> GameNames(bool showMinigames) =>
-        [.. Games().Where(scope => showMinigames || Store.MinigameOf(scope) is null).Select(scope => scope.Game)];
+    public IReadOnlyList<string> GameNames() => [.. Games().Where(scope => Store.MinigameOf(scope) is null).Select(scope => scope.Game)];
+
+    /// <summary>
+    /// The live games started from a minigame (the Minigames page design): one bundle's, or every bundle's when none is named. No list holds these
+    /// beside the games <see cref="GameNames"/> returns.
+    /// </summary>
+    public IReadOnlyList<string> MinigameGameNames(string? bundle = null) =>
+        [.. Games().Where(scope => Store.MinigameOf(scope) is { } of && (bundle is null || of == bundle)).Select(scope => scope.Game)];
+
+    /// <summary>
+    /// The games a list shows beside an open game (the Minigames page design): the open game's minigame's games when it is a minigame's, otherwise the
+    /// games that are not a minigame's. A list never holds both kinds.
+    /// </summary>
+    public IReadOnlyList<string> GamesLike(string? game) => MinigameOf(game ?? string.Empty) is { } bundle ? MinigameGameNames(bundle) : GameNames();
 
     /// <summary>The minigame bundle a live game was started from, or null.</summary>
     public string? MinigameOf(string game) => string.IsNullOrEmpty(game) ? null : Store.MinigameOf(new GameScope(Tenant, game));

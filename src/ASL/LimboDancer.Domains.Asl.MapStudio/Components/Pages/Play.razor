@@ -36,11 +36,8 @@
         {
         <LiveGameToolbar Games="@ListedGames" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
                          ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" />
-        @* The Rules-first proving slice (ruling RPS.10): minigames are left out of the game and card lists unless shown. *@
-        <label class="play-show-minigames" title="List the minigames' games and cards too">
-            <input type="checkbox" id="play-show-minigames" checked="@showMinigames" @onchange="@(args => showMinigames = args.Value is true)" />
-            Show minigames
-        </label>
+        @* The Minigames page design (ruling RPS.10): with a minigame's game or card open, the lists hold that minigame's alone. *@
+        <MinigameNote Id="play-minigame" Bundle="@OpenMinigame" />
         }
         @if (gameId.StartsWith("campaign-", StringComparison.Ordinal))
         {
@@ -1653,13 +1650,15 @@ else if (state is not null)
     private string CardTitle(string name) => CardRead(name)?.Card is { } card ? card.Title : name;
 
     /// <summary>The cards a new game may start from (K02).</summary>
-    private IReadOnlyList<CardPicker.Choice> CardChoices => [.. Live.Cards.Names.Concat(showMinigames ? ScenarioCards.MinigameNames : [])
-        .Select(name => new CardPicker.Choice(name, CardTitle(name), Live.Cards.IsUser(name)))];
+    private IReadOnlyList<CardPicker.Choice> CardChoices =>
+        [.. (OpenMinigame is { } bundle && Minigames.Find(bundle) is { } manifest ? [manifest.Card] : Live.Cards.Names)
+            .Select(name => new CardPicker.Choice(name, CardTitle(name), Live.Cards.IsUser(name)))];
 
-    // The Rules-first proving slice (ruling RPS.10): the minigames' games and cards are listed only when shown; the game open is always listed.
-    private bool showMinigames;
+    // The Minigames page design (ruling RPS.10): the minigame of the game open, or of the card chosen for a new game. While one is open the game and
+    // card lists hold that minigame's alone; otherwise they hold no minigame's. A list never holds both kinds.
+    private string? OpenMinigame => gameId.Length > 0 ? Live.MinigameOf(gameId) : Minigames.BundleOfCard(scenarioCard);
 
-    private IReadOnlyList<string> ListedGames => Live.GameNames(showMinigames || Live.MinigameOf(gameId) is not null);
+    private IReadOnlyList<string> ListedGames => OpenMinigame is { } bundle ? Live.MinigameGameNames(bundle) : Live.GameNames();
 
     /// <summary>The start the chosen card gives, worded for the summary (K03); null before a card is chosen.</summary>
     private CardStartSummary.StartLines? NewStart => ChosenCard is not { } card ? null : new(
@@ -7188,6 +7187,10 @@ else if (state is not null)
     [SupplyParameterFromQuery(Name = "game")]
     public string? GameQuery { get; set; }
 
+    /// <summary>A card to start a new game from, such as a minigame's from the Minigames page; read only when no game is named.</summary>
+    [SupplyParameterFromQuery(Name = "card")]
+    public string? CardQuery { get; set; }
+
     /// <summary>A hex to pick when the page opens, such as the one picked on the board viewer before "Back to Play".</summary>
     [SupplyParameterFromQuery(Name = "hex")]
     public string? HexQuery { get; set; }
@@ -7208,6 +7211,12 @@ else if (state is not null)
         placeDefinition = Definitions.FirstOrDefault()?.Id ?? string.Empty;
         gameId = GameQuery ?? string.Empty;
         Refresh();
+        if (gameId.Length == 0 && CardQuery is { Length: > 0 } card
+            && (ScenarioCards.MinigameNames.Contains(card, StringComparer.Ordinal) || Live.Cards.Names.Contains(card, StringComparer.Ordinal)))
+        {
+            ChooseCard(card);
+        }
+
         if (HexQuery is { Length: > 0 } hex && LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation.TryParse(hex, out var picked))
         {
             // Picked once the hand-over on load is confirmed, which clears what the last view picked.
@@ -7242,7 +7251,7 @@ else if (state is not null)
         inspectorTab = PlayTab;
 
         // Pass 29: the address names the game, so a reload opens it again (behind the hand-over).
-        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["game"] = gameId.Length > 0 ? gameId : null, ["hex"] = null }), replace: true);
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["game"] = gameId.Length > 0 ? gameId : null, ["hex"] = null, ["card"] = null }), replace: true);
         placeEntry = string.Empty;
         nonObChosen.Clear();
         sniperHex = string.Empty;
