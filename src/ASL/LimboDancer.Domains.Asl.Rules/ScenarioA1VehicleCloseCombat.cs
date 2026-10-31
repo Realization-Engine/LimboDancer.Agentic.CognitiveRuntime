@@ -756,8 +756,9 @@ public static class ScenarioA1VehicleCloseCombat
     }
 
     /// <summary>A11.62: the same participating armament and crew facts used by the attack precheck, for turn order and choices.</summary>
-    public static bool CanAttack(VehicleCloseCombatVehicle vehicle, FireDefinition definition, bool captured) =>
-        !captured && vehicle.Stunned != true && vehicle.Shocked != true && vehicle.Abandoned != true && Weapons(vehicle, definition).Count > 0;
+    public static bool CanAttack(VehicleCloseCombatVehicle vehicle, FireDefinition definition, bool captured, bool recalled, bool unconfirmedKill) =>
+        !captured && !recalled && !unconfirmedKill && vehicle.Stunned != true && vehicle.Shocked != true && vehicle.Abandoned != true
+        && Weapons(vehicle, definition).Count > 0;
 
     private static VehicleCloseCombatResolution ByVehicle(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, IReadOnlyList<int> dice,
         CcvContext? context)

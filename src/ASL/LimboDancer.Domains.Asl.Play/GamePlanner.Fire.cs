@@ -1018,6 +1018,9 @@ public sealed partial class GamePlanner
                 JsonSerializer.SerializeToElement(ScenarioA1ArmorLeaders.Recorded(facts, resolution), LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
             {
                 MovementStep = step,
+                VehicleArmamentEvidence = facts.VehicleBreakdown is not null
+                    && state.Unit(facts.VehicleFire?.VehicleId ?? facts.Overrun?.VehicleId ?? "") is { } firingVehicle
+                    ? VehicleArmamentFacts.Evidence(state, firingVehicle) : null,
                 TurretFacing = VehicleTurretTurn(state, facts),
             }, package, hidesIdentity ? [targetSide] : null));
         if (hidesIdentity)
@@ -1156,7 +1159,7 @@ public sealed partial class GamePlanner
             var conditions = ConditionChanges(ScenarioA1FireFollowUps.WeaponEffectConditions(weapon,
                 () => state.Find(weapon.EquipmentId) is { } equipment && GameState.Condition(equipment, Conditions.FirstFire) == ConditionState.True));
             if (weapon.VehicleBreakdown?.Outcome == VehicleBreakdownOutcome.Disabled && state.Unit(weapon.EquipmentId) is { } armed
-                && LiveFire.VehicleRecalledAfterDisable(armed, weapon.VehicleWeapon is null || Is(armed, Conditions.Disabled)))
+                && LiveFire.VehicleRecalledAfterDisable(state, armed, weapon.VehicleWeapon is null || Is(armed, Conditions.Disabled)))
             {
                 foreach (var change in ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma", true))
                 {
@@ -1189,7 +1192,7 @@ public sealed partial class GamePlanner
         {
             var conditions = ConditionChanges(ScenarioA1FireFollowUps.OverrunEffectConditions(overrunEffect));
             if (overrunEffect.VehicleBreakdowns?.Any(item => item.Value.Outcome == VehicleBreakdownOutcome.Disabled) == true
-                && state.Unit(overrunEffect.VehicleId) is { } armed && LiveFire.VehicleRecalledAfterDisable(armed,
+                && state.Unit(overrunEffect.VehicleId) is { } armed && LiveFire.VehicleRecalledAfterDisable(state, armed,
                     Is(armed, Conditions.Disabled) || overrunEffect.VehicleBreakdowns.GetValueOrDefault("ma")?.Outcome == VehicleBreakdownOutcome.Disabled))
             {
                 foreach (var change in ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma", true))

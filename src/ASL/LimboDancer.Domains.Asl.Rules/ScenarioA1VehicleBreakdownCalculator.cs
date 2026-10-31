@@ -83,10 +83,14 @@ public static class ScenarioA1VehicleBreakdownCalculator
     /// a reading the user approved), so a Hero Rider may repair it even on an Abandoned vehicle or an Unconfirmed Kill. A weapon of the SA column is not
     /// named here (no vehicle the catalog holds has one; W-D3.7). The RPh itself is the caller's phase check.
     /// </summary>
-    public static string? RepairRefusal(VehicleRepairFacts facts)
+    public static string? RepairRefusal(VehicleRepairFacts facts) => RepairRefusal(facts, null);
+
+    /// <summary>D3.7: a listed Secondary Armament uses the MA repair checks with its own display name.</summary>
+    public static string? RepairRefusal(VehicleRepairFacts facts, string? secondaryArmamentName)
     {
         ArgumentNullException.ThrowIfNull(facts);
         var (id, weapon) = (facts.VehicleId, facts.Weapon);
+        var name = secondaryArmamentName ?? ScenarioA1RallyRules.VehicleWeaponName(weapon);
         if (weapon == AntiAircraftMg)
         {
             return facts.Disabled ? $"play.repair-weapon: {id}'s AAMG is disabled for good (D3.7)"
@@ -98,9 +102,9 @@ public static class ScenarioA1VehicleBreakdownCalculator
         }
 
         return !ScenarioA1RallyRules.IsVehicleWeapon(weapon) ? $"play.repair-weapon: {id} has no weapon named '{weapon}' to repair (D3.7)"
-            : facts.Disabled ? $"play.repair-weapon: {id}'s {ScenarioA1RallyRules.VehicleWeaponName(weapon)} is disabled for good (D3.7)"
-            : !facts.Malfunctioned ? $"play.repair-weapon: {id}'s {ScenarioA1RallyRules.VehicleWeaponName(weapon)} is not malfunctioned (D3.7)"
-            : facts.RepairedThisPhase ? $"play.repair-unit: {id}'s {ScenarioA1RallyRules.VehicleWeaponName(weapon)} has had its repair attempt this RPh (D3.7)"
+            : facts.Disabled ? $"play.repair-weapon: {id}'s {name} is disabled for good (D3.7)"
+            : !facts.Malfunctioned ? $"play.repair-weapon: {id}'s {name} is not malfunctioned (D3.7)"
+            : facts.RepairedThisPhase ? $"play.repair-unit: {id}'s {name} has had its repair attempt this RPh (D3.7)"
             : facts.CrewImpaired
                 ? $"play.repair-unit: {id}'s crew repairs nothing while it is shocked, stunned, or Recalled in this Player Turn, which is treated as a Stun, or while the vehicle is Abandoned (D3.7, D5.341)"
             : null;

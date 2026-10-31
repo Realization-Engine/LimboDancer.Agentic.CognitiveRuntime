@@ -68,6 +68,10 @@ public static class ScenarioA1FireCalculator
 
         if (vehicleBreakdown is not null)
         {
+            if (vehicleBreakdown.OverrunVersion is not null and not 1 || vehicleBreakdown.OverrunVersion is not null && attack.Overrun is null)
+            {
+                return Refused(FireResolution.Abstained, ["asl.a1.fire.vehicle-breakdown-version"]);
+            }
             if (vehicleBreakdown.Weapons is null || vehicleBreakdown.Weapons.Values.Any(facts => facts is null))
             {
                 return Refused(FireResolution.Indeterminate, ["asl.a1.fire.vehicle-breakdown: supply the participating vehicle weapon facts"]);
@@ -89,7 +93,7 @@ public static class ScenarioA1FireCalculator
                     FireOverrunEffect.MainArmament => VehicleBreakdownWeapon.MainArmament,
                     FireOverrunEffect.BowMg => VehicleBreakdownWeapon.BowMg,
                     FireOverrunEffect.CoaxialMg => VehicleBreakdownWeapon.CoaxialMg,
-                    _ => (VehicleBreakdownWeapon)(-1),
+                    _ => (VehicleBreakdownWeapon?)null,
                 })))
             {
                 return Refused(FireResolution.Indeterminate, ["asl.a1.fire.vehicle-breakdown: supply exactly the participating vehicle weapons"]);
@@ -3261,7 +3265,7 @@ public static class ScenarioA1FireCalculator
         private Dictionary<string, VehicleBreakdownResolved>? VehicleBreakdowns(string vehicleId, VehicleBreakdownUse use, int originalDr)
         {
             var outcomes = ScenarioA1VehicleBreakdownResolutionCalculator.ResolveWeapons(vehicleId, vehicleBreakdown!.Weapons, use, originalDr,
-                attack.Rolls!.WeaponSelection, out var keys);
+                attack.Rolls!.WeaponSelection, out var keys, legacyOverrun: use == VehicleBreakdownUse.Overrun && vehicleBreakdown.OverrunVersion is null);
             if (outcomes is null)
             {
                 undecided.Add("asl.a1.fire.roll-missing:weaponSelection:" + string.Join(",", keys));

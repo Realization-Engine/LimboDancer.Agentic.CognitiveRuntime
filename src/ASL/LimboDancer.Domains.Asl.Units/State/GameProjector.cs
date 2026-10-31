@@ -564,6 +564,7 @@ public static partial class GameProjector
             var state = new GameState(gameEvent.Scope, gameEvent.Revision, gameEvent.Time, started.Synthetic, started.Sides, started.Map,
                 catalog.Identity, started.Turn, started.Phase, started.PhasingSide, [], [], [])
             {
+                VehicleArmamentCatalog = catalog,
                 SpecialRules = started.SpecialRules,
                 // E1.1, E3.51, E3.71 (backlog pass 16, rulings R16.1, R16.9): the SSRs' Base NVR and precipitation at the start.
                 Nvr = GameState.NightRule(started.SpecialRules),
@@ -2387,16 +2388,32 @@ public static partial class GameProjector
 
         private GameState? Repair(GameState state, RepairAttempted repair)
         {
+            var repairState = state;
+            if (repair.VehicleArmamentEvidence is { } evidence)
+            {
+                if (repair.VehicleRepairVersion != 1)
+                {
+                    return Fail<GameState>("UNIT-STATE-028", "Vehicle armament evidence requires the current repair reading.");
+                }
+                if (VehicleArmamentFacts.EvidenceRefusal(state, state.Unit(repair.Unit), evidence) is { } evidenceRefusal)
+                {
+                    return Fail<GameState>("UNIT-STATE-028", evidenceRefusal);
+                }
+                repairState = state with
+                {
+                    VehicleArmamentEvidence = evidence
+                };
+            }
             if (repair.VehicleRepairVersion is not null)
             {
                 if (repair.VehicleRepairVersion != 1 || repair.Unit != repair.Equipment
                     || Active(state, repair.Unit) is not UnitInstance currentVehicle || currentVehicle.Kind != "asl:vehicle"
-                    || currentVehicle.Definition is not { } currentReference || catalog?.Definition(currentReference.Definition) is not { } currentDefinition
+                    || VehicleArmamentFacts.Definition(repairState, currentVehicle) is not { } currentDefinition
                     || VehicleArmamentFacts.Weapons(currentDefinition).FirstOrDefault(item => item.Id == repair.Weapon) is not { } currentWeapon)
                 {
                     return Fail<GameState>("UNIT-STATE-028", "The vehicle repair version, vehicle or listed weapon is invalid.");
                 }
-                var currentFacts = VehicleArmamentFacts.Repair(state, currentVehicle, currentDefinition, currentWeapon, repair.Hero);
+                var currentFacts = VehicleArmamentFacts.Repair(repairState, currentVehicle, currentDefinition, currentWeapon, repair.Hero);
                 var currentRefusal = Rules.ScenarioA1RallyRules.VehicleRepairPhaseBar(state.Phase, currentVehicle.Status == InstanceStatus.Active)
                     ?? VehicleArmamentFacts.RecallFactsRefusal(currentDefinition)
                     ?? Rules.ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(currentFacts);

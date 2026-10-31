@@ -1,6 +1,7 @@
 namespace LimboDancer.Domains.Asl.Rules;
 
-/// <summary>A24.4 (PDF p. 92): SMOKE's vertical extent. Its Hindrance value remains A24.5's, and a Blaze's height remains B25.2's.</summary>
+/// <summary>A24.4 (PDF p. 92): counter height and column intersection. Its Blaze-height clause is decided by ScenarioA1BlazeSmokeCalculator.Height;
+/// both heights feed Intersect. Hindrance strength remains ScenarioA1SmokeStrengthCalculator's A24.5 decision.</summary>
 public static class ScenarioA1SmokeHeightCalculator
 {
     /// <summary>A24.2/.8: an exact source Location proves occupancy without another LOS walk. An end elsewhere in the same hex still needs height facts.</summary>
@@ -87,17 +88,17 @@ public static class ScenarioA1SmokeHeightCalculator
         var highEnd = source >= target ? facts.Source : facts.Target;
         var rangeFromHigher = source >= target ? facts.RangeFromSource : facts.RangeToTarget;
         var rangeToLower = source >= target ? facts.RangeToTarget : facts.RangeFromSource;
-        if (higher - top > 1)
-        {
-            higher = decimal.Floor(higher);
-        }
         if ((highEnd.Hillock || highEnd.Upslope) && highEnd.Elevation == top)
         {
-            higher++;
+            // No reviewed rule establishes an extra level for this endpoint geometry.
+            return null;
         }
 
-        // A6.4-.43: full source height, range in groups of five, elevation advantage and lower-end elevation.
-        var blind = Math.Max(2 * top + rangeFromHigher / 5 - higher - lower + 1, 1);
+        // A6.42 (p. 53): only full levels count. Apply its minimum before A6.43 adjusts for the hex behind.
+        // The extra hex at an endpoint exactly at the top follows the A24.4 example (ruling RA24H.1).
+        var advantage = decimal.Floor(higher) - top;
+        var blind = Math.Max(facts.Height + rangeFromHigher / 5 - advantage + 1, 1)
+            + bottom - decimal.Floor(lower);
         return new(rangeToLower <= blind, false, false);
     }
 }

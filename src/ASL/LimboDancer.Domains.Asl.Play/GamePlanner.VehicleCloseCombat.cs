@@ -17,7 +17,7 @@ public sealed partial class GamePlanner
     /// <summary>Whether a vehicle has a CC attack (A11.62): a CMG not malfunctioned, or an AAMG while CE, with its crew able to fight.</summary>
     private static bool VehicleCcArmament(UnitInstance vehicle) => VehicleDefinition(vehicle) is { } definition
         && ScenarioA1VehicleCloseCombat.CanAttack(LiveFire.VehicleCloseCombatAvailability(vehicle, LiveCloseCombat.VehicleFacts(vehicle, false, true)),
-            definition, Is(vehicle, Conditions.Captured));
+            definition, Is(vehicle, Conditions.Captured), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.UnconfirmedKill));
 
     /// <summary>Whether an Infantry unit may make a CC attack in the CCPh (A11.16, A20.5): active, unbroken, and not a prisoner.</summary>
     private bool CcAttacker(UnitInstance unit) => ScenarioA1VehicleCloseCombatRules.CcAttacker(unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit), vocabulary.IsA(unit.Kind, "asl:personnel"),
@@ -854,6 +854,7 @@ public sealed partial class GamePlanner
                 new VehicleCloseCombatResolved(location, vehicle.Id, [vehicle.Id], defenders, true, false, rollIds,
                     JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
                 {
+                    VehicleArmamentEvidence = facts.VehicleBreakdown is not null ? VehicleArmamentFacts.Evidence(state, vehicle) : null,
                     Next = following,
                     Closed = closed,
                 }, package, null));
@@ -863,19 +864,13 @@ public sealed partial class GamePlanner
                 foreach (var (name, outcome) in breakdowns)
                 {
                     var weapon = armaments.Single(item => item.Id == name);
-                    var changes = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-                    if (outcome.Outcome == VehicleBreakdownOutcome.Malfunction)
+                    var verdict = ScenarioA1VehicleBreakdownResolutionCalculator.BreakdownChanges(weapon.Malfunction, weapon.Disabled,
+                        outcome.Outcome, VehicleArmamentFacts.RecalledAfterDisable(vehicle, vehicleDefinition, weapon));
+                    var changes = verdict.Weapon.ToDictionary(change => change.Condition,
+                        change => change.Value ? ConditionState.True : ConditionState.False, StringComparer.Ordinal);
+                    foreach (var change in verdict.Vehicle)
                     {
-                        changes[weapon.Malfunction] = ConditionState.True;
-                    }
-                    else if (outcome.Outcome == VehicleBreakdownOutcome.Disabled)
-                    {
-                        foreach (var change in ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma",
-                            VehicleArmamentFacts.RecalledAfterDisable(vehicle, vehicleDefinition, weapon)))
-                        {
-                            changes[change.Condition == UnitCondition.Disabled ? weapon.Disabled : ConditionName(change.Condition)]
-                                = change.Value ? ConditionState.True : ConditionState.False;
-                        }
+                        changes[ConditionName(change.Condition)] = change.Value ? ConditionState.True : ConditionState.False;
                     }
                     if (changes.Count > 0)
                     {

@@ -301,27 +301,12 @@ public static class ScenarioA1RallyRules
     public static string SwRepairSummary(string unitId, string equipmentId, int repairNumber) => $"play.repair: {unitId} attempts to repair {equipmentId} (R{repairNumber}; a 6 eliminates it)";
 
     /// <summary>
-    /// D3.7: a vehicle's MG is repaired in the RPh by an active vehicle. The AAMG's old path (this member, <see cref="VehicleRepairWeaponBar"/>,
-    /// <see cref="VehicleRepairCrewBarAsPlanned"/>, and <see cref="VehicleRepairChange"/>) keeps its answers (the D3.7 claim, RD3.6): it asks no shocked
-    /// or stunned crew and allows no Hero Rider, where
-    /// <see cref="ScenarioA1VehicleBreakdownCalculator.RepairRefusal"/> asks both; and a failed AAMG sets the MA's generic Disabled.
+    /// D3.7: the shared RPh and active-vehicle check, used by current repair and projection.
     /// </summary>
     public static string? VehicleRepairPhaseBar(string? phase, bool active) => phase != "rph" || !active ? "play.repair-phase: a vehicle's MG is repaired in the RPh (D3.7)" : null;
 
-    /// <summary>D3.7: the MG is malfunctioned and not disabled for good.</summary>
-    public static string? VehicleRepairWeaponBar(string vehicleId, bool malfunctioned, bool disabled) =>
-        !malfunctioned || disabled ? $"play.repair-weapon: {vehicleId}'s MG is not malfunctioned, or is disabled (D3.7)" : null;
-
-    /// <summary>D3.7 (ruling R6.10), as the planner has it: a CE crew repairs once per RPh; the projector's test differs (section 12) and stays its own.</summary>
-    public static string? VehicleRepairCrewBarAsPlanned(string vehicleId, bool crewExposed, bool repairedThisPhase) =>
-        !crewExposed || repairedThisPhase ? $"play.repair-unit: {vehicleId}'s AAMG is repaired once per RPh by a CE crew that is not Stunned or Recalled (D3.7)" : null;
-
     /// <summary>D3.7: a dr of 1 repairs the MG, a 6 disables it for good, by <see cref="ScenarioA1VehicleBreakdownCalculator.RepairResult"/> (RD3.6).</summary>
     public static RepairOutcome VehicleMgRepairResult(int dr) => ScenarioA1VehicleBreakdownCalculator.RepairResult(dr);
-
-    /// <summary>D3.7: a repaired MG is no longer malfunctioned; a 6 disables it.</summary>
-    public static (UnitCondition Condition, bool Value) VehicleRepairChange(RepairOutcome outcome) =>
-        outcome == RepairOutcome.Repaired ? (UnitCondition.Malfunctioned, false) : (UnitCondition.Disabled, true);
 
     /// <summary>The name a vehicle's weapon is repaired under (D3.7; pass 50): <c>ma</c>, <c>bmg</c>, or <c>cmg</c>.</summary>
     public static bool IsVehicleWeapon(string? weapon) => weapon is "ma" or FireVehicleWeapon.BowMg or FireVehicleWeapon.CoaxialMg;
@@ -367,20 +352,6 @@ public static class ScenarioA1RallyRules
         weapon == ScenarioA1VehicleBreakdownCalculator.AntiAircraftMg
             ? $"play.repair-weapon: {vehicleId} has no weapon named '{weapon}' to repair (D3.7)"
             : ScenarioA1VehicleBreakdownCalculator.RepairRefusal(new(vehicleId, weapon, malfunctioned, disabled, crewImpaired, repairedThisPhase));
-
-    /// <summary>
-    /// What a repair dr does to a vehicle's Gun MA, BMG, or CMG (D3.7, D5.341, pp. 201 and 203; pass 50): a 1 removes the Malfunction counter; a 6
-    /// disables the weapon, which stays malfunctioned; and "any vehicle whose MA and all Secondary Armament ... are all disabled is immediately
-    /// Recalled (5.341) unless that vehicle has Passenger/Towing capability": the Recall of D5.341, a Stun until the Player Turn ends. Keeps its answer
-    /// (the D3.7 claim, RD3.6): it Recalls on the MA alone, where <see cref="ScenarioA1VehicleBreakdownCalculator.Recalled"/> asks every SA too (the
-    /// same for every vehicle the catalog holds, none of which has SA).
-    /// </summary>
-    public static IReadOnlyList<(UnitCondition Condition, bool Value)> VehicleWeaponRepairChanges(string weapon, RepairOutcome outcome, bool passengerOrTowing) => outcome switch
-    {
-        RepairOutcome.Repaired => [(VehicleWeaponMalfunction(weapon), false)],
-        RepairOutcome.Eliminated => ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges(weapon, weapon == "ma" && !passengerOrTowing),
-        _ => [],
-    };
 
     /// <summary>The plan's words for the repair of a vehicle's Gun MA, BMG, or CMG.</summary>
     public static string VehicleWeaponRepairSummary(string vehicleId, string weapon, bool recallsIfDisabled) =>

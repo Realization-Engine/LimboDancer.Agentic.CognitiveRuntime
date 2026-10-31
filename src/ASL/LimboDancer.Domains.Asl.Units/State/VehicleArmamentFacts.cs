@@ -1,11 +1,56 @@
 using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.Catalog;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace LimboDancer.Domains.Asl.Units.State;
 
 /// <summary>Source and state gathering shared by vehicle repair proposals, owner choices, and replay. All verdicts belong to Rules.</summary>
 public static class VehicleArmamentFacts
 {
+    private static readonly HashSet<string> EvidenceNames = new(StringComparer.Ordinal)
+    {
+        "asl:printed-breakdown", "asl:printed-elimination", "asl:breakdown-circled", "asl:breakdown-note-extends",
+        "asl:sa-mount", "asl:sa-caliber", "asl:passenger-capacity", "asl:towing", "asl:ma-weapon", "asl:caliber",
+        "asl:bmg", "asl:cmg", "asl:aamg", "asl:unarmored", "asl:open-topped", "asl:vehicle-class"
+    };
+
+    /// <summary>The catalog actually loaded for this state, with only a recorded breakdown/repair evidence override.</summary>
+    public static UnitDefinition? Definition(GameState state, UnitInstance vehicle)
+    {
+        var definition = vehicle.Definition is { } reference ? state.VehicleArmamentCatalog?.Definition(reference.Definition) : null;
+        return definition is not null && state.VehicleArmamentEvidence is { } evidence && evidence.Definition == definition.Id
+            ? definition with
+            {
+                Values = evidence.Values
+            } : definition;
+    }
+
+    public static VehicleArmamentEvidence? Evidence(GameState state, UnitInstance vehicle) => Definition(state, vehicle) is { } definition
+        && state.VehicleArmamentCatalog is { } catalog
+        ? new(1, catalog.Identity, definition.Id, [.. definition.Values.Where(value => value.Face == "front" && EvidenceNames.Contains(value.Name))]) : null;
+
+    /// <summary>Evidence is authoritative for an earlier catalog. When its exact catalog is loaded, verify the source values too.</summary>
+    public static string? EvidenceRefusal(GameState state, UnitInstance? vehicle, VehicleArmamentEvidence evidence)
+    {
+        if (evidence.Version != 1 || vehicle?.Definition is not { } reference || evidence.Catalog is null
+            || evidence.Catalog.Catalog != state.Catalog.Catalog || evidence.Definition != reference.Definition
+            || !Version.TryParse(evidence.Catalog.Version, out var recordedVersion) || !Version.TryParse(state.Catalog.Version, out var loadedVersion)
+            || recordedVersion > loadedVersion || evidence.Catalog.Hash is not { Length: 64 } hash || !hash.All(char.IsAsciiHexDigit)
+            || recordedVersion == loadedVersion && evidence.Catalog != state.Catalog
+            || evidence.Values is null || evidence.Values.Any(value => value is null || value.Face != "front" || !EvidenceNames.Contains(value.Name))
+            || evidence.Values.Select(value => value.Name).Distinct(StringComparer.Ordinal).Count() != evidence.Values.Count)
+        {
+            return "The vehicle armament evidence has an unknown version, source, definition, or duplicate value.";
+        }
+        if (state.VehicleArmamentCatalog?.Identity == evidence.Catalog && Evidence(state, vehicle) is { } current
+            && JsonSerializer.Serialize(current.Values) != JsonSerializer.Serialize(evidence.Values))
+        {
+            return "The vehicle armament evidence conflicts with its loaded catalog.";
+        }
+        return null;
+    }
+
     public sealed record Weapon(string Id, string RepairKind, string Malfunction, string Disabled, bool Secondary = false);
 
     public static IReadOnlyList<Weapon> Weapons(UnitDefinition definition)
@@ -103,3 +148,10 @@ public static class VehicleArmamentFacts
     private static bool? Trait(UnitDefinition definition, string name) => definition.Printed("front", "asl:" + name) is { State: PrintedState.Printed } value ? value.TraitPresent : null;
     private static bool Marked(UnitInstance vehicle, string condition) => GameState.Condition(vehicle, condition) == ConditionState.True;
 }
+
+/// <summary>A versioned snapshot of breakdown and repair source values only. Other rules continue to use the current catalog.</summary>
+public sealed record VehicleArmamentEvidence(
+    [property: JsonRequired] int Version,
+    [property: JsonRequired] CatalogIdentity Catalog,
+    [property: JsonRequired] string Definition,
+    [property: JsonRequired] IReadOnlyList<PrintedValue> Values);

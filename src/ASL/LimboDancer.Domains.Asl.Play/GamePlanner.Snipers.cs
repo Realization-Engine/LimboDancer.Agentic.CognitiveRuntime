@@ -569,7 +569,8 @@ public sealed partial class GamePlanner
         // A14.21 (ruling R71.7): the target hex, or the closest hex holding an eligible target or the enemy Sniper counter; ties go to the lowest TEM with the
         // Location's SMOKE (Rules orders them), and the equidistant hexes still tied are the Sniper player's choice (ruling R71.12). New continuations ask
         // A24.4 which Locations the column occupies; legacy continuations retain their recorded exact-Location count.
-        var smoke = smokeVersion is null ? SmokeSources(state).GroupBy(place => place).ToDictionary(group => group.Key, group => group.Count()) : null;
+        var smoke = smokeVersion is null ? SmokeSources(state).GroupBy(place => place).ToDictionary(group => group.Key,
+            group => (IReadOnlyList<int>)[.. group.Select(_ => ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance)]) : null;
         var tems = new Dictionary<BoardLocation, int>();
         int Tem(BoardLocation location)
         {
@@ -578,7 +579,7 @@ public sealed partial class GamePlanner
                 return known;
             }
             var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
-            var tem = smoke is not null ? ScenarioA1Sniper.TargetTem(terrain, smoke.GetValueOrDefault(location))
+            var tem = smoke is not null ? ScenarioA1Sniper.TargetTem(terrain, smoke.GetValueOrDefault(location) ?? [])
                 : ScenarioA1Sniper.TargetTem(terrain, SmokeHindrancesAt(state, location).Hindrances
                     ?? throw new InvalidOperationException("Sniper SMOKE facts changed after preflight."));
             tems.Add(location, tem);

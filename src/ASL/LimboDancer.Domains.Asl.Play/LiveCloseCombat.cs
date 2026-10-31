@@ -472,6 +472,21 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             return "The CC record's facts are incomplete.";
         }
 
+        if (combat.VehicleArmamentEvidence is { } evidence)
+        {
+            if (recorded.VehicleBreakdown is null)
+            {
+                return "Vehicle armament evidence requires a vehicle breakdown reading.";
+            }
+            if (VehicleArmamentFacts.EvidenceRefusal(state, state.Unit(combat.Vehicle), evidence) is { } evidenceRefusal)
+            {
+                return evidenceRefusal;
+            }
+            state = state with
+            {
+                VehicleArmamentEvidence = evidence
+            };
+        }
         var (expected, reason) = LiveCloseCombat.VehicleFromState(state, combat.Location, combat.Vehicle, combat.Attackers, combat.Defenders, combat.ByVehicle, combat.Reaction,
             legacyVehicleBreakdown: recorded.Vehicle?.UnavailableWeapons is null);
         if (expected is null)

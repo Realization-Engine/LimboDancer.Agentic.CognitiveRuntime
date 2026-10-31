@@ -47,6 +47,13 @@ public sealed record ResidualFire(BoardLocation Location, int Fp, string Fire);
 /// </summary>
 public sealed record RepairAttempted(string Unit, string Equipment, string Roll, int RepairNumber, string Result) : EventPayload
 {
+    /// <summary>Versioned repair source values. Null preserves the earlier catalog read.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public VehicleArmamentEvidence? VehicleArmamentEvidence
+    {
+        get; init;
+    }
+
     /// <summary>Current D3.7 weapon and participant validation. Null preserves the recorded legacy repair reading.</summary>
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public int? VehicleRepairVersion

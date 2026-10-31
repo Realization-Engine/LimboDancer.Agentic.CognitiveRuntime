@@ -554,17 +554,11 @@ public sealed class ScenarioA1RoutRallyRulesTests
     public void AVehicleMgRepairDrOfOneRepairsAndASixDisables(int dr, RepairOutcome outcome)
     {
         Assert.Equal(outcome, ScenarioA1RallyRules.VehicleMgRepairResult(dr));
-        if (outcome != RepairOutcome.NoChange)
-        {
-            Assert.Equal(outcome == RepairOutcome.Repaired ? (UnitCondition.Malfunctioned, false) : (UnitCondition.Disabled, true), ScenarioA1RallyRules.VehicleRepairChange(outcome));
-        }
     }
 
     [Fact]
     public void TheRepairBarsOfThePlannerAndTheProjectorStayTheirOwn()
     {
-        Assert.Null(ScenarioA1RallyRules.VehicleRepairCrewBarAsPlanned("v", true, false));
-        Assert.NotNull(ScenarioA1RallyRules.VehicleRepairCrewBarAsPlanned("v", false, false));
         Assert.True(ScenarioA1RoutRallyProjection.VehicleRepairAllowedAsRecorded("rph", true, false, false, false, false, false, false, false));
         Assert.False(ScenarioA1RoutRallyProjection.VehicleRepairAllowedAsRecorded("rph", true, false, true, false, false, false, false, false));
         Assert.True(ScenarioA1RallyRules.SwRepairGoodOrderAsPlanned(false));

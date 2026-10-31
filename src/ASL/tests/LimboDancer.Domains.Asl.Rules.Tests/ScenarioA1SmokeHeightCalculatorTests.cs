@@ -56,6 +56,29 @@ public sealed class ScenarioA1SmokeHeightCalculatorTests
         Assert.Equal(new SmokeLosVerdict(true, false, false), ScenarioA1SmokeHeightCalculator.Intersect(
             new(0, 0, 2, End(source), End(0), 0, range, false, true, false)));
 
+    [Theory]
+    [InlineData(2.5, 0, 3, true)]
+    [InlineData(3.5, 0, 2, true)]
+    [InlineData(4, 1, 1, false)]
+    public void BlindHexesUseWholeLevelsAndAdjustTheRearHexAfterTheMinimum(double higher, int lower, int behind, bool expected)
+    {
+        var verdict = new SmokeLosVerdict(expected, false, false);
+        Assert.Equal(verdict, ScenarioA1SmokeHeightCalculator.Intersect(
+            new(0, 0, 2, End((decimal)higher), End(lower), 1, behind, true, false, false)));
+        Assert.Equal(verdict, ScenarioA1SmokeHeightCalculator.Intersect(
+            new(0, 0, 2, End(lower), End((decimal)higher), behind, 1, true, false, false)));
+    }
+
+    [Fact]
+    public void UnsupportedTopEndpointGeometryStaysUnknown()
+    {
+        var facts = new SmokeLosFacts(0, 0, 2, End(2), End(0), 1, 2, true, false, false);
+        Assert.Null(ScenarioA1SmokeHeightCalculator.Intersect(facts with { Source = End(2) with { Hillock = true } }));
+        Assert.Null(ScenarioA1SmokeHeightCalculator.Intersect(facts with { Source = End(2) with { Upslope = true } }));
+        Assert.Null(ScenarioA1SmokeHeightCalculator.Intersect(facts with { Source = End(2) with { EmbankmentAdjustment = 1 } }));
+        Assert.Equal(new SmokeLosVerdict(false, false, false), ScenarioA1SmokeHeightCalculator.Intersect(facts with { Height = 0 }));
+    }
+
     [Fact]
     public void CellarLosThroughGroundSmokeDoesNotAcquireTheOutgoingPenalty() =>
         Assert.Equal(new SmokeLosVerdict(true, false, false), ScenarioA1SmokeHeightCalculator.Intersect(

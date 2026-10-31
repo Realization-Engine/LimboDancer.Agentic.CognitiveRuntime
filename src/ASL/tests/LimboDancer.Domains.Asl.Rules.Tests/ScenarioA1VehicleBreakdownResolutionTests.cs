@@ -6,6 +6,23 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 public sealed class ScenarioA1VehicleBreakdownResolutionTests
 {
     [Fact]
+    public void RepairAndBreakdownMapOnlyTheNamedWeaponAndTheCompleteRecallTransition()
+    {
+        var repaired = ScenarioA1VehicleBreakdownResolutionCalculator.RepairChanges("sa-malfunctioned", "sa-disabled", RepairOutcome.Repaired, false);
+        Assert.Equal(("sa-malfunctioned", false), Assert.Single(repaired.Weapon));
+        Assert.Empty(repaired.Vehicle);
+        var failed = ScenarioA1VehicleBreakdownResolutionCalculator.BreakdownChanges("cmg-malfunctioned", "cmg-disabled", VehicleBreakdownOutcome.Malfunction, false);
+        Assert.Equal(("cmg-malfunctioned", true), Assert.Single(failed.Weapon));
+        Assert.Empty(failed.Vehicle);
+        var disabled = ScenarioA1VehicleBreakdownResolutionCalculator.RepairChanges("sa-malfunctioned", "sa-disabled", RepairOutcome.Eliminated, true);
+        Assert.Equal(("sa-disabled", true), Assert.Single(disabled.Weapon));
+        Assert.Equal([(UnitCondition.Recalled, true), (UnitCondition.Stunned, false), (UnitCondition.StunRecovery, false),
+            (UnitCondition.ButtonedUp, true), (UnitCondition.Motion, false)], disabled.Vehicle);
+        Assert.Empty(ScenarioA1VehicleBreakdownResolutionCalculator.RepairChanges("ma-malfunctioned", "ma-disabled", RepairOutcome.NoChange, true).Weapon);
+        Assert.Empty(ScenarioA1VehicleBreakdownResolutionCalculator.BreakdownChanges("ma-malfunctioned", "ma-disabled", VehicleBreakdownOutcome.LowAmmo, true).Vehicle);
+    }
+
+    [Fact]
     public void HeroRiderUsesHisWoundedMoraleAndKeepsTheSharedChecksOutcome()
     {
         Assert.Null(ScenarioA1RiderRules.MoraleBar("hero", 9, null, true, 8));
@@ -106,6 +123,22 @@ public sealed class ScenarioA1VehicleBreakdownResolutionTests
     private static readonly VehicleBreakdownUseFacts Circled = new(VehicleBreakdownWeapon.MainArmament, 11, null, true, false, false, false);
 
     [Fact]
+    public void OverrunMalfunctionsAtACircledBreakdownNumberInsteadOfGivingLowAmmo()
+    {
+        Assert.Equal(VehicleBreakdownOutcome.Malfunction,
+            ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(Circled, VehicleBreakdownUse.Overrun, 11).Outcome);
+        var shortage = Circled with { PrintedB = null, Circled = false, AmmunitionShortage = true };
+        Assert.Equal(VehicleBreakdownOutcome.Malfunction,
+            ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(shortage, VehicleBreakdownUse.Overrun, 11).Outcome);
+        Assert.Equal(VehicleBreakdownOutcome.None,
+            ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(shortage, VehicleBreakdownUse.Overrun, 10).Outcome);
+        Assert.Equal(VehicleBreakdownOutcome.LowAmmo,
+            ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(Circled, VehicleBreakdownUse.Canister, 11).Outcome);
+        Assert.Equal(VehicleBreakdownOutcome.LowAmmo,
+            ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(Circled, VehicleBreakdownUse.Overrun, 11, legacyOverrun: true).Outcome);
+    }
+
+    [Fact]
     public void SupplementalUseDerivesLoweringsAndDistinguishesLowAmmoFromFailure()
     {
         var low = ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(Circled, VehicleBreakdownUse.OrdnanceToHit, 11);
@@ -126,7 +159,8 @@ public sealed class ScenarioA1VehicleBreakdownResolutionTests
         {
             AmmunitionShortage = true
         };
-        Assert.Equal(VehicleBreakdownOutcome.Disabled, ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(shortage, VehicleBreakdownUse.Overrun, 10).Outcome);
+        Assert.Equal(VehicleBreakdownOutcome.Malfunction, ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(shortage, VehicleBreakdownUse.Overrun, 10).Outcome);
+        Assert.Equal(VehicleBreakdownOutcome.Disabled, ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(shortage, VehicleBreakdownUse.Overrun, 10, legacyOverrun: true).Outcome);
         Assert.Equal(VehicleBreakdownOutcome.None, ScenarioA1VehicleBreakdownResolutionCalculator.Resolve(shortage, VehicleBreakdownUse.CloseCombat, 10).Outcome);
     }
 
@@ -207,6 +241,10 @@ public sealed class ScenarioA1VehicleBreakdownResolutionTests
         Assert.Contains("sa-1", ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(new(sa with
         {
             RepairedThisPhase = true
+        }, true, true))!, StringComparison.Ordinal);
+        Assert.Contains("MA-1's SA 'sa-1'", ScenarioA1VehicleBreakdownResolutionCalculator.RepairRefusal(new(sa with
+        {
+            VehicleId = "MA-1", Disabled = true
         }, true, true))!, StringComparison.Ordinal);
         // The original entry point still accepts its recorded Boolean HeroRider fact.
         Assert.Null(ScenarioA1VehicleBreakdownCalculator.RepairRefusal(weapon));

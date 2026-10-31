@@ -8156,7 +8156,7 @@ else if (state is not null)
 
     private bool RepairReady => repairWeapon.Split('|') is [var vehicleId, var weapon]
         ? state?.Unit(vehicleId) is { } vehicle
-            && Live.Planner.VehicleRepairRefusal(state, vehicle, weapon, repairHero.Length == 0 ? null : repairHero) is null
+            && GamePlanner.VehicleRepairRefusal(state, vehicle, weapon, repairHero.Length == 0 ? null : repairHero) is null
         : repairWeapon.Length > 0;
 
     private IReadOnlyList<PlayChoice> DeployChoices => state is null ? []
