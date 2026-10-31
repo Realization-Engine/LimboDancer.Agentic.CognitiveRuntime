@@ -280,6 +280,106 @@ public sealed class ScenarioA1FireExtensionTests
     }
 
     [Fact]
+    public void CurrentFinalFireUsesTheWeaponsOwnCounterAndPreservesBothOldAnswers()
+    {
+        var markedMg = Firer("ru-1") with
+        {
+            UsesInherentFp = false,
+            Weapons = [new FireWeapon("ru-mmg", "defender-mmg", false, false, true)],
+        };
+        var oldMarked = Attack(Rolls([1, 6]), phase: "DFPh", side: "non-phasing", range: 4, firers: [markedMg], targets:
+        [
+            Target("de-s") with
+            {
+                KnownEnemyInLos = true,
+                Captors = [],
+            },
+        ]);
+        Assert.Empty(ScenarioA1FireCalculator.Precheck(oldMarked, Reference));
+        Assert.Contains("asl.a1.fire.final-fire-outside", ScenarioA1FireCalculator.Precheck(oldMarked with
+        {
+            FinalFireVersion = 1
+        }, Reference));
+
+        var unmarkedMg = markedMg with
+        {
+            FirstFireMarked = true,
+            Weapons = [markedMg.Weapons![0] with { FirstFireMarked = false }],
+        };
+        var oldUnmarked = oldMarked with
+        {
+            Firers = [unmarkedMg]
+        };
+        Assert.Contains("asl.a1.fire.final-fire-outside", ScenarioA1FireCalculator.Precheck(oldUnmarked, Reference));
+        Assert.Empty(ScenarioA1FireCalculator.Precheck(oldUnmarked with
+        {
+            FinalFireVersion = 1
+        }, Reference));
+        Assert.Equal(4m, Complete(oldUnmarked with
+        {
+            FinalFireVersion = 1
+        }).Arithmetic!.TotalFirepower);
+        Assert.Contains("asl.a1.fire.final-fire-version-outside", ScenarioA1FireCalculator.Precheck(oldUnmarked with
+        {
+            FinalFireVersion = 2
+        }, Reference));
+    }
+
+    [Fact]
+    public void CurrentUnmarkedMgDoesNotInheritItsHoldersAreaFire()
+    {
+        var firer = Firer("ru-1") with
+        {
+            FirstFireMarked = true,
+            UsesInherentFp = false,
+            Weapons = [new FireWeapon("ru-mmg", "defender-mmg", false, false, false)],
+        };
+        var attack = Attack(Rolls([1, 6]), phase: "DFPh", side: "non-phasing", firers: [firer]);
+        Assert.Equal(4m, Complete(attack).Arithmetic!.TotalFirepower);
+        Assert.Equal(8m, Complete(attack with
+        {
+            FinalFireVersion = 1
+        }).Arithmetic!.TotalFirepower);
+
+        var marked = firer with
+        {
+            Weapons = [firer.Weapons![0] with { FirstFireMarked = true }]
+        };
+        var sustained = Complete(attack with
+        {
+            Firers = [marked],
+            FinalFireVersion = 1
+        });
+        Assert.Equal(4m, sustained.Arithmetic!.TotalFirepower);
+        var effect = Assert.Single(sustained.WeaponEffects!);
+        Assert.True(effect.SustainedFire);
+        Assert.False(effect.RateOfFireRetained);
+        Assert.Equal("final-fire", effect.FireCounter);
+    }
+
+    [Theory]
+    [InlineData("defender-leader")]
+    [InlineData("defender-hero")]
+    public void CurrentFinalFireRefusesALoneSmcsFirstFireMg(string definition)
+    {
+        // A9.3 (p. 63), A8.312 (p. 61): a lone SMC's First-Fire-marked MG cannot sustain, so it has no Final Fire (the review of PR 75, item 48).
+        var smc = Firer("ru-l", definition) with
+        {
+            UsesInherentFp = false,
+            Weapons = [new FireWeapon("ru-mmg", "defender-mmg", false, false, true)],
+        };
+        var attack = Attack(Rolls([1, 6]), phase: "DFPh", side: "non-phasing", range: 1, firers: [smc]) with
+        {
+            FinalFireVersion = 1
+        };
+        Assert.Contains("asl.a1.fire.final-fire-outside", ScenarioA1FireCalculator.Precheck(attack, Reference));
+        Assert.DoesNotContain("asl.a1.fire.final-fire-outside", ScenarioA1FireCalculator.Precheck(attack with
+        {
+            Firers = [Firer("ru-1") with { UsesInherentFp = false, Weapons = smc.Weapons }]
+        }, Reference));
+    }
+
+    [Fact]
     public void MachineGunsAddTheirFirepowerMalfunctionAndKeepTheirRof()
     {
         var mmg = new FireWeapon("ru-mmg", "defender-mmg", false, false, false);

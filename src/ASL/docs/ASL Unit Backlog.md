@@ -1656,3 +1656,12 @@ Written on 2026-10-31. What the W-E10 wiring design (`Designs/ASL Wiring 002 Amm
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | DYO purchase of an Ammo Vehicle or an Ammo Dump | Claude's PR 69 review (finding 10) | E10.11 and E10.6, p. 244 (DYO cost H1.49, purchase H1.6) | The DYO passes (34 and 35, deferred) | Only a scenario card's SSR creates an Ammo Supply or an Ammo Dump; no DYO purchase offers one. |
+
+## 89. Added by Claude's review of PR 75 (Wiring 003 adapters, Final Fire, Fire Lane)
+
+Written on 2026-10-31. What the Wiring 003 Rules adapter supplement leaves out (review items 17 and 49); its design, `Designs/ASL Wiring 003 Rules Adapter Supplement.md`, records the rest.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| DC Placement into a Cave | The A23.3 claim (Wiring 003 supplement; review of PR 75, item 17) | A23.3, p. 90 ("[EXC: Cave; G11.8331]"); G11.8331 | A claim of G11.83 (Caves) and a Cave fact on the Placement Location | The Cave-aware `ScenarioA1DemolitionChargeRules.PlacementRefusal` overload refuses every Placement into a Cave, including the out-of-LOS Placement G11.8331 permits; no board in use has a Cave. |
+| Recombination of Assault Engineer and other units | The A11.5 claim, A25.01 (review of PR 75, item 17) | A25.01, p. 93; A1.32, p. 45 | A ruling on whether a squad recombined from an AE HS and a non-AE HS is an Assault Engineer (A1.32 does not settle it) | `ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage` returns no status and a "not resolved" reason for mixed ancestry; no counter in the catalog prints the AE trait. |

@@ -2139,7 +2139,7 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: a stream read from 
 
 **Pass 130: Terrain II: the refused ground terrain** (new; 63 rows of the inventory; pass 135 until 2026-10-16). Counters: a Shellhole counter; Climb markers; overlay art and data (no source for it is in the repository). Needs first: 35, 40; 125 (the wadis and streams an overlay joins, A2.76; shellholes in a gully, B2.4).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 77 rows: 1 built with a deviation, 29 partly, 21 refused, 26 not built. Claims: 76 open, 1 built (owners: A9.222 (Codex)). A rule decided outside Rules on 3 rows. Wiring: 0 of 77. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 77 rows: 1 built with a deviation, 29 partly, 21 refused, 26 not built. Claims: 76 open, 1 built (owners: A9.222 (Codex)). A rule decided outside Rules on 3 rows. Wiring: 0 of 77. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2362,7 +2362,7 @@ Turns tasks that reach this pass from another: D7.2 (pass 125) takes amphibious 
 
 **Pass 180: Nationalities II: new formations and nations** (new; 54 rows of the inventory). Counters: SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them. Needs first: 105 (Impulse Movement) for Human Wave; 115 (entrenching); 85 (WP); 110 (PF and PSK for other nations).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 56 rows: 3 partly, 53 not built. Claims: 56 open. Wiring: 0 of 56. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 56 rows: 3 partly, 53 not built. Claims: 55 open, 1 built (owners: A11.5 (Codex)). Wiring: 0 of 56. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|

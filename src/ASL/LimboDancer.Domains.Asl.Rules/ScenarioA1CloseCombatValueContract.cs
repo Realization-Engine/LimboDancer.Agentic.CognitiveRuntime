@@ -25,7 +25,8 @@ internal static class ScenarioA1CloseCombatValueContract
             ScenarioA1RuleContracts.Flag("pinned", "An attacker is pinned (A7.8)"),
             ScenarioA1RuleContracts.Flag("reactionFireMarked", "The attack is CC Reaction Fire by a unit marked First or Final Fire (D7.213)"),
             ScenarioA1RuleContracts.Flag("vehicleConcealed", "The vehicle is concealed (A11.19)"),
-            ScenarioA1RuleContracts.Flag("guardOutnumbered", "An attacker is a Guard whose US# is below its prisoners' (A20.52)"),
+            ScenarioA1RuleContracts.Flag("guard", "An attacker is a Guard attacking non-prisoners, regardless of US# (A20.52)", mayBeUnknown: true),
+            ScenarioA1RuleContracts.Flag("guardOutnumbered", "Legacy input: an attacker is an outnumbered Guard", mayBeUnknown: true),
             ScenarioA1RuleContracts.Flag("csRed", "The vehicle's CS# is printed red (D5.7)"),
             new("finalDr", ContractFactType.Number, false, ContractDisclosure.All, "The Final CC DR"),
             ScenarioA1RuleContracts.Flag("unarmed", "An attacker is Unarmed (A20.5)"),
@@ -66,6 +67,15 @@ internal static class ScenarioA1CloseCombatValueContract
             return new(ContractVerdict.NotEvaluated, [new("the Final DR is a whole number", "A11.5", 74)], []);
         }
 
+        var guard = facts.Flag("guard");
+        var legacyGuard = facts.Flag("guardOutnumbered");
+        // A20.52 (p. 87): the halving does not depend on US#, so a false "outnumbered" input does not show the attacker is no Guard. Evaluate only
+        // when the full fact is known, or when the outnumbered input already proves the penalty (the review of PR 75, item 15).
+        if (guard is null && legacyGuard != true)
+        {
+            return new(ContractVerdict.NotEvaluated, [new("whether an attacker is a Guard is not known", "A20.52", 87)], []);
+        }
+
         var kind = facts.Text("attackerKind") switch
         {
             "squad" => "asl:squad",
@@ -75,7 +85,10 @@ internal static class ScenarioA1CloseCombatValueContract
         };
         var ccv = ScenarioA1CloseCombatValueCalculator.AttackCcv(new CcvAttackFacts(facts.Text("attackerId")!, kind, engineer, facts.Flag("inexperienced")!.Value,
             facts.Flag("smcCombining")!.Value ? "smc" : null, null, facts.Flag("pinned")!.Value, facts.Flag("reactionFireMarked")!.Value,
-            facts.Flag("vehicleConcealed")!.Value, facts.Flag("guardOutnumbered")!.Value, NationalOf(national)));
+            facts.Flag("vehicleConcealed")!.Value, legacyGuard == true, NationalOf(national))
+        {
+            Guard = guard == true
+        });
         var result = ScenarioA1CloseCombatValueCalculator.VehicleResult((int)dr, ccv.Ccv, facts.Flag("csRed")!.Value);
         var reasons = new List<ContractReason>
         {

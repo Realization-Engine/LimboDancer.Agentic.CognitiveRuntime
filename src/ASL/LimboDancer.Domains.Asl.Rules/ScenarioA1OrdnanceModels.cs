@@ -22,6 +22,13 @@ public sealed record OrdnanceShot(
     FireAttack? Hit,
     OrdnanceRolls? Rolls)
 {
+    /// <summary>A8.41/C2.241: version 1 uses the Gun's own Final Fire admission. Null retains the earlier recorded reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? FinalFireVersion
+    {
+        get; init;
+    }
+
     /// <summary>C9.2/A21.13 participation evidence. Null preserves the recorded single-crew reading and serializes without this property.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceParticipation? Participation
@@ -826,6 +833,12 @@ public sealed record GunDefinition(
     bool NoHe,
     bool Mount360)
 {
+    /// <summary>C5.63 (PDF p. 173): the listing or counter's No IF restriction.</summary>
+    public bool NoIntensiveFire
+    {
+        get; init;
+    }
+
     /// <summary>Whether it may not fire AP (C2.21); false for a Gun whose listing does not say so.</summary>
     public bool NoAp
     {

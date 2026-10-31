@@ -71,7 +71,7 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
         }
     }
 
-    public static VehicleBreakdownNumbers Numbers(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use)
+    public static VehicleBreakdownNumbers Numbers(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use, bool sustained = false)
     {
         ArgumentNullException.ThrowIfNull(facts);
         if (!Enum.IsDefined(use))
@@ -90,12 +90,14 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
         // A21.11's shortage exception names captured Gun/SW, whereas its lowering explicitly also names vehicles.
         return ScenarioA1VehicleBreakdownCalculator.Numbers(new(facts.Weapon, facts.PrintedB, facts.PrintedX, facts.Circled,
             facts.NoteExtends, facts.LowAmmo, facts.AmmunitionShortage && use != VehicleBreakdownUse.CloseCombat,
-            facts.IntensiveFire ? 2 : 0, facts.WinterReduction + (facts.Captured ? 2 : 0) + (facts.NonQualified ? 2 : 0)));
+            facts.IntensiveFire ? 2 : sustained ? ScenarioA1FinalFireCalculator.SustainedBreakdownReduction : 0,
+            facts.WinterReduction + (facts.Captured ? 2 : 0) + (facts.NonQualified ? 2 : 0)));
     }
 
-    public static VehicleBreakdownResolved Resolve(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use, int originalDr, bool legacyOverrun = false)
+    public static VehicleBreakdownResolved Resolve(VehicleBreakdownUseFacts facts, VehicleBreakdownUse use, int originalDr, bool sustained = false,
+        bool legacyOverrun = false)
     {
-        var numbers = Numbers(facts, use);
+        var numbers = Numbers(facts, use, sustained);
         var kind = use == VehicleBreakdownUse.OrdnanceToHit ? VehicleBreakdownDr.ToHit
             : use == VehicleBreakdownUse.CloseCombat ? VehicleBreakdownDr.CloseCombat : VehicleBreakdownDr.Ift;
         // D7.17 (PDF p. 207), RD3.11: an OVR reaching B#/X# malfunctions, without Low Ammo or Disablement.
@@ -111,9 +113,11 @@ public static class ScenarioA1VehicleBreakdownResolutionCalculator
     /// <summary>A9.71 (PDF p. 65): select among actual failed armaments; Low Ammo remains independent of Random Selection.</summary>
     public static Dictionary<string, VehicleBreakdownResolved>? ResolveWeapons(string vehicleId,
         IReadOnlyDictionary<string, VehicleBreakdownUseFacts> weapons, VehicleBreakdownUse use, int originalDr,
-        IReadOnlyDictionary<string, int>? selection, out IReadOnlyList<string> selectionKeys, bool legacyOverrun = false)
+        IReadOnlyDictionary<string, int>? selection, out IReadOnlyList<string> selectionKeys, bool sustainedMainArmament = false,
+        bool legacyOverrun = false)
     {
-        var outcomes = weapons.ToDictionary(item => item.Key, item => Resolve(item.Value, use, originalDr, legacyOverrun), StringComparer.Ordinal);
+        var outcomes = weapons.ToDictionary(item => item.Key, item => Resolve(item.Value, use, originalDr,
+            sustainedMainArmament && item.Key == FireOverrunEffect.MainArmament, legacyOverrun), StringComparer.Ordinal);
         var failed = outcomes.Where(item => item.Value.Failed).Select(item => item.Key).ToArray();
         selectionKeys = failed.Length > 1 ? [.. failed.Select(name => vehicleId + ":" + name)] : [];
         if (selectionKeys.Count == 0)
