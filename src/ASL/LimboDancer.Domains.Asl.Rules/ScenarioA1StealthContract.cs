@@ -18,7 +18,7 @@ internal static class ScenarioA1StealthContract
 
     private static readonly string[] Classes = ["elite", "1st-line", "2nd-line", "green", "conscript", "none"];
 
-    private static readonly string[] Designations = ["none", "anzac", "gurkha", "commando", "partisan", "raider"];
+    private static readonly string[] Designations = [.. ScenarioA1StealthCalculator.DesignationTokens];
 
     private static readonly string[] DesignationNames = ["", "ANZAC", "Gurkha", "Commando", "Partisan", "Raider"];
 
