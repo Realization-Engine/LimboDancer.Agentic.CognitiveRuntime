@@ -255,7 +255,7 @@ public sealed class PlayPagePass35Tests : IDisposable
         // The MG is listed again and may be ticked.
         page.Find("#fire-from").Change(WideBoards.At(5));
         page.Find(".fire-firer[data-unit='g1']").Change(true);
-        Assert.Equal("the MMG of 4-6-7 squad G1", Text(page, "label:has(.fire-weapon)"));
+        Assert.Equal("the MMG", Text(page, "label:has(.fire-weapon)"));
         Assert.False(page.Find(".fire-weapon[data-weapon='gm']").HasAttribute("disabled"));
 
         page.ViewAs("russian");

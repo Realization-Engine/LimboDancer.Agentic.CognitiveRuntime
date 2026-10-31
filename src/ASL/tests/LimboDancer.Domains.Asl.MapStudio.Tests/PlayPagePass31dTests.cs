@@ -307,7 +307,7 @@ public sealed class PlayPagePass31dTests : IDisposable
         page.Find("#fire-target").Change(WideBoards.At(6));
 
         // The FT's row says it fires alone, and the "only its MG fires" box is not offered for it.
-        Assert.Equal(["the FT of 4-6-7 squad G1: fires alone, without its holder's own FP (A22.31)"], Texts(page, "label:has(.fire-weapon)"));
+        Assert.Equal(["the FT: fires alone (A22.31)"], Texts(page, "label:has(.fire-weapon)"));
         Assert.Empty(page.FindAll(".fire-alone"));
         Assert.Empty(page.FindAll("#fire-ft-alone"));
         Assert.False(page.Find("#propose-fire").HasAttribute("disabled"));
@@ -330,7 +330,7 @@ public sealed class PlayPagePass31dTests : IDisposable
         var page = Open("german");
         page.Find("#fire-from").Change(WideBoards.At(5));
         page.Find(".fire-firer[data-unit='g1']").Change(true);
-        Assert.Equal(["the MMG of 4-6-7 squad G1: has malfunctioned"], Texts(page, "label:has(.fire-weapon)"));
+        Assert.Equal(["the MMG: has malfunctioned"], Texts(page, "label:has(.fire-weapon)"));
         Assert.True(page.Find(".fire-weapon[data-weapon='gm']").HasAttribute("disabled"));
         Assert.Empty(page.FindAll(".fire-alone"));
     }

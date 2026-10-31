@@ -1,4 +1,4 @@
-param([switch]$Movement)
+param([switch]$Movement, [switch]$Fire)
 $ErrorActionPreference = 'Stop'
 if (-not $env:ASL_GATE_WORK) { throw 'Set ASL_GATE_WORK first.' }
 $repoRoot = (Resolve-Path "$PSScriptRoot/../../..").Path
@@ -18,6 +18,15 @@ $checkName = 'action-forms'
 if ($Movement) {
     $methods = @('MovementComponentTests.MapOriginsKeepBoardsLevelsAndUnitSelectionDistinct', 'PlayPagePass31cTests.ARouteIsPlottedOnTheMapAndMadeStepByStep')
     $checkName = 'movement-workflow'
+}
+if ($Fire) {
+    $methods = @(
+        'CloseCombatComponentTests.TheFirePanelFollowsTheSelectionAndThePhase',
+        'PlayPagePass31dTests.AFtIsSaidToFireAloneAndHoldsProposeWhenTickedWithAnotherUnit',
+        'PlayPagePass31dTests.AWeaponThatHasMalfunctionedIsListedAndCannotBeTicked',
+        'PlayPagePass35Tests.AKeptRateOfFireIsSaidToBothSidesAndTheMgIsOfferedAgain'
+    )
+    $checkName = 'fire-presentation'
 }
 $filter = ($methods | ForEach-Object { "FullyQualifiedName~$_" }) -join '|'
 $env:DOTNET_CLI_USE_MSBUILD_SERVER = '0'

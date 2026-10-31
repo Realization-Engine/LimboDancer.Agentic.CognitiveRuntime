@@ -334,7 +334,10 @@ public sealed class CloseCombatComponentTests : IDisposable
             .Add(item => item.SelectedWeapons, new HashSet<string> { "lmg1" }).Add(item => item.Targets, ["bd04:E7:0"]).Add(item => item.MolAllowed, true)
             .Add(item => item.OnFrom, value => from = value));
         Assert.Contains("The German side may fire in the Prep Fire Phase", panel.Find("#fire-side").TextContent, StringComparison.Ordinal);
-        Assert.Equal("lmg1 of g1", panel.Find(".fire-weapon[data-weapon='lmg1']").Parent!.TextContent.Trim());
+        Assert.Equal("lmg1", panel.Find(".fire-weapon[data-weapon='lmg1']").Parent!.TextContent.Trim());
+        Assert.Equal("lmg1 of g1", panel.Find(".fire-weapon[data-weapon='lmg1']").GetAttribute("aria-label"));
+        Assert.NotNull(panel.Find(".fire-unit[aria-label='g1'] .fire-weapon[data-weapon='lmg1']"));
+        Assert.Empty(panel.FindAll(".fire-unit[aria-label='g2'] .fire-weapon"));
         Assert.Equal("g1", panel.Find(".fire-alone").GetAttribute("data-unit"));
         Assert.Single(panel.FindAll(".fire-alone"));
         Assert.Equal(["", "g1", "g2"], panel.FindAll("#fire-mol option").Select(option => option.GetAttribute("value")));

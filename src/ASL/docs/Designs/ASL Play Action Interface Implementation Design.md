@@ -168,3 +168,13 @@ The user approved the follow-up analysis on 2026-10-31: connect the selected map
 - Studio checks cover an empty mover list, a populated origin, selection without auto-submission, destination picking, switching both directions between picking and plotting, Escape, and inspector changes. A small component regression covers board and level distinction. No full suite is required for these presentation changes.
 
 External Studio outputs for this follow-up are `action-form-design/studio-movement` and `action-form-design/studio-map-movement` beneath the Codex gate folder. The builder registers each; superseded binaries are removed after the replacement demo is established. The latest active demo stays available for the user's review.
+
+## 11. Approved fire-presentation follow-up
+
+The user approved the Advancing Fire findings on 2026-10-31 and asked for concise text throughout the remaining phase reviews. Keep From and Director together above the unit list. Show each unit on its own row, with its weapons and the short `MG only` choice indented underneath. Preserve existing callbacks, disabled states, and selection requirements; accessible names retain the weapon's holder and location. Remove repeated holder names from the visible weapon labels, the repeated valid-target feedback, and the paragraph describing internal processing. Keep useful refusal reasons and rule references.
+
+The MG-only preview names the selected weapon or weapons and their holder, using the already gathered attack facts. This changes presentation text in the plan's reasons, not legality, firepower, dice, or recorded events. Mixed groups continue to name each contributing unit or its weapon-only contribution. Vehicle wording is retained.
+
+Memory/performance: group the view-scoped offered weapons by holder once per render, with render-local storage bounded by the offered list. No new map/state scan, persistent cache, disclosure path, or counter-rendering work. Verify the hierarchy and selection behavior in Studio, then run only existing regression methods whose labels changed. No performance improvement is claimed.
+
+The registered external build is `action-form-design/studio-fire` under the Codex gate folder. The launcher explicitly supplies this worktree's verification fixtures because the external build cannot discover them by walking its parent folders. Keep the active demo for review; remove superseded task builds and disposable test binaries with the guarded cleanup script. Main remains unchanged until the user's explicit merge approval.

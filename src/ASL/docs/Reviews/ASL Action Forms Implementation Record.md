@@ -55,6 +55,30 @@ The active demo is `http://localhost:6680/games/play?game=ui-movement-demo-01`, 
 
 The user wants to resume the phase-by-phase workflow review after this correction. Defensive Fire is next. When the review reaches Rout, apply the same map-to-unit selection, clear destination/route entry, and single map-input ownership while preserving Rout's required decisions. Rout has not yet received that follow-up implementation. No merge is authorized.
 
+## Defensive Fire verification follow-up, 2026-10-31
+
+Advanced only `ui-movement-demo-01` to Defensive Fire and handed the view to German. Checked source selection, target selection from the inspected hex, explicit target picking, replacement of an unfinished manual target edit, optional spraying-fire controls, and Escape cancellation. The first proposal from German [A2] to Russian [A3] was refused with a nondefinitive LOS result.
+
+The external Codex Studio output could not discover the repository's oracle fixtures by searching its parent directories. `start_codex_studio.ps1` now explicitly supplies the worktree's oracle-fixture directory and refuses startup if that directory is missing. Verification criteria, board data, game rules, and application binaries are unchanged. This is a startup-only change with no new cache, state scan, or rendering work.
+
+Restarted the existing `action-form-design/studio-map-movement` binary on port 6680 (process 75704 when started). Retried the same unit, source, target, and phase in the Studio: the proposal reports every check passed, range 1, same level, clear LOS, Hindrance DRM 0, and open ground. The proposal remains awaiting confirmation; no fire was committed. This isolates the earlier refusal to verification-data discovery rather than the edge hexes. No rebuild or unit tests were needed for this launcher change. No merge is authorized.
+
+## Advancing Fire review, 2026-10-31
+
+Advanced only `ui-movement-demo-01` from Defensive Fire through the normal phase-end confirmation, then handed the view to Russian. Selected [A3] through the map's inspected-location action, selected squad R1 and its LMG, and picked German [A2] on the map. The attack preview passed every check and displayed separate squad and LMG contributions with the Advancing Fire factor. The MG-only selection produced a passing preview containing only the LMG contribution. Invalid manual target input disabled proposal; selecting [A2] again cleared the invalid edit and restored readiness. No attack was committed. No build or automated tests ran for this browser review.
+
+Two presentation findings were identified: the long MG-only checkbox wrapped together with Director, making the firing-group layout harder to scan; and the MG-only preview's main sentence said the squad fired, although its contribution list and facts table identified the LMG alone. The user approved both corrections; their implementation is recorded below.
+
+## Fire-presentation corrections, 2026-10-31
+
+From and Director now occupy one row above the unit choices. Each unit contains its weapons and the short `MG only` choice. Visible weapon labels omit the repeated holder name; accessible labels retain the holder and location. Shorter readiness messages name only the missing step, and a valid target no longer receives a redundant summary below the form. Removed the help paragraph about internal processing and shortened other repeated labels. Existing weapon restrictions and callbacks remain unchanged.
+
+The preview now names weapon-only contributions from the gathered attack facts. Studio verified the disabled MG-only choice before selecting the LMG, its enabled state afterwards, the nested hierarchy, and a passing preview saying `The LMG of 4-4-7 squad R1 fires at [A2]`. No attack was committed. The first visual check caught an unloaded isolated stylesheet; the final styles are scoped by fire-form classes in the page's existing `site.css`.
+
+The final `build-codex-studio.log` reports zero warnings/errors for `action-form-design/studio-fire`. The demo uses process 47568 when started, on port 6680, and remains in Russian Advancing Fire. No merge is authorized.
+
+All four affected existing regression methods passed: the fire panel's selection/phase check, the FT-alone label and proposal restriction, the malfunctioned-weapon label and disabled state, and the weapon offered after retained rate of fire. Evidence: `action-form-design/fire-presentation-checks.log` and `action-form-design/results/fire-presentation.trx` (4 passed, 0 failed). No broader suite ran. Continue shortening low-value text as the remaining phases are reviewed.
+
 ## Current outputs
 
 `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex`. Task builds and checks are registered under `action-form-design`. The active demo stays on port 6680 for review; other Studio ports are untouched. Keep logs/results as verification evidence, and clean superseded task-owned binaries after the active demo build is established.

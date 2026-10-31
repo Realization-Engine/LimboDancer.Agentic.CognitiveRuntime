@@ -4076,3 +4076,12 @@ button[data-working]::after {
 .action-form .toolbar > button[id^="propose-"] { margin-top: .5rem; }
 .action-form .rule-help { margin: .5rem 0; }
 .action-form .fire-range { width: 100%; }
+
+.action-form .fire-source-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem 1rem; width: 100%; }
+.action-form .fire-source-controls > label { display: flex; flex-direction: column; gap: .3rem; min-width: 0; max-width: 100%; }
+.action-form .fire-unit-list { display: grid; gap: .75rem; width: 100%; }
+.action-form .fire-unit { min-width: 0; }
+.action-form .fire-unit label { display: flex; align-items: baseline; gap: .4rem; overflow-wrap: anywhere; }
+.action-form .fire-unit input { flex-shrink: 0; }
+.action-form .fire-unit-weapons { display: grid; gap: .4rem; margin-left: 1.5rem; }
+.action-form .fire-unit-weapons:not(:empty) { margin-top: .4rem; }

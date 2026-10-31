@@ -3,14 +3,14 @@
    kept here), and a leader's partner SMC (A9.12; plan C14, kept here). The page reads the choices for the view (ruling R23.1), keeps the draft and
    prunes it when the Location changes, and proposes the fire. *@
 <ActionSection Title="Fire" Key="fire">
-<RuleHelp Id="fire-side" Summary="@($"The {DisplayText.Side(Side)} side may fire in the {PhaseLabel}: Good Order squads and half-squads in one Location, or in Locations each ADJACENT to another, fire as one fire group with their MGs, optionally directed by a leader (A7.5).")">
+<RuleHelp Id="fire-side" Summary="Choose firers, weapons, and a target.">
     The @DisplayText.Side(Side) side may fire in the @PhaseLabel (A3.2, A3.3, A3.4, A3.5): Good Order squads and half-squads, in one Location
     or in Locations each ADJACENT to another (A7.5), as one fire group, with the MGs they possess, optionally directed by a leader, at a Location
-    the @DisplayText.Side(Side) side can see into or at any Location. The reviewed Fire package resolves the attack, and only when every outcome the dice can reach
-    is decided.
+    the @DisplayText.Side(Side) side can see into or at any Location.
 </RuleHelp>
 <div class="action-form">
 <ActionFormGroup Legend="Firing group">
+    <div class="fire-source-controls">
     <label>
         From
         <select id="fire-from" value="@From" @onchange="@(args => OnFrom.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -22,6 +22,14 @@
         </select>
     </label>
     <PickedOption For="fire-from" Options="@Locations" Value="@From" OnChange="@OnFrom" />
+    <label>
+        Director
+        <select id="fire-director" value="@Director" @onchange="@(args => OnDirector.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">none</option>
+            <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
+        </select>
+    </label>
+    </div>
     @* Pass 31c (design D14; A7.5): the group's other Locations, each ADJACENT to another of them. *@
     @foreach (var at in Also)
     {
@@ -30,7 +38,7 @@
     @if (From.Length > 0 && AlsoChoices.Count > 0)
     {
         <label title="A7.5: a fire group may take firers from several Locations, each ADJACENT to another Location of the group.">
-            Add an ADJACENT Location
+            Add adjacent location
             <select id="fire-also" value="" @onchange="@(args => OnAlso.InvokeAsync(new UnitSelectionList.Toggle(args.Value as string ?? string.Empty, true)))">
                 <option value="">choose</option>
                 @foreach (var at in AlsoChoices)
@@ -41,28 +49,29 @@
         </label>
         <PickedOption For="fire-also" Options="@AlsoChoices" Value="" OnChange="@(at => OnAlso.InvokeAsync(new UnitSelectionList.Toggle(at, true)))" />
     }
+    @{ var weaponsByHolder = Weapons.ToLookup(weapon => weapon.Holder, StringComparer.Ordinal); }
+    <div class="fire-unit-list">
     @foreach (var unit in Firers)
     {
+        var held = weaponsByHolder[unit].ToArray();
+        <div class="fire-unit" role="group" aria-label="@At(unit)" @key="unit">
         <label><input class="fire-firer" type="checkbox" data-unit="@unit" checked="@SelectedFirers.Contains(unit)" @onchange="@(args => OnFirer.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @(Aboard.TryGetValue(unit, out var vehicle) ? $"{At(unit)}, aboard {Say(vehicle)}" : Say(unit))@(Places.TryGetValue(unit, out var place) ? Say($" in {place}") : "")</label>
-    }
-    @foreach (var weapon in Weapons)
-    {
+        <div class="fire-unit-weapons">
+        @foreach (var weapon in held)
+        {
         @* Pass 31d (design D10): a weapon that has fired or malfunctioned is listed and cannot be ticked, and a FT says that it fires alone (A22.31). *@
-        <label class="@(weapon.Bar is null ? null : "muted")"><input class="fire-weapon" type="checkbox" data-weapon="@weapon.Id" disabled="@(weapon.Bar is not null)" checked="@(weapon.Bar is null && SelectedWeapons.Contains(weapon.Id))" @onchange="@(args => OnWeapon.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @(weapon.Label ?? Say(weapon.Id)) of @Say(weapon.Holder)@(weapon.Bar is { } bar ? $": {bar}" : weapon.Ft ? ": fires alone, without its holder's own FP (A22.31)" : "")</label>
-    }
+        <label class="@(weapon.Bar is null ? null : "muted")"><input class="fire-weapon" type="checkbox" data-weapon="@weapon.Id" aria-label="@($"{weapon.Label ?? Say(weapon.Id)} of {At(weapon.Holder)}")" disabled="@(weapon.Bar is not null)" checked="@(weapon.Bar is null && SelectedWeapons.Contains(weapon.Id))" @onchange="@(args => OnWeapon.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @(weapon.Label ?? Say(weapon.Id))@(weapon.Bar is { } bar ? $": {bar}" : weapon.Ft ? ": fires alone (A22.31)" : "")</label>
+        }
     @* Pass 31c (play test P-17): "MGs alone" is in sight for every firer with a MG, and waits for the firer and its MG to be ticked. *@
-    @foreach (var id in AloneCandidates.Union(SelectedFirers.Where(id => Weapons.Any(weapon => weapon.Holder == id && !weapon.Ft && weapon.Label is null && weapon.Bar is null))).Order(StringComparer.Ordinal))
-    {
-        var ready = SelectedFirers.Contains(id) && Weapons.Any(weapon => weapon.Holder == id && !weapon.Ft && weapon.Label is null && weapon.Bar is null && SelectedWeapons.Contains(weapon.Id));
-        <label title="@(ready ? "The MG fires without its holder's own FP (A9.1)." : "Tick the unit and its MG first; then its MG may fire without the unit's own FP (A9.1).")"><input class="fire-alone" type="checkbox" data-unit="@id" disabled="@(!ready)" checked="@(ready && Alone.Contains(id))" @onchange="@(args => OnAlone.InvokeAsync(new UnitSelectionList.Toggle(id, args.Value is true)))" /> @Say(id): only its MG fires, without its own FP@(ready ? "" : " (tick the unit and its MG first)")</label>
+        @if (AloneCandidates.Contains(unit) || (SelectedFirers.Contains(unit) && held.Any(weapon => !weapon.Ft && weapon.Label is null && weapon.Bar is null)))
+        {
+            var ready = SelectedFirers.Contains(unit) && held.Any(weapon => !weapon.Ft && weapon.Label is null && weapon.Bar is null && SelectedWeapons.Contains(weapon.Id));
+            <label title="@(ready ? "Exclude the unit's own firepower (A9.1)." : "Select the unit and its MG first.")"><input class="fire-alone" type="checkbox" data-unit="@unit" aria-label="@($"{At(unit)}: MG only")" disabled="@(!ready)" checked="@(ready && Alone.Contains(unit))" @onchange="@(args => OnAlone.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> MG only</label>
+        }
+        </div>
+        </div>
     }
-    <label>
-        Director
-        <select id="fire-director" value="@Director" @onchange="@(args => OnDirector.InvokeAsync(args.Value as string ?? string.Empty))">
-            <option value="">none</option>
-            <UnitOptions Units="@([.. Leaders.Select(leader => new PlayChoice(leader, leader))])" Text="@Say" />
-        </select>
-    </label>
+    </div>
     @if (MolAllowed)
     {
         <label title="A22.611: with a PBF or TPBF attack, one firer's MOL Check dr of 3 or less after its drm (+1 HS or crew, +2 SMC, +1 CX, +1 against a non-AFV) adds 4 FP; a colored 6 on the IFT DR breaks it.">MOL by
@@ -96,7 +105,7 @@
                     <li data-subject="@row.Key" class="@(row.Out ? "range-out" : null)">@row.Name, Normal Range @row.NormalRange: @row.Words</li>
                 }
             </ul>
-            <button type="button" class="link" id="fire-range-show" @onclick="@(() => OnShowRange.InvokeAsync())">Show the range on the map</button>
+            <button type="button" class="link" id="fire-range-show" @onclick="@(() => OnShowRange.InvokeAsync())">Show range on map</button>
         </details>
     }
 </ActionFormGroup>
@@ -301,9 +310,10 @@
         if (lastReset != ResetToken) { sprayOpen = false; lastReset = ResetToken; }
     }
     private async Task RemoveSpray() { sprayOpen = false; await OnSpray.InvokeAsync(string.Empty); }
-    private string? ReadyFeedback => TargetEditing ? "Finish or clear the location edit before proposing fire."
-        : SelectedFirers.Count == 0 ? "Choose the firing location and select the units or weapons that fire."
-        : Target.Length == 0 ? "Choose a target or pick it on the map." : $"Target: {Say(Target)}";
+    private string? ReadyFeedback => TargetEditing ? "Apply or clear the target edit."
+        : From.Length == 0 ? "Choose a firing location."
+        : SelectedFirers.Count == 0 ? "Select firers."
+        : Target.Length == 0 ? "Choose a target or pick it on the map." : null;
 
     [Parameter]
     public bool SnapShot { get; set; }

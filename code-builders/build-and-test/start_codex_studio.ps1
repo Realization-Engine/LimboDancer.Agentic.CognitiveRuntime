@@ -3,6 +3,11 @@ $ErrorActionPreference = 'Stop'
 if (-not $env:ASL_GATE_WORK) { throw 'Set ASL_GATE_WORK first.' }
 $repoRoot = (Resolve-Path "$PSScriptRoot/../..").Path
 $outputPath = Join-Path $env:ASL_GATE_WORK $OutputName
+$oracleFixtures = Join-Path $repoRoot 'src/ASL/tests/LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle'
+if (-not (Test-Path -LiteralPath $oracleFixtures -PathType Container)) {
+    throw "Board verification fixtures are missing: $oracleFixtures"
+}
+$env:AslMaps__OracleFixtures = $oracleFixtures
 $env:ASPNETCORE_ENVIRONMENT = 'Development'
 $env:ASPNETCORE_URLS = 'http://localhost:6680'
 $env:Kestrel__Endpoints__Http__Url = 'http://localhost:6680'
