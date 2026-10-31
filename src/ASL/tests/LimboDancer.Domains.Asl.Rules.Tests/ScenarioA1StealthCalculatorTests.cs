@@ -12,6 +12,86 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 /// </summary>
 public sealed class ScenarioA1StealthCalculatorTests
 {
+    [Theory]
+    [InlineData("stealthy")]
+    [InlineData("stealthy:")]
+    [InlineData("lax:german:")]
+    [InlineData("lax:german:group:extra")]
+    public void MalformedStealthSsrsAreRefusedAtSetup(string token)
+    {
+        Assert.StartsWith("play.stealth-rule:", ScenarioA1StealthCalculator.SsrRulesBar([token]), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AStealthOrLaxSsrMayNameAnObGroupAndTheFoldReadsItsSideAndGroup()
+    {
+        // A11.17 and A11.18 (p. 73): "Good Order troops", "certain units"; ruling RA11S.11, the Fanatic token's form (ruling R70.15).
+        Assert.Null(ScenarioA1StealthCalculator.SsrRulesBar(["lax:german:reserve", "stealthy:russian:scouts"], ["german", "russian"]));
+        Assert.NotNull(ScenarioA1StealthCalculator.SsrRulesBar(["lax:missing:reserve"], ["german", "russian"]));
+        Assert.Equal(("german", (string?)"reserve", true), ScenarioA1StealthCalculator.SsrScope("lax:german:reserve"));
+        Assert.Equal(("german", (string?)null, false), ScenarioA1StealthCalculator.SsrScope("stealthy:german"));
+        // The side-wide reader keeps its answer: a group token is not side-wide.
+        Assert.Null(ScenarioA1StealthCalculator.SsrToken("lax:german:reserve"));
+
+        string[] rules = ["lax:german:reserve", "stealthy:german", "hip:german:2", "fanatic:russian", "stealthy:russian:scouts"];
+        Assert.Equal((true, true), ScenarioA1StealthCalculator.SsrFlags(rules, "german", "reserve"));
+        Assert.Equal((true, false), ScenarioA1StealthCalculator.SsrFlags(rules, "german", "assault"));
+        Assert.Equal((true, false), ScenarioA1StealthCalculator.SsrFlags(rules, "german", null));
+        Assert.Equal((true, false), ScenarioA1StealthCalculator.SsrFlags(rules, "russian", "scouts"));
+        Assert.Equal((false, false), ScenarioA1StealthCalculator.SsrFlags(rules, "russian", "line"));
+        Assert.Equal((false, false), ScenarioA1StealthCalculator.SsrFlags([], "german", null));
+    }
+
+    [Fact]
+    public void TheRulesBarIgnoresOtherTokensAndNeedsNoSides()
+    {
+        Assert.Null(ScenarioA1StealthCalculator.SsrRulesBar(["hip:german:2", "stealthy:german", "lax:russian:line", "laxity", "fanatic:russian"]));
+    }
+
+    [Theory]
+    [InlineData("none", StealthDesignation.None)]
+    [InlineData("anzac", StealthDesignation.Anzac)]
+    [InlineData("gurkha", StealthDesignation.Gurkha)]
+    [InlineData("commando", StealthDesignation.Commando)]
+    [InlineData("partisan", StealthDesignation.Partisan)]
+    [InlineData("raider", StealthDesignation.Raider)]
+    public void EveryDesignationTokenReadsItsDesignation(string token, StealthDesignation expected)
+    {
+        Assert.Equal(expected, ScenarioA1StealthCalculator.Designation(token));
+        Assert.Null(ScenarioA1StealthCalculator.Designation(token.ToUpperInvariant() + "x"));
+    }
+
+    [Fact]
+    public void TheContractsDesignationChoicesAreTheCalculatorsTokens()
+    {
+        var choices = ScenarioA1RuleContracts.All.Single(contract => contract.Id == "a11.17-stealth").Facts.Single(fact => fact.Name == "designation").Choices;
+        Assert.Equal(ScenarioA1StealthCalculator.DesignationTokens, choices);
+        Assert.Equal(Enum.GetValues<StealthDesignation>().Length, ScenarioA1StealthCalculator.DesignationTokens.Count);
+    }
+
+    [Fact]
+    public void StealthSsrsNameAnExplicitScenarioSideAndLaxStillWins()
+    {
+        Assert.Null(ScenarioA1StealthCalculator.SsrRulesBar(["stealthy:german", "lax:german"], ["german", "russian"]));
+        Assert.NotNull(ScenarioA1StealthCalculator.SsrRulesBar(["stealthy:missing"], ["german", "russian"]));
+        var stealth = ScenarioA1StealthCalculator.SsrToken("stealthy:german")!.Value;
+        var lax = ScenarioA1StealthCalculator.SsrToken("lax:german")!.Value;
+        Assert.Equal("german", stealth.Side);
+        Assert.False(stealth.Lax);
+        Assert.True(lax.Lax);
+        Assert.Equal(StealthStatus.Lax, ScenarioA1StealthCalculator.Status(Unit("asl:squad", @class: "1st-line", ssrStealthy: true, ssrLax: true), StealthPurpose.Ambush));
+    }
+
+    [Fact]
+    public void ACardDesignationIsExplicitAndUnknownIsNotOrdinary()
+    {
+        Assert.Equal(StealthDesignation.None, ScenarioA1StealthCalculator.Designation(null));
+        Assert.Equal(StealthDesignation.Anzac, ScenarioA1StealthCalculator.Designation("anzac"));
+        Assert.Null(ScenarioA1StealthCalculator.Designation("New Zealanders"));
+        Assert.Equal(StealthStatus.Stealthy, ScenarioA1StealthCalculator.Status(Unit("asl:squad", "british", "1st-line",
+            designation: ScenarioA1StealthCalculator.Designation("anzac")!.Value), StealthPurpose.Search));
+    }
+
     private static readonly ScenarioA1CloseCombatReference Reference = new ScenarioA1CloseCombatPackage().Reference;
 
     private static readonly FireModifier[] StealthyOnly = [ScenarioA1StealthCalculator.AmbushStealthy];
@@ -78,6 +158,8 @@ public sealed class ScenarioA1StealthCalculatorTests
 
         Assert.Equal(StealthStatus.Stealthy, Status(Unit("asl:squad", "russian", "2nd-line", designation: StealthDesignation.Partisan)));
         Assert.Equal(StealthStatus.Stealthy, Status(Unit("asl:leader", "russian", designation: StealthDesignation.Partisan)));
+        Assert.Equal(StealthStatus.Stealthy, Status(Unit("asl:leader", "british", designation: StealthDesignation.Anzac)));
+        Assert.Equal(StealthStatus.Stealthy, Status(Unit("asl:leader", "british", designation: StealthDesignation.Gurkha)));
         Assert.Null(Status(Unit("asl:squad", "british", null, designation: StealthDesignation.Anzac)));
         // An SSR's Stealth (A11.17), and an SSR's Lax on Stealthy Finns: "Stealthy unless Lax", Lax wins (A11.18).
         Assert.Equal(StealthStatus.Stealthy, Status(Unit("asl:squad", "german", "1st-line", ssrStealthy: true)));
@@ -85,6 +167,21 @@ public sealed class ScenarioA1StealthCalculatorTests
         Assert.Equal(StealthStatus.Lax, Status(Unit("asl:squad", "german", "conscript", inexperienced: true, ssrStealthy: true)));
         Assert.Equal(StealthStatus.Lax, Status(Unit("asl:squad", "finnish", "elite", ssrLax: true)));
         Assert.Equal(1, ScenarioA1StealthCalculator.Drm(Status(Unit("asl:squad", "finnish", "elite", ssrLax: true))!.Value));
+    }
+
+    [Theory]
+    [InlineData(StealthDesignation.Commando)]
+    [InlineData(StealthDesignation.Raider)]
+    public void CommandosAndRaidersAreSquadsAndHalfSquadsNotTheirLeadersOrCrews(StealthDesignation designation)
+    {
+        // H1.24 (p. 329): "A squad designated as a Commando"; G17.111 (p. 319): "Raider MMC are Stealthy" of the Raider squads/HS (ruling RA11S.2).
+        Assert.Equal(StealthStatus.Stealthy, Status(Unit("asl:squad", "american", "elite", designation: designation)));
+        Assert.Equal(StealthStatus.Stealthy, Status(Unit("asl:half-squad", "american", "elite", designation: designation)));
+        Assert.Equal(StealthStatus.Normal, Status(Unit("asl:leader", "american", designation: designation)));
+        Assert.Equal(StealthStatus.Normal, Status(Unit("asl:crew", "american", "elite", designation: designation)));
+        // A hero and a heroic leader stay Stealthy by A15.24 and A15.21, whatever the designation.
+        Assert.Equal(StealthStatus.Stealthy, Status(Unit("asl:hero", "american", designation: designation)));
+        Assert.Equal(StealthStatus.Stealthy, Status(Unit("asl:leader", "american", heroic: true, designation: designation)));
     }
 
     [Fact]
@@ -331,6 +428,37 @@ public sealed class ScenarioA1StealthCalculatorTests
     private static int? GainDrm(ConcealmentCandidateFacts unit) => ScenarioA1FireFollowUps.ConcealmentGains([unit],
         [new WatchingEnemyFacts(0, true, new SightSeerFacts(true, "russian", false, false, false, true, true, false, false, 1))], false, 7, new GainMap())
         .Single().Drm;
+
+    [Fact]
+    public void UnknownStealthRefusesOnlyAConcealmentDrThatIsNeeded()
+    {
+        var unit = Candidate("u", "asl:squad");
+        WatchingEnemyFacts[] watchers = [new(0, true, new SightSeerFacts(true, "russian", false, false, false, true, true, false, false, 1))];
+        var day = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit], watchers, false, 7, new GainMap());
+        Assert.Null(day.Gains);
+        Assert.StartsWith("play.stealth-facts:", day.Reason, StringComparison.Ordinal);
+        var night = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit], watchers, true, 7, new GainMap());
+        Assert.Null(night.Reason);
+        Assert.Null(Assert.Single(night.Gains!).Drm);
+        var ineligible = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit with { Broken = true }], watchers, false, 7, new GainMap());
+        Assert.Null(ineligible.Reason);
+        Assert.Empty(ineligible.Gains!);
+        Assert.Single(ScenarioA1FireFollowUps.ConcealmentGains([unit], watchers, false, 7, new GainMap()));
+        var known = ScenarioA1FireFollowUps.ConcealmentGainsWithStealth([unit with { Stealth = StealthStatus.Lax }], watchers, false, 7, new GainMap());
+        Assert.Null(known.Reason);
+        Assert.Equal(GainDrm(unit with
+        {
+            Stealth = StealthStatus.Lax
+        }), Assert.Single(known.Gains!).Drm);
+    }
+
+    [Fact]
+    public void UnknownContributingStealthStatusIsNotALegacyFallback()
+    {
+        Assert.NotNull(ScenarioA1StealthCalculator.FactsRefusal([StealthStatus.Normal, null]));
+        Assert.Null(ScenarioA1StealthCalculator.FactsRefusal([]));
+        Assert.Null(ScenarioA1StealthCalculator.FactsRefusal([StealthStatus.Normal, StealthStatus.Lax]));
+    }
 
     [Fact]
     public void TheHeroExampleOfA12122TakesTheStatus()

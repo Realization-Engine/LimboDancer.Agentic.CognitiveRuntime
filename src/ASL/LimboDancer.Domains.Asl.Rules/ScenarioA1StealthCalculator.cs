@@ -16,6 +16,112 @@ public static class ScenarioA1StealthCalculator
     private const string Leader = "asl:leader";
     private const string Hero = "asl:hero";
 
+    /// <summary>A11.17 and A11.18 (p. 73): a current-reading modifier cannot be resolved from an unknown contributing status.</summary>
+    public static string? FactsRefusal(IEnumerable<StealthStatus?> statuses)
+    {
+        ArgumentNullException.ThrowIfNull(statuses);
+        return statuses.Any(status => status is null)
+            ? "play.stealth-facts: the facts needed to resolve Stealth or Lax are unknown (A11.17, A11.18)"
+            : null;
+    }
+
+    /// <summary>
+    /// A11.17 and A11.18 (p. 73): an explicit side-wide SSR token, <c>stealthy:&lt;side&gt;</c> or <c>lax:&lt;side&gt;</c>; no inference from a card's prose.
+    /// A token that names an OB group is not side-wide and answers null here; <see cref="SsrScope"/> reads both forms, and <see cref="SsrFlags"/> folds them.
+    /// </summary>
+    public static (string Side, bool Lax)? SsrToken(string token) => SsrScope(token) is { Group: null } scope ? (scope.Side, scope.Lax) : null;
+
+    /// <summary>
+    /// A11.17 and A11.18 (p. 73: "Good Order troops", "certain units"; ruling RA11S.11): a Stealth or Lax SSR token naming a side, <c>stealthy:&lt;side&gt;</c>
+    /// or <c>lax:&lt;side&gt;</c>, or one of its OB groups, <c>stealthy:&lt;side&gt;:&lt;group&gt;</c> or <c>lax:&lt;side&gt;:&lt;group&gt;</c>, as the Fanatic
+    /// token names them (ruling R70.15). Null when the token is neither.
+    /// </summary>
+    public static (string Side, string? Group, bool Lax)? SsrScope(string token)
+    {
+        ArgumentNullException.ThrowIfNull(token);
+        return token.Split(':') switch
+        {
+            ["stealthy", { Length: > 0 } side] => (side, null, false),
+            ["lax", { Length: > 0 } side] => (side, null, true),
+            ["stealthy", { Length: > 0 } side, { Length: > 0 } group] => (side, group, false),
+            ["lax", { Length: > 0 } side, { Length: > 0 } group] => (side, group, true),
+            _ => null,
+        };
+    }
+
+    /// <summary>
+    /// The SSR facts of one unit (A11.17, A11.18, p. 73; ruling RA11S.11): whether a <c>stealthy:</c> and whether a <c>lax:</c> token names its side, either
+    /// side-wide or by its OB group. These are <see cref="StealthFacts.SsrStealthy"/> and <see cref="StealthFacts.SsrLax"/>; Lax still wins in
+    /// <see cref="Status"/>. Tokens that are not Stealth or Lax SSRs are ignored; <see cref="SsrRulesBar"/> refuses malformed ones at setup.
+    /// </summary>
+    public static (bool Stealthy, bool Lax) SsrFlags(IReadOnlyList<string> rules, string side, string? group)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        ArgumentNullException.ThrowIfNull(side);
+        var stealthy = false;
+        var lax = false;
+        foreach (var rule in rules)
+        {
+            if (SsrScope(rule) is { } scope && scope.Side == side && (scope.Group is null || scope.Group == group))
+            {
+                lax |= scope.Lax;
+                stealthy |= !scope.Lax;
+            }
+        }
+
+        return (stealthy, lax);
+    }
+
+    /// <summary>A11.17 and A11.18 (p. 73): Stealth/Lax SSRs name a side or one of its OB groups; when supplied, the scenario's sides bound that name.</summary>
+    public static string? SsrRulesBar(IReadOnlyList<string> rules, IReadOnlyCollection<string>? sides = null)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        foreach (var rule in rules)
+        {
+            if (rule is not ("stealthy" or "lax") && !rule.StartsWith("stealthy:", StringComparison.Ordinal) && !rule.StartsWith("lax:", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (SsrScope(rule) is not { } token)
+            {
+                return $"play.stealth-rule: '{rule}' is not stealthy:<side>, lax:<side>, stealthy:<side>:<group>, or lax:<side>:<group> (A11.17, A11.18)";
+            }
+
+            if (sides is not null && !sides.Contains(token.Side, StringComparer.Ordinal))
+            {
+                return $"play.stealth-rule: '{token.Side}' is not a side of this scenario (A11.17, A11.18)";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The designation tokens, in <see cref="StealthDesignation"/> order (index i is the enum value i): the one list that <see cref="Designation"/> reads and
+    /// the contract's <c>designation</c> choices are.
+    /// </summary>
+    public static readonly IReadOnlyList<string> DesignationTokens = ["none", "anzac", "gurkha", "commando", "partisan", "raider"];
+
+    /// <summary>A11.17 (p. 73): the explicit force designation on an OB group; absent means none, an unknown token is not a known designation.</summary>
+    public static StealthDesignation? Designation(string? token)
+    {
+        if (token is null)
+        {
+            return StealthDesignation.None;
+        }
+
+        for (var i = 0; i < DesignationTokens.Count; i++)
+        {
+            if (string.Equals(DesignationTokens[i], token, StringComparison.Ordinal))
+            {
+                return (StealthDesignation)i;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>The Ambush drm of a side with a Lax unit, once (A11.4, A11.18), as the Ambush has always written it.</summary>
     public static readonly FireModifier AmbushLax = new("lax", 1m, "A11.18");
 
@@ -45,8 +151,10 @@ public static class ScenarioA1StealthCalculator
 
     /// <summary>
     /// Whether a unit is Stealthy by what it is, before Good Order and Lax: never a Green or Conscript unit (A19.2); a hero (A15.24, p. 83) or a heroic
-    /// leader (A15.21); a unit of a Stealthy designation or of an SSR (A11.17, A25.44, A25.43, H1.24, A25.24, G17.111); an Elite or 1st Line Finnish
-    /// (A11.17, A25.7, p. 97) or Japanese (G1.6, p. 280; ruling RA11S.3) MMC. Null when a squad's or HS's class is unknown and decides it.
+    /// leader (A15.21); a unit of an SSR (A11.17); a unit of an ANZAC, Gurkha, or Partisan force (A11.17, A25.44, A25.43, A25.24); a squad or HS of a
+    /// Commando or Raider force (H1.24, p. 329: "A squad designated as a Commando"; G17.111, p. 319: "Raider MMC are Stealthy" of the Raider squads/HS;
+    /// ruling RA11S.2); an Elite or 1st Line Finnish (A11.17, A25.7, p. 97) or Japanese (G1.6, p. 280; ruling RA11S.3) MMC. Null when a squad's or HS's
+    /// class is unknown and decides it.
     /// </summary>
     public static bool? StealthyByNature(StealthFacts unit)
     {
@@ -61,8 +169,9 @@ public static class ScenarioA1StealthCalculator
             return true;
         }
 
-        var classUnknown = unit.Class is null && unit.Kind is Squad or HalfSquad;
-        if (unit.SsrStealthy || unit.Designation != StealthDesignation.None)
+        var squadOrHalf = unit.Kind is Squad or HalfSquad;
+        var classUnknown = unit.Class is null && squadOrHalf;
+        if (unit.SsrStealthy || DesignationStealthy(unit.Designation, squadOrHalf))
         {
             return classUnknown ? null : true;
         }
@@ -204,6 +313,14 @@ public static class ScenarioA1StealthCalculator
             _ => [],
         };
     }
+
+    // RA11S.2: ANZAC, Gurkha, and Partisan name a force, its leaders included; Commando (H1.24) and Raider (G17.111) name squads and HS only.
+    private static bool DesignationStealthy(StealthDesignation designation, bool squadOrHalf) => designation switch
+    {
+        StealthDesignation.None => false,
+        StealthDesignation.Commando or StealthDesignation.Raider => squadOrHalf,
+        _ => true,
+    };
 
     private static int? Count(IReadOnlyList<StealthFacts> units, StealthPurpose purpose, StealthStatus wanted)
     {
