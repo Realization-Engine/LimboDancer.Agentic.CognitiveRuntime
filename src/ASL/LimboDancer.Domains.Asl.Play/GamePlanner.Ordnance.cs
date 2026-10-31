@@ -293,8 +293,13 @@ public sealed partial class GamePlanner
             }
 
             // C5.5: a wreck, SMOKE, or an AFV in the hex adds its Hindrance (Case R), "other than the target or firer".
+            var (smokeHindrances, smokeReason) = SmokeHindrancesAt(state, target);
+            if (smokeHindrances is null)
+            {
+                return (null, smokeReason);
+            }
             var ownHindrance = ScenarioA1VehicleSightRules.OwnHexHindrance(
-                SmokeSources(state).Count(place => place.Board == target.Board && place.Hex == target.Hex),
+                smokeHindrances,
                 state.Units.Any(unit => unit.Id != shot.VehicleTarget?.VehicleId && unit.Id != firer.Id
                     && (unit.Status == InstanceStatus.Active ? IsAfv(unit) : unit.Status == InstanceStatus.Wrecked && !IsBurning(state, unit))
                     && state.Location(unit.Id)?.Location == target && Standing(state, unit)));
@@ -968,7 +973,7 @@ public sealed partial class GamePlanner
         }
 
         // C8.9: Special Ammunition the Gun turned out not to have was never fired, unless the Gun malfunctioned: no marker, no Acquisition.
-        if (ScenarioA1OrdnanceProjection.NeverFired(resolution.AmmunitionUse, gunResult.Malfunctioned, gunResult.Eliminated == true))
+        if (ScenarioA1VehicleBreakdownResolutionCalculator.NeverFired(resolution.AmmunitionUse, gunResult.Malfunctioned, gunResult.Eliminated == true, gunResult.VehicleBreakdown))
         {
             return;
         }
@@ -1076,6 +1081,14 @@ public sealed partial class GamePlanner
         else if (gunResult.Malfunctioned)
         {
             gunConditions[Conditions.Malfunctioned] = ConditionState.True;
+        }
+        if (gunResult.VehicleBreakdown?.Outcome == VehicleBreakdownOutcome.Disabled)
+        {
+            var recalled = state.Unit(facts.Gun.GunId!) is { } disabledVehicle && LiveFire.VehicleRecalledAfterDisable(disabledVehicle, true);
+            foreach (var change in ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma", recalled))
+            {
+                gunConditions[ConditionName(change.Condition)] = change.Value ? ConditionState.True : ConditionState.False;
+            }
         }
 
         if (state.Find(facts.Gun.GunId!) is { } gun && marker is not null && GameState.Condition(gun, marker) != ConditionState.True)

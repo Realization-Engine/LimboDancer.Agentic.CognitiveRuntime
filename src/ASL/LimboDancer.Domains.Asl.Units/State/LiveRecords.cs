@@ -47,6 +47,20 @@ public sealed record ResidualFire(BoardLocation Location, int Fp, string Fire);
 /// </summary>
 public sealed record RepairAttempted(string Unit, string Equipment, string Roll, int RepairNumber, string Result) : EventPayload
 {
+    /// <summary>Current D3.7 weapon and participant validation. Null preserves the recorded legacy repair reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? VehicleRepairVersion
+    {
+        get; init;
+    }
+
+    /// <summary>The actual Hero Rider taking the AAMG repair; null selects the inherent crew.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Hero
+    {
+        get; init;
+    }
+
     public const string Repaired = "repaired";
     public const string NoChange = "no-change";
     public const string Eliminated = "eliminated";
@@ -480,6 +494,13 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
 /// </summary>
 public sealed record RiderBailedOut(string Unit, string Vehicle, BoardLocation At, string Cause, string Roll, int Morale, string Result) : EventPayload
 {
+    /// <summary>The verified shared Hero morale-check event; null preserves the earlier Bail Out reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? MoraleCheck
+    {
+        get; init;
+    }
+
     /// <summary>Each SW the unit carries, with its dr's roll (null when the unit breaks or is eliminated, which eliminates it) and its fate (D6.24).</summary>
     public IReadOnlyList<RiderWeapon>? Weapons
     {
