@@ -28,11 +28,15 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
         Assert.Equal(["grain"], alone.Destinations);
         var october = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, true), ("woods", true, true, false, false)]);
         Assert.Equal(["woods"], october.Destinations);
-        var unknownEntry = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason(
-            [("grain", false, true, false, null)], [(true, false, "play.move-grain: unknown month")]);
-        Assert.NotNull(unknownEntry.Refusal);
-        Assert.Null(ScenarioA1InfantryOverrun.EvadeDestinationsBySeason(
-            [("woods", true, true, false, false)], [(false, false, "play.move-grain: unknown month"), (true, true, "play.move-grain: unknown month")]).Refusal);
+
+        // A4.151: Enterable is Accessible, and grain is Accessible in every month, so with no month and nothing else open it is the destination.
+        var besideEnemy = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, null), ("woods", true, true, true, false)]);
+        Assert.Null(besideEnemy.Refusal);
+        Assert.Equal(["grain"], besideEnemy.Destinations);
+        var known = ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("open", true, true, false, true), ("woods", true, true, false, false)]);
+        Assert.Null(known.Refusal);
+        Assert.Equal(["woods"], known.Destinations);
+        Assert.Equal(["grain", "woods"], ScenarioA1InfantryOverrun.EvadeDestinationsBySeason([("grain", true, true, false, false), ("woods", true, true, false, false)]).Destinations);
     }
 
     private static readonly string?[] TerrainKeys = ["open-ground", "grain", "brush", "woods", "orchard", "marsh", "wooden-rubble", "stone-rubble", "unknown", null];
@@ -218,7 +222,8 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
         }
     }
 
-    // RA10.9: Dash's OpenGroundTo and the rout's CouldApplyFfmo forward their cover test, equal over a grid of cover facts.
+    // RA10.9: Dash's Open Ground (A10.531's calculator, purpose Dash, since W-A10.531) and the rout's CouldApplyFfmo use the one cover test, over a
+    // grid of cover facts.
     [Fact]
     public void DashAndTheRoutsCoverTestForwardWithTheSameAnswer()
     {
@@ -233,7 +238,8 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
                 {
                     foreach (var clear in Both)
                     {
-                        Assert.Equal(Old(open, clear, hindrance, cover), ScenarioA1Dash.OpenGroundTo(open, clear, hindrance, cover));
+                        Assert.Equal(Old(open, clear, hindrance, cover), ScenarioA1OpenGroundCalculator.OpenGroundTo(open ? Open : new("woods", 7, false, false),
+                            new OpenGroundViewFacts(clear, hindrance, cover), OpenGroundPurpose.Dash));
                     }
                 }
 
@@ -248,7 +254,6 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
             }
         }
 
-        Assert.Throws<ArgumentNullException>(() => ScenarioA1Dash.OpenGroundTo(false, false, 0, null!));
     }
 
     private static IEnumerable<RoutCoverFacts> Covers()
@@ -271,36 +276,48 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
         }
     }
 
-    // RA10.5: the overloads give the old members' answers when A10.531's fact equals the old terrain test, and read each fact only where the old did.
+    // A12.14 (p. 78), A12.15, E1.31 (p. 223) with RA10.5: the movement and advance answers over every fact, each fact read only where it is needed.
     [Fact]
-    public void TheConcealmentOverloadsAnswerAsTheOldMembersOnTheOldReading()
+    public void TheConcealmentMembersAnswerA1214OverEveryFact()
     {
         MoverConcealmentFacts[] movers = [new("a", false, true), new("b", true, false), new("c", false, false)];
-        foreach (var terrain in new[] { "open-ground", "grain", "woods" })
+        foreach (var forcedBack in Both)
         {
-            foreach (var forcedBack in Both)
+            foreach (var assault in Both)
             {
-                foreach (var assault in Both)
+                foreach (var night in Both)
                 {
-                    foreach (var night in Both)
+                    foreach (var open in Both)
                     {
                         foreach (var sees in Both)
                         {
                             foreach (var lit in Both)
                             {
-                                var oldReads = new List<string>();
-                                var newReads = new List<string>();
-                                var old = ScenarioA1MovementCalculator.Unmasked(movers, forcedBack, assault, night, terrain, () => Read(oldReads, "sees", sees), () => Read(oldReads, "lit", lit));
-                                var updated = ScenarioA1MovementCalculator.Unmasked(movers, forcedBack, assault, night,
-                                    () => Read(newReads, "open", terrain == "open-ground" && sees), () => Read(newReads, "sees", sees), () => Read(newReads, "lit", lit));
-                                Assert.Equal(old.Select(unit => unit.Id), updated.Select(unit => unit.Id));
-                                Assert.Equal(oldReads, newReads.Where(read => read != "open"));
+                                var reads = new List<string>();
+                                var unmasked = ScenarioA1MovementCalculator.Unmasked(movers, forcedBack, assault, night,
+                                    () => Read(reads, "open", open), () => Read(reads, "sees", sees), () => Read(reads, "lit", lit));
+                                var seen = forcedBack || (sees && (night ? !assault && lit : !assault || open));
+                                string[] expected = seen ? ["a", "b"] : [];
+                                Assert.Equal(expected, unmasked.Select(unit => unit.Id));
+                                var expectedReads = new List<string>();
+                                if (!forcedBack)
+                                {
+                                    expectedReads.Add("sees");
+                                    if (sees && night && !assault)
+                                    {
+                                        expectedReads.Add("lit");
+                                    }
+                                    else if (sees && !night && assault)
+                                    {
+                                        expectedReads.Add("open");
+                                    }
+                                }
+                                Assert.Equal(expectedReads, reads);
                             }
                         }
 
                         var losReads = 0;
-                        Assert.Equal(ScenarioA1AdvanceCalculator.LosesConcealment(night, terrain, () => assault),
-                            ScenarioA1AdvanceCalculator.LosesConcealment(night, () => ++losReads > 0 && terrain == "open-ground" && assault));
+                        Assert.Equal(!night && open, ScenarioA1AdvanceCalculator.LosesConcealment(night, () => ++losReads > 0 && open));
                         Assert.Equal(night ? 0 : 1, losReads);
                     }
                 }
@@ -325,8 +342,6 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
         }, Clear(), OpenGroundPurpose.Concealment);
         Assert.True(ScenarioA1AdvanceCalculator.LosesConcealment(false, () => grain == true));
         Assert.False(ScenarioA1AdvanceCalculator.LosesConcealment(false, () => smoke == true));
-        Assert.False(ScenarioA1AdvanceCalculator.LosesConcealment(false, "grain", () => true));
-        Assert.True(ScenarioA1AdvanceCalculator.LosesConcealment(false, "open-ground", () => true));
         MoverConcealmentFacts[] movers = [new("a", false, true)];
         Assert.Single(ScenarioA1MovementCalculator.Unmasked(movers, false, true, false, () => grain == true, () => true, () => false));
         Assert.Empty(ScenarioA1MovementCalculator.Unmasked(movers, false, true, false, () => smoke == true, () => true, () => false));
@@ -458,6 +473,14 @@ public sealed class ScenarioA1OpenGroundCalculatorTests
         Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground", null, null, null, true)));
         Assert.Equal("keeps-concealment", Concealment(Advance(false, "open-ground", null, null, null, false)));
         Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground", 13, seen: true)));
+
+        // RA10.7 as refined: grain with no month is not-evaluated unless the seer flag settles it; with no Good Order enemy in LOS (A12.14 Case B)
+        // the season cannot matter, so the "?" stays.
+        Assert.Equal("keeps-concealment", Concealment(Advance(false, "grain", null, seen: false)));
+
+        // A known SMOKE settles "not Open Ground" alone, with cover absent; a known absence of SMOKE leaves the absent cover fact deciding.
+        Assert.Equal("keeps-concealment", Concealment(Advance(false, "open-ground", smoke: true, cover: null, seen: true)));
+        Assert.Equal(ContractVerdict.NotEvaluated, Concealment(Advance(false, "open-ground", smoke: false, cover: null, seen: true)));
     }
 
     private sealed class Reader(RoutLosFacts los, RoutCoverFacts cover) : IRoutFactReader

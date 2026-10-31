@@ -198,26 +198,34 @@ public sealed class BacklogPass10Tests : IDisposable
         return proposed.Outcome != PlayOutcome.NeedsConfirmation ? proposed : await play.ConfirmAsync(action, arguments, Player, proposed.Correlation);
     }
 
+    // The scenario month of the game; null for a game that names none (W-A10.531).
+    private int? month = 7;
+
     private async Task Setup(params Dictionary<string, object>[] placements)
     {
+        var start = new Dictionary<string, object>
+        {
+            ["label"] = "Pass 10",
+            ["catalog"] = "asl-scenario-a1@1.13.0",
+            ["boards"] = Bd01,
+            ["firstSide"] = "german",
+            ["sides"] = new object[]
+            {
+                new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
+                new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
+            },
+        };
+        if (month is { } scenarioMonth)
+        {
+            start["scenarioMonth"] = scenarioMonth;
+        }
+
         Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
         {
             gameId = Scope.Game,
             attemptId = "setup-1",
             expectedRevision = 0,
-            start = new Dictionary<string, object>
-            {
-                ["label"] = "Pass 10",
-                ["catalog"] = "asl-scenario-a1@1.13.0",
-                ["boards"] = Bd01,
-                ["firstSide"] = "german",
-                ["sides"] = new object[]
-                {
-                    new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
-                    new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
-                },
-                ["scenarioMonth"] = 7,
-            },
+            start,
             placements,
         })));
         for (var index = 0; index < 2; index++)
@@ -441,6 +449,57 @@ public sealed class BacklogPass10Tests : IDisposable
         before = Revision;
         Committed(await Fire(R2, L("E4"), false, 6, 6, 6, 6, 6, 6));
         Assert.DoesNotContain("dash", Multipliers(LastFire(before)));
+        NoReplayErrors();
+    }
+
+    [Theory]
+    [InlineData(7)]
+    [InlineData(10)]
+    [InlineData(null)]
+    public async Task ADashToGrainQualifiesAgainstAFirerOnlyWhenTheGrainIsInSeason(int? scenarioMonth)
+    {
+        // A4.63 (p. 51), A10.531 (p. 67), B15.6 (p. 129): from the woods of D5 through the road of D4 to the grain of D3. In season the grain is not Open
+        // Ground, so the Dash qualifies against the firer in B3 and its First Fire is Area Fire; out of season the grain is Open Ground to it and the
+        // Dash does not qualify. With no month the fire cannot say, and is refused.
+        month = scenarioMonth;
+        board.Terrain["D5"] = "Woods";
+        board.Terrain["D4"] = "Dirt Road";
+        board.Terrain["D3"] = "Grain";
+        await Setup(Squad("g1", L("D5"), "german"), Squad("r1", L("B3"), "russian"));
+        Committed(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("D4"), ["dash"] = L("D3") }));
+        var before = Revision;
+        var fire = await Fire(R1, L("D4"), false, 6, 6, 6, 6, 6, 6);
+        if (scenarioMonth is null)
+        {
+            Refused(fire, "play.open-ground-unknown");
+        }
+        else
+        {
+            Committed(fire);
+            Assert.Equal(scenarioMonth == 7, Multipliers(LastFire(before)).Contains("dash"));
+        }
+
+        NoReplayErrors();
+    }
+
+    [Theory]
+    [InlineData("Woods", false)]
+    [InlineData("Woods", true)]
+    [InlineData("Orchard", false)]
+    [InlineData("Orchard", true)]
+    public async Task AConcealedRoadRateMoverLosesItsConcealmentToAFirerWhoseLosRunsAlongTheRoad(string terrain, bool crosses)
+    {
+        // A4.132 (p. 48), A10.531 (p. 67), A12.14 (p. 78): the concealed squad's Assault Movement at the road rate into the woods-road or orchard-road
+        // hex D4 is on the road for the Russian in D2 when its LOS reaches the target point clear of the hex's other terrain, so D4 is Open Ground to
+        // it and the "?" is lost; when the LOS crosses that terrain the "?" is kept.
+        board.Terrain["D4"] = terrain;
+        board.Side("D5", HexsideDirection.North, terrain: "Dirt Road");
+        los.CrossesTerrain["D2"] = crosses;
+        await Setup(Squad("g1", L("D5"), "german", Conditions.Concealed), Squad("r1", L("D2"), "russian"));
+        var before = Revision;
+        Committed(await Move(G1, L("D4"), assault: true));
+        Assert.True(LastStep(before).RoadRate);
+        Assert.Equal(crosses, Is(Current.Unit("g1")!, Conditions.Concealed));
         NoReplayErrors();
     }
 

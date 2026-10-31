@@ -338,7 +338,7 @@ public static class ScenarioA1RuleContracts
     /// hidden. What is under the "?" is the owner's, and the calculator does not need it. The LOS is read only when night and the Location leave the
     /// question open, so the owner settles a woods advance alone. The opponent names the advancer by its "?" stack, which shows its side and Location
     /// and not what is under it (the review of Wiring Prompt 001, PS4); its identity reaches the calculator as unknown. The month may be unknown (a game
-    /// that names none): grain is then not evaluated (ruling RA10.7). SMOKE and a wreck or AFV are on the map for both sides; an absent
+    /// that names none): grain is then not evaluated, unless the seer flag is false, when the season cannot matter (ruling RA10.7). SMOKE and a wreck or AFV are on the map for both sides; an absent
     /// <c>smokeInLocation</c> or <c>inLocationCover</c> remains unknown when it could change the answer (W-A10.531).
     /// </summary>
     [RuleContract]

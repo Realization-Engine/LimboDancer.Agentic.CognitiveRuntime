@@ -5038,6 +5038,14 @@ public static partial class GameProjector
                 }
             }
 
+            // A8.1 (p. 59): Defensive First Fire affects "only the moving unit/stack", so the units moving with the placer are its own move, not
+            // another unit beginning movement (A23.3, p. 90): the step's movers with the placer, and the members of the placer's current move, even
+            // when they move on apart from it (A4.2: no other unit moves until the ATTACKER ends them all).
+            bool InPlacersStack(string id, string placer) =>
+                payload is MovementStepped { Movers: var movers } && movers.Contains(placer) && movers.Contains(id)
+                || previous?.Movement is { } before && before.Members.Contains(placer) && before.Members.Contains(id)
+                || next.Movement is { } now && now.Members.Contains(placer) && now.Members.Contains(id);
+
             var kept = new List<PlacedCharge>();
             var equipment = next.Equipment;
             foreach (var recordedCharge in charges)
@@ -5092,12 +5100,12 @@ public static partial class GameProjector
                     var settled = Rules.ScenarioA1DemolitionChargeRules.PlacementSettled(
                         next.Location(charge.Unit)?.Location is { } at && at != charge.From,
                         next.Phase == "mph" && (payload is VehicleStepped
-                            || payload is MovementStepped other && !other.Movers.Contains(charge.Unit)
+                            || payload is MovementStepped other && !other.Movers.Contains(charge.Unit) && !other.Movers.All(id => InPlacersStack(id, charge.Unit))
                             || payload is InstanceMoved { Mf: not null } entered && entered.Id != charge.Unit
                             || payload is EntryAttempted attempted && attempted.Id != charge.Unit
                             || payload is ManhandlingRolled push && previous?.Find(push.Gun) is EquipmentInstance { Holding: { Role: HoldingRole.Manned } crew }
                                 && crew.Holder != charge.Unit
-                            || spentMovement?.Any(id => id != charge.Unit) == true), next.Phase != "mph");
+                            || spentMovement?.Any(id => id != charge.Unit && !InPlacersStack(id, charge.Unit)) == true), next.Phase != "mph");
                     if (Rules.ScenarioA1DemolitionChargeRules.PlacementOperable(settled, failed) != true)
                     {
                         kept.Add(charge);

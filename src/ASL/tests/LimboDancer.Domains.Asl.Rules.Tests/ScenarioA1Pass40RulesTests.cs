@@ -212,11 +212,14 @@ public sealed class ScenarioA1Pass40RulesTests
 
         // Open Ground to a firer: the terrain, a clear LOS with no Hindrance, and no TEM against that firer. "Any Location out of the LOS of a
         // firer is also considered a non-Open Ground Location."
-        Assert.True(ScenarioA1Dash.OpenGroundTo(true, true, 0, RoutCoverFacts.None));
-        Assert.False(ScenarioA1Dash.OpenGroundTo(false, true, 0, RoutCoverFacts.None));
-        Assert.False(ScenarioA1Dash.OpenGroundTo(true, false, 0, RoutCoverFacts.None));
-        Assert.False(ScenarioA1Dash.OpenGroundTo(true, true, 1, RoutCoverFacts.None));
-        Assert.False(ScenarioA1Dash.OpenGroundTo(true, true, 0, new RoutCoverFacts(null, 0, true, false, false)));
+        // A10.531's calculator decides it for Dash (W-A10.531).
+        static bool? DashOpenGround(bool open, bool clear, int hindrance, RoutCoverFacts cover) => ScenarioA1OpenGroundCalculator.OpenGroundTo(
+            new OpenGroundLocationFacts(open ? "open-ground" : "woods", 7, false, false), new OpenGroundViewFacts(clear, hindrance, cover), OpenGroundPurpose.Dash);
+        Assert.True(DashOpenGround(true, true, 0, RoutCoverFacts.None));
+        Assert.False(DashOpenGround(false, true, 0, RoutCoverFacts.None));
+        Assert.False(DashOpenGround(true, false, 0, RoutCoverFacts.None));
+        Assert.False(DashOpenGround(true, true, 1, RoutCoverFacts.None));
+        Assert.False(DashOpenGround(true, true, 0, new RoutCoverFacts(null, 0, true, false, false)));
     }
 
     [Fact]

@@ -159,9 +159,11 @@ public sealed partial class GamePlanner
                 EnemyOccupied:
                 state.At(near).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != side && !Is(other, Conditions.Captured)),
                 OpenGround: ScenarioA1OpenGroundCalculator.OpenGroundTerrain(ReadLocation(state, near) is { } read ? TerrainKey(read) : null, state.ScenarioMonth))).ToArray();
+        // A4.151 asks only that the Location be Accessible (ruling R70.24: an ordinary Infantry step could enter it, enemy ignored). Grain is
+        // Accessible in every month (B15.6); with no month only its MF cost is unknown, and the move away spends no MF, so that refusal still counts.
         return ScenarioA1InfantryOverrun.EvadeDestinationsBySeason(
-            [.. adjacent.Select(item => (item.Location, item.Entry.Entry is not null, item.Playable, item.EnemyOccupied, item.OpenGround))],
-            adjacent.Select(item => (item.Playable, item.EnemyOccupied, item.Entry.Reason)));
+            [.. adjacent.Select(item => (item.Location, item.Entry.Entry is not null || item.Entry.Reason?.StartsWith("play.move-grain:", StringComparison.Ordinal) == true,
+                item.Playable, item.EnemyOccupied, item.OpenGround))]);
     }
 
     /// <summary>The DEFENDER's declaration that its SMC moves away from an Infantry OVR (A4.151): the ATTACKER is then asked where.</summary>

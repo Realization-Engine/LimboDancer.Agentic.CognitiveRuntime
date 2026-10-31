@@ -192,26 +192,33 @@ public sealed class BacklogPass27Tests : IDisposable
         return proposed.Outcome != PlayOutcome.NeedsConfirmation ? proposed : await play.ConfirmAsync(action, arguments, Player, proposed.Correlation);
     }
 
+    // The scenario month of the game (W-A10.531); null sets up a game with no month.
+    private int? month = 7;
+
     private async Task Setup(params Dictionary<string, object>[] placements)
     {
+        var start = new Dictionary<string, object>
+        {
+            ["label"] = "Pass 10",
+            ["catalog"] = "asl-scenario-a1@1.13.0",
+            ["boards"] = Bd01,
+            ["firstSide"] = "german",
+            ["sides"] = new object[]
+            {
+                new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
+                new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
+            },
+        };
+        if (month is { } known)
+        {
+            start["scenarioMonth"] = known;
+        }
         Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
         {
             gameId = Scope.Game,
             attemptId = "setup-1",
             expectedRevision = 0,
-            start = new Dictionary<string, object>
-            {
-                ["label"] = "Pass 10",
-                ["catalog"] = "asl-scenario-a1@1.13.0",
-                ["boards"] = Bd01,
-                ["firstSide"] = "german",
-                ["sides"] = new object[]
-                {
-                    new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
-                    new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
-                },
-                ["scenarioMonth"] = 7,
-            },
+            start,
             placements,
         })));
         for (var index = 0; index < 2; index++)
@@ -460,6 +467,46 @@ public sealed class BacklogPass27Tests : IDisposable
         Assert.False(Is(Current.Unit("g1")!, Conditions.Melee));
         Committed(await EndMove());
         NoReplayErrors();
+    }
+
+    [Theory]
+    [InlineData(7)]
+    [InlineData(10)]
+    public async Task TheEvadingSmcTreatsOutOfSeasonGrainAsOpenGround(int scenarioMonth)
+    {
+        // A4.151 (p. 49), A10.531 (p. 67), B15.6 (p. 129): the leader in C4 may not be sent into Open Ground when another Location is open. In July the
+        // grain north of it is not Open Ground, so it is the only choice; in October it is Open Ground like the rest, and every open neighbour is offered.
+        month = scenarioMonth;
+        var north = Pass27Board.N("C4", HexsideDirection.North);
+        board.Terrain[north] = "Grain";
+        await Setup(Squad("g1", L("C5"), "german"), Unit("rl", "asl:leader", "defender-leader-7-0", L("C4"), "russian"));
+        Committed(await Do(GameActions.InfantryOverrunNtc, Once(1, 1), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("C4") }));
+        Committed(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("C4"), ["overrun"] = true }));
+        Committed(await Do(GameActions.OverrunEvade, NoRoll(), new Dictionary<string, object> { ["unitId"] = "rl" }));
+        var options = Current.Choice!.Options;
+        Assert.Contains(L(north), options);
+        if (scenarioMonth == 7)
+        {
+            Assert.Single(options);
+        }
+        else
+        {
+            Assert.True(options.Count > 1);
+        }
+    }
+
+    [Fact]
+    public async Task WithNoMonthTheEvadeIsRefusedOnlyWhenTheSeasonChangesTheChoice()
+    {
+        // A4.151 (p. 49), B15.6 (p. 129), W-A10.531: grain is Accessible in any month, so it is never dropped for its unknown MF cost. With no month,
+        // whether it is Open Ground decides the choice here (alone in season, one of many out of it), so the move away is refused and asks for the month.
+        month = null;
+        var north = Pass27Board.N("C4", HexsideDirection.North);
+        board.Terrain[north] = "Grain";
+        await Setup(Squad("g1", L("C5"), "german"), Unit("rl", "asl:leader", "defender-leader-7-0", L("C4"), "russian"));
+        Committed(await Do(GameActions.InfantryOverrunNtc, Once(1, 1), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("C4") }));
+        Committed(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("C4"), ["overrun"] = true }));
+        Refused(await Do(GameActions.OverrunEvade, NoRoll(), new Dictionary<string, object> { ["unitId"] = "rl" }), "play.overrun-evade-season");
     }
 
     [Fact]

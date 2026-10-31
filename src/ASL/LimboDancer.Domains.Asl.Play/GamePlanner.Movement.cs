@@ -14,11 +14,19 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    /// <summary>Read each Loss seer's view for the Open Ground calculator, using the state's existing sight index.</summary>
+    /// <summary>
+    /// Read each Loss seer's view for the Open Ground calculator, using the state's existing sight index. Null, before any seer is read, when the
+    /// Location's own public facts leave the answer unknown (grain with no month): the refusal then says nothing of the enemy's units.
+    /// </summary>
     private bool? ConcealmentOpenGroundSeen(GameState state, string side, BoardLocation at, string terrain, BoardLocation? roadFrom = null, HashSet<int>? qualifyingSeers = null)
     {
-        var table = SightOf(state);
         var location = new OpenGroundLocationFacts(terrain, state.ScenarioMonth, HasSmoke(state, at), false);
+        if (ScenarioA1OpenGroundCalculator.OpenGroundTo(location, new OpenGroundViewFacts(true, 0, RoutCoverFacts.None), OpenGroundPurpose.Concealment) is null)
+        {
+            return null;
+        }
+
+        var table = SightOf(state);
         var cover = RoutCoverFacts.None with
         {
             InHexCover = CoverAt(state, at, side) is not null
