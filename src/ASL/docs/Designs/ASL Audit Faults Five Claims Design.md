@@ -171,6 +171,12 @@ Outside Rules: `Play/LiveOrdnance.cs:339`, `:344` and `Play/LiveFire.cs:626`, `:
 
 `ScenarioA1FinalFireCalculatorTests`: every `Use` case (inherent, MG, Gun, ordnance SW, IFE, by marker); `MaySustain` for a lone SMC, a non-MA vehicular MG, the MA, as ordnance; `InReach` at 0, 1, 2, unknown; the survey's case at ranges 4 and 1; the reverse case; a First-Fire-marked Gun at ranges 1 and 5, "No IF", already Intensive Fired; the forwards equal over enumerated inputs. The contract. Bundle `a8-final-fire` on bd02, after the A9.2 example (manufactured under R0.3): a German squad with an LMG marked First Fire, Russian squads at ranges 1 and 4, a lone leader, a Gun; the Russian viewer's not-evaluated.
 
+### 3.7 Wiring adapter checkpoint, 2026-10-30
+
+Main inventory commit `00e9ddbd` adds the shared Fire and Ordnance model holds for nullable recorded readings. `FireAttack.FinalFireVersion` is omitted when null; version 1 selects each infantry weapon's own marker for Final Fire admission and Area Fire. `ScenarioA1FinalFireCalculator.InfantryFacts` supplies the common fact mapping for the calculator and its callers. Unknown versions refuse. Null continues the previous admission and arithmetic, including both historical marker faults.
+
+Two focused checks passed with warnings as errors: a marked MG held by an unmarked squad is refused beyond range 1 under version 1, while an unmarked MG held by a marked squad fires at full FP; adjacent Sustained Fire still halves FP, loses ROF and places Final Fire. Both old answers are asserted in the same checks. Evidence: `FinalFire-Own-Marker-2.log` in Codex's gate folder. This is an infantry adapter checkpoint only. Vehicle MGs, Gun Intensive Fire, recorded-reader reconstruction, Play/UI use and the wiring replay gate remain pending; callers do not select this version yet.
+
 ## 4. Claim A11.17: Stealth and Lax (rows A11.17, A11.18, A25.64)
 
 ### 4.1 The rule (A11.17, A11.18 p. 73; A15.21, A15.24 p. 83; A19.2, A19.3, A19.36 p. 86; A25.7 p. 97; A25.24 p. 95; A25.43, A25.44 p. 96; A25.64 p. 97; H1.24 p. 329; G17.111 p. 319; G1.6 p. 280; A1.123 p. 44; A11.4 p. 73; A12.122 p. 77; A12.152, A12.154 p. 79)

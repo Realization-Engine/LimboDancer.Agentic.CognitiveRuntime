@@ -58,6 +58,22 @@ public static class ScenarioA1FinalFireCalculator
     /// <summary>A8.4, A8.41 (p. 61): a target in an ADJACENT or the same hex, range one or zero. An unknown range is not in reach.</summary>
     public static bool InReach(int? range) => range is >= 0 and <= 1;
 
+    /// <summary>A8.4, A8.41 (p. 61): facts for the selected inherent FP or held weapon, using that subject's own counter.</summary>
+    public static FinalFireFacts InfantryFacts(FireAttack attack, FireFirer firer, FireWeapon? weapon, ScenarioA1FireReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(firer);
+        ArgumentNullException.ThrowIfNull(reference);
+        var definition = reference.Definitions.GetValueOrDefault(firer.DefinitionId ?? string.Empty);
+        var first = weapon is null ? firer.FirstFireMarked == true : weapon.FirstFireMarked == true;
+        var final = weapon is null ? firer.FinalFireMarked == true : weapon.FiredThisPlayerTurn == true;
+        var kind = weapon is null ? FinalFireWeapon.Inherent
+            : reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsMg == true ? FinalFireWeapon.Mg : FinalFireWeapon.OtherSw;
+        return new(kind, final ? FireMarker.FinalFire : first ? FireMarker.FirstFire : FireMarker.None,
+            firer.Range ?? attack.Range, (definition is { IsLeader: true } or { IsHero: true }) && firer.Partner is null,
+            false, false, false, false, firer.Pinned != true && firer.Broken != true);
+    }
+
     /// <summary>C5.6, C5.63 (p. 172): whether a Gun's crew may Intensive Fire it: not a "No IF" Gun, and its crew not pinned, shocked, or stunned.</summary>
     public static bool MayIntensiveFire(bool noIntensiveFire, bool crewFit) => !noIntensiveFire && crewFit;
 

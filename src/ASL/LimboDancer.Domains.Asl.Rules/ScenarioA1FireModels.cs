@@ -23,6 +23,13 @@ public sealed record FireAttack(
     int? TargetSideElr,
     FireRolls? Rolls)
 {
+    /// <summary>A8.41 (p. 61): version 1 reads each weapon's own Final Fire counter. Null retains the recorded earlier reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? FinalFireVersion
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The kind of Defensive fire in the MPh (unit step 22): <c>first-fire</c> (A8.1), <c>subsequent-first-fire</c> (A8.3),
     /// <c>final-protective-fire</c> (A8.31), or <c>residual-fp</c> (A8.2); null for the fire phases.
