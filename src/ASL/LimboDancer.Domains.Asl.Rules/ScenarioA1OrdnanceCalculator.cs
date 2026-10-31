@@ -707,10 +707,18 @@ public static class ScenarioA1OrdnanceCalculator
     }
 
     /// <summary>
-    /// The reasons a SW's shot is outside (rulings R9.2, R9.4, R9.7): a Spotter must be Good Order Personnel of the firer's side; a directing
-    /// leader must be a Good Order leader of that side who has not directed or fired this phase; a PF needs a scenario after September 1943 and
-    /// a shot left on the usage track.
+    /// The existing directing-leader refusal, shared by the recorded shot and candidate selection (A7.531, ruling R9.2).
+    /// The caller reads continuing direction into DirectedThisPlayerTurn before asking this method.
     /// </summary>
+    public static string? DirectorRefusal(FireDirector director, string? firer, string? nationality, ScenarioA1FireReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(director);
+        ArgumentNullException.ThrowIfNull(reference);
+        return reference.Definitions.GetValueOrDefault(director.DefinitionId!) is not { IsLeader: true, Leadership: not null } leader
+            || leader.Nationality != nationality || director.Broken == true || director.Pinned == true || director.DirectedThisPlayerTurn == true
+            || director.UnitId == firer ? Prefix + "director-outside" : null;
+    }
+
     private static void SupportWeaponOutside(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, List<string> outside)
     {
         // C9.3: who may spot is ScenarioA1SpotterCalculator's (ruling RC93.3); the recorded shot carries definitions and no sides, so its Spotter's
@@ -723,11 +731,9 @@ public static class ScenarioA1OrdnanceCalculator
             outside.Add(Prefix + "spotter-outside");
         }
 
-        if (shot.Director is { } director && (reference.Fire.Definitions.GetValueOrDefault(director.DefinitionId!) is not { IsLeader: true, Leadership: not null } leader
-            || leader.Nationality != FriendlyNationality(shot, gun) || director.Broken == true || director.Pinned == true || director.DirectedThisPlayerTurn == true
-            || director.UnitId == shot.Crew!.UnitId))
+        if (shot.Director is { } director && DirectorRefusal(director, shot.Crew!.UnitId, FriendlyNationality(shot, gun), reference.Fire) is { } refusal)
         {
-            outside.Add(Prefix + "director-outside");
+            outside.Add(refusal);
         }
 
         if (gun.LatwType == "pf" && (shot.ScenarioYear is not { } year || shot.Hit!.ScenarioMonth is not { } month || year < 1943 || (year == 1943 && month < 10)))
