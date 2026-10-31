@@ -1703,5 +1703,5 @@ Written on 2026-10-31. What the [Minigames page design](<Designs/ASL Minigames P
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Bundle games without the `minigame` field | The Minigames page design | Presentation only | Adding `"minigame": "a23-placed-dc"` to `units/minigames/a23-placed-dc/games/wire-dc-*.game.json` | A copy of one of these games in the live folder is listed with the user's games, not on the Minigames page. |
-| Pass check games in the live folder | The Minigames page design | Presentation only | The user's cleanup of old generated games | p70-perf-tw, p71-* and p72-* carry no `minigame` field and are listed with the user's games. |
+| Bundle games without the `minigame` field | The Minigames page design | Presentation only | Adding `"minigame": "a23-placed-dc"` to `units/minigames/a23-placed-dc/games/wire-dc-*.game.json` | Done (2026-10-31): the three games name their bundle, and `MinigameBundleTests.EveryGameInABundlesFolderNamesItsBundle` refuses any bundle game whose header does not. |
+| Pass check games in the live folder | The Minigames page design | Presentation only | The user's deletion (the Standing Rules on generated games: upgrade or delete, never archive; the user runs the deletion) | p70-perf-tw, p71-* and p72-* (30 games) carry no `minigame` field and are listed with the user's games until deleted. |
