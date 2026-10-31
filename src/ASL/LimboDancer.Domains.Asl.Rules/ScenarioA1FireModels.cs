@@ -2,6 +2,25 @@ using System.Text.Json.Serialization;
 
 namespace LimboDancer.Domains.Asl.Rules;
 
+/// <summary>A9.222/D9.4: one identified lane's burning wrecks, with recorded geometry and state facts checked by its verifier.</summary>
+public sealed record FireLaneWreckFacts(
+    [property: JsonRequired] string LaneWeaponId,
+    [property: JsonRequired] string SourceLocation,
+    [property: JsonRequired] bool SameLevel,
+    [property: JsonRequired] IReadOnlyList<FireLaneWreckCandidate> Candidates);
+
+/// <summary>The crossed wreck's identity and Location bind its recorded geometry to the state. Other hard terrain remains outside this bounded reading.</summary>
+public sealed record FireLaneWreckCandidate(
+    [property: JsonRequired] string WreckId,
+    [property: JsonRequired] string Location,
+    [property: JsonRequired] int Range,
+    [property: JsonRequired] bool AtLosElevation,
+    [property: JsonRequired] bool Standing,
+    [property: JsonRequired] string BypassOtherHex,
+    [property: JsonRequired] bool CrossesBypassOtherHex,
+    [property: JsonRequired] bool VisibleFromSource,
+    [property: JsonRequired] bool VisibleFromTarget);
+
 /// <summary>
 /// A declared fire attack for the Fire package (unit step 17). Every fact is supplied by the caller; the package never
 /// reads a game. Nullable members are required: a missing one leaves the attack undecided.
@@ -445,6 +464,13 @@ public sealed record FireAttack(
     /// <summary>A Fire Lane's Residual FP (A9.22, A9.222; ruling R12.7): never reduced by DRM, no CX, leader, or hero DRM, and no Cowering; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? FireLane
+    {
+        get; init;
+    }
+
+    /// <summary>A9.222/B25.2: null retains the earlier Fire Lane reading; an explicit empty candidate list selects current hard-wreck Hindrance.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireLaneWreckFacts? FireLaneWrecks
     {
         get; init;
     }

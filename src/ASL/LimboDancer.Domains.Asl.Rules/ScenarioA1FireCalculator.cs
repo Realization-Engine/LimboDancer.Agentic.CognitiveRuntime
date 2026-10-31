@@ -586,6 +586,11 @@ public static class ScenarioA1FireCalculator
         {
             outside.Add("asl.a1.fire.final-fire-version-outside");
         }
+        if (attack.FireLaneWrecks is not null && (attack.FireLane != true || attack.FireKind != ResidualFire
+            || ScenarioA1FireFollowUps.FireLaneWreckHindrance(attack.FireLaneWrecks) is null))
+        {
+            outside.Add("asl.a1.fire.fire-lane-wreck-facts-outside");
+        }
         var phase = attack.Phase!;
         var kind = attack.FireKind;
         var phaseAdmitted = (phase, attack.FiringSide, kind) switch
@@ -3846,6 +3851,12 @@ public static class ScenarioA1FireCalculator
                 // A23.1 (ruling R15.2): a DC takes no LOS Hindrance.
                 : attack.DemolitionCharge is not null ? 0
                 : attack.Firers!.Max(item => LosOf(attack, item)!.HindranceDrm!.Value);
+            var wreckHindrance = ScenarioA1FireFollowUps.FireLaneWreckHindrance(attack.FireLaneWrecks) ?? 0;
+            if (wreckHindrance > 0)
+            {
+                drm.Add(new FireModifier("wreck-hindrance", wreckHindrance, "A9.222, D9.4"));
+                hindrance += wreckHindrance;
+            }
             // A9.222 (referee, pass 12): the SMOKE, grain, brush, and marsh a Fire Lane's LOS crosses cancel FFMO but apply no DRM.
             if (hindrance > 0 && attack.FireLane != true)
             {

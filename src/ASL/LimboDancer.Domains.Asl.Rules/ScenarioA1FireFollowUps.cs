@@ -12,17 +12,41 @@ public static class ScenarioA1FireFollowUps
     /// A Fire Lane's attack on the moving stack in one of its Locations (A9.22, A9.222; ruling R12.7): Residual FP, never reduced, with no CX, leader, or
     /// hero DRM and no Cowering, taking the Hindrance of the LOS from its MG added to the Location's own.
     /// </summary>
-    public static FireAttack FireLaneAttack(FireAttack facts, int laneHindranceDrm)
+    public static FireAttack FireLaneAttack(FireAttack facts, int laneHindranceDrm, FireLaneWreckFacts? wrecks = null)
     {
         ArgumentNullException.ThrowIfNull(facts);
         return facts with
         {
             FireLane = true,
+            FireLaneWrecks = wrecks,
             Los = (facts.Los ?? new FireLos(false, 0, true, false)) with
             {
                 HindranceDrm = (facts.Los?.HindranceDrm ?? 0) + laneHindranceDrm
             },
         };
+    }
+
+    /// <summary>A9.222 (p. 63), D9.4 (p. 210), B25.2 (p. 143): count distinct eligible hard-wreck ranges, independently of ignored soft Hindrances.</summary>
+    public static int? FireLaneWreckHindrance(FireLaneWreckFacts? facts)
+    {
+        if (facts is null)
+        {
+            return 0;
+        }
+        if (string.IsNullOrWhiteSpace(facts.LaneWeaponId) || string.IsNullOrWhiteSpace(facts.SourceLocation) || facts.Candidates is null
+            || facts.Candidates.Any(item => item is null || string.IsNullOrWhiteSpace(item.WreckId) || string.IsNullOrWhiteSpace(item.Location)
+                || item.Range < 0 || item.BypassOtherHex is null)
+            || facts.Candidates.Select(item => item.WreckId).Distinct(StringComparer.Ordinal).Count() != facts.Candidates.Count)
+        {
+            return null;
+        }
+        if (!facts.SameLevel || !ScenarioA1BlazeSmokeCalculator.WreckBlazeLos(true, WindForce.None)!.WreckHindrance)
+        {
+            return 0;
+        }
+        return facts.Candidates.Where(item => item.AtLosElevation && item.Standing && item.VisibleFromSource && item.VisibleFromTarget
+                && ScenarioA1VehicleSightRules.BypassHinders(item.BypassOtherHex.Length > 0, () => item.CrossesBypassOtherHex))
+            .Select(item => item.Range).Distinct().Count();
     }
 
     /// <summary>A9.22, A9.223: a Fire Lane attacks the moving stack still in its Location, once the other attacks there are made, while the lane is in place.</summary>
