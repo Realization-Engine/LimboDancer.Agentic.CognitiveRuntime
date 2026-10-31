@@ -1,0 +1,62 @@
+@page "/games/minigames"
+@using LimboDancer.Domains.Asl.Play
+@inject LivePlay Live
+
+<PageTitle>Minigames - ASL Map Studio</PageTitle>
+
+<PageHeader Title="Minigames">
+    <RuleHelp Id="minigames-intro" DetailLabel="How this works" Summary="Each minigame proves a few rules on a small position: start one, play it, and ask its rules on the Rule Workbench.">
+        A minigame is a bundle under <code>src/ASL/units/minigames</code>: a card, the rules it proves, the contracts it exercises, and its checks (the
+        Rules-first plan, section 7.1). A game started from its card carries the bundle's id in its record, and is listed here alone: Play, Replay, and
+        the Game inspector list only the other games.
+    </RuleHelp>
+</PageHeader>
+
+@foreach (var bundle in Minigames.All)
+{
+    var games = byBundle.GetValueOrDefault(bundle.Id) ?? [];
+    <section class="minigame" id="minigame-@bundle.Id" aria-labelledby="minigame-@bundle.Id-title">
+        <h3 id="minigame-@bundle.Id-title">@bundle.Title <span class="muted">(@bundle.Id)</span></h3>
+        <p>
+            Rules: @string.Join(", ", bundle.Rules)<br />
+            Contracts: @(bundle.Contracts.Count == 0 ? "none" : string.Join(", ", bundle.Contracts))<br />
+            @if (bundle.Example is { } example)
+            {
+                <span>Example: @example.Source, p. @example.Page<br /></span>
+            }
+            Checks: @bundle.Checks.Count
+        </p>
+        <p class="toolbar">
+            <a class="minigame-start" href="@($"games/play?card={Uri.EscapeDataString(bundle.Card)}")" title="A new game on this minigame's card, on the Play page">Start a new game</a>
+            <a class="minigame-card" href="@($"units/scenarios?card={Uri.EscapeDataString(bundle.Card)}")">Its card</a>
+        </p>
+        @if (games.Count == 0)
+        {
+            <p class="muted minigame-none">No game started from this minigame.</p>
+        }
+        else
+        {
+            <ul class="minigame-games">
+                @foreach (var game in games)
+                {
+                    var escaped = Uri.EscapeDataString(game);
+                    <li data-game="@game">
+                        <strong>@game</strong>:
+                        <a href="@($"games/play?game={escaped}")">Play</a>,
+                        <a href="@($"games/replay?game={escaped}")">Replay</a>,
+                        <a href="@($"games/workbench?game={escaped}")">Rule Workbench</a>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+}
+
+@code {
+    // Each bundle's live games, read once when the page opens: the store keeps each file's header, so no whole record is read.
+    private Dictionary<string, List<string>> byBundle = new(StringComparer.Ordinal);
+
+    protected override void OnInitialized() =>
+        byBundle = Live.MinigameGameNames().GroupBy(game => Live.MinigameOf(game)!, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Order(StringComparer.Ordinal).ToList(), StringComparer.Ordinal);
+}

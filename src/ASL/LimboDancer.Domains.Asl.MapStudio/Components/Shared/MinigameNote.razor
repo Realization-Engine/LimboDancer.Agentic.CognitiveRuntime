@@ -1,0 +1,22 @@
+@using LimboDancer.Domains.Asl.Play
+@* The Minigames page design: a page whose list holds one minigame's games or card says so, and links back to the Minigames page. *@
+@if (Bundle is { } id)
+{
+    <span class="muted minigame-note" id="@Id">
+        Minigame: @(Minigames.Find(id)?.Title ?? id). The list holds only this minigame's @What.
+        <a href="games/minigames#minigame-@id">All minigames</a>
+    </span>
+}
+
+@code {
+    /// <summary>The minigame bundle open, or null, which draws nothing.</summary>
+    [Parameter]
+    public string? Bundle { get; set; }
+
+    [Parameter]
+    public string Id { get; set; } = "minigame-note";
+
+    /// <summary>What the page's list holds: "games" or "card".</summary>
+    [Parameter]
+    public string What { get; set; } = "games";
+}
