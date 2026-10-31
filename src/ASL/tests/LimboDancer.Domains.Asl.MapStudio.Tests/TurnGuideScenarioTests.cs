@@ -114,8 +114,7 @@ public sealed partial class TurnGuideScenarioTests : IDisposable
         var page = context.Render<PlayPage>();
         page.OpenGame(game);
         page.ViewAs("german");
-        page.Find("#play-one-click").Change(false);
-        page.Find("#play-turn-guide-toggle").Click();
+        page.Find("#play-inspector-tab-phase-guide").Click();
         page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll(".turn-guide [data-topic]")));
         var before = Current.Revision;
         var phase = TurnGuideCatalog.Load().Phases.Single(item => item.Id == Current.Phase);
@@ -264,7 +263,7 @@ public sealed partial class TurnGuideScenarioTests : IDisposable
         var reopened = context.Render<PlayPage>();
         reopened.OpenGame(game);
         reopened.ViewAs("german");
-        reopened.Find("#play-turn-guide-toggle").Click();
+        reopened.Find("#play-inspector-tab-phase-guide").Click();
         reopened.WaitForAssertion(() => Assert.Contains("Resolved", reopened.Find(".turn-evidence").TextContent, StringComparison.Ordinal));
         Assert.NotEmpty(reopened.FindAll(".turn-guide [data-topic^='rtph:']"));
         Assert.Contains("Pending rules:", reopened.Find(".turn-guide").TextContent, StringComparison.Ordinal);

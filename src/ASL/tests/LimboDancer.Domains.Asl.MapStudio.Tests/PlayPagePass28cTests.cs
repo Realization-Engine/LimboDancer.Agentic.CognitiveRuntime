@@ -6,6 +6,7 @@ using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Units.State;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using PlayPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.Play;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
@@ -107,7 +108,10 @@ public sealed class PlayPagePass28cTests : IDisposable
     {
         var page = Started();
         var before = Current.Revision;
-        page.Find("#play-turn-guide-toggle").Click();
+        Assert.Empty(page.FindAll("#play-turn-guide-toggle"));
+        Assert.Empty(page.FindAll(".turn-guide"));
+        Assert.Equal("Current phase guide", page.Find("#play-inspector-tab-phase-guide").TextContent);
+        page.Find("#play-inspector-tab-phase-guide").Click();
         page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll(".turn-guide [data-topic]")));
         Assert.Equal(before, Current.Revision);
         Assert.Empty(page.FindAll(".turn-guide [data-phase]"));
@@ -255,17 +259,17 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.NotEmpty(page.FindAll("#propose-end-move"));
     }
 
-    // The Play streamlining plan, S2 (rulings Q3, Q4): with the setting on, a step and a pass commit on one click and no Confirm is asked; a
-    // refused step still opens its review; with the setting off, Confirm is asked again.
+    // Routine steps, passes, and ending a move commit on one click; ending a phase still requires confirmation.
     [Fact]
     public void RoutineActionsCommitOnOneClick()
     {
+        context.Services.RemoveAll<ConfirmEveryAction>();
         var hexes = Hexes();
         var page = Started();
         page.EndPhase(Commit);
         page.EndPhase(Commit);
         Assert.Equal("mph", Current.Phase);
-        page.Find("#play-one-click").Change(true);
+        Assert.Empty(page.FindAll("#play-one-click"));
 
         page.Find(".move-unit[data-unit='g1']").Change(true);
         page.Find("#move-to").Change(hexes.Three);
@@ -286,14 +290,12 @@ public sealed class PlayPagePass28cTests : IDisposable
 
         page.Find("#play-hand-over").Click();
         page.Find("#play-handover-confirm").Click();
-        page.Find("#play-one-click").Change(false);
+        var beforeEndMove = Current.Revision;
         page.Find("#propose-end-move").Click();
-        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        page.Find("#play-confirm").Click();
-        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        page.WaitForAssertion(() => Assert.True(Current.Revision > beforeEndMove && Current.Movement is null));
+        Assert.Empty(page.FindAll("#play-confirm"));
 
         // The user, 2026-10-21: the end of a phase cannot be taken back, so it is never routine: with one click on, it still waits for Confirm.
-        page.Find("#play-one-click").Change(true);
         page.Find("#propose-advance").Click();
         page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Equal("mph", Current.Phase);

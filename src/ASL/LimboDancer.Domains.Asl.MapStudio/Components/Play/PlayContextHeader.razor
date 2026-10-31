@@ -8,7 +8,7 @@
     @if (Banner is { } parts)
     {
         @* The one-line banner (the user, 2026-10-17): the game, the turn, the phase, and the card, with a proposal to review, a hand-over, and the
-           gate's status at its end when there are any; the game and view pickers are in the Play tab. *@
+           gate's status at its end when there are any; the view picker follows the card link. *@
         <div class="play-banner" id="play-banner">
             <span class="play-banner-parts">
                 @foreach (var part in parts)
@@ -18,6 +18,10 @@
                 @if (HasCard)
                 {
                     <span class="play-banner-part"><a id="play-card-link" href="@CardHref" @onclick="@(() => OpenCard.InvokeAsync())" @onclick:preventDefault>Card and Victory Conditions</a></span>
+                }
+                @if (ViewPicker is not null)
+                {
+                    <span class="play-banner-view">@ViewPicker</span>
                 }
                 @if (CardChanged)
                 {
@@ -90,6 +94,10 @@
                 {
                     <a id="play-card-link" href="@CardHref" @onclick="@(() => OpenCard.InvokeAsync())" @onclick:preventDefault>Card and Victory Conditions</a>
                 }
+                @if (ViewPicker is not null)
+                {
+                    <span class="play-banner-view">@ViewPicker</span>
+                }
             </ChildContent>
         </GameLine>
         @* Pass 31 (play test P-08; the user, 2026-10-04): the game's result is stated here, in every view, once the game has ended. *@
@@ -142,6 +150,9 @@
 </div>
 
 @code {
+    [Parameter]
+    public RenderFragment? ViewPicker { get; set; }
+
     /// <summary>
     /// The one-line banner's parts, such as the scenario's title, "Turn 1 of 5", and "Russian Movement Phase"; when given, the header is that
     /// banner (Play from 1024px), and the summary, the acting note, and the reserved rows are not drawn.

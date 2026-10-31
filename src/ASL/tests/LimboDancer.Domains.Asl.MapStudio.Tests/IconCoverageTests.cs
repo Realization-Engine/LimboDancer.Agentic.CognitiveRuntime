@@ -52,7 +52,8 @@ public sealed class IconCoverageTests(StudioFactory factory) : IClassFixture<Stu
         Assert.Equal("Propose: the DEFENDER passes", Assert.Single(play.Controls, control => control.Id == "propose-pass").Label);
 
         var inspector = Assert.Single(coverage.Components, component => component.Name == "BoardInspector");
-        Assert.Equal(["selection", "los", "range", "evidence"], inspector.Controls.Where(control => control.Kind == "tab").Select(control => control.Icon));
+        Assert.Equal(["selection", "los", "range"], inspector.Controls.Where(control => control.Kind == "tab").Select(control => control.Icon));
+        Assert.Contains(inspector.Controls, control => control.Kind == "button" && control.Icon == "evidence");
         Assert.Contains("BoardWorkspace", inspector.UsedBy);
         Assert.Contains("/games/replay", inspector.Pages);
 
