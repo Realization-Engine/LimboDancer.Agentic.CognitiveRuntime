@@ -9,6 +9,18 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 /// </summary>
 public sealed class ScenarioA1FinalFireCalculatorTests
 {
+    [Fact]
+    public void VehicleMaKeepsItsOwnCounterWhenAnotherWeaponChangesTheUnitCounter()
+    {
+        Assert.Equal(FireMarker.FirstFire, ScenarioA1FinalFireCalculator.VehicleMarker("first-fire", true, false, true, false));
+        Assert.Equal(FireMarker.FinalFire, ScenarioA1FinalFireCalculator.VehicleMarker("final-fire", true, true, false, false));
+        Assert.Equal(FireMarker.None, ScenarioA1FinalFireCalculator.VehicleMarker("none", true, true, true, false));
+        Assert.Equal(FireMarker.None, ScenarioA1FinalFireCalculator.VehicleMarker("first-fire", true, true, false, true));
+        Assert.Equal(FireMarker.None, ScenarioA1FinalFireCalculator.VehicleMarker(null, false, true, true, false));
+        Assert.Equal(FireMarker.FirstFire, ScenarioA1FinalFireCalculator.VehicleMarker(null, true, true, false, false));
+        Assert.Equal(FireMarker.FinalFire, ScenarioA1FinalFireCalculator.VehicleMarker(null, true, false, true, false));
+    }
+
     private const string Contract = "a8.41-final-fire";
 
     private static readonly bool[] Both = [false, true];
