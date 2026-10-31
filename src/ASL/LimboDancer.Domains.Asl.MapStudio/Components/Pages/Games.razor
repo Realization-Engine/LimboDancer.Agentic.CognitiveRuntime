@@ -21,11 +21,7 @@
 
 <p class="muted" id="games-still-played">
     A game still being played is not listed here, since any view of it could be chosen with no hand-over. Open it on
-    <a href="games/play">Play</a>, or watch it on <a href="games/replay">Replay</a>.
-    <label title="List the minigames' ended games too">
-        <input type="checkbox" id="games-show-minigames" checked="@showMinigames" @onchange="@(args => { showMinigames = args.Value is true; names = ListedNames(); })" />
-        Show minigames
-    </label>
+    <a href="games/play">Play</a>, or watch it on <a href="games/replay">Replay</a>. Minigames are on the <a href="games/minigames">Minigames</a> page.
 </p>
 
 @if (names.Count == 0)
@@ -122,10 +118,8 @@ else
 
     private string BoardName => state?.Map.Boards.FirstOrDefault()?.Board.Value ?? "the board";
 
-    // The Rules-first proving slice (ruling RPS.10): a live game that is a minigame's is listed only when minigames are shown.
-    private bool showMinigames;
-
-    private List<string> ListedNames() => [.. GamesLibrary.OpenNames.Where(name => showMinigames || GamesLibrary.MinigameOf(name) is null)];
+    // The Minigames page design (ruling RPS.10): a live game that is a minigame's is never listed here; the Minigames page lists it.
+    private List<string> ListedNames() => [.. GamesLibrary.OpenNames.Where(name => GamesLibrary.MinigameOf(name) is null)];
 
     private IReadOnlyList<PerspectivePicker.Choice> PerspectiveChoices => state is null ? [] : [.. state.Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.IsAdjudicator ? "the adjudicator" : DisplayText.Side(option.Name)))];
 

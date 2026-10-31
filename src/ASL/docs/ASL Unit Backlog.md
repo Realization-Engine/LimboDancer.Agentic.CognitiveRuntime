@@ -1697,7 +1697,16 @@ Written on 2026-10-31 for the approved [shared action-outcome design](<Designs/A
 | Unrolled dice in Turn Guide and Rule Workbench requests | Approved dice/outcome design | Presentation only | Explicit count, sides, grouping, roles, and subject metadata in the request contracts | Existing required-roll prose remains. The UI does not infer pending faces or roll roles from prose. |
 | Subject labels for older independent roll collections | Approved neutral-fallback contract | Presentation only | A disclosed, ordered subject list associated with the recorded roll ID | Disclosed `RandomSelection.Subjects` supplies historical names when present. Other collections retain numbered dice. No hidden event or positional guess supplies a subject. |
 
-## 91. Phase-by-phase action workflow review
+## 91. Minigames page follow-ups
+
+Written on 2026-10-31. What the [Minigames page design](<Designs/ASL Minigames Page Design.md>) leaves out.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Bundle games without the `minigame` field | The Minigames page design | Presentation only | Adding `"minigame": "a23-placed-dc"` to `units/minigames/a23-placed-dc/games/wire-dc-*.game.json` | Done (2026-10-31): the three games name their bundle, and `MinigameBundleTests.EveryGameInABundlesFolderNamesItsBundle` refuses any bundle game whose header does not. |
+| Pass check games in the live folder | The Minigames page design | Presentation only | The user's deletion (the Standing Rules on generated games: upgrade or delete, never archive; the user runs the deletion) | p70-perf-tw, p71-* and p72-* (30 games) carry no `minigame` field and are listed with the user's games until deleted. |
+
+## 92. Phase-by-phase action workflow review
 
 Written on 2026-10-31 during the user's review of `codex/action-form-design`.
 

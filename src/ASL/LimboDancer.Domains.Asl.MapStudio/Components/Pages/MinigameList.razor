@@ -1,0 +1,195 @@
+@page "/games/minigames"
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.Catalog
+@inject LivePlay Live
+@inject UnitLibrary Library
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Minigames - ASL Map Studio</PageTitle>
+
+<PageHeader Title="Minigames">
+    <RuleHelp Id="minigames-intro" DetailLabel="How this works" Summary="Each minigame proves a few rules on a small position: choose one, start a game of it, and ask its rules on the Rule Workbench.">
+        A minigame is a bundle under <code>src/ASL/units/minigames</code>: a card, the rules it proves, the contracts it exercises, and its checks (the
+        Rules-first plan, section 7.1). A game started from its card carries the bundle's id in its record, and is listed here alone: Play, Replay, and
+        the Game inspector list only the other games. Its card is shown here too, never among the scenario cards.
+    </RuleHelp>
+</PageHeader>
+
+@* The user, 2026-10-31: one minigame at a time, chosen from a list of its own at the left; at a narrow width the list is a dropdown. *@
+<div class="minigame-browser">
+    <nav class="minigame-index" aria-label="Minigames">
+        <label class="minigame-filter">
+            <span>Filter</span>
+            <input type="search" id="minigame-filter" placeholder="title or rule, such as C9" value="@filter" @oninput="@(args => filter = args.Value as string ?? string.Empty)" />
+        </label>
+        <ul id="minigame-list">
+            @foreach (var bundle in Listed)
+            {
+                var count = byBundle.GetValueOrDefault(bundle.Id)?.Count ?? 0;
+                var current = bundle.Id == Selected?.Id;
+                <li>
+                    <a href="@Address(bundle.Id)" data-minigame="@bundle.Id" class="@(current ? "active" : null)" aria-current="@(current ? "page" : null)">
+                        <span class="minigame-index-title">@bundle.Title</span>
+                        <span class="minigame-index-meta">@(count == 0 ? "no game" : count == 1 ? "1 game" : $"{count} games")</span>
+                    </a>
+                </li>
+            }
+        </ul>
+        @if (!Listed.Any())
+        {
+            <p class="muted" id="minigame-none-matches">No minigame matches '@filter'.</p>
+        }
+    </nav>
+
+    <label class="minigame-picker">
+        Minigame
+        <select id="minigame-choice" value="@(Selected?.Id ?? string.Empty)" @onchange="@(args => Navigation.NavigateTo(Address(args.Value as string ?? string.Empty)))">
+            @foreach (var bundle in MinigameOrder.All)
+            {
+                <option value="@bundle.Id">@bundle.Title</option>
+            }
+        </select>
+    </label>
+
+    @if (Selected is { } shown)
+    {
+        var games = byBundle.GetValueOrDefault(shown.Id) ?? [];
+        var cardOpen = opened.Contains(shown.Id);
+        <section class="minigame" id="minigame-@shown.Id" aria-labelledby="minigame-title">
+            <h2 id="minigame-title">@shown.Title</h2>
+            <dl class="minigame-facts">
+                <dt>Bundle</dt>
+                <dd><code>@shown.Id</code></dd>
+                <dt>Rules</dt>
+                <dd>@string.Join(", ", shown.Rules)</dd>
+                <dt>Contracts</dt>
+                <dd>@(shown.Contracts.Count == 0 ? "none" : string.Join(", ", shown.Contracts))</dd>
+                @if (shown.Example is { } example)
+                {
+                    <dt>Example</dt>
+                    <dd>@example.Source, p. @example.Page</dd>
+                }
+                <dt>Checks</dt>
+                <dd>@shown.Checks.Count</dd>
+            </dl>
+
+            <h3>Games</h3>
+            @if (games.Count == 0)
+            {
+                <p class="muted minigame-none">No game started from this minigame.</p>
+            }
+            else
+            {
+                <ul class="minigame-games">
+                    @foreach (var game in games)
+                    {
+                        var escaped = Uri.EscapeDataString(game);
+                        <li data-game="@game">
+                            <strong>@game</strong>:
+                            <a href="@($"games/play?game={escaped}")">Play</a>,
+                            <a href="@($"games/replay?game={escaped}")">Replay</a>,
+                            <a href="@($"games/workbench?game={escaped}")">Rule Workbench</a>
+                        </li>
+                    }
+                </ul>
+            }
+            <p class="toolbar">
+                <a class="minigame-start" href="@($"games/play?card={Uri.EscapeDataString(shown.Card)}")" title="A new game on this minigame's card, on the Play page">Start a new game</a>
+                <button type="button" class="link minigame-card-toggle" id="minigame-card-toggle" aria-expanded="@(cardOpen ? "true" : "false")"
+                        aria-controls="minigame-card" @onclick="@(() => Toggle(shown.Id))">@(cardOpen ? "Hide its card" : "Show its card")</button>
+            </p>
+            @if (cardOpen)
+            {
+                @* The card is drawn only while it is open (the memory and performance guidelines). *@
+                <div class="minigame-card" id="minigame-card">
+                    @if (catalog is null)
+                    {
+                        <p class="diagnostic error">The published catalog cannot be read, so the card cannot be shown.</p>
+                    }
+                    else if (Live.Cards.Read(shown.Card, catalog) is { } read)
+                    {
+                        @if (read.Diagnostics.Count > 0)
+                        {
+                            <FindingList Id="minigame-card-diagnostics" Items="@FindingList.Of(read.Diagnostics)" />
+                        }
+
+                        @if (read.Card is { } card)
+                        {
+                            <ScenarioCardView Card="@card" Catalog="@catalog" />
+                        }
+                    }
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    // Each bundle's live games, read once when the page opens: the store keeps each file's header, so no whole record is read.
+    private Dictionary<string, List<string>> byBundle = new(StringComparer.Ordinal);
+
+    // The bundles whose card is open; the catalog a card is checked against, read once; the list's filter.
+    private readonly HashSet<string> opened = new(StringComparer.Ordinal);
+    private UnitCatalog? catalog;
+    private string filter = string.Empty;
+
+    /// <summary>The minigame shown; the first when the address names none.</summary>
+    [SupplyParameterFromQuery(Name = "minigame")]
+    public string? MinigameQuery { get; set; }
+
+    /// <summary>A minigame shown with its card open, as Play's "The whole card" link names it.</summary>
+    [SupplyParameterFromQuery(Name = "open")]
+    public string? OpenQuery { get; set; }
+
+    private MinigameManifest? Selected => Minigames.Find(MinigameQuery ?? OpenQuery ?? string.Empty) ?? MinigameOrder.All.FirstOrDefault();
+
+    // The minigames whose title, id, or a rule holds the filter's text.
+    private IEnumerable<MinigameManifest> Listed => filter.Trim() is { Length: > 0 } text
+        ? MinigameOrder.All.Where(bundle => bundle.Title.Contains(text, StringComparison.OrdinalIgnoreCase) || bundle.Id.Contains(text, StringComparison.OrdinalIgnoreCase)
+            || bundle.Rules.Any(rule => rule.Contains(text, StringComparison.OrdinalIgnoreCase)))
+        : MinigameOrder.All;
+
+    private static string Address(string bundle) => $"games/minigames?minigame={Uri.EscapeDataString(bundle)}";
+
+    protected override void OnInitialized()
+    {
+        byBundle = Live.MinigameGameNames().GroupBy(game => Live.MinigameOf(game)!, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Order(StringComparer.Ordinal).ToList(), StringComparer.Ordinal);
+        catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Library.Vocabulary)?.Catalog;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (OpenQuery is { } open && Minigames.Find(open) is not null)
+        {
+            opened.Add(open);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The minigame the address names may sit further down the list than the list shows: its entry is brought into the list's view.
+        if (firstRender && (MinigameQuery ?? OpenQuery) is not null)
+        {
+            try
+            {
+                var script = await JS.InvokeAsync<IJSObjectReference>("import", "./js/minigames.js");
+                await script.InvokeVoidAsync("showChosen", "minigame-list");
+                await script.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // The circuit closed while the page opened: nothing to show.
+            }
+        }
+    }
+
+    private void Toggle(string bundle)
+    {
+        if (!opened.Remove(bundle))
+        {
+            opened.Add(bundle);
+        }
+    }
+}

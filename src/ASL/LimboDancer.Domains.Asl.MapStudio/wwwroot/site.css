@@ -4103,3 +4103,114 @@ button[data-working]::after {
 .cc-infiltration-unit { margin-top: .6rem; }
 .cc-infiltration-unit > label:first-child { display: grid; grid-template-columns: minmax(0, 1fr) minmax(6rem, 10rem); align-items: center; gap: .75rem; }
 .cc-change-location { padding: .65rem; border: 1px solid #a6853c; }
+/* The Minigames page (the user, 2026-10-31): a list of the minigames at the left, scrolled on its own, and the one chosen beside it; the list's
+   items read as the Studio's own menu does. Where the page is narrow the list gives way to a dropdown. */
+.minigame-browser {
+    display: grid;
+    grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* The list fits the window below the page's header (about 13rem: the Studio's bar, the title, and its introduction), so its last entry is in reach
+   without scrolling the page; it stays in view when a long card scrolls the page. */
+.minigame-index {
+    position: sticky;
+    top: 1rem;
+    max-height: max(12rem, calc(100vh - 13rem));
+    overflow-y: auto;
+    border-right: 1px solid var(--line);
+    padding-right: 0.75rem;
+}
+
+.minigame-filter {
+    display: grid;
+    gap: 0.2rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+}
+
+.minigame-filter input {
+    width: 100%;
+}
+
+.minigame-index ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.minigame-index a {
+    display: block;
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--radius);
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.minigame-index a:hover {
+    background: var(--line-soft);
+}
+
+.minigame-index a.active {
+    background: var(--accent-tint);
+    color: var(--accent-ink);
+    font-weight: 600;
+}
+
+.minigame-index-title {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.minigame-index-meta {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--muted);
+}
+
+.minigame-picker {
+    display: none;
+}
+
+.minigame h2 {
+    margin-top: 0;
+}
+
+.minigame-facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.25rem 1rem;
+    margin: 0 0 1rem;
+}
+
+.minigame-facts dt {
+    color: var(--muted);
+}
+
+.minigame-facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 1023.98px) {
+    .minigame-browser {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1rem;
+    }
+
+    .minigame-index {
+        display: none;
+    }
+
+    .minigame-picker {
+        display: grid;
+        gap: 0.2rem;
+    }
+
+    .minigame-picker select {
+        max-width: 100%;
+    }
+}

@@ -183,7 +183,7 @@ Where the rulebook prints an example on a named board and hexes, the minigame re
 
 **The Minigame property** (the user, 2026-10-28). A game record gains a property `Minigame`, beside the `Synthetic` property it already has: `GameRecord(Label, Synthetic, Minigame, Events)`. It holds the bundle id, written in the game's JSON as `"minigame": "a10-rally"`; empty means a normal game. A record without it reads as empty, so every existing game keeps its meaning. A minigame card carries the same property, and a game started from the card takes it from the card; it is not set by hand. The id both filters the lists and leads from any game back to its bundle and its rules.
 
-- The normal game lists (the Games page, the Play page's game picker, Replay) leave minigames out by default, with a "Show minigames" filter to bring them in.
+- The normal game lists (the Games page, the Play page's game picker, Replay) leave minigames out. Since the Minigames page design (2026-10-31) there is no "Show minigames" filter: the Minigames page lists them, and no list holds both kinds.
 - The Scenarios page leaves minigame cards out the same way.
 - The Rule Workbench (section 6) lists minigames first.
 

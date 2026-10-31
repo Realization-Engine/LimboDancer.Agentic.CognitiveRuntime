@@ -37,10 +37,7 @@
                 }
             </select>
         </label>
-        <label title="List the minigames' games too">
-            <input type="checkbox" id="replay-show-minigames" checked="@showMinigames" @onchange="@(args => { showMinigames = args.Value is true; games = ListedGames(); })" />
-            Show minigames
-        </label>
+        <MinigameNote Id="replay-minigame" Bundle="@Live.MinigameOf(gameId)" />
         @if (history?.Current is { } current)
         {
             <PerspectivePicker Id="replay-perspective" Choices="@ViewChoices(current)" Value="@(handOver ?? viewAs)" ValueChanged="@ChangeView" />
@@ -321,10 +318,8 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
 
     protected override void OnInitialized() => games = ListedGames();
 
-    // The Rules-first proving slice (ruling RPS.10): minigames are left out unless shown, and the game open is always listed.
-    private bool showMinigames;
-
-    private List<string> ListedGames() => [.. Live.GameNames(showMinigames || Live.MinigameOf(gameId) is not null)];
+    // The Minigames page design (ruling RPS.10): the open game's kind decides the list, a minigame's games or the other games, never both.
+    private List<string> ListedGames() => [.. Live.GamesLike(gameId)];
 
     private static IReadOnlyList<PerspectivePicker.Choice> ViewChoices(GameState state) =>
         [.. state.Perspectives.Select(perspective => new PerspectivePicker.Choice(perspective.Name, perspective.IsAdjudicator ? "the adjudicator" : DisplayText.Side(perspective.Name)))];

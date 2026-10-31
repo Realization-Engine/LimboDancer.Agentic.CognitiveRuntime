@@ -223,7 +223,7 @@ public static class ScenarioCards
         .Where(name => !Minigames.IsMinigameCard(name))
         .Order(StringComparer.Ordinal)];
 
-    /// <summary>The minigames' card names, in ordinal order: what a list shows when "Show minigames" is on.</summary>
+    /// <summary>The minigames' card names, in ordinal order: never listed beside the scenario cards (the Minigames page design).</summary>
     public static IReadOnlyList<string> MinigameNames => [.. Minigames.All.Select(bundle => bundle.Card).Order(StringComparer.Ordinal)];
 
     /// <summary>Whether a name is an embedded card's, a scenario's or a minigame's: read from the assembly, and never a user card's name.</summary>

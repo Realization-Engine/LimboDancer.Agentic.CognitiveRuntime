@@ -4,6 +4,7 @@
   "game": "wire-dc-other-mover",
   "label": "W-A23.3 DC settlement: other-mover",
   "synthetic": false,
+  "minigame": "a23-placed-dc",
   "events": [
     {
       "eventId": "wire-dc-other-mover-fixture-1-1",

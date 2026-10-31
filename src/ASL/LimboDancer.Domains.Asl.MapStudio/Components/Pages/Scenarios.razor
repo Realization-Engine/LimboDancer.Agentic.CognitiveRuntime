@@ -25,15 +25,20 @@ else
             Card
             <CardPicker Id="card-choice" Cards="@Choices" Value="@selected" ValueChanged="@Show" />
         </label>
-        <label title="List the minigames' cards too">
-            <input type="checkbox" id="card-show-minigames" checked="@showMinigames" @onchange="@(args => showMinigames = args.Value is true)" />
-            Show minigames
-        </label>
         @if (selected is { } editable)
         {
             <a id="card-edit" href="@($"units/cards/edit?card={Uri.EscapeDataString(editable)}")">@(Live.Cards.IsUser(editable) ? "Edit this card" : "Copy this card to edit it")</a>
         }
     </div>
+
+    @if (minigameBundle is { } bundle)
+    {
+        @* The minigame cards design: a minigame's card is shown on the Minigames page, never among the scenario cards. *@
+        <p class="muted" id="card-minigame">
+            '@Card' is the card of the minigame @(Minigames.Find(bundle)?.Title ?? bundle); it is shown on the
+            <a href="@($"games/minigames?open={Uri.EscapeDataString(bundle)}")">Minigames page</a>, not among the scenario cards.
+        </p>
+    }
 
     @if (read is { } shown)
     {
@@ -68,15 +73,16 @@ else
     // Referee, pass 18: the link picks its card whenever it is followed, even from this page.
     protected override void OnParametersSet()
     {
-        // A link to a minigame's card shows the minigames (ruling RPS.10).
-        showMinigames |= Card is { } minigame && ScenarioCards.MinigameNames.Contains(minigame, StringComparer.Ordinal);
-        Show(Card is { } named && Names.Contains(named, StringComparer.Ordinal) ? named : selected ?? Live.Cards.Names.FirstOrDefault());
+        // The minigame cards design (ruling RPS.10): an address that names a minigame's card points to the Minigames page; the card is not shown here.
+        minigameBundle = Minigames.BundleOfCard(Card);
+        Show(Card is { } named && Names.Contains(named, StringComparer.Ordinal) ? named
+            : selected is { } kept && Names.Contains(kept, StringComparer.Ordinal) ? kept : Names.FirstOrDefault());
     }
 
-    // The Rules-first proving slice (ruling RPS.10): the minigames' cards are listed only when shown.
-    private bool showMinigames;
+    // The minigame whose card the address names, or null.
+    private string? minigameBundle;
 
-    private IReadOnlyList<string> Names => [.. Live.Cards.Names, .. showMinigames ? ScenarioCards.MinigameNames : []];
+    private IReadOnlyList<string> Names => Live.Cards.Names;
 
     private IReadOnlyList<CardPicker.Choice> Choices => [.. Names.Select(name => new CardPicker.Choice(name, Title(name), Live.Cards.IsUser(name)))];
 
