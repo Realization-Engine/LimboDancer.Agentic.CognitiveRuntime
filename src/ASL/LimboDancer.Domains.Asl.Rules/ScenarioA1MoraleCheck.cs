@@ -249,4 +249,8 @@ public static class ScenarioA1MoraleCheck
             : check.FinalDr == check.MoraleLevel ? ScenarioA1RiderRules.Pinned
             : ScenarioA1RiderRules.Passed;
     }
+
+    /// <summary>A15.2/.21 (PDF p. 83): preserve the shared MC's Hero wound or elimination, and never turn his passing MC into a Pin.</summary>
+    public static string BailOutResult(FireCheck check, bool broken, bool replaced, bool unarmed, bool heroic) =>
+        heroic ? check.Consequence : BailOutResult(check, broken, replaced, unarmed);
 }

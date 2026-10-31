@@ -1,0 +1,257 @@
+{
+  "sourceCommit": "ba97f7d3",
+  "startedUtc": "2026-10-31T13:01:27.4479833+00:00",
+  "build": "Debug",
+  "runtime": "10.0.14",
+  "serverGc": false,
+  "processorCount": 16,
+  "supportsPair": false,
+  "playVersion": "1.0.0\u002Bba97f7d3edd0c6304cdcc186ebef21bff4ee5d7f",
+  "playAssemblySha256": "A1B9DF683E761D35C22AE1B00905E7C762243EFFDEEF4E1602AE755590B01855",
+  "inputs": [
+    {
+      "workload": "mortar81-solo",
+      "game": "wire-c9-pair-review",
+      "revision": 7,
+      "Map": {
+        "Reference": "bd03",
+        "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+        "Boards": [
+          {
+            "Board": {
+              "Kind": 0,
+              "Value": "bd03",
+              "VaslBoardName": "03"
+            },
+            "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+            "Slot": null
+          }
+        ],
+        "IsPlaced": false
+      },
+      "secondFirer": null,
+      "sha256": "3D5A1598B033FFA5F351A54E8A06AFE7853BA3E929401C325F4E3A3ADB7E9BA6"
+    },
+    {
+      "workload": "mortar81-pair",
+      "game": "wire-c9-pair-review",
+      "revision": 7,
+      "Map": {
+        "Reference": "bd03",
+        "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+        "Boards": [
+          {
+            "Board": {
+              "Kind": 0,
+              "Value": "bd03",
+              "VaslBoardName": "03"
+            },
+            "Version": "ba2920ce55cd954a62394dc81f35833e24054093",
+            "Slot": null
+          }
+        ],
+        "IsPlaced": false
+      },
+      "secondFirer": null,
+      "sha256": "3D5A1598B033FFA5F351A54E8A06AFE7853BA3E929401C325F4E3A3ADB7E9BA6"
+    }
+  ],
+  "results": [
+    {
+      "workload": "mortar81-solo",
+      "game": "wire-c9-pair-review",
+      "operation": "target-advice",
+      "cold": false,
+      "answer": "range 4, turn 1 hexspine(s) (Case A)",
+      "iterations": 400,
+      "bytes": 888,
+      "medianUs": 4.12375,
+      "p90Us": 5.0255,
+      "samples": [
+        {
+          "Bytes": 888,
+          "Microseconds": 3.6405000000000003
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 3.7785
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 4.14325
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 4.06975
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 4.503
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 5.0255
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 4.12375
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 4.34575
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 4.082
+        }
+      ]
+    },
+    {
+      "workload": "mortar81-solo",
+      "game": "wire-c9-pair-review",
+      "operation": "target-advice",
+      "cold": true,
+      "answer": "range 4, turn 1 hexspine(s) (Case A)",
+      "iterations": 40,
+      "bytes": 18114.6,
+      "medianUs": 17.8275,
+      "p90Us": 22.61,
+      "samples": [
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 17.8275
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 16.96
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 22.61
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 20.6725
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 19.3525
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 16.145
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 16.9725
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 16.195
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 20.740000000000002
+        }
+      ]
+    },
+    {
+      "workload": "mortar81-pair",
+      "game": "wire-c9-pair-review",
+      "operation": "target-advice",
+      "cold": false,
+      "answer": "range 4, turn 1 hexspine(s) (Case A)",
+      "iterations": 400,
+      "bytes": 888,
+      "medianUs": 3.95725,
+      "p90Us": 8.42775,
+      "samples": [
+        {
+          "Bytes": 888,
+          "Microseconds": 3.95725
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 3.6630000000000003
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 3.71625
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 3.697
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 3.56325
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 8.42775
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 6.78475
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 4.758
+        },
+        {
+          "Bytes": 888,
+          "Microseconds": 4.2444999999999995
+        }
+      ]
+    },
+    {
+      "workload": "mortar81-pair",
+      "game": "wire-c9-pair-review",
+      "operation": "target-advice",
+      "cold": true,
+      "answer": "range 4, turn 1 hexspine(s) (Case A)",
+      "iterations": 40,
+      "bytes": 18114.6,
+      "medianUs": 20.825,
+      "p90Us": 30.517500000000002,
+      "samples": [
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 23.935
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 15.0525
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 15.6875
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 20.825
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 30.517500000000002
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 23.7475
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 16.682499999999997
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 16.142500000000002
+        },
+        {
+          "Bytes": 18114.6,
+          "Microseconds": 25.330000000000002
+        }
+      ]
+    }
+  ]
+}

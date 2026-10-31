@@ -56,6 +56,17 @@ public sealed class ScenarioA1CloseCombatValueTests
     }
 
     [Fact]
+    public void AssaultEngineerLineageRecordsTheLossOfAnUntouchedPrintedEngineer()
+    {
+        // A25.01 (p. 93): a printed AE Replaced by a lower-quality unit loses AE, "even if it subsequently Battle Hardens".
+        Assert.Equal((false, (string?)null), ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(true, [null], false, [true]));
+        Assert.Equal((true, (string?)null), ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(false, [null], false, [true]));
+        Assert.Equal(((bool?)null, (string?)null), ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(true, [null], false, [false]));
+        Assert.NotNull(ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(false, [null, null], false, [true, false]).Reason);
+        Assert.Throws<ArgumentException>(() => ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(true, [null], false, [true, true]));
+    }
+
+    [Fact]
     public void AssaultEngineerCasualtyLossReadsTheDefinitionAfterEarlierBattleHardening()
     {
         var effect = new FireUnitEffect("u", "finnish-green-squad", "finnish-green-half-squad", null, false, true, false, false, false, false,
@@ -608,6 +619,11 @@ public sealed class ScenarioA1CloseCombatValueTests
         Assert.Contains("guard-outnumbered -1", Evaluate(legacy).Reasons[0].Text, StringComparison.Ordinal);
         legacy.Remove("guardOutnumbered");
         Assert.Equal(ContractVerdict.NotEvaluated, Evaluate(legacy).Outcome);
+        // A20.52 (p. 87): "not outnumbered" does not show the attacker is no Guard, so an unknown guard fact is not evaluated (item 15).
+        legacy["guardOutnumbered"] = false;
+        Assert.Equal(ContractVerdict.NotEvaluated, Evaluate(legacy).Outcome);
+        legacy["guard"] = false;
+        Assert.Equal("eliminated", Evaluate(legacy).Outcome);
     }
 
     [Fact]

@@ -59,44 +59,8 @@ public sealed class ScenarioA1SmokeStrengthCalculatorTests
     }
 
     [Fact]
-    public void InitialStrengthForwardsWithTheSameAnswerOnEveryInput()
+    public void ByValueSmokeTotalsCapBeforeAddingTheOutgoingPenalty()
     {
-        foreach (var source in Enum.GetValues<TurnSmokeSource>())
-        {
-            foreach (var chemical in Enum.GetValues<TurnSmokeChemical>())
-            {
-                foreach (var prep in new[] { true, false })
-                {
-                    foreach (var before in new bool?[] { true, false, null })
-                    {
-                        Assert.Equal(ScenarioA1SmokeStrengthCalculator.PlacementStrength(source, chemical, prep, before),
-                            TurnWhiteSmokeRules.InitialStrength(source, chemical, prep, before));
-                    }
-                }
-            }
-        }
-
-        Assert.Throws<ArgumentException>(() => TurnWhiteSmokeRules.InitialStrength(TurnSmokeSource.Ordnance, (TurnSmokeChemical)99, true, true));
-    }
-
-    [Fact]
-    public void TheCountMembersAnswerAsTheirByValueOverloadsAndAsBefore()
-    {
-        Func<bool> crossedNever = static () => throw new InvalidOperationException("crossed is read only when neither end is in the Location");
-        for (var count = -1; count <= 3; count++)
-        {
-            int[] values = count >= 0 ? [.. Enumerable.Repeat(ScenarioA1SmokeStrengthCalculator.CountedSourceHindrance, count)] : [2 * count];
-            var old = Math.Min(3, 2 * count);
-            Assert.Equal(old + 1, ScenarioA1VehicleSightRules.SmokeDrm(count, true, false, crossedNever));
-            Assert.Equal(old, ScenarioA1VehicleSightRules.SmokeDrm(count, false, true, crossedNever));
-            Assert.Equal(old, ScenarioA1VehicleSightRules.SmokeDrm(count, false, false, static () => true));
-            Assert.Equal(0, ScenarioA1VehicleSightRules.SmokeDrm(count, false, false, static () => false));
-            Assert.Equal(ScenarioA1VehicleSightRules.SmokeDrm(values, true, false, crossedNever), ScenarioA1VehicleSightRules.SmokeDrm(count, true, false, crossedNever));
-            Assert.Equal(count == 0 ? 0 : old + 1, ScenarioA1OverrunCalculator.OverrunSmoke(count));
-            Assert.Equal((count > 0 ? Math.Min(3, 2 * count) + 1 : 0) + 1, ScenarioA1VehicleSightRules.OwnHexHindrance(count, true));
-            Assert.Equal(Math.Max(0, (count > 0 ? Math.Min(3, 2 * count) : 0)), ScenarioA1Sniper.TargetTem(null, count));
-        }
-
         // By value: a WP grenade's +1 and a full ordnance SMOKE's +3 cap at +3 (A24.2), and the outgoing +1 is added after the cap (A24.8).
         Assert.Equal(4, ScenarioA1VehicleSightRules.SmokeDrm([1, 3], true, false, static () => false));
         Assert.Equal(1, ScenarioA1VehicleSightRules.SmokeDrm([1], false, true, static () => false));
@@ -109,9 +73,9 @@ public sealed class ScenarioA1SmokeStrengthCalculatorTests
     public void ResidualFireReadsTheTargetsSmokeByValueAsBefore()
     {
         var attack = new FireAttack("PFPh", "phasing", true, "bd01:G5:0", "bd01:F5:0", [], null, 1, true, null, null, "open-ground", [], 2, null);
-        Assert.Null(ScenarioA1FireMapRules.ResidualMapFacts(attack, "open-ground", 0).Los);
-        Assert.Equal(2, ScenarioA1FireMapRules.ResidualMapFacts(attack, "open-ground", 1).Los!.HindranceDrm);
-        Assert.Equal(3, ScenarioA1FireMapRules.ResidualMapFacts(attack, "open-ground", 2).Los!.HindranceDrm);
+        Assert.Null(ScenarioA1FireMapRules.ResidualMapFacts(attack, "open-ground", []).Los);
+        Assert.Equal(2, ScenarioA1FireMapRules.ResidualMapFacts(attack, "open-ground", [2]).Los!.HindranceDrm);
+        Assert.Equal(3, ScenarioA1FireMapRules.ResidualMapFacts(attack, "open-ground", [2, 2]).Los!.HindranceDrm);
         Assert.Equal(1, ScenarioA1FireMapRules.ResidualMapFacts(attack, "open-ground", [1]).Los!.HindranceDrm);
     }
 

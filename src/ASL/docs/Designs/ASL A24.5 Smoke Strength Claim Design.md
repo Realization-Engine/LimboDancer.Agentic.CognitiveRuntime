@@ -75,6 +75,8 @@ A sub-agent read the build read-only (2026-10-29), with the E10 claim's: every f
 
 ## Codex review of Wiring Prompt 002 (2026-10-29)
 
+PR 68 retirement note, 2026-10-30: B25.2 is built, ending RA24.6's temporary count-overload dependency. Wreck Blaze strength now asks `ScenarioA1BlazeSmokeCalculator.Hindrance` under its existing no-wind reading; every other caller passes explicit values. The five count overloads and unused `TurnWhiteSmokeRules.InitialStrength` are removed. Null-version Sniper replay preserves its old count reading through an explicit array of +2 source values.
+
 Read-only review of the calculator, contract, tests and minigame against physical PDF pp. 91 to 93, 143 and 212: no blocking calculation or disclosure finding. The contract asks public source, chemical and timing facts and does not request private unit identities. No build or tests were run for this review.
 
 Wiring must distinguish the contract's display outcome `full` for grenades from the calculator's non-dispersible grenade representation (`TurnSmokeStrength.Unknown`). Existing `asl:smoke` entities need source facts from their causal placement, not their display names. Combine all applicable source values at one Location before the common cap; do not cap grenade and Blaze groups independently. Location grouping alone does not establish an elevated LOS's intersection with SMOKE. Keep height/weather and B25.2 with their calculators. Claude's B25.2 claim is now active, so re-read its merged contract before removing any legacy Blaze path. The PFPh Place metadata is not authority to place every source or a restriction on evaluating other source strengths.

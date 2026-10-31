@@ -1021,6 +1021,9 @@ public sealed partial class GamePlanner
                 JsonSerializer.SerializeToElement(ScenarioA1ArmorLeaders.Recorded(facts, resolution), LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
             {
                 MovementStep = step,
+                VehicleArmamentEvidence = facts.VehicleBreakdown is not null
+                    && state.Unit(facts.VehicleFire?.VehicleId ?? facts.Overrun?.VehicleId ?? "") is { } firingVehicle
+                    ? VehicleArmamentFacts.Evidence(state, firingVehicle) : null,
                 TurretFacing = VehicleTurretTurn(state, facts),
             }, package, hidesIdentity ? [targetSide] : null));
         if (hidesIdentity)
@@ -1158,6 +1161,14 @@ public sealed partial class GamePlanner
         {
             var conditions = ConditionChanges(ScenarioA1FireFollowUps.WeaponEffectConditions(weapon,
                 () => state.Find(weapon.EquipmentId) is { } equipment && GameState.Condition(equipment, Conditions.FirstFire) == ConditionState.True));
+            if (weapon.VehicleBreakdown?.Outcome == VehicleBreakdownOutcome.Disabled && state.Unit(weapon.EquipmentId) is { } armed
+                && LiveFire.VehicleRecalledAfterDisable(state, armed, weapon.VehicleWeapon is null || Is(armed, Conditions.Disabled)))
+            {
+                foreach (var change in ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma", true))
+                {
+                    conditions[ConditionName(change.Condition)] = change.Value ? ConditionState.True : ConditionState.False;
+                }
+            }
             if (conditions.Count > 0)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(weapon.EquipmentId, conditions),
@@ -1182,8 +1193,21 @@ public sealed partial class GamePlanner
         // D7.17 (ruling R11.11): an OVR's Original 12 malfunctions a weapon that added FP, or immobilizes a vehicle with none; a wreck keeps no weapons.
         if (resolution.OverrunEffect is { } overrunEffect && state.Unit(overrunEffect.VehicleId) is { Status: InstanceStatus.Active })
         {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                new ConditionsChanged(overrunEffect.VehicleId, ConditionChanges(ScenarioA1FireFollowUps.OverrunEffectConditions(overrunEffect))), package, null, [fireId]));
+            var conditions = ConditionChanges(ScenarioA1FireFollowUps.OverrunEffectConditions(overrunEffect));
+            if (overrunEffect.VehicleBreakdowns?.Any(item => item.Value.Outcome == VehicleBreakdownOutcome.Disabled) == true
+                && state.Unit(overrunEffect.VehicleId) is { } armed && LiveFire.VehicleRecalledAfterDisable(state, armed,
+                    Is(armed, Conditions.Disabled) || overrunEffect.VehicleBreakdowns.GetValueOrDefault("ma")?.Outcome == VehicleBreakdownOutcome.Disabled))
+            {
+                foreach (var change in ScenarioA1VehicleBreakdownResolutionCalculator.DisabledChanges("ma", true))
+                {
+                    conditions[ConditionName(change.Condition)] = change.Value ? ConditionState.True : ConditionState.False;
+                }
+            }
+            if (conditions.Count > 0)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(overrunEffect.VehicleId, conditions), package, null, [fireId]));
+            }
         }
 
         // The fire markers (A3.2, A3.4, A3.5, A8.1, A8.3, A8.4); a MG firing again alone on its Multiple ROF leaves its unit as it was.
@@ -1706,7 +1730,9 @@ public sealed partial class GamePlanner
         if (attack.FireKind == ScenarioA1FireCalculator.ResidualFire)
         {
             // A8.2 (rulings R6.6, R9.6): Residual FP has no LOS Hindrance, but the SMOKE of its Location applies.
-            return UpperLevelEncircled(state, (ScenarioA1FireMapRules.ResidualMapFacts(attack, terrain, SmokeSources(state).Count(place => place == target)), null));
+            var (smokeHindrances, smokeReason) = SmokeHindrancesAt(state, target);
+            return smokeHindrances is null ? (null, smokeReason)
+                : UpperLevelEncircled(state, (ScenarioA1FireMapRules.ResidualMapFacts(attack, terrain, smokeHindrances), null));
         }
 
         var firingSide = attack.VehicleFire is { } vehicleFire ? state.Unit(vehicleFire.VehicleId!)?.Side : state.Unit(attack.Firers![0].UnitId!)?.Side;

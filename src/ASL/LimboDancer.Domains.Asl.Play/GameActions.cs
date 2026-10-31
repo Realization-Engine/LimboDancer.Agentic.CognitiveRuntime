@@ -307,7 +307,7 @@ public static class GameActions
             package = ScenarioA1RallyPackage.Identity.ToString()
         }));
 
-    public static readonly ActionDescriptor Repair = Descriptor("asl.game.repair", "Repair a SW",
+    public static readonly ActionDescriptor Repair = Descriptor("asl.game.repair", "Repair a weapon",
         "Attempt in the RPh to repair a malfunctioned MG a Good Order unit possesses: a dr at most its Repair Number repairs it, a 6 eliminates it (A9.72).",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
@@ -316,7 +316,8 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "unitId": { "type": "string" }, "equipmentId": { "type": "string" }
+            "unitId": { "type": "string" }, "equipmentId": { "type": "string" },
+            "weapon": { "type": "string" }, "hero": { "type": ["string", "null"] }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -561,7 +562,7 @@ public static class GameActions
             "aim": { "type": "integer", "minimum": 1, "maximum": 5 },
             "aimFacing": { "type": "string", "enum": ["east", "north-east", "north-west", "west", "south-west", "south-east"] },
             "intensive": { "type": "boolean" },
-            "spotter": { "type": "string" }, "director": { "type": "string" }
+            "spotter": { "type": "string" }, "director": { "type": "string" }, "secondFirer": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new

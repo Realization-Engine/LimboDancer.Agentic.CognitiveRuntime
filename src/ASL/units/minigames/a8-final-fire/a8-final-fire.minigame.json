@@ -141,6 +141,46 @@
       }
     },
     {
+      "name": "A lone leader firing the Gun's IFE, marked First Fire, may not sustain, so has no Final Fire",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-leader",
+        "marker": "first-fire",
+        "range": 1,
+        "phase": "DFPh",
+        "weapon": "ife",
+        "loneSmc": true
+      },
+      "expect": {
+        "outcome": "refused",
+        "reasons": [
+          "neither"
+        ]
+      }
+    },
+    {
+      "name": "The Gun's crew firing its IFE, marked First Fire, sustains once at the ADJACENT squad",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a8.41-final-fire",
+      "facts": {
+        "firerId": "g-gun",
+        "marker": "first-fire",
+        "range": 1,
+        "phase": "DFPh",
+        "weapon": "ife",
+        "loneSmc": false
+      },
+      "expect": {
+        "outcome": "may-fire-once-more",
+        "reasons": [
+          "Sustained Fire"
+        ]
+      }
+    },
+    {
       "name": "The Gun marked First Fire may not Intensive Fire at range 5",
       "position": "setup",
       "viewer": "german",

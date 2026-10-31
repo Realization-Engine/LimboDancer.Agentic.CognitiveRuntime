@@ -28,6 +28,16 @@
             <UnitOptions Units="@([.. Guns.Select(gun => new PlayChoice(gun.Id, gun.Label))])" Text="@Say" />
         </select>
     </label>
+    @if (SecondFirers is not null)
+    {
+        <label title="Two distinct SMC in the same Location fire together; the additional firer cannot also direct or spot.">
+            Second firer
+            <select id="ordnance-second-firer" value="@SecondFirer" @onchange="@(args => OnSecondFirer.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none</option>
+                <UnitOptions Units="@SecondFirers" Text="@At" />
+            </select>
+        </label>
+    }
     @if (Spotters is not null)
     {
         <label title="C9.3: a Good Order unit in the mortar's hex or an adjacent one spots for it (+2, ROF one less), in the PFPh or DFPh; it keeps spotting while Good Order.">
@@ -85,7 +95,16 @@
     [Parameter]
     public string Gun { get; set; } = string.Empty;
 
-    /// <summary>The units that may spot for a light mortar, or null when the weapon takes no Spotter.</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice>? SecondFirers { get; set; }
+
+    [Parameter]
+    public string SecondFirer { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnSecondFirer { get; set; }
+
+    /// <summary>The units that may spot for a mortar, or null when the weapon takes no Spotter.</summary>
     [Parameter]
     public IReadOnlyList<PlayChoice>? Spotters { get; set; }
 
@@ -103,7 +122,7 @@
     [Parameter, EditorRequired]
     public RenderFragment Target { get; set; } = default!;
 
-    /// <summary>Whether the weapon may use Intensive Fire (a Gun or MA, not a mortar, LATW, or Panzerfaust).</summary>
+    /// <summary>Whether the weapon may use Intensive Fire in its selected firing mode.</summary>
     [Parameter]
     public bool IntensiveAllowed { get; set; }
 

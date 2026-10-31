@@ -53,6 +53,163 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
     }
 
     [Fact]
+    public void CurrentFinalFireMaMgUsesSustainedNumbersAndForfeitsRof()
+    {
+        var plain = Shot();
+        var attack = plain with
+        {
+            Phase = "DFPh",
+            FiringSide = "non-phasing",
+            Range = 1,
+            FinalFireVersion = 1,
+            VehicleFire = plain.VehicleFire! with
+            {
+                FiredThisPlayerTurn = true,
+                FinalFireMarker = FireMarker.FirstFire,
+            },
+        };
+        var facts = Supplement(("ma", Facts(VehicleBreakdownWeapon.MainArmament, 12)));
+        Assert.Contains("asl.a1.fire.firer-already-fired", ScenarioA1FireCalculator.Precheck(attack with
+        {
+            FinalFireVersion = null
+        }, Reference));
+        Assert.Contains(ScenarioA1FireCalculator.Precheck(attack with
+        {
+            Range = 3
+        }, Reference), reason => reason.StartsWith("asl.a1.fire.final-fire:", StringComparison.Ordinal));
+        foreach (var dice in new int[][] { [1, 2], [5, 5], [6, 6] })
+        {
+            var result = Complete(attack with
+            {
+                Rolls = new FireRolls(dice, null, null, null)
+            }, facts);
+            Assert.Equal(FireResolution.Resolved, result.Disposition);
+            var effect = Assert.Single(result.WeaponEffects!);
+            Assert.True(effect.SustainedFire);
+            Assert.False(effect.RateOfFireRetained);
+            Assert.Equal("final-fire", effect.FireCounter);
+            Assert.Equal(new VehicleBreakdownNumbers(10, 12, false, false), effect.VehicleBreakdown!.Numbers);
+            Assert.Equal(dice.Sum() == 12 ? VehicleBreakdownOutcome.Disabled
+                : dice.Sum() == 10 ? VehicleBreakdownOutcome.Malfunction : VehicleBreakdownOutcome.None, effect.VehicleBreakdown.Outcome);
+            var normal = Complete(attack with
+            {
+                VehicleFire = attack.VehicleFire! with
+                {
+                    FiredThisPlayerTurn = false,
+                    FinalFireMarker = FireMarker.None
+                },
+                Rolls = new FireRolls([5, 6], null, null, null)
+            }, facts);
+            Assert.True(normal.Disposition == FireResolution.Resolved, string.Join(", ", normal.Reasons));
+            Assert.Equal(normal.Arithmetic!.TotalFirepower / 2, result.Arithmetic!.TotalFirepower);
+        }
+    }
+
+    private static FireAttack FinalFireMaMg(FireMarker? marker, bool fired = true, bool rofShot = false)
+    {
+        var plain = Shot();
+        return plain with
+        {
+            Phase = "DFPh",
+            FiringSide = "non-phasing",
+            Range = 1,
+            FinalFireVersion = 1,
+            VehicleFire = plain.VehicleFire! with
+            {
+                FiredThisPlayerTurn = fired,
+                RateOfFireShot = rofShot,
+                FinalFireMarker = marker,
+            },
+        };
+    }
+
+    [Fact]
+    public void AnMaMgWithNoMultipleRofHasNoFinalFire()
+    {
+        // D3.5 (p. 200): a vehicle's MG fires once a Player Turn "unless it is the vehicle's MA with a specific Multiple ROF" (item 46).
+        var attack = FinalFireMaMg(FireMarker.FirstFire);
+        var printed = Reference.Definitions["attacker-halftrack"];
+        Assert.NotNull(printed.RateOfFire);
+        var none = printed with
+        {
+            RateOfFire = null
+        };
+        Assert.Equal(FinalFireUse.OnceMore, ScenarioA1FinalFireCalculator.Verdict(ScenarioA1FinalFireCalculator.VehicleFacts(attack, attack.VehicleFire!, printed)).Use);
+        var refused = ScenarioA1FinalFireCalculator.Verdict(ScenarioA1FinalFireCalculator.VehicleFacts(attack, attack.VehicleFire!, none));
+        Assert.Equal(FinalFireUse.None, refused.Use);
+        Assert.Contains("neither", refused.Refusal, StringComparison.Ordinal);
+        Assert.Equal(FinalFireUse.None, ScenarioA1FinalFireCalculator.Verdict(ScenarioA1FinalFireCalculator.VehicleFacts(attack, attack.VehicleFire!, null)).Use);
+        var spent = new FireSpentFacts("dfph", true, false, true, () => false, () => false, () => false);
+        Assert.False(ScenarioA1FireEligibility.FireSpent(spent, ScenarioA1FinalFireCalculator.VehicleFacts(attack.VehicleFire!, true, 1)));
+        Assert.True(ScenarioA1FireEligibility.FireSpent(spent, ScenarioA1FinalFireCalculator.VehicleFacts(attack.VehicleFire!, false, 1)));
+    }
+
+    [Fact]
+    public void ASustainedMaMgThroughTheLegacyResolveNeedsBreakdownFacts()
+    {
+        var result = ScenarioA1FireCalculator.Resolve(FinalFireMaMg(FireMarker.FirstFire), Reference);
+        Assert.Equal(FireResolution.Indeterminate, result.Disposition);
+        Assert.Contains("asl.a1.fire.vehicle-breakdown-facts-missing", result.Reasons);
+    }
+
+    [Fact]
+    public void AnUnknownOrContradictoryMaMarkerUnderVersionOneIsRefused()
+    {
+        Assert.Contains("asl.a1.fire.final-fire-marker-unknown", ScenarioA1FireCalculator.Precheck(FinalFireMaMg(null), Reference));
+        Assert.Contains("asl.a1.fire.final-fire-marker-unknown", ScenarioA1FireCalculator.Precheck(FinalFireMaMg((FireMarker)99), Reference));
+        // Item 49: fired this Player Turn, no ROF kept, and no counter cannot all be true.
+        Assert.Contains("asl.a1.fire.final-fire-marker-contradicts", ScenarioA1FireCalculator.Precheck(FinalFireMaMg(FireMarker.None), Reference));
+        Assert.DoesNotContain("asl.a1.fire.final-fire-marker-contradicts", ScenarioA1FireCalculator.Precheck(FinalFireMaMg(FireMarker.None, rofShot: true), Reference));
+        Assert.DoesNotContain("asl.a1.fire.final-fire-marker-contradicts", ScenarioA1FireCalculator.Precheck(FinalFireMaMg(FireMarker.None, fired: false), Reference));
+    }
+
+    [Theory]
+    [InlineData("first-fire", FireMarker.FirstFire)]
+    [InlineData("final-fire", FireMarker.FinalFire)]
+    [InlineData("none", FireMarker.None)]
+    [InlineData("something-else", FireMarker.NoFire)]
+    public void VehicleMarkerReadsTheMaCounterAndAnUnknownOneBarsFire(string counter, FireMarker expected)
+    {
+        Assert.Equal(expected, ScenarioA1FinalFireCalculator.VehicleMarker(counter, true, false, false, false));
+    }
+
+    [Fact]
+    public void FinalFireFactsAreOmittedFromTheRecordWhenNull()
+    {
+        var legacy = Shot();
+        var element = JsonSerializer.SerializeToElement(legacy);
+        Assert.False(element.TryGetProperty(nameof(FireAttack.FinalFireVersion), out _));
+        Assert.False(element.GetProperty(nameof(FireAttack.VehicleFire)).TryGetProperty(nameof(FireVehicleFire.FinalFireMarker), out _));
+        var current = JsonSerializer.SerializeToElement(FinalFireMaMg(FireMarker.FirstFire));
+        Assert.Equal(1, current.GetProperty(nameof(FireAttack.FinalFireVersion)).GetInt32());
+        Assert.True(current.GetProperty(nameof(FireAttack.VehicleFire)).TryGetProperty(nameof(FireVehicleFire.FinalFireMarker), out _));
+    }
+
+    [Fact]
+    public void RecordedWeaponFactsRoundTripAndMissingWeaponFactsAreRefused()
+    {
+        var legacy = Shot();
+        Assert.False(JsonSerializer.SerializeToElement(legacy).TryGetProperty(nameof(FireAttack.VehicleBreakdown), out _));
+        var facts = Supplement(("ma", Facts(VehicleBreakdownWeapon.MainArmament, 11, circled: true)));
+        var current = legacy with
+        {
+            VehicleBreakdown = facts
+        };
+        var roundTrip = JsonSerializer.Deserialize<FireAttack>(JsonSerializer.Serialize(current))!;
+        Assert.Equal(JsonSerializer.Serialize(ScenarioA1FireCalculator.Resolve(current, Reference, facts)),
+            JsonSerializer.Serialize(ScenarioA1FireCalculator.Resolve(roundTrip, Reference)));
+        foreach (var incomplete in new[] { new FireVehicleBreakdownFacts(null!), Supplement(("ma", null!)) })
+        {
+            var refused = ScenarioA1FireCalculator.Resolve(legacy with
+            {
+                VehicleBreakdown = incomplete
+            }, Reference);
+            Assert.Equal(FireResolution.Indeterminate, refused.Disposition);
+            Assert.Contains(refused.Reasons, reason => reason.Contains("vehicle-breakdown", StringComparison.Ordinal));
+        }
+    }
+
+    [Fact]
     public void NewLowAmmoReadingDoesNotChangeTheLegacyAttackOrResolution()
     {
         var attack = Shot();
@@ -126,6 +283,42 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
         Assert.Equal(VehicleBreakdownOutcome.Disabled, result.OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
         Assert.Contains((UnitCondition.Disabled, true), ScenarioA1FireFollowUps.OverrunEffectConditions(result.OverrunEffect));
         Assert.False(result.OverrunEffect.Immobilized);
+        Assert.Equal(VehicleBreakdownOutcome.Malfunction,
+            Complete(attack, facts with
+            {
+                OverrunVersion = 1
+            }).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
+        var circled = Supplement(("ma", Facts(VehicleBreakdownWeapon.MainArmament, 11, circled: true)),
+            ("bmg", Facts(VehicleBreakdownWeapon.BowMg)), ("cmg", Facts(VehicleBreakdownWeapon.CoaxialMg)));
+        Assert.Equal(VehicleBreakdownOutcome.LowAmmo, Complete(attack, circled).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
+        Assert.False(JsonSerializer.SerializeToElement(circled).TryGetProperty(nameof(FireVehicleBreakdownFacts.OverrunVersion), out _));
+        Assert.Equal(VehicleBreakdownOutcome.Malfunction,
+            Complete(attack, circled with
+            {
+                OverrunVersion = 1
+            }).OverrunEffect!.VehicleBreakdowns!["ma"].Outcome);
+        Assert.Equal(FireResolution.Abstained, Complete(attack, circled with
+        {
+            OverrunVersion = 2
+        }).Disposition);
+    }
+
+    [Theory]
+    [InlineData("ma")]
+    [InlineData("bmg")]
+    [InlineData("cmg")]
+    public void DisabledArmamentDoesNotParticipateInCurrentOverruns(string disabled)
+    {
+        var legacy = new FireOverrun("de-v", "attacker-tank", At, false, false, false, false, false);
+        var current = legacy with
+        {
+            DisabledWeapons = [disabled]
+        };
+        var definition = Reference.Definitions["attacker-tank"];
+        Assert.Contains(ScenarioA1FireCalculator.OverrunWeapons(legacy, definition), item => item.Weapon == disabled);
+        Assert.DoesNotContain(ScenarioA1FireCalculator.OverrunWeapons(current, definition), item => item.Weapon == disabled);
+        Assert.Equal(2, ScenarioA1FireCalculator.OverrunWeapons(current, definition).Count);
+        Assert.False(JsonSerializer.SerializeToElement(legacy).TryGetProperty(nameof(FireOverrun.DisabledWeapons), out _));
     }
 
     [Fact]
@@ -212,5 +405,24 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
         var wrong = Supplement(("ma", Facts(VehicleBreakdownWeapon.BowMg)));
         Assert.Equal(FireResolution.Indeterminate, ScenarioA1FireCalculator.Resolve(Shot(), Reference, wrong).Disposition);
         Assert.Equal(FireResolution.Indeterminate, ScenarioA1FireCalculator.Resolve(Shot(), Reference, Supplement()).Disposition);
+    }
+
+    [Fact]
+    public void OverrunRejectsUnknownDisabledWeaponNamesBeforeDice()
+    {
+        var attack = Shot() with
+        {
+            Phase = "MPh",
+            FireKind = ScenarioA1FireCalculator.OverrunFire,
+            Firers = [],
+            VehicleFire = null,
+            FirerLocationId = At,
+            Range = 0,
+            Overrun = new FireOverrun("de-v", "attacker-tank", At, false, false, false, false, false) { DisabledWeapons = ["aamg"] },
+            Rolls = new FireRolls(null, null, null, null)
+        };
+        var result = ScenarioA1FireCalculator.Resolve(attack, Reference);
+        Assert.Equal(FireResolution.Abstained, result.Disposition);
+        Assert.Contains("asl.a1.fire.overrun-disabled-weapon-unknown", result.Reasons);
     }
 }

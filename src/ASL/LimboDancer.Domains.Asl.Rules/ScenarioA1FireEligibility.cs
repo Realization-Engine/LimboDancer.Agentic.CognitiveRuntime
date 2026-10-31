@@ -219,9 +219,14 @@ public static class ScenarioA1FireEligibility
     /// squad whose only fire is one SW use still fires its inherent FP, and an unfired MG, ATR, or FT fires on (A9.2, A7.351, A22.3). The MPh is not
     /// read here.
     /// </summary>
-    public static bool FireSpent(FireSpentFacts facts)
+    public static bool FireSpent(FireSpentFacts facts, FinalFireFacts? mainArmament = null)
     {
         ArgumentNullException.ThrowIfNull(facts);
+        if (facts.Vehicle && facts.Phase == "dfph" && mainArmament is { Weapon: FinalFireWeapon.Mg, Vehicular: true, MainArmament: true }
+            && ScenarioA1FinalFireCalculator.Use(mainArmament) != FinalFireUse.None)
+        {
+            return false;
+        }
         // A8.4 (the A8.41 claim): a First-Fire-marked unit fires again in the DFPh, from the Final Fire calculator.
         if (facts.Phase is not ("pfph" or "afph" or "dfph") || !facts.Fired || ScenarioA1FinalFireCalculator.FiresAgain(facts.Phase == "dfph", facts.FirstFire))
         {

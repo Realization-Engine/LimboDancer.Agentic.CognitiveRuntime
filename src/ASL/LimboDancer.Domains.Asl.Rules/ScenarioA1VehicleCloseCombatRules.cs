@@ -39,12 +39,6 @@ public sealed record VehicleCcUnitFacts(string Id, string Side, bool Vehicle, bo
 /// </summary>
 public static class ScenarioA1VehicleCloseCombatRules
 {
-    /// <summary>Whether a vehicle has a CC attack (A11.62): a CMG not malfunctioned, or an AAMG while CE, with its crew able to fight.</summary>
-    public static bool VehicleCcArmament(bool fromCatalog, bool stunned, bool shocked, bool unconfirmedKill, bool abandoned, bool recalled, bool captured,
-        bool coaxialMg, bool cmgMalfunctioned, bool antiAircraftMg, bool crewExposed, bool mainArmamentAamg, bool malfunctioned, bool disabled) =>
-        fromCatalog && !stunned && !shocked && !unconfirmedKill && !abandoned && !recalled && !captured
-        && ((coaxialMg && !cmgMalfunctioned) || (antiAircraftMg && crewExposed && !(mainArmamentAamg && (malfunctioned || disabled))));
-
     /// <summary>
     /// Whether Passengers join a vehicle's CC attack on Infantry (A11.62; pass 70, ruling R70.31): some do (<paramref name="joining"/>, as
     /// <see cref="ScenarioA1PassengerActionRules.CloseCombat"/> reads each one's part), and the vehicle is neither Stunned, Shocked, Abandoned, nor captured.

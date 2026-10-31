@@ -1862,7 +1862,7 @@ Moved here by pass 72 (2026-10-27), with no task renumbered: a berserk Dash acro
 
 **Pass 74: Infantry VII: prisoners, Interrogation, and Control** (24 rows of the inventory). Counters: none. Needs first: 40; 70 (the capture of Passengers, and the concealment and HIP that Interrogation reveals). Interrogation (E2.1) is rolled on a capture or a surrender, so it is built with the prisoners.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 24 rows: 2 built with a deviation, 10 partly, 12 not built. Claims: 24 open. A rule decided outside Rules on 1 row. Wiring: 0 of 24. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 24 rows: 2 built with a deviation, 10 partly, 12 not built. Claims: 21 open, 3 built (owners: A20.54 (Claude)). A rule decided outside Rules on 1 row. Wiring: 0 of 24. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1908,7 +1908,7 @@ Turns tasks that reach this pass from another: D6 (pass 73) names the CC and her
 
 **Pass 85: SMOKE, wind, and Environmental Conditions** (new; 33 rows of the inventory). Counters: s# and WP# on Guns and mortars (the British mortar's s7 is already in the catalog, unread); a smoke dispenser value on each vehicle whose counter prints one (the audit says the PzKpfw IIIH does; not checked against the Vehicle Listing). Needs first: 35.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 33 rows: 1 built with a deviation, 7 partly, 25 not built. Claims: 32 open, 1 reviewed (owners: A24.5 (Claude)). A Turns calculator on 2 rows. Wiring: 0 of 33. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 33 rows: 1 built, 1 built with a deviation, 7 partly, 24 not built. Claims: 31 open, 2 wired (owners: A24.4 (Codex), A24.5 (Claude)). A Turns calculator on 1 row. Wiring: 2 of 33. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1932,7 +1932,7 @@ Turns tasks that reach this pass from another: D6 (pass 73) names the CC and her
 
 **Pass 90: Night** (planned at 2:45 of build; 47 rows of the inventory, the four Trip Flare rows included since 2026-10-28). Counters: none. Needs first: 35.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 47 rows: 1 built with a deviation, 13 partly, 33 not built. Claims: 47 open. A Turns calculator on 2 rows. Wiring: 0 of 47. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 47 rows: 1 built with a deviation, 13 partly, 33 not built. Claims: 43 open, 4 built (owners: E1.8 (Claude)). A Turns calculator on 2 rows. Wiring: 0 of 47. Minigames: 2.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1999,7 +1999,7 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: unloading, a Passen
 
 **Pass 105: Armored combat IV: equipment and formations** (new; 68 rows of the inventory). Counters: an armored car; a non-turreted AFV; an AFV with Secondary Armament; a partially armored AFV; a vehicle FT; an AA Gun with IFE of 40mm or less; an AFV with a G and one with Sz; a radioless trait on the T-34 M41. Needs first: 50, 55, 65, 100 (Armored Assault for D14.33).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 2 built with a deviation, 69 partly, 4 refused, 48 not built. Claims: 119 open, 4 built (owners: A11.5 (Codex), D3.7 (Codex)). A rule decided outside Rules on 6 rows. A Turns calculator on 2 rows. Wiring: 0 of 123. Minigames: 2.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 2 built with a deviation, 69 partly, 4 refused, 48 not built. Claims: 118 open, 3 built, 2 wired (owners: A11.5 (Codex), D3.7 (Codex), D5.34 (Claude)). A rule decided outside Rules on 6 rows. A Turns calculator on 1 row. Wiring: 2 of 123. Minigames: 3.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2026,7 +2026,7 @@ Turns tasks that reach this pass from another: D4.3 (pass 175) takes D3.71's cir
 
 **Pass 110: Guns and anti-tank weapons II** (new; 77 rows of the inventory). Counters: R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3). Needs first: 35; 60 (HE Equivalency for C13.4x).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 3 built with a deviation, 72 partly, 2 refused, 46 not built. Claims: 117 open, 2 reviewed, 4 wired (owners: A21.13 (Claude), C9 (Claude), C9.3 (Claude)). A rule decided outside Rules on 6 rows. Wiring: 4 of 123. Minigames: 3.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 3 built with a deviation, 72 partly, 2 refused, 46 not built. Claims: 114 open, 3 built, 6 wired (owners: A21.13 (Claude), C10.3 (Claude), C9 (Claude), C9.2 (Codex), C9.3 (Claude), D5.34 (Claude)). A rule decided outside Rules on 4 rows. Wiring: 6 of 123. Minigames: 5.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2139,7 +2139,7 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: a stream read from 
 
 **Pass 130: Terrain II: the refused ground terrain** (new; 63 rows of the inventory; pass 135 until 2026-10-16). Counters: a Shellhole counter; Climb markers; overlay art and data (no source for it is in the repository). Needs first: 35, 40; 125 (the wadis and streams an overlay joins, A2.76; shellholes in a gully, B2.4).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 77 rows: 1 built with a deviation, 29 partly, 21 refused, 26 not built. Claims: 77 open. A rule decided outside Rules on 3 rows. Wiring: 0 of 77. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 77 rows: 1 built with a deviation, 29 partly, 21 refused, 26 not built. Claims: 76 open, 1 built (owners: A9.222 (Codex)). A rule decided outside Rules on 3 rows. Wiring: 0 of 77. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2157,7 +2157,7 @@ Moved here by passes 35, 40, and 45, with no task renumbered (their leading rule
 
 **Pass 135: Terrain III: buildings and rubble** (planned at 3:05 of build; 43 rows of the inventory; pass 140 until 2026-10-16). Counters: Breach and rubble as states. Needs first: 45 (levels); 100 (vertex LOS for Rowhouses); 115 (Clearance); 125 (rubble in a gully, B24.2); 130 (Scaling, a way down from an upper level, A7.72).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 51 rows: 22 partly, 7 refused, 22 not built. Claims: 51 open. Wiring: 0 of 51. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 51 rows: 22 partly, 7 refused, 22 not built. Claims: 46 open, 5 built (owners: B23.74 (Claude), D5.34 (Claude)). Wiring: 0 of 51. Minigames: 2.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2362,7 +2362,7 @@ Turns tasks that reach this pass from another: D7.2 (pass 125) takes amphibious 
 
 **Pass 180: Nationalities II: new formations and nations** (new; 54 rows of the inventory). Counters: SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them. Needs first: 105 (Impulse Movement) for Human Wave; 115 (entrenching); 85 (WP); 110 (PF and PSK for other nations).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 56 rows: 3 partly, 53 not built. Claims: 56 open. Wiring: 0 of 56. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 56 rows: 3 partly, 53 not built. Claims: 55 open, 1 built (owners: A11.5 (Codex)). Wiring: 0 of 56. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2381,7 +2381,7 @@ Turns tasks that reach this pass from another: D6 (pass 73) names this pass's CC
 
 **Pass 185: Fire** (planned at 3:00 of build; 32 rows of the inventory). Counters: Flame and Blaze as states; the Kindle and Spread numbers of the Terrain Chart. Needs first: 85 (EC and wind), 135 (rubble), 75 (who Kindled).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 35 rows: 6 partly, 29 not built. Claims: 34 open, 1 built (owners: B25.2 (Claude)). Wiring: 0 of 35. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 35 rows: 6 partly, 29 not built. Claims: 34 open, 1 reviewed (owners: B25.2 (Claude)). Wiring: 0 of 35. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|

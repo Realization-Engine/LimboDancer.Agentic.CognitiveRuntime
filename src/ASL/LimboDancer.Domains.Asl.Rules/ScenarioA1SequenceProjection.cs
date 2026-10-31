@@ -105,13 +105,15 @@ public static class ScenarioA1SequenceProjection
     /// <summary>
     /// The markers the ending phase removes, from units and weapons alike: First and Final Fire at the end of the DFPh (A3.4), Prep Fire at the end of the AFPh
     /// (A3.5), pins and TI in the CCPh (A3.8), DM at the end of every RPh (A10.62), the CC Reaction Fire counter with the MPh (D7.21; ruling R11.13); E1.8 (ruling
-    /// R16.2): at night First and Final Fire counters stay, as Gunflashes, until the end of the AFPh.
+    /// R16.2): at night First and Final Fire counters stay, as Gunflashes, until the end of the AFPh. The DFPh's night branch asks
+    /// <see cref="ScenarioA1GunflashCalculator.FireCountersStayAtNight"/> and the AFPh's <see cref="ScenarioA1GunflashCalculator.MarksEnd"/> (ASOP 5.33B; the
+    /// E1.8 claim, RE1.13): the same answer for every phase, day and night.
     /// </summary>
     public static IReadOnlyList<UnitCondition> ClearedMarkers(string phase, bool night) => phase switch
     {
-        "dfph" when night => [UnitCondition.IntensiveFire],
+        "dfph" when ScenarioA1GunflashCalculator.FireCountersStayAtNight(phase, night) => [UnitCondition.IntensiveFire],
         "dfph" => [UnitCondition.FinalFire, UnitCondition.FirstFire, UnitCondition.IntensiveFire],
-        "afph" when night => [UnitCondition.PrepFire, UnitCondition.BoundingFire, UnitCondition.IntensiveFire, UnitCondition.FinalFire, UnitCondition.FirstFire],
+        "afph" when night && ScenarioA1GunflashCalculator.MarksEnd(phase) => [UnitCondition.PrepFire, UnitCondition.BoundingFire, UnitCondition.IntensiveFire, UnitCondition.FinalFire, UnitCondition.FirstFire],
         "afph" => [UnitCondition.PrepFire, UnitCondition.BoundingFire, UnitCondition.IntensiveFire],
         "ccph" => [UnitCondition.Pinned, UnitCondition.Ti],
         "mph" => [UnitCondition.CcReaction],
@@ -150,7 +152,8 @@ public static class ScenarioA1SequenceProjection
             return new StunEndVerdict(stunRecovery ? [] : [(UnitCondition.StunRecovery, true)]);
         }
 
-        return new StunEndVerdict(stunned ? [(UnitCondition.Stunned, false), (UnitCondition.StunRecovery, true)] : []);
+        // D5.34 (the D5.34 claim): the Stun's flip.
+        return new StunEndVerdict(ScenarioA1StunCalculator.PlayerTurnEnd(active, stunned));
     }
 
     /// <summary>A3.3 (table player, pass 12): as the PFPh ends within a Player Turn, a unit that fired only a SW has Prep Fired and does not move.</summary>
