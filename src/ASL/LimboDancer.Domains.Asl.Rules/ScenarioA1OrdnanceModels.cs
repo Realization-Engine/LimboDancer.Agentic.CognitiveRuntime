@@ -22,13 +22,6 @@ public sealed record OrdnanceShot(
     FireAttack? Hit,
     OrdnanceRolls? Rolls)
 {
-    /// <summary>D3.7 source and use facts for the current vehicle reading. Null preserves a shot recorded before this wiring.</summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public VehicleBreakdownUseFacts? VehicleBreakdown
-    {
-        get; init;
-    }
-
     /// <summary>A8.41/C2.241: version 1 uses the Gun's own Final Fire admission. Null retains the earlier recorded reading.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? FinalFireVersion
@@ -39,6 +32,13 @@ public sealed record OrdnanceShot(
     /// <summary>C9.2/A21.13 participation evidence. Null preserves the recorded single-crew reading and serializes without this property.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceParticipation? Participation
+    {
+        get; init;
+    }
+
+    /// <summary>D3.7 source and use facts for the current vehicle reading. Null preserves a shot recorded before this wiring.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public VehicleBreakdownUseFacts? VehicleBreakdown
     {
         get; init;
     }

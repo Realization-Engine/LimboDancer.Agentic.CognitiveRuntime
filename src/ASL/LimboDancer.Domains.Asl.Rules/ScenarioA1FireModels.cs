@@ -23,16 +23,16 @@ public sealed record FireAttack(
     int? TargetSideElr,
     FireRolls? Rolls)
 {
-    /// <summary>D3.7 facts for the actual participating vehicle weapons. Null preserves the previously recorded reading.</summary>
+    /// <summary>A8.41 (p. 61): version 1 reads each weapon's own Final Fire counter. Null retains the recorded earlier reading.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public FireVehicleBreakdownFacts? VehicleBreakdown
+    public int? FinalFireVersion
     {
         get; init;
     }
 
-    /// <summary>A8.41 (p. 61): version 1 reads each weapon's own Final Fire counter. Null retains the recorded earlier reading.</summary>
+    /// <summary>D3.7 facts for the actual participating vehicle weapons. Null preserves the previously recorded reading.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public int? FinalFireVersion
+    public FireVehicleBreakdownFacts? VehicleBreakdown
     {
         get; init;
     }
