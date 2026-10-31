@@ -2139,7 +2139,7 @@ Moved here by pass 65 (2026-10-24), with no task renumbered: a stream read from 
 
 **Pass 130: Terrain II: the refused ground terrain** (new; 63 rows of the inventory; pass 135 until 2026-10-16). Counters: a Shellhole counter; Climb markers; overlay art and data (no source for it is in the repository). Needs first: 35, 40; 125 (the wadis and streams an overlay joins, A2.76; shellholes in a gully, B2.4).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 77 rows: 1 built with a deviation, 29 partly, 21 refused, 26 not built. Claims: 77 open. A rule decided outside Rules on 3 rows. Wiring: 0 of 77. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 77 rows: 1 built with a deviation, 29 partly, 21 refused, 26 not built. Claims: 76 open, 1 claimed (owners: A9.222 (Codex)). A rule decided outside Rules on 3 rows. Wiring: 0 of 77. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
