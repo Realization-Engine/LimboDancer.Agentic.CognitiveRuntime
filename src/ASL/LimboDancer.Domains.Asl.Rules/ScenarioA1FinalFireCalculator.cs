@@ -92,7 +92,8 @@ public static class ScenarioA1FinalFireCalculator
         return new(sw ? FinalFireWeapon.OrdnanceSw : FinalFireWeapon.Gun, marker, shot.Range,
             ScenarioA1OrdnanceParticipationCalculator.SmcCount(reference.Fire.Definitions.GetValueOrDefault(shot.Crew!.DefinitionId!)?.Kind, shot.Participation) == 1,
             shot.Vehicle is not null, shot.Vehicle is not null, true, definition.NoIntensiveFire,
-            !ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) && shot.Crew.Broken != true && shot.Vehicle?.Shocked != true && shot.Vehicle?.Stunned != true);
+            IntensiveFireCrewFit(ScenarioA1OrdnanceParticipationCalculator.Pinned(shot), shot.Crew.Broken == true,
+                shot.Vehicle?.Shocked == true, shot.Vehicle?.Stunned == true));
     }
 
     /// <summary>A8.4, A8.41 (p. 61): facts for the selected inherent FP or held weapon, using that subject's own counter.</summary>
@@ -113,6 +114,9 @@ public static class ScenarioA1FinalFireCalculator
 
     /// <summary>C5.6, C5.63 (p. 172): whether a Gun's crew may Intensive Fire it: not a "No IF" Gun, and its crew not pinned, shocked, or stunned.</summary>
     public static bool MayIntensiveFire(bool noIntensiveFire, bool crewFit) => !noIntensiveFire && crewFit;
+
+    /// <summary>C5.6 (p. 172): the same crew-state test for the command and its Intensive Fire control.</summary>
+    public static bool IntensiveFireCrewFit(bool pinned, bool broken, bool shocked, bool stunned) => !pinned && !broken && !shocked && !stunned;
 
     /// <summary>
     /// A8.4, A8.41 (p. 61), A9.3 (p. 63), C2.241 (p. 168), C2.29: what Final Fire allows a unit or weapon by its own counter. With no counter, Normal
