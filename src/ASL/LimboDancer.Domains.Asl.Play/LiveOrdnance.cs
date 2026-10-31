@@ -128,7 +128,8 @@ public static class LiveOrdnance
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
-        if (secondFirer is not null && ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal(state.Find(gunId)?.Kind) is { } weaponRefusal)
+        var selectedGun = secondFirer is not null ? state.Find(gunId) : null;
+        if (secondFirer is not null && ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal(selectedGun?.Kind) is { } weaponRefusal)
         {
             return (null, weaponRefusal);
         }
@@ -154,7 +155,8 @@ public static class LiveOrdnance
 
         IGameObject gun;
         UnitInstance crew;
-        if (state.Find(gunId) is UnitInstance { Status: InstanceStatus.Active, Definition: not null, Position: MapPosition } tank && LiveFire.IsVehicle(tank))
+        selectedGun ??= state.Find(gunId);
+        if (selectedGun is UnitInstance { Status: InstanceStatus.Active, Definition: not null, Position: MapPosition } tank && LiveFire.IsVehicle(tank))
         {
             // D1.3: the tank is the Gun and the crew; its MA must be a reviewed Gun (a caliber in the catalog). D5.41: an Abandoned AFV has no crew.
             if (ScenarioA1OrdnanceEligibility.TankRefusal(tank.Id, Is(tank, Conditions.Abandoned)) is { } abandoned)
@@ -177,13 +179,13 @@ public static class LiveOrdnance
             gun = tank;
             crew = tank;
         }
-        else if (state.Find(gunId) is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:gun", Definition: not null, Position: MapPosition } piece
+        else if (selectedGun is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:gun", Definition: not null, Position: MapPosition } piece
             && piece.Holding is { Role: HoldingRole.Manned } manning && state.Unit(manning.Holder) is { Status: InstanceStatus.Active, Definition: not null } holder)
         {
             gun = piece;
             crew = holder;
         }
-        else if (state.Find(gunId) is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:light-mortar", Definition: not null } lightMortar
+        else if (selectedGun is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:light-mortar", Definition: not null } lightMortar
             && lightMortar.Holding is { Role: HoldingRole.Possessed } possession && state.Unit(possession.Holder) is { Status: InstanceStatus.Active, Definition: not null } possessor)
         {
             // C9.2 (ruling R9.2): a light mortar is fired by the unit possessing it; A4.41 (referee, pass 9): not in the AFPh after it moved.
@@ -196,7 +198,7 @@ public static class LiveOrdnance
             gun = lightMortar;
             crew = possessor;
         }
-        else if (state.Find(gunId) is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:latw", Definition: not null } counterLatw
+        else if (selectedGun is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:latw", Definition: not null } counterLatw
             && counterLatw.Holding is { Role: HoldingRole.Possessed } carried && state.Unit(carried.Holder) is { Status: InstanceStatus.Active, Definition: not null } carrier)
         {
             // C13.8 (table player, pass 9b): not fired from inside a vehicle; its possessor stands on the map.
@@ -209,7 +211,7 @@ public static class LiveOrdnance
             gun = counterLatw;
             crew = carrier;
         }
-        else if (state.Find(gunId) is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:mg", Definition: not null } machineGun
+        else if (selectedGun is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:mg", Definition: not null } machineGun
             && machineGun.Holding is { Role: HoldingRole.Possessed } held && state.Unit(held.Holder) is { Status: InstanceStatus.Active, Definition: not null } possessorOfMg)
         {
             // A9.61 (pass 60, ruling R60.19): a SW MG fires as ordnance alone, at a named AFV, by the unit possessing it.
