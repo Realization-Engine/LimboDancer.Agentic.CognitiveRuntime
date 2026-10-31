@@ -357,6 +357,28 @@ public sealed class ScenarioA1FireExtensionTests
         Assert.Equal("final-fire", effect.FireCounter);
     }
 
+    [Theory]
+    [InlineData("defender-leader")]
+    [InlineData("defender-hero")]
+    public void CurrentFinalFireRefusesALoneSmcsFirstFireMg(string definition)
+    {
+        // A9.3 (p. 63), A8.312 (p. 61): a lone SMC's First-Fire-marked MG cannot sustain, so it has no Final Fire (the review of PR 75, item 48).
+        var smc = Firer("ru-l", definition) with
+        {
+            UsesInherentFp = false,
+            Weapons = [new FireWeapon("ru-mmg", "defender-mmg", false, false, true)],
+        };
+        var attack = Attack(Rolls([1, 6]), phase: "DFPh", side: "non-phasing", range: 1, firers: [smc]) with
+        {
+            FinalFireVersion = 1
+        };
+        Assert.Contains("asl.a1.fire.final-fire-outside", ScenarioA1FireCalculator.Precheck(attack, Reference));
+        Assert.DoesNotContain("asl.a1.fire.final-fire-outside", ScenarioA1FireCalculator.Precheck(attack with
+        {
+            Firers = [Firer("ru-1") with { UsesInherentFp = false, Weapons = smc.Weapons }]
+        }, Reference));
+    }
+
     [Fact]
     public void MachineGunsAddTheirFirepowerMalfunctionAndKeepTheirRof()
     {

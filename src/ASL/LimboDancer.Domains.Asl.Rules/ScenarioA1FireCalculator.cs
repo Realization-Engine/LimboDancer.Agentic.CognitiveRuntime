@@ -66,7 +66,7 @@ public static class ScenarioA1FireCalculator
             return Refused(FireResolution.Indeterminate, undecided);
         }
 
-        if (attack.VehicleFire is { } finalVehicle && CurrentVehicleFinalFire(attack, finalVehicle)?.Sustained == true && vehicleBreakdown is null)
+        if (attack.VehicleFire is { } finalVehicle && CurrentVehicleFinalFire(attack, finalVehicle, reference)?.Sustained == true && vehicleBreakdown is null)
         {
             return Refused(FireResolution.Indeterminate, ["asl.a1.fire.vehicle-breakdown-facts-missing"]);
         }
@@ -1105,9 +1105,9 @@ public static class ScenarioA1FireCalculator
     /// an ADJACENT or same-hex target, as <see cref="ScenarioA1FinalFireCalculator.MaySustain"/> and
     /// <see cref="ScenarioA1FinalFireCalculator.FinalFireRefusal"/> answer.
     /// </summary>
-    private static FinalFireVerdict? CurrentVehicleFinalFire(FireAttack attack, FireVehicleFire vehicle) =>
+    private static FinalFireVerdict? CurrentVehicleFinalFire(FireAttack attack, FireVehicleFire vehicle, ScenarioA1FireReference reference) =>
         attack.FinalFireVersion == 1 && attack.Phase == "DFPh" && vehicle.Weapons is not { Count: > 0 }
-            ? ScenarioA1FinalFireCalculator.Verdict(ScenarioA1FinalFireCalculator.VehicleFacts(attack, vehicle)) : null;
+            ? ScenarioA1FinalFireCalculator.Verdict(ScenarioA1FinalFireCalculator.VehicleFacts(attack, vehicle, reference.Definitions.GetValueOrDefault(vehicle.DefinitionId ?? string.Empty))) : null;
 
     private static void VehicleFireOutside(FireAttack attack, FireVehicleFire vehicle, ScenarioA1FireReference reference,
         IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
@@ -1146,7 +1146,13 @@ public static class ScenarioA1FireCalculator
             {
                 outside.Add("asl.a1.fire.final-fire-marker-unknown");
             }
-            else if (ScenarioA1FinalFireCalculator.FinalFireRefusal(ScenarioA1FinalFireCalculator.VehicleFacts(attack, vehicle)) is { } refusal)
+            else if (marker == FireMarker.None && vehicle.FiredThisPlayerTurn == true && vehicle.RateOfFireShot != true)
+            {
+                // A8.41, D3.5: an MA that fired this Player Turn and kept no Multiple ROF carries a fire counter, so "no counter" contradicts the
+                // record (the review of PR 75, item 49).
+                outside.Add("asl.a1.fire.final-fire-marker-contradicts");
+            }
+            else if (ScenarioA1FinalFireCalculator.FinalFireRefusal(ScenarioA1FinalFireCalculator.VehicleFacts(attack, vehicle, definition)) is { } refusal)
             {
                 outside.Add("asl.a1.fire.final-fire:" + refusal);
             }
@@ -3248,7 +3254,7 @@ public static class ScenarioA1FireCalculator
         {
             if (vehicleBreakdown is not null)
             {
-                var sustained = CurrentVehicleFinalFire(attack, vehicle)?.Sustained == true;
+                var sustained = CurrentVehicleFinalFire(attack, vehicle, reference)?.Sustained == true;
                 var outcomes = VehicleBreakdowns(vehicle.VehicleId!, VehicleBreakdownUse.MachineGun, arithmetic.OriginalDr, sustained);
                 if (outcomes is null)
                 {
@@ -4205,7 +4211,7 @@ public static class ScenarioA1FireCalculator
             var range = attack.Range!.Value;
             var multipliers = new List<FireModifier>();
 
-            if (CurrentVehicleFinalFire(attack, vehicle)?.AreaFire == true)
+            if (CurrentVehicleFinalFire(attack, vehicle, reference)?.AreaFire == true)
             {
                 multipliers.Add(new FireModifier("final-fire", 0.5m, "A8.4"));
             }

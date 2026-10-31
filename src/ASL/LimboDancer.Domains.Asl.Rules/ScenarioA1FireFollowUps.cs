@@ -26,7 +26,10 @@ public static class ScenarioA1FireFollowUps
         };
     }
 
-    /// <summary>A9.222 (p. 63), D9.4 (p. 210), B25.2 (p. 143): count distinct eligible hard-wreck ranges, independently of ignored soft Hindrances.</summary>
+    /// <summary>
+    /// A9.222 (p. 63), D9.4 (p. 210), B25.2 (p. 143): count distinct eligible hard-wreck ranges, independently of ignored soft Hindrances. A wreck in the
+    /// MG's own hex (range 0), in the attacked Location, or beyond it is not between firer and target (A6.7, p. 54), so such facts are refused.
+    /// </summary>
     public static int? FireLaneWreckHindrance(FireLaneWreckFacts? facts)
     {
         if (facts is null)
@@ -34,12 +37,15 @@ public static class ScenarioA1FireFollowUps
             return 0;
         }
         if (string.IsNullOrWhiteSpace(facts.LaneWeaponId) || string.IsNullOrWhiteSpace(facts.SourceLocation) || facts.Candidates is null
+            || facts.TargetRange < 1
             || facts.Candidates.Any(item => item is null || string.IsNullOrWhiteSpace(item.WreckId) || string.IsNullOrWhiteSpace(item.Location)
-                || item.Range < 0 || item.BypassOtherHex is null)
+                || item.Range < 1 || item.Range >= facts.TargetRange || item.BypassOtherHex is null)
             || facts.Candidates.Select(item => item.WreckId).Distinct(StringComparer.Ordinal).Count() != facts.Candidates.Count)
         {
             return null;
         }
+        // A constant: the call is there only to cite B25.2's exception (an established Fire Lane takes the Wreck Hindrance, not the +2 SMOKE), so
+        // the lane reads the same calculator as other fire through a burning wreck (the review of PR 75, item 49).
         if (!facts.SameLevel || !ScenarioA1BlazeSmokeCalculator.WreckBlazeLos(true, WindForce.None)!.WreckHindrance)
         {
             return 0;

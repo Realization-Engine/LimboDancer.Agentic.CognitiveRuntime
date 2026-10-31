@@ -95,6 +95,7 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
             {
                 VehicleFire = attack.VehicleFire! with
                 {
+                    FiredThisPlayerTurn = false,
                     FinalFireMarker = FireMarker.None
                 },
                 Rolls = new FireRolls([5, 6], null, null, null)
@@ -102,6 +103,86 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
             Assert.True(normal.Disposition == FireResolution.Resolved, string.Join(", ", normal.Reasons));
             Assert.Equal(normal.Arithmetic!.TotalFirepower / 2, result.Arithmetic!.TotalFirepower);
         }
+    }
+
+    private static FireAttack FinalFireMaMg(FireMarker? marker, bool fired = true, bool rofShot = false)
+    {
+        var plain = Shot();
+        return plain with
+        {
+            Phase = "DFPh",
+            FiringSide = "non-phasing",
+            Range = 1,
+            FinalFireVersion = 1,
+            VehicleFire = plain.VehicleFire! with
+            {
+                FiredThisPlayerTurn = fired,
+                RateOfFireShot = rofShot,
+                FinalFireMarker = marker,
+            },
+        };
+    }
+
+    [Fact]
+    public void AnMaMgWithNoMultipleRofHasNoFinalFire()
+    {
+        // D3.5 (p. 200): a vehicle's MG fires once a Player Turn "unless it is the vehicle's MA with a specific Multiple ROF" (item 46).
+        var attack = FinalFireMaMg(FireMarker.FirstFire);
+        var printed = Reference.Definitions["attacker-halftrack"];
+        Assert.NotNull(printed.RateOfFire);
+        var none = printed with
+        {
+            RateOfFire = null
+        };
+        Assert.Equal(FinalFireUse.OnceMore, ScenarioA1FinalFireCalculator.Verdict(ScenarioA1FinalFireCalculator.VehicleFacts(attack, attack.VehicleFire!, printed)).Use);
+        var refused = ScenarioA1FinalFireCalculator.Verdict(ScenarioA1FinalFireCalculator.VehicleFacts(attack, attack.VehicleFire!, none));
+        Assert.Equal(FinalFireUse.None, refused.Use);
+        Assert.Contains("neither", refused.Refusal, StringComparison.Ordinal);
+        Assert.Equal(FinalFireUse.None, ScenarioA1FinalFireCalculator.Verdict(ScenarioA1FinalFireCalculator.VehicleFacts(attack, attack.VehicleFire!, null)).Use);
+        var spent = new FireSpentFacts("dfph", true, false, true, () => false, () => false, () => false);
+        Assert.False(ScenarioA1FireEligibility.FireSpent(spent, ScenarioA1FinalFireCalculator.VehicleFacts(attack.VehicleFire!, true, 1)));
+        Assert.True(ScenarioA1FireEligibility.FireSpent(spent, ScenarioA1FinalFireCalculator.VehicleFacts(attack.VehicleFire!, false, 1)));
+    }
+
+    [Fact]
+    public void ASustainedMaMgThroughTheLegacyResolveNeedsBreakdownFacts()
+    {
+        var result = ScenarioA1FireCalculator.Resolve(FinalFireMaMg(FireMarker.FirstFire), Reference);
+        Assert.Equal(FireResolution.Indeterminate, result.Disposition);
+        Assert.Contains("asl.a1.fire.vehicle-breakdown-facts-missing", result.Reasons);
+    }
+
+    [Fact]
+    public void AnUnknownOrContradictoryMaMarkerUnderVersionOneIsRefused()
+    {
+        Assert.Contains("asl.a1.fire.final-fire-marker-unknown", ScenarioA1FireCalculator.Precheck(FinalFireMaMg(null), Reference));
+        Assert.Contains("asl.a1.fire.final-fire-marker-unknown", ScenarioA1FireCalculator.Precheck(FinalFireMaMg((FireMarker)99), Reference));
+        // Item 49: fired this Player Turn, no ROF kept, and no counter cannot all be true.
+        Assert.Contains("asl.a1.fire.final-fire-marker-contradicts", ScenarioA1FireCalculator.Precheck(FinalFireMaMg(FireMarker.None), Reference));
+        Assert.DoesNotContain("asl.a1.fire.final-fire-marker-contradicts", ScenarioA1FireCalculator.Precheck(FinalFireMaMg(FireMarker.None, rofShot: true), Reference));
+        Assert.DoesNotContain("asl.a1.fire.final-fire-marker-contradicts", ScenarioA1FireCalculator.Precheck(FinalFireMaMg(FireMarker.None, fired: false), Reference));
+    }
+
+    [Theory]
+    [InlineData("first-fire", FireMarker.FirstFire)]
+    [InlineData("final-fire", FireMarker.FinalFire)]
+    [InlineData("none", FireMarker.None)]
+    [InlineData("something-else", FireMarker.NoFire)]
+    public void VehicleMarkerReadsTheMaCounterAndAnUnknownOneBarsFire(string counter, FireMarker expected)
+    {
+        Assert.Equal(expected, ScenarioA1FinalFireCalculator.VehicleMarker(counter, true, false, false, false));
+    }
+
+    [Fact]
+    public void FinalFireFactsAreOmittedFromTheRecordWhenNull()
+    {
+        var legacy = Shot();
+        var element = JsonSerializer.SerializeToElement(legacy);
+        Assert.False(element.TryGetProperty(nameof(FireAttack.FinalFireVersion), out _));
+        Assert.False(element.GetProperty(nameof(FireAttack.VehicleFire)).TryGetProperty(nameof(FireVehicleFire.FinalFireMarker), out _));
+        var current = JsonSerializer.SerializeToElement(FinalFireMaMg(FireMarker.FirstFire));
+        Assert.Equal(1, current.GetProperty(nameof(FireAttack.FinalFireVersion)).GetInt32());
+        Assert.True(current.GetProperty(nameof(FireAttack.VehicleFire)).TryGetProperty(nameof(FireVehicleFire.FinalFireMarker), out _));
     }
 
     [Fact]

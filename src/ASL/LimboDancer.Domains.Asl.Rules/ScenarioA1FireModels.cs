@@ -2,12 +2,17 @@ using System.Text.Json.Serialization;
 
 namespace LimboDancer.Domains.Asl.Rules;
 
-/// <summary>A9.222/D9.4: one identified lane's burning wrecks, with recorded geometry and state facts checked by its verifier.</summary>
+/// <summary>
+/// A9.222/D9.4: one identified lane's burning wrecks, with recorded geometry and state facts checked by its verifier. <see cref="TargetRange"/> is the
+/// range from the lane's MG to the attacked Location: a Hindrance counts only between firer and target (A6.7, p. 54; D9.4, p. 210), so a wreck's
+/// range must lie strictly between 0 and it.
+/// </summary>
 public sealed record FireLaneWreckFacts(
     [property: JsonRequired] string LaneWeaponId,
     [property: JsonRequired] string SourceLocation,
     [property: JsonRequired] bool SameLevel,
-    [property: JsonRequired] IReadOnlyList<FireLaneWreckCandidate> Candidates);
+    [property: JsonRequired] IReadOnlyList<FireLaneWreckCandidate> Candidates,
+    [property: JsonRequired] int TargetRange);
 
 /// <summary>The crossed wreck's identity and Location bind its recorded geometry to the state. Other hard terrain remains outside this bounded reading.</summary>
 public sealed record FireLaneWreckCandidate(

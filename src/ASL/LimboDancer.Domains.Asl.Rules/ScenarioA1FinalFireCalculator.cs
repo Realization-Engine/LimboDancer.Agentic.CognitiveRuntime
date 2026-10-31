@@ -58,12 +58,17 @@ public static class ScenarioA1FinalFireCalculator
     /// <summary>A8.4, A8.41 (p. 61): a target in an ADJACENT or the same hex, range one or zero. An unknown range is not in reach.</summary>
     public static bool InReach(int? range) => range is >= 0 and <= 1;
 
-    /// <summary>The vehicle MA MG's own counter and crew facts for A8.4 and A9.3 (pp. 61, 63).</summary>
-    public static FinalFireFacts VehicleFacts(FireAttack attack, FireVehicleFire vehicle) => VehicleFacts(vehicle, attack.Range);
+    /// <summary>
+    /// The vehicle MA MG's own counter and crew facts for A8.4 and A9.3 (pp. 61, 63). D3.5 (p. 200): a vehicle's MG "may make only one fire attack
+    /// per Player Turn unless it is the vehicle's MA with a specific Multiple ROF", so an MA MG sustains only when its definition prints a Multiple
+    /// ROF; with none (or no definition) it counts as a vehicular MG that is not the MA and has no Final Fire (the review of PR 75, item 46).
+    /// </summary>
+    public static FinalFireFacts VehicleFacts(FireAttack attack, FireVehicleFire vehicle, FireDefinition? definition) =>
+        VehicleFacts(vehicle, definition?.RateOfFire is > 0, attack.Range);
 
     /// <summary>The same own-counter facts before a target is chosen; a missing range does not decide whether the weapon is spent.</summary>
-    public static FinalFireFacts VehicleFacts(FireVehicleFire vehicle, int? range = null) =>
-        new(FinalFireWeapon.Mg, vehicle.FinalFireMarker ?? FireMarker.None, range, false, true, true, false, false,
+    public static FinalFireFacts VehicleFacts(FireVehicleFire vehicle, bool multipleRof, int? range = null) =>
+        new(FinalFireWeapon.Mg, vehicle.FinalFireMarker ?? FireMarker.None, range, false, true, multipleRof, false, false,
             vehicle.Pinned != true && vehicle.Stunned != true);
 
     /// <summary>A8.41/A9.3 (pp. 61, 63): the MA's own recorded counter takes precedence over the vehicle's other weapons. Null uses the earlier unit counter.</summary>

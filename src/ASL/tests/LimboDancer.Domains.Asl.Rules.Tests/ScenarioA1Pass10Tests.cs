@@ -255,7 +255,7 @@ public sealed class ScenarioA1Pass10Tests
             candidate with { WreckId = "above", Range = 2, AtLosElevation = false },
             candidate with { WreckId = "blocked", Range = 3, VisibleFromTarget = false },
             candidate with { WreckId = "bypass", Range = 4, BypassOtherHex = "bd01:F7:0" },
-        ]);
+        ], 5);
         var legacy = Moving(Attack([5, 5])) with
         {
             FireKind = ScenarioA1FireCalculator.ResidualFire,
@@ -285,6 +285,30 @@ public sealed class ScenarioA1Pass10Tests
         {
             Candidates = [candidate with { Range = -1 }]
         }));
+        // A6.7 (p. 54), D9.4 (p. 210): only a wreck between firer and target hinders, so one in the MG's hex, the attacked Location, or beyond is refused.
+        foreach (var outside in new[] { 0, 5, 6 })
+        {
+            Assert.Null(ScenarioA1FireFollowUps.FireLaneWreckHindrance(facts with
+            {
+                Candidates = [candidate with { Range = outside }]
+            }));
+        }
+        Assert.Equal(1, ScenarioA1FireFollowUps.FireLaneWreckHindrance(facts with
+        {
+            Candidates = [candidate with { Range = 4 }]
+        }));
+        Assert.Null(ScenarioA1FireFollowUps.FireLaneWreckHindrance(facts with
+        {
+            TargetRange = 0,
+            Candidates = []
+        }));
+        Assert.Contains("asl.a1.fire.fire-lane-wreck-facts-outside", ScenarioA1FireCalculator.Precheck(legacy with
+        {
+            FireLaneWrecks = facts with
+            {
+                Candidates = [candidate with { Range = 5 }]
+            },
+        }, Reference));
         Assert.Contains("asl.a1.fire.fire-lane-wreck-facts-outside", ScenarioA1FireCalculator.Precheck(legacy with
         {
             FireLane = null,
