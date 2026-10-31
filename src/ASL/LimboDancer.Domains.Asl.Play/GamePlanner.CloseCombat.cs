@@ -27,16 +27,8 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        var stealthy = false;
-        var lax = false;
-        foreach (var rule in state.SpecialRules)
-        {
-            if (ScenarioA1StealthCalculator.SsrToken(rule) is { } token && token.Side == unit.Side)
-            {
-                lax |= token.Lax;
-                stealthy |= !token.Lax;
-            }
-        }
+        // A11.17, A11.18 (ruling RA11S.11): the one Rules fold of the Stealth and Lax SSR tokens, side-wide and by OB group.
+        var (stealthy, lax) = ScenarioA1StealthCalculator.SsrFlags(state.SpecialRules, unit.Side, unit.Group);
 
         var experience = Experience.Inexperienced(state, unit, catalogs, vocabulary) switch
         {

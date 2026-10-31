@@ -136,6 +136,8 @@ public static class LiveCloseCombat
             }
         }
 
+        // The recorded context keeps side-wide SSR lists (its shape is recorded, rule 6): SsrToken reads only the side-wide form, so a group token
+        // (RA11S.11) is not yet carried into a CC record; backlog row "Group Stealth and Lax SSRs in the CC record context".
         var stealthy = new List<string>();
         var lax = new List<string>();
         foreach (var rule in state.SpecialRules)
