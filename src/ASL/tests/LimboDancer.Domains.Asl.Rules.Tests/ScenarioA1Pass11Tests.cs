@@ -216,6 +216,135 @@ public sealed class ScenarioA1Pass11Tests
     }
 
     [Fact]
+    public void VehicleCcBreakdownUsesTheOriginalDrWithoutTheShortageLowering()
+    {
+        var facts = new VehicleCloseCombatFacts("CCPh", At, Vehicle("attacker-tank"),
+            [Unit("ru-s", "defender-squad", "russian")], [], ["ru-s"], true, false, new VehicleCloseCombatRolls([5, 6]));
+        Assert.Null(ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).VehicleBreakdowns);
+        var current = facts with
+        {
+            VehicleBreakdown = new(new Dictionary<string, VehicleBreakdownUseFacts>
+            {
+                ["cmg"] = new(VehicleBreakdownWeapon.CoaxialMg, null, null, false, false, false, true)
+            })
+        };
+        var eleven = ScenarioA1VehicleCloseCombat.Resolve(current, CloseCombat);
+        Assert.Equal(CloseCombatResolution.Resolved, eleven.Disposition);
+        Assert.Equal(VehicleBreakdownOutcome.None, eleven.VehicleBreakdowns!["cmg"].Outcome);
+        var twelve = ScenarioA1VehicleCloseCombat.Resolve(current with
+        {
+            Rolls = new VehicleCloseCombatRolls([6, 6])
+        }, CloseCombat);
+        Assert.Equal(VehicleBreakdownOutcome.Malfunction, twelve.VehicleBreakdowns!["cmg"].Outcome);
+        Assert.Equal(5m, twelve.AttackFirepower);
+        var disabled = current with
+        {
+            Vehicle = current.Vehicle! with
+            {
+                UnavailableWeapons = ["cmg"]
+            },
+            VehicleBreakdown = new(new Dictionary<string, VehicleBreakdownUseFacts>())
+        };
+        Assert.Contains("asl.a1.cc-vehicle.no-cc-armament", ScenarioA1VehicleCloseCombat.Precheck(disabled, CloseCombat));
+        Assert.Contains("asl.a1.cc-vehicle.breakdown-facts-invalid", ScenarioA1VehicleCloseCombat.Precheck(disabled with
+        {
+            VehicleBreakdown = current.VehicleBreakdown
+        }, CloseCombat));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MannedMgHonorsMalfunctionFlagsEvenWithAnEmptyUnavailableList(bool current)
+    {
+        foreach (var definition in new[] { "attacker-tank", "attacker-halftrack" })
+        {
+            var vehicle = Vehicle(definition, crewExposed: true) with
+            {
+                MainArmamentMalfunctioned = true,
+                BmgMalfunctioned = true,
+                CmgMalfunctioned = true,
+                UnavailableWeapons = current ? [] : null
+            };
+            var result = ScenarioA1VehicleCloseCombat.Resolve(Attack(vehicle,
+                [Unit("ru-s", "defender-squad", "russian")], ["ru-s"], [4, 4]), CloseCombat);
+            Assert.Equal(CloseCombatResolution.Resolved, result.Disposition);
+            Assert.Contains(result.Drm, item => item.Name == "vs-no-manned-mg" && item.Value == -1);
+            Assert.Empty(ScenarioA1VehicleCloseCombat.Weapons(vehicle, CloseCombat.Definitions[definition]));
+            var disabled = vehicle with
+            {
+                MainArmamentMalfunctioned = false,
+                BmgMalfunctioned = false,
+                CmgMalfunctioned = false,
+                UnavailableWeapons = ["ma", "bmg", "cmg"]
+            };
+            Assert.Contains(ScenarioA1VehicleCloseCombat.Resolve(Attack(disabled,
+                [Unit("ru-s", "defender-squad", "russian")], ["ru-s"], [4, 4]), CloseCombat).Drm,
+                item => item.Name == "vs-no-manned-mg");
+        }
+    }
+
+    [Fact]
+    public void PassengerFirepowerKeepsAHalftrackAttackAvailableWithoutAWorkingMg()
+    {
+        var vehicle = Vehicle("attacker-halftrack", crewExposed: true) with
+        {
+            MainArmamentMalfunctioned = true,
+            UnavailableWeapons = ["ma"]
+        };
+        var passengers = new[] { Unit("de-p", "attacker-squad", "german", pinned: true) };
+        var facts = new VehicleCloseCombatFacts("CCPh", At, vehicle, [Unit("ru-s", "defender-squad", "russian")], [], ["ru-s"], true, false,
+            new VehicleCloseCombatRolls([4, 4]))
+        {
+            Passengers = passengers
+        };
+        Assert.Empty(ScenarioA1VehicleCloseCombat.Precheck(facts, CloseCombat));
+        Assert.True(ScenarioA1VehicleCloseCombat.CanAttack(vehicle, CloseCombat.Definitions[vehicle.DefinitionId!], passengers, CloseCombat, false, false, false));
+        Assert.False(ScenarioA1VehicleCloseCombat.CanAttack(vehicle, CloseCombat.Definitions[vehicle.DefinitionId!], [], CloseCombat, false, false, false));
+        Assert.False(ScenarioA1VehicleCloseCombat.CanAttack(vehicle, CloseCombat.Definitions[vehicle.DefinitionId!], passengers, CloseCombat, false, true, false));
+        Assert.False(ScenarioA1VehicleCloseCombat.CanAttack(vehicle, CloseCombat.Definitions[vehicle.DefinitionId!], passengers, CloseCombat, false, false, true));
+        Assert.False(ScenarioA1VehicleCloseCombat.CanAttack(vehicle, CloseCombat.Definitions[vehicle.DefinitionId!],
+            [passengers[0] with { Broken = true }], CloseCombat, false, false, false));
+    }
+
+    [Fact]
+    public void TwoFailedCcWeaponsRequestRandomSelectionAndKeepOnlyTheHighestOrTies()
+    {
+        // Manufactured two-MG definition, local to this test; no shared reference is mutated.
+        var reference = new ScenarioA1CloseCombatPackage().Reference;
+        var definitions = Assert.IsAssignableFrom<IDictionary<string, FireDefinition>>(reference.Definitions);
+        definitions["attacker-tank"] = definitions["attacker-tank"] with
+        {
+            AntiAircraftMg = 2
+        };
+        var facts = new VehicleCloseCombatFacts("CCPh", At, Vehicle("attacker-tank", crewExposed: true),
+            [Unit("ru-s", "defender-squad", "russian")], [], ["ru-s"], true, false, new VehicleCloseCombatRolls([6, 6]))
+        {
+            VehicleBreakdown = new(new Dictionary<string, VehicleBreakdownUseFacts>
+            {
+                ["cmg"] = new(VehicleBreakdownWeapon.CoaxialMg, null, null, false, false, false, false),
+                ["aamg"] = new(VehicleBreakdownWeapon.AntiAircraftMg, null, null, false, false, false, false)
+            })
+        };
+        var missing = ScenarioA1VehicleCloseCombat.Resolve(facts, reference);
+        Assert.Equal(CloseCombatResolution.Indeterminate, missing.Disposition);
+        Assert.Contains("asl.a1.cc-vehicle.roll-missing:randomSelection:de-v:cmg,de-v:aamg", missing.Reasons);
+        foreach (var second in new[] { 1, 6 })
+        {
+            var result = ScenarioA1VehicleCloseCombat.Resolve(facts with
+            {
+                Rolls = facts.Rolls! with
+                {
+                    RandomSelection = new Dictionary<string, int> { ["de-v:cmg"] = 6, ["de-v:aamg"] = second }
+                }
+            }, reference);
+            Assert.Equal(CloseCombatResolution.Resolved, result.Disposition);
+            Assert.Equal(VehicleBreakdownOutcome.Malfunction, result.VehicleBreakdowns!["cmg"].Outcome);
+            Assert.Equal(second == 6 ? VehicleBreakdownOutcome.Malfunction : VehicleBreakdownOutcome.None, result.VehicleBreakdowns["aamg"].Outcome);
+        }
+    }
+
+    [Fact]
     public void ACeRstTankFiresNeitherMaNorCmgInAnOvrOrInCcAndAStunPlusOneAddsToBothDrs()
     {
         // D1.321 (p. 194; pass 35, task 35.13 c): the T-34 M41 is RST: CE, it adds neither its MA's base nor its CMG to an OVR, and no CMG to CC. The

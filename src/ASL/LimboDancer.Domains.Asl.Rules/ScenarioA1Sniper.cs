@@ -441,13 +441,6 @@ public static class ScenarioA1Sniper
     /// <summary>The TEM of a target hex's terrain, for the tie between hexes (A14.21).</summary>
     public static int TargetTem(string? terrain) => terrain is not null ? ScenarioA1FireReference.Tem.GetValueOrDefault(terrain) : 0;
 
-    /// <summary>
-    /// A14.21 (p. 82; pass 71, ruling R71.7): "the lowest (to a minimum of zero) in-hex TEM/SMOKE DRM applicable to any eligible target": a target's TEM
-    /// plus the in-hex SMOKE DRM of its hex, +2 a source to at most +3 (A24.2).
-    /// </summary>
-    public static int TargetTem(string? terrain, int smokeSources) =>
-        Math.Max(0, TargetTem(terrain) + (smokeSources > 0 ? ScenarioA1VehicleSightRules.SmokeDrm(smokeSources, false, true, static () => false) : 0));
-
     /// <summary>A14.21 by value (the A24.5 claim, RA24.5): a target's TEM plus its hex's in-hex SMOKE from each source's Hindrance, to a minimum of zero.</summary>
     public static int TargetTem(string? terrain, IReadOnlyList<int> smokeHindrances)
     {

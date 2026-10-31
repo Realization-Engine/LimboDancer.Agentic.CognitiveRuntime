@@ -37,7 +37,11 @@ public static class LosCalculator
         ArgumentNullException.ThrowIfNull(target);
         var sourceEnd = Resolve(map, source, sourceAim, nameof(source));
         var targetEnd = Resolve(map, target, targetAim, nameof(target));
-        var result = new Walk(map, sourceEnd, targetEnd).Run();
+        var walk = new Walk(map, sourceEnd, targetEnd);
+        var result = walk.Run() with
+        {
+            Elevations = walk.Elevations
+        };
         return result.Status is LosStatus.Clear or LosStatus.Blocked && !map.IsDefinitive
             ? result with
             {
@@ -106,6 +110,10 @@ public static class LosCalculator
     /// </summary>
     private sealed class Walk
     {
+        public LosElevations? Elevations => source.Terrain is null || target.Terrain is null ? null : new(
+            new(sourceElevation, sourceRooftopAdjustment, sourceIsCellar, source.Terrain.Name == Hillock, ExitsSlopeHexside(), SourceEmbankmentAdjustment),
+            new(targetElevation, targetRooftopAdjustment, targetIsCellar, target.Terrain.Name == Hillock, EntersSlopeHexside(), TargetEmbankmentAdjustment));
+
         private const int None = -1;
         private const string Bocage = "Bocage";
         private const string PartialOrchard = "PartialOrchard";
@@ -376,9 +384,12 @@ public static class LosCalculator
                 first = new LosHindranceAt(firstPoint, firstOwner?.Board, firstOwner?.Hex);
             }
 
-            LosCrossedHex[] hexes = [.. crossed.Select(hex => map.OwnerOf(hex) is { } owner
+            LosCrossedHex[] hexes = [.. crossed.Select(hex => (map.OwnerOf(hex) is { } owner
                 ? new LosCrossedHex(owner.Board, owner.Hex, map.Geometry.Distance(sourceHex, hex))
-                : new LosCrossedHex(null, null, map.Geometry.Distance(sourceHex, hex)))];
+                : new LosCrossedHex(null, null, map.Geometry.Distance(sourceHex, hex))) with
+            {
+                RangeToTarget = map.Geometry.Distance(hex, targetHex)
+            })];
             if (!resultBlocked)
             {
                 return new LosResult(LosStatus.Clear, false, resultRange, hindrance, null, string.Empty) { Hindrances = breakdown, FirstHindranceAt = first, Crossed = hexes };

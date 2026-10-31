@@ -29,6 +29,13 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
+    /// <summary>D3.7 source and use facts for the current vehicle reading. Null preserves a shot recorded before this wiring.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public VehicleBreakdownUseFacts? VehicleBreakdown
+    {
+        get; init;
+    }
+
     /// <summary>The tank whose MA fires (ruling R7.10); null for a Gun manned by its crew.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceVehicleFirer? Vehicle

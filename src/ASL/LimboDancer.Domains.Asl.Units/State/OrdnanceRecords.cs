@@ -13,6 +13,20 @@ namespace LimboDancer.Domains.Asl.Units.State;
 public sealed record OrdnanceFired(string Gun, string Crew, BoardLocation Target, UnitFacing? Facing, bool RateOfFireKept, int Acquisition,
     BoardLocation? Acquired, IReadOnlyDictionary<string, string> Rolls, JsonElement Facts, JsonElement Resolution) : EventPayload
 {
+    /// <summary>Versioned breakdown source values. Null preserves the earlier catalog read.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public VehicleArmamentEvidence? VehicleArmamentEvidence
+    {
+        get; init;
+    }
+
+    /// <summary>Version 1 gathers SMOKE strengths from verified sources. Absent keeps the recorded count reading.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? SmokeWiringVersion
+    {
+        get; init;
+    }
+
     /// <summary>Version 1 uses current assignment occurrences and applies Rules' spotting marks. Absent preserves legacy replay.</summary>
     public int? SpotterWiringVersion
     {

@@ -105,7 +105,7 @@ public static class LiveOrdnance
     /// </summary>
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
         string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false, bool legacySpotterUse = false,
-        bool currentSpotterAssignment = true, bool legacyNonQualifiedUse = false)
+        bool currentSpotterAssignment = true, bool legacyNonQualifiedUse = false, bool legacyVehicleBreakdown = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
@@ -386,6 +386,18 @@ public static class LiveOrdnance
             // A21.22 (pass 65, ruling R65.22): a vehicle's Temporary crew fires its MA under the captured-weapon penalty.
             CapturedPenalty = gun is UnitInstance mannedVehicle ? LiveFire.CapturedPenalty(mannedVehicle) : null,
         };
+        if (!legacyVehicleBreakdown && gun is UnitInstance breakdownVehicle)
+        {
+            var (breakdown, breakdownReason) = LiveFire.VehicleBreakdownFacts(state, breakdownVehicle, VehicleBreakdownWeapon.MainArmament, intensive);
+            if (breakdown is null)
+            {
+                return (null, breakdownReason);
+            }
+            shot = shot with
+            {
+                VehicleBreakdown = breakdown
+            };
+        }
         if (mortar)
         {
             var (supported, supportReason) = MortarSupport(state, gun.Id, crew, spotter, director, phase, target, legacySpotterUse, currentSpotterAssignment);
@@ -855,6 +867,10 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(fired);
         ArgumentNullException.ThrowIfNull(rolls);
+        if (fired.SmokeWiringVersion is not null and not 1)
+        {
+            return "Unknown SMOKE wiring version.";
+        }
         if (fired.SpotterWiringVersion is not null and not 1)
         {
             return "Unknown Spotter wiring version.";
@@ -879,6 +895,22 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "Unknown Spotter use validation version.";
         }
 
+        if (fired.VehicleArmamentEvidence is { } evidence)
+        {
+            if (recorded.VehicleBreakdown is null)
+            {
+                return "Vehicle armament evidence requires a vehicle breakdown reading.";
+            }
+            if (VehicleArmamentFacts.EvidenceRefusal(state, state.Unit(fired.Gun), evidence) is { } evidenceRefusal)
+            {
+                return evidenceRefusal;
+            }
+            state = state with
+            {
+                VehicleArmamentEvidence = evidence
+            };
+        }
+
         // W-A21.13 (rule 6 as amended 2026-10-30): a shot recorded before the wiring carries no UseMultiple and is rebuilt on its recorded reading.
         if (recorded.UseMultiple is < 0 or > 2)
         {
@@ -888,7 +920,7 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         // C2.2401 (pass 55): a record that names itself a Gun Duel's first shot is read as one; the projector holds the fact to the answered choice.
         var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true,
             recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true, recorded.SpotterUseVersion is null,
-            fired.SpotterWiringVersion == 1, legacyNonQualifiedUse: recorded.UseMultiple is null);
+            fired.SpotterWiringVersion == 1, legacyNonQualifiedUse: recorded.UseMultiple is null, legacyVehicleBreakdown: recorded.VehicleBreakdown is null);
         if (expected is null)
         {
             return reason;

@@ -8,10 +8,24 @@
             <UnitOptions Units="@([.. Weapons.Select(weapon => new PlayChoice(weapon.Id, weapon.Label))])" Text="@Say" />
         </select>
     </label>
-    <button id="propose-repair" disabled="@(!Weapons.Any(weapon => weapon.Id == Weapon))" aria-describedby="propose-repair-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: repair</button>
+    @if (Heroes.Count > 0)
+    {
+        <label>
+            Repair participant
+            <select id="repair-hero" value="@Hero" @onchange="@(args => OnHero.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">inherent crew</option>
+                <UnitOptions Units="@Heroes" Text="@Say" />
+            </select>
+        </label>
+    }
+    <button id="propose-repair" disabled="@(!Ready || !Weapons.Any(weapon => weapon.Id == Weapon))" aria-describedby="propose-repair-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: repair</button>
     @if (!Weapons.Any(weapon => weapon.Id == Weapon))
     {
         <span id="propose-repair-ready" class="toolbar-note">Choose the malfunctioned SW or vehicle weapon.</span>
+    }
+    else if (!Ready)
+    {
+        <span id="propose-repair-ready" class="toolbar-note">Choose an eligible repair participant.</span>
     }
 </div>
 
@@ -34,4 +48,16 @@
 
     [Parameter]
     public EventCallback OnPropose { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<PlayChoice> Heroes { get; set; } = [];
+
+    [Parameter]
+    public string Hero { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnHero { get; set; }
+
+    [Parameter]
+    public bool Ready { get; set; } = true;
 }
