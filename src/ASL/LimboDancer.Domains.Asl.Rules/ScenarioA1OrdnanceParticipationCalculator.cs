@@ -169,7 +169,7 @@ public static class ScenarioA1OrdnanceParticipationCalculator
     internal static bool OpportunityFire(OrdnanceAdditionalFirer second) => second.OpportunityFireDeclared ?? second.Crew?.OpportunityFire == true;
 
     /// <summary>
-    /// Why the named second SMC cannot participate. C9.2 and A21.13 require two actual SMC; A9.12 distinguishes use from direction.
+    /// Why the named second SMC cannot participate. C9.2 and A21.13 require two actual SMC; A7.35 and C9.3 govern weapon use and spotting.
     /// Existing Gun restrictions decide TI, Melee and captivity. Pinned Infantry may fire, with Case D and no ROF (A7.81 p. 58, C5.4 p. 172).
     /// </summary>
     public static string? CandidateRefusal(string primaryId, string? primaryKind, string? secondKind, OrdnanceAdditionalFirer second,
