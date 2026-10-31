@@ -1,6 +1,9 @@
 @page "/games/minigames"
 @using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.Catalog
 @inject LivePlay Live
+@inject UnitLibrary Library
+@inject IJSRuntime JS
 
 <PageTitle>Minigames - ASL Map Studio</PageTitle>
 
@@ -8,13 +11,14 @@
     <RuleHelp Id="minigames-intro" DetailLabel="How this works" Summary="Each minigame proves a few rules on a small position: start one, play it, and ask its rules on the Rule Workbench.">
         A minigame is a bundle under <code>src/ASL/units/minigames</code>: a card, the rules it proves, the contracts it exercises, and its checks (the
         Rules-first plan, section 7.1). A game started from its card carries the bundle's id in its record, and is listed here alone: Play, Replay, and
-        the Game inspector list only the other games.
+        the Game inspector list only the other games. Its card is shown here too, never among the scenario cards.
     </RuleHelp>
 </PageHeader>
 
 @foreach (var bundle in Minigames.All)
 {
     var games = byBundle.GetValueOrDefault(bundle.Id) ?? [];
+    var cardOpen = opened.Contains(bundle.Id);
     <section class="minigame" id="minigame-@bundle.Id" aria-labelledby="minigame-@bundle.Id-title">
         <h3 id="minigame-@bundle.Id-title">@bundle.Title <span class="muted">(@bundle.Id)</span></h3>
         <p>
@@ -28,8 +32,31 @@
         </p>
         <p class="toolbar">
             <a class="minigame-start" href="@($"games/play?card={Uri.EscapeDataString(bundle.Card)}")" title="A new game on this minigame's card, on the Play page">Start a new game</a>
-            <a class="minigame-card" href="@($"units/scenarios?card={Uri.EscapeDataString(bundle.Card)}")">Its card</a>
+            <button type="button" class="link minigame-card-toggle" id="minigame-@bundle.Id-card-toggle" aria-expanded="@(cardOpen ? "true" : "false")"
+                    aria-controls="minigame-@bundle.Id-card" @onclick="@(() => Toggle(bundle.Id))">@(cardOpen ? "Hide its card" : "Show its card")</button>
         </p>
+        @if (cardOpen)
+        {
+            @* The card is drawn only while it is open, so the page does not draw every bundle's card at once (the memory and performance guidelines). *@
+            <div class="minigame-card" id="minigame-@bundle.Id-card">
+                @if (catalog is null)
+                {
+                    <p class="diagnostic error">The published catalog cannot be read, so the card cannot be shown.</p>
+                }
+                else if (Live.Cards.Read(bundle.Card, catalog) is { } read)
+                {
+                    @if (read.Diagnostics.Count > 0)
+                    {
+                        <FindingList Id="@($"minigame-{bundle.Id}-card-diagnostics")" Items="@FindingList.Of(read.Diagnostics)" />
+                    }
+
+                    @if (read.Card is { } card)
+                    {
+                        <ScenarioCardView Card="@card" Catalog="@catalog" />
+                    }
+                }
+            </div>
+        }
         @if (games.Count == 0)
         {
             <p class="muted minigame-none">No game started from this minigame.</p>
@@ -56,7 +83,40 @@
     // Each bundle's live games, read once when the page opens: the store keeps each file's header, so no whole record is read.
     private Dictionary<string, List<string>> byBundle = new(StringComparer.Ordinal);
 
-    protected override void OnInitialized() =>
+    // The bundles whose card is open; the catalog a card is checked against, read once.
+    private readonly HashSet<string> opened = new(StringComparer.Ordinal);
+    private UnitCatalog? catalog;
+
+    /// <summary>A bundle whose card opens with the page, as Play's "The whole card" link names it; the page brings it into view.</summary>
+    [SupplyParameterFromQuery(Name = "open")]
+    public string? OpenQuery { get; set; }
+
+    protected override void OnInitialized()
+    {
         byBundle = Live.MinigameGameNames().GroupBy(game => Live.MinigameOf(game)!, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.Order(StringComparer.Ordinal).ToList(), StringComparer.Ordinal);
+        catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Library.Vocabulary)?.Catalog;
+        if (OpenQuery is { } open && Minigames.Find(open) is not null)
+        {
+            opened.Add(open);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && OpenQuery is { } open && opened.Contains(open))
+        {
+            var script = await JS.InvokeAsync<IJSObjectReference>("import", "./js/minigames.js");
+            await script.InvokeVoidAsync("showSection", $"minigame-{open}");
+            await script.DisposeAsync();
+        }
+    }
+
+    private void Toggle(string bundle)
+    {
+        if (!opened.Remove(bundle))
+        {
+            opened.Add(bundle);
+        }
+    }
 }
