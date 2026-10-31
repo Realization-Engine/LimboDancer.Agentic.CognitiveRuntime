@@ -63,6 +63,18 @@ public static class ScenarioA1FinalFireCalculator
         new(FinalFireWeapon.Mg, vehicle.FinalFireMarker ?? FireMarker.None, attack.Range, false, true, true, false, false,
             vehicle.Pinned != true && vehicle.Stunned != true);
 
+    /// <summary>A8.41/A9.3 (pp. 61, 63): the MA's own recorded counter takes precedence over the vehicle's other weapons. Null uses the earlier unit counter.</summary>
+    public static FireMarker VehicleMarker(string? counter, bool ownShot, bool firstFire, bool finalFire, bool rateOfFireKept) =>
+        !ownShot || rateOfFireKept ? FireMarker.None : counter switch
+        {
+            "none" => FireMarker.None,
+            "first-fire" => FireMarker.FirstFire,
+            "final-fire" => FireMarker.FinalFire,
+            "intensive-fire" => FireMarker.IntensiveFire,
+            null => finalFire ? FireMarker.FinalFire : firstFire ? FireMarker.FirstFire : FireMarker.None,
+            _ => FireMarker.NoFire,
+        };
+
     /// <summary>C2.241, C5.6 (pp. 168, 172): the Gun's own marker, firing mode and actual crew for Final Fire.</summary>
     public static FinalFireFacts OrdnanceFacts(OrdnanceShot shot, GunDefinition definition, ScenarioA1OrdnanceReference reference)
     {
