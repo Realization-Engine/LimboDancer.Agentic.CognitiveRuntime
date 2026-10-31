@@ -1613,7 +1613,7 @@ Written on 2026-10-29. These are required before the corresponding wiring is cal
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Versioned vehicle weapon resolution and repair adapters | W-D3.7 design | D3.7, D3.71, A.11, A19.131, A9.71 | Scoped Rules adapter claim; preserve old entry points and frozen fact records | Implemented on codex/rules-d37-adapters, awaiting PR acceptance and caller wiring: new Low Ammo/Disabled results pass through opt-in Rules-owned ordnance, area, armor, canister, MG and OVR resolution. SA repair and actual Hero Rider qualification need Rules support before enabling those cases. No equivalent rule is added to Play. |
-| E10 composition, complete shared-supply lifecycle and explosion resolution | W-E10 design | E10, D3.71, D.7, Vehicle Note 93 | D3.7 wiring first; scoped Rules support where existing adapters cannot express the facts | Keep two recipients, shared TI, full-turn interruptions, one Ammunition DR per completion, movement bars and structured Goliath/DC effects explicit. Rules must decide both recipients completing at one boundary when the first DR exhausts supply; serialization order must not decide it. Accessible needs hypothetical Infantry advance eligibility, not adjacency alone. A prose effect string is not a resolution API. |
+| E10 composition, complete shared-supply lifecycle and explosion resolution | W-E10 design | E10, D3.71, D.7, Vehicle Note 93 | D3.7 wiring first; scoped Rules support where existing adapters cannot express the facts | Keep two recipients, shared TI, full-turn interruptions, one Ammunition DR per completion, movement bars and structured Goliath/DC effects explicit. Rules must decide both recipients completing at one boundary when the first DR exhausts supply; serialization order must not decide it (ruled 2026-10-31: RE10W.1 of the W-E10 design; the work is the rule claim `e10-supply-adapters`, that design's section 2). Accessible needs hypothetical Infantry advance eligibility, not adjacency alone. A prose effect string is not a resolution API. |
 | Correct Rules contract citations and inspection summaries | Codex read-only reviews of D3.7 and E10 | A.11 physical PDF p. 43; G10.41 p. 292; A12.16 p. 79; E10.3 p. 244 | Scoped Rules maintenance for source comments/contract metadata | PR 68 corrects both D3.71 citations to p. 201. The original D3.7 contract remains hand-entered and disclosed to All; its summary's narrower unconcealed-vehicle inspection wording is not an implemented access check. Live play uses its existing inspection restrictions and this contract grants no extra access. Align the original contract's disclosure/summary in its own reviewed change. E10.3's table explicitly prints <=9. |
 | Integrate authoritative smoke source metadata with vertical intersection and B25.2 | W-A24.5 design | A24.2, A24.5, A24.8, B25.2 | Existing geometry and relevant height Rules; Claude's active B25.2 claim and later caller scope | Combine source values at a full Location before the common cap. Keep legacy Blaze readings until its calculator is wired. New SMOKE placement procedures remain their own claims. |
 
@@ -1643,8 +1643,15 @@ Written on 2026-10-31. What the review of PR 85 (wire-fire-2, carrying PR 84) le
 | C6.43 Bore Sighting with a joining SMC | Claude's PR 85 review (ruling RC9P.7) | C6.43, p. 174; C9.2 | An original-crew fact for the Bore Sighted weapon, recorded at setup, and a Rules refusal of Case M for a second participant who is not original manning Infantry | A pair whose second SMC did not man the weapon at setup may claim Case M when the record sets `BoreSighted`. |
 | W-C9 projector participation effects | Claude's PR 85 review | A7.35, C9.2, C9.3 | A Rules projection member that says which participants enter `PhaseFirers` and whether the second firer loses inherent FP; one shared read of the gun's type and caliber for Play and the projector | `GameProjector` decides that SMC firers enter `PhaseFirers` and passes literal arguments to `CrewLosesInherentFp`; it reads type and caliber from the catalog's printed values, Play from `OrdnanceReference`. Both read the same definition. |
 
+## 88. Added by Claude's review of PR 69 (W-E10 design)
 
-## 88. Added by Claude's review of PR 75 (Wiring 003 adapters, Final Fire, Fire Lane)
+Written on 2026-10-31. What the W-E10 wiring design (`Designs/ASL Wiring 002 Ammo Supply Design.md`, revised 2026-10-31) leaves out; its section 10 lists the rest of the review's answers.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| DYO purchase of an Ammo Vehicle or an Ammo Dump | Claude's PR 69 review (finding 10) | E10.11 and E10.6, p. 244 (DYO cost H1.49, purchase H1.6) | The DYO passes (34 and 35, deferred) | Only a scenario card's SSR creates an Ammo Supply or an Ammo Dump; no DYO purchase offers one. |
+
+## 89. Added by Claude's review of PR 75 (Wiring 003 adapters, Final Fire, Fire Lane)
 
 Written on 2026-10-31. What the Wiring 003 Rules adapter supplement leaves out (review items 17 and 49); its design, `Designs/ASL Wiring 003 Rules Adapter Supplement.md`, records the rest.
 
