@@ -42,7 +42,7 @@ public static class ScenarioA1CloseCombatValueCalculator
     /// <summary>
     /// A11.5 (p. 74; rulings RA11C.1, RA11C.2): the attackers' CCV, the vehicle's Basic Kill Number. The main unit's base CCV; +1 for a SMC combining with
     /// it, or failing one for the leader an Original 2 created (A18.12); +1 an Assault Engineer (H1.22, A25.01); -1 Inexperienced (A19.34); and -1 for each
-    /// halving FP penalty, once per kind (A7.8: Pin effects are not cumulative): pinned, a concealed vehicle (A11.19), an outnumbered Guard (A20.52),
+    /// halving FP penalty, once per kind (A7.8: Pin effects are not cumulative): pinned, a concealed vehicle (A11.19), a Guard attacking non-prisoners (A20.52),
     /// D7.213's First or Final Fire counter in Reaction Fire. No floor: a CCV of 0 or less leaves the Unlikely Kill (A11.501). The modifiers come in the
     /// order the attack has always listed them, the new ones where an attack without them lists the same.
     /// </summary>
@@ -79,9 +79,9 @@ public static class ScenarioA1CloseCombatValueCalculator
             modifiers.Add(new FireModifier("vehicle-concealed", -1m, "A11.19"));
         }
 
-        if (facts.GuardOutnumbered)
+        if (facts.GuardOutnumbered || facts.Guard)
         {
-            modifiers.Add(new FireModifier("guard-outnumbered", -1m, "A20.52"));
+            modifiers.Add(new FireModifier(facts.Guard ? "guard" : "guard-outnumbered", -1m, "A20.52"));
         }
 
         if (facts.ReactionFireMarked)
@@ -98,6 +98,59 @@ public static class ScenarioA1CloseCombatValueCalculator
     /// them), and is none once Replaced by a lower-quality unit, "even if it subsequently Battle Hardens". An unknown trait is not one.
     /// </summary>
     public static bool AssaultEngineer(bool? printedTrait, bool designated, bool replaced) => !replaced && (printedTrait == true || designated);
+
+    /// <summary>A25.01 (p. 93): only lower-quality Replacement loses AE, not an underscored squad becoming its own HS or Battle Hardening.</summary>
+    public static bool AssaultEngineerLostByFire(FireUnitEffect effect)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        var definition = effect.DefinitionId;
+        foreach (var consequence in effect.Events)
+        {
+            switch (consequence)
+            {
+                case "replaced-elr":
+                case "ammunition-shortage-replaced":
+                    return true;
+                case "battle-hardened":
+                    definition = ScenarioA1FireReference.HardenedOf(definition) ?? definition;
+                    break;
+                case "casualty-reduced-beyond-elr":
+                    if (ScenarioA1FireReference.HalfSquadOf(definition) is { } half && ScenarioA1FireReference.CasualtyHalfSquadOf(half) is not null)
+                    {
+                        return true;
+                    }
+
+                    break;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// A25.01 (p. 93): true retains AE through lineage, false records permanent lower-quality loss, and null uses the printed trait.
+    /// An absent recorded reading keeps the former projector answer. Mixed AE ancestry needs a separate recombination ruling (A1.32, p. 45).
+    /// </summary>
+    public static (bool? Status, string? Reason) AssaultEngineerLineage(bool? lowerQualityReplacement, IReadOnlyList<bool?> parents, bool? printedTrait)
+    {
+        ArgumentNullException.ThrowIfNull(parents);
+        if (lowerQualityReplacement is null)
+        {
+            return (null, null);
+        }
+
+        if (parents.Contains(true) && parents.Any(parent => parent != true))
+        {
+            return (null, "play.ae-lineage: mixed Assault Engineer ancestry is not resolved for recombination");
+        }
+
+        if (parents.Contains(false) || (lowerQualityReplacement == true && parents.Contains(true)))
+        {
+            return (false, null);
+        }
+
+        return (parents.Contains(true) || printedTrait == true ? true : null, null);
+    }
 
     /// <summary>
     /// A11.5 (p. 74; the design's review, finding 7): what a Final DR does to the vehicle. Below the CCV eliminates it, as a burning wreck when the DR is at
@@ -140,6 +193,10 @@ public static class ScenarioA1CloseCombatValueCalculator
         : unarmed ? "play.cc-vehicle: an Unarmed unit's CC FP is usable only vs Personnel, never vs a vehicle (A20.5)"
         : swimming ? "play.cc-vehicle: a swimmer has no CCV and attacks no vehicle (E6.2)"
         : null;
+
+    /// <summary>A11.5 (p. 74): currently supported Infantry kinds, before condition checks. Cavalry awaits its catalog representation.</summary>
+    public static bool InfantryOrCavalry(string kind) =>
+        kind is "asl:squad" or "asl:half-squad" or "asl:leader" or "asl:hero" || ScenarioA1Definitions.IsCrew(kind);
 
     /// <summary>
     /// A11.5 (p. 74): "A single CC attack cannot affect both a vehicle and Personnel (except for the PRC of a vehicle, which are eliminated if the vehicle is

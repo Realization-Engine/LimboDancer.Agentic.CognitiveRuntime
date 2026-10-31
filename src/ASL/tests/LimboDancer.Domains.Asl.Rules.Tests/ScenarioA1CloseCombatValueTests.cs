@@ -28,6 +28,45 @@ public sealed class ScenarioA1CloseCombatValueTests
         Assert.Equal([5, 3, 4, 4, 2, 2], Kinds.Select(ScenarioA1CloseCombatValueCalculator.BaseCcv));
     }
 
+    [Theory]
+    [InlineData("attacker-squad", "replaced-elr", true)]
+    [InlineData("attacker-squad", "ammunition-shortage-replaced", true)]
+    [InlineData("attacker-elite-squad-8-3-8", "replaced-by-two-half-squads", false)]
+    [InlineData("attacker-elite-squad-8-3-8", "ammunition-shortage-half-squads", false)]
+    [InlineData("attacker-elite-squad-8-3-8", "casualty-reduced-beyond-elr", true)]
+    [InlineData("finnish-elite-squad", "casualty-reduced-beyond-elr", false)]
+    [InlineData("attacker-squad", "battle-hardened", false)]
+    public void AssaultEngineerLossDistinguishesLowerQualityFromOwnHalfSquads(string definition, string consequence, bool lost)
+    {
+        var effect = new FireUnitEffect("u", definition, definition, null, false, true, false, false, false, false, [consequence], []);
+        Assert.Equal(lost, ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByFire(effect));
+    }
+
+    [Fact]
+    public void AssaultEngineerLineagePreservesPermanentLossAndDoesNotTurnOrdinaryAncestryIntoLoss()
+    {
+        Assert.Equal((true, (string?)null), ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(false, [true], false));
+        Assert.Equal((false, (string?)null), ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(true, [true], true));
+        Assert.Equal((false, (string?)null), ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(false, [false], true));
+        Assert.Equal(((bool?)null, (string?)null), ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(false, [null], false));
+        Assert.Equal(((bool?)null, (string?)null), ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(true, [null], false));
+        Assert.Equal(((bool?)null, (string?)null), ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(null, [true], true));
+        Assert.Equal((true, (string?)null), ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(false, [true, true], false));
+        Assert.NotNull(ScenarioA1CloseCombatValueCalculator.AssaultEngineerLineage(false, [true, null], false).Reason);
+    }
+
+    [Fact]
+    public void AssaultEngineerCasualtyLossReadsTheDefinitionAfterEarlierBattleHardening()
+    {
+        var effect = new FireUnitEffect("u", "finnish-green-squad", "finnish-green-half-squad", null, false, true, false, false, false, false,
+            ["battle-hardened", "casualty-reduced-beyond-elr"], []);
+        Assert.True(ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByFire(effect));
+        Assert.False(ScenarioA1CloseCombatValueCalculator.AssaultEngineerLostByFire(effect with
+        {
+            Events = ["casualty-reduced-beyond-elr", "battle-hardened"],
+        }));
+    }
+
     [Fact]
     public void TheNationalCasesChangeTheBaseCcvOfTheKindsTheyName()
     {
@@ -332,7 +371,40 @@ public sealed class ScenarioA1CloseCombatValueTests
         Unit("ru-g", "defender-conscript-squad", inexperienced: true), Unit("ru-p", "defender-squad", pinned: true),
     ];
 
+    [Fact]
+    public void CurrentVehicleDefenseRequiresKnownExperienceBeforeAnyRoll()
+    {
+        var defender = Unit("ru-g", "defender-conscript-squad") with
+        {
+            Inexperienced = null,
+        };
+        var facts = new VehicleCloseCombatFacts("CCPh", At, Vehicle("attacker-tank"), [defender], [], ["ru-g"], true, false,
+            new VehicleCloseCombatRolls([3, 4]));
+        Assert.Empty(ScenarioA1VehicleCloseCombat.Precheck(facts, CloseCombat));
+        Assert.Equal(CloseCombatResolution.Resolved, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).Disposition);
+        Assert.Equal(["asl.a1.cc-vehicle.fact-missing:inexperienced"], ScenarioA1VehicleCloseCombat.Precheck(facts, CloseCombat, new CcvContext()));
+        Assert.Equal(CloseCombatResolution.Abstained, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext()).Disposition);
+        var known = defender with
+        {
+            Inexperienced = true,
+        };
+        Assert.Empty(ScenarioA1VehicleCloseCombat.Precheck(facts with
+        {
+            Units = [known],
+        }, CloseCombat, new CcvContext()));
+    }
+
     private static string Json(VehicleCloseCombatResolution resolution) => JsonSerializer.Serialize(resolution);
+
+    [Fact]
+    public void AContextResolverRefusesAVehicleAsAnInfantryAttacker()
+    {
+        var facts = Against(Vehicle("attacker-tank"), [Unit("ru-vehicle", "attacker-truck")], ["ru-vehicle"], [3, 4]);
+        Assert.Empty(ScenarioA1VehicleCloseCombat.Precheck(facts, CloseCombat));
+        var result = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext());
+        Assert.Equal(CloseCombatResolution.Abstained, result.Disposition);
+        Assert.Contains(result.Reasons, reason => reason.Contains("only Infantry or Cavalry", StringComparison.Ordinal));
+    }
 
     [Fact]
     public void TheNewOverloadWithAnEmptyContextGivesTheOldAnswerOverTheExistingCases()
@@ -393,6 +465,26 @@ public sealed class ScenarioA1CloseCombatValueTests
         {
             ["ru-s"] = NationalCcv.Ethiopian
         })).KillNumber);
+    }
+
+    [Fact]
+    public void AGuardAttackingAVehicleLosesOneCcvWithoutBeingOutnumbered()
+    {
+        // A20.52 (p. 87): a squad guarding one HS still halves its attack against non-prisoners.
+        var facts = Against(Vehicle("attacker-tank"), Russians, ["ru-s"], [3, 4]);
+        var context = new CcvContext { Guards = ["ru-s"] };
+        Assert.False(context.IsOutnumberedGuard("ru-s"));
+        var result = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, context);
+        Assert.Equal(4, result.KillNumber);
+        Assert.Contains(result.KillNumberModifiers, item => item.Name == "guard" && item.Value == -1m);
+        Assert.Equal(5, ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat).KillNumber);
+        Assert.DoesNotContain("\"Guards\":", JsonSerializer.Serialize(new CcvContext()), StringComparison.Ordinal);
+        var both = ScenarioA1VehicleCloseCombat.Resolve(facts, CloseCombat, new CcvContext(OutnumberedGuards: ["ru-s"]) { Guards = ["ru-s"] });
+        Assert.Equal(4, both.KillNumber);
+        Assert.Single(both.KillNumberModifiers);
+        var combined = Against(Vehicle("attacker-tank"), Russians, ["ru-s", "ru-l"], [3, 4]);
+        Assert.Equal(5, ScenarioA1VehicleCloseCombat.Resolve(combined, CloseCombat, new CcvContext { Guards = ["ru-l"] }).KillNumber);
+        Assert.Null(JsonSerializer.Deserialize<CcvContext>(JsonSerializer.Serialize(new CcvContext()))!.Guards);
     }
 
     [Fact]
@@ -469,7 +561,7 @@ public sealed class ScenarioA1CloseCombatValueTests
             ["pinned"] = pinned,
             ["reactionFireMarked"] = marked,
             ["vehicleConcealed"] = false,
-            ["guardOutnumbered"] = false,
+            ["guard"] = false,
             ["csRed"] = false,
             ["finalDr"] = finalDr,
             ["unarmed"] = unarmed,
@@ -500,6 +592,22 @@ public sealed class ScenarioA1CloseCombatValueTests
         Assert.Equal("burning-wreck", Evaluate(Facts(3, engineer: true, smc: true)).Outcome);
         Assert.Equal("immobilized", Evaluate(Facts(4, pinned: true)).Outcome);
         Assert.Equal("no-effect", Evaluate(Facts(4, pinned: true, marked: true)).Outcome);
+    }
+
+    [Fact]
+    public void TheGuardContractAcceptsBothNewAndLegacyInputs()
+    {
+        var current = Facts(4);
+        current["guard"] = true;
+        Assert.Equal("immobilized", Evaluate(current).Outcome);
+        Assert.Contains("guard -1", Evaluate(current).Reasons[0].Text, StringComparison.Ordinal);
+        var legacy = Facts(4);
+        legacy.Remove("guard");
+        legacy["guardOutnumbered"] = true;
+        Assert.Equal("immobilized", Evaluate(legacy).Outcome);
+        Assert.Contains("guard-outnumbered -1", Evaluate(legacy).Reasons[0].Text, StringComparison.Ordinal);
+        legacy.Remove("guardOutnumbered");
+        Assert.Equal(ContractVerdict.NotEvaluated, Evaluate(legacy).Outcome);
     }
 
     [Fact]

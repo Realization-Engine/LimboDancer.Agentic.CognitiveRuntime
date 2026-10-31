@@ -58,13 +58,54 @@ public static class ScenarioA1FinalFireCalculator
     /// <summary>A8.4, A8.41 (p. 61): a target in an ADJACENT or the same hex, range one or zero. An unknown range is not in reach.</summary>
     public static bool InReach(int? range) => range is >= 0 and <= 1;
 
+    /// <summary>The vehicle MA MG's own counter and crew facts for A8.4 and A9.3 (pp. 61, 63).</summary>
+    public static FinalFireFacts VehicleFacts(FireAttack attack, FireVehicleFire vehicle) =>
+        new(FinalFireWeapon.Mg, vehicle.FinalFireMarker ?? FireMarker.None, attack.Range, false, true, true, false, false,
+            vehicle.Pinned != true && vehicle.Stunned != true);
+
+    /// <summary>C2.241, C5.6 (pp. 168, 172): the Gun's own marker, firing mode and actual crew for Final Fire.</summary>
+    public static FinalFireFacts OrdnanceFacts(OrdnanceShot shot, GunDefinition definition, ScenarioA1OrdnanceReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(reference);
+        var gun = shot.Gun!;
+        var othersOnly = shot.Vehicle?.Weapons?.MarkedByOthers == true;
+        var vehicleRof = shot.Vehicle is not null && gun.ShotsThisPhase > 0 && gun.RateOfFireKept == true;
+        var marker = gun.IntensiveFired == true ? FireMarker.IntensiveFire
+            : !othersOnly && gun.FinalFire == true ? FireMarker.FinalFire
+            : !othersOnly && !vehicleRof && gun.FirstFire == true ? FireMarker.FirstFire : FireMarker.None;
+        var sw = ScenarioA1OrdnanceParticipationCalculator.FiresAsLight(shot, definition, reference)
+            || definition.LatwType is not null || definition.GunType == ScenarioA1MachineGunKill.GunType;
+        return new(sw ? FinalFireWeapon.OrdnanceSw : FinalFireWeapon.Gun, marker, shot.Range,
+            ScenarioA1OrdnanceParticipationCalculator.SmcCount(reference.Fire.Definitions.GetValueOrDefault(shot.Crew!.DefinitionId!)?.Kind, shot.Participation) == 1,
+            shot.Vehicle is not null, shot.Vehicle is not null, true, definition.NoIntensiveFire,
+            !ScenarioA1OrdnanceParticipationCalculator.Pinned(shot) && shot.Crew.Broken != true && shot.Vehicle?.Shocked != true && shot.Vehicle?.Stunned != true);
+    }
+
+    /// <summary>A8.4, A8.41 (p. 61): facts for the selected inherent FP or held weapon, using that subject's own counter.</summary>
+    public static FinalFireFacts InfantryFacts(FireAttack attack, FireFirer firer, FireWeapon? weapon, ScenarioA1FireReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(firer);
+        ArgumentNullException.ThrowIfNull(reference);
+        var definition = reference.Definitions.GetValueOrDefault(firer.DefinitionId ?? string.Empty);
+        var first = weapon is null ? firer.FirstFireMarked == true : weapon.FirstFireMarked == true;
+        var final = weapon is null ? firer.FinalFireMarked == true : weapon.FiredThisPlayerTurn == true;
+        var kind = weapon is null ? FinalFireWeapon.Inherent
+            : reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsMg == true ? FinalFireWeapon.Mg : FinalFireWeapon.OtherSw;
+        return new(kind, final ? FireMarker.FinalFire : first ? FireMarker.FirstFire : FireMarker.None,
+            firer.Range ?? attack.Range, (definition is { IsLeader: true } or { IsHero: true }) && firer.Partner is null,
+            false, false, false, false, firer.Pinned != true && firer.Broken != true);
+    }
+
     /// <summary>C5.6, C5.63 (p. 172): whether a Gun's crew may Intensive Fire it: not a "No IF" Gun, and its crew not pinned, shocked, or stunned.</summary>
     public static bool MayIntensiveFire(bool noIntensiveFire, bool crewFit) => !noIntensiveFire && crewFit;
 
     /// <summary>
     /// A8.4, A8.41 (p. 61), A9.3 (p. 63), C2.241 (p. 168), C2.29: what Final Fire allows a unit or weapon by its own counter. With no counter, Normal
     /// (a Multiple-ROF weapon that kept its ROF in First Fire has no counter). Marked Final, Intensive, or No Fire, None. Marked First Fire: OnceMore
-    /// for a unit's inherent FP (A8.4), for a MG that <see cref="MaySustain"/>, for a Gun firing IFE (C2.29: Sustained Fire), and for a Gun that
+    /// for a unit's inherent FP (A8.4), for a MG that <see cref="MaySustain"/>, for IFE not fired by a lone SMC (A8.312, C2.29), and for a Gun that
     /// <see cref="MayIntensiveFire"/> (C2.241); None for an ordnance SW (no SW Intensive Fires, C5.6, and no ordnance sustains, A9.3), for a MG that
     /// may not sustain, and for another SW (a FT or DC, which can use neither; ruling RA8.8).
     /// </summary>
@@ -77,7 +118,8 @@ public static class ScenarioA1FinalFireCalculator
             FireMarker.None => FinalFireUse.Normal,
             FireMarker.FirstFire => facts.Weapon switch
             {
-                FinalFireWeapon.Inherent or FinalFireWeapon.Ife => FinalFireUse.OnceMore,
+                FinalFireWeapon.Inherent => FinalFireUse.OnceMore,
+                FinalFireWeapon.Ife => facts.LoneSmc ? FinalFireUse.None : FinalFireUse.OnceMore,
                 FinalFireWeapon.Mg => MaySustain(true, facts.Vehicular, facts.MainArmament, facts.AsOrdnance, facts.LoneSmc) ? FinalFireUse.OnceMore : FinalFireUse.None,
                 FinalFireWeapon.Gun => MayIntensiveFire(facts.NoIntensiveFire, facts.CrewFit) ? FinalFireUse.OnceMore : FinalFireUse.None,
                 _ => FinalFireUse.None,
@@ -107,7 +149,7 @@ public static class ScenarioA1FinalFireCalculator
 
     /// <summary>
     /// The verdict of one Final Fire at this target (ruling RA8.1). Refused, the use None and the refusal. Otherwise the use; a OnceMore attack is
-    /// Area Fire (A8.4), Sustained for a MG or IFE (A9.3, C2.29) with the B# two lower, and Intensive for a Gun (C2.241). A Normal attack is none of
+    /// Area Fire except for ordnance (A7.23, p. 55), Sustained for a MG or IFE (A9.3, C2.29) with the B# two lower, and Intensive for a Gun (C2.241). A Normal attack is none of
     /// these here: the attack's other facts (Subsequent First Fire, a pinned firer) are the fire calculator's.
     /// </summary>
     public static FinalFireVerdict Verdict(FinalFireFacts facts)
@@ -124,7 +166,7 @@ public static class ScenarioA1FinalFireCalculator
         }
 
         var sustained = facts.Weapon is FinalFireWeapon.Mg or FinalFireWeapon.Ife;
-        return new(FinalFireUse.OnceMore, true, sustained, facts.Weapon == FinalFireWeapon.Gun, sustained ? SustainedBreakdownReduction : 0, null);
+        return new(FinalFireUse.OnceMore, facts.Weapon != FinalFireWeapon.Gun, sustained, facts.Weapon == FinalFireWeapon.Gun, sustained ? SustainedBreakdownReduction : 0, null);
     }
 
     private static void Validate(FinalFireFacts facts)

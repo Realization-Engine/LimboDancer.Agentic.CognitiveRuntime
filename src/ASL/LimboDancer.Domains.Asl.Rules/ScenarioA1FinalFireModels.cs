@@ -36,7 +36,7 @@ public sealed record FinalFireFacts(FinalFireWeapon Weapon, FireMarker Marker, i
     bool NoIntensiveFire, bool CrewFit);
 
 /// <summary>
-/// The verdict of one Final Fire (ruling RA8.1): the use; whether it is Area Fire (every OnceMore attack, A8.4); Sustained Fire (a MG or IFE,
+/// The verdict of one Final Fire (ruling RA8.1): the use; whether it is Area Fire (OnceMore except ordnance, A8.4 and A7.23); Sustained Fire (a MG or IFE,
 /// A9.3, C2.29); Intensive Fire (a Gun, C2.241); the B# lowering of Sustained Fire (A9.3; a Gun's C5.62 lowering stays the ordnance calculator's);
 /// and the refusal, null when it may fire.
 /// </summary>

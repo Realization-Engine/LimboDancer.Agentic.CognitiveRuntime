@@ -101,7 +101,7 @@ public sealed class ScenarioA1FinalFireCalculatorTests
     [Fact]
     public void AFirstFireMarkedGunFiresOnceMoreAsIntensiveFireOnlyAdjacent()
     {
-        Assert.Equal(new FinalFireVerdict(FinalFireUse.OnceMore, true, false, true, 0, null),
+        Assert.Equal(new FinalFireVerdict(FinalFireUse.OnceMore, false, false, true, 0, null),
             ScenarioA1FinalFireCalculator.Verdict(Facts(FinalFireWeapon.Gun, FireMarker.FirstFire, 1)));
         Assert.Equal("marked First Fire: it fires again only at an ADJACENT or same-hex target (A8.4, A8.41)",
             ScenarioA1FinalFireCalculator.FinalFireRefusal(Facts(FinalFireWeapon.Gun, FireMarker.FirstFire, 5)));
@@ -114,6 +114,26 @@ public sealed class ScenarioA1FinalFireCalculatorTests
 
         // A Gun with no counter keeps its multiple attacks at any target (C2.241).
         Assert.Null(ScenarioA1FinalFireCalculator.FinalFireRefusal(Facts(FinalFireWeapon.Gun, FireMarker.None, 9)));
+    }
+
+    [Fact]
+    public void ALoneSmcCannotSustainIfeAndTheContractRequiresThatFact()
+    {
+        var facts = Facts(FinalFireWeapon.Ife, FireMarker.FirstFire, loneSmc: true);
+        Assert.Equal(FinalFireUse.None, ScenarioA1FinalFireCalculator.Use(facts));
+        Assert.NotNull(ScenarioA1FinalFireCalculator.FinalFireRefusal(facts));
+        Assert.Equal(FinalFireUse.Normal, ScenarioA1FinalFireCalculator.Use(facts with
+        {
+            Marker = FireMarker.None
+        }));
+        var contract = ScenarioA1RuleContracts.Find(Contract)!;
+        var input = Ask(weapon: "ife");
+        input.Remove("loneSmc");
+        Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(contract, input).Outcome);
+        input["loneSmc"] = true;
+        Assert.Equal("refused", ScenarioA1RuleContracts.Evaluate(contract, input).Outcome);
+        input["loneSmc"] = false;
+        Assert.Equal("may-fire-once-more", ScenarioA1RuleContracts.Evaluate(contract, input).Outcome);
     }
 
     [Fact]

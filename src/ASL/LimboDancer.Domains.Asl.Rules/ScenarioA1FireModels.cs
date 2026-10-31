@@ -30,6 +30,13 @@ public sealed record FireAttack(
         get; init;
     }
 
+    /// <summary>A8.41 (p. 61): version 1 reads each weapon's own Final Fire counter. Null retains the recorded earlier reading.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? FinalFireVersion
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The kind of Defensive fire in the MPh (unit step 22): <c>first-fire</c> (A8.1), <c>subsequent-first-fire</c> (A8.3),
     /// <c>final-protective-fire</c> (A8.31), or <c>residual-fp</c> (A8.2); null for the fire phases.
@@ -777,6 +784,13 @@ public sealed record FireVehicleFire(
     bool? FiredThisPlayerTurn,
     bool? RateOfFireShot)
 {
+    /// <summary>The MA MG's own fire counter for the opt-in A8.41 reading. Null is the reading before that wiring.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireMarker? FinalFireMarker
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The BMG and CMG this attack fires (D1.81, D1.82, D3.5, pp. 195 and 200; pass 50), each once a Player Turn, added together for one attack
     /// or fired apart. Null for an attack by the vehicle's MA MG, which is every record made before pass 50.

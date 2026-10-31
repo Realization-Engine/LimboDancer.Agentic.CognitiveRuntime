@@ -66,6 +66,11 @@ public static class ScenarioA1FireCalculator
             return Refused(FireResolution.Indeterminate, undecided);
         }
 
+        if (attack.VehicleFire is { } finalVehicle && CurrentVehicleFinalFire(attack, finalVehicle)?.Sustained == true && vehicleBreakdown is null)
+        {
+            return Refused(FireResolution.Indeterminate, ["asl.a1.fire.vehicle-breakdown-facts-missing"]);
+        }
+
         if (vehicleBreakdown is not null)
         {
             if (vehicleBreakdown.Weapons is null || vehicleBreakdown.Weapons.Values.Any(facts => facts is null))
@@ -577,6 +582,10 @@ public static class ScenarioA1FireCalculator
     private static List<string> Outside(FireAttack attack, ScenarioA1FireReference reference)
     {
         var outside = new List<string>();
+        if (attack.FinalFireVersion is not (null or 1))
+        {
+            outside.Add("asl.a1.fire.final-fire-version-outside");
+        }
         var phase = attack.Phase!;
         var kind = attack.FireKind;
         var phaseAdmitted = (phase, attack.FiringSide, kind) switch
@@ -896,7 +905,12 @@ public static class ScenarioA1FireCalculator
         // unit's counter for its weapons too, so a First-Fire-marked MG held by an unmarked unit fires here at any range, and an unmarked MG fired
         // alone by a First-Fire-marked unit is refused beyond range 1; the calculator reads each weapon's own counter, and an unknown range is not
         // in reach there (here it passes).
-        if (firers.Any(item => IsFinalFireAgain(attack, item) && RangeOf(attack, item) > 1))
+        if (attack.FinalFireVersion == 1 ? attack.Phase == "DFPh" && firers.Any(item =>
+                (reference.Definitions.GetValueOrDefault(item.DefinitionId!) is { } definition && AddsOwnFp(item, definition)
+                    && ScenarioA1FinalFireCalculator.FinalFireRefusal(ScenarioA1FinalFireCalculator.InfantryFacts(attack, item, null, reference)) is not null)
+                || (item.Weapons ?? []).Any(weapon => ScenarioA1FinalFireCalculator.FinalFireRefusal(
+                    ScenarioA1FinalFireCalculator.InfantryFacts(attack, item, weapon, reference)) is not null))
+            : firers.Any(item => IsFinalFireAgain(attack, item) && RangeOf(attack, item) > 1))
         {
             outside.Add("asl.a1.fire.final-fire-outside");
         }
@@ -954,7 +968,7 @@ public static class ScenarioA1FireCalculator
         // An attack recorded before the pass keeps ruling R12.6's test: every firer fires a MG, and its holder's FP goes with it.
         // A7.351, A7.352: a squad firing two SW, and a HS or hero firing one, add no FP of their own, as in any attack.
         bool AddsOwnFp(FireFirer item, FireDefinition? definition) => item.UsesInherentFp != false
-            && !(definition?.Kind == "asl:squad" && item.Weapons!.Count >= 2) && !((definition?.Kind == "asl:half-squad" || definition?.IsHero == true) && item.Weapons!.Count >= 1);
+            && !(definition?.Kind == "asl:squad" && item.Weapons?.Count >= 2) && !((definition?.Kind == "asl:half-squad" || definition?.IsHero == true) && item.Weapons?.Count >= 1);
         bool Sprays(FireFirer item, FireDefinition? definition) => item.Weapons is { } used
             && used.All(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty) is { IsMg: true })
             && (!AddsOwnFp(item, definition) ? used.Count > 0
@@ -1082,6 +1096,10 @@ public static class ScenarioA1FireCalculator
     /// an ADJACENT or same-hex target, as <see cref="ScenarioA1FinalFireCalculator.MaySustain"/> and
     /// <see cref="ScenarioA1FinalFireCalculator.FinalFireRefusal"/> answer.
     /// </summary>
+    private static FinalFireVerdict? CurrentVehicleFinalFire(FireAttack attack, FireVehicleFire vehicle) =>
+        attack.FinalFireVersion == 1 && attack.Phase == "DFPh" && vehicle.Weapons is not { Count: > 0 }
+            ? ScenarioA1FinalFireCalculator.Verdict(ScenarioA1FinalFireCalculator.VehicleFacts(attack, vehicle)) : null;
+
     private static void VehicleFireOutside(FireAttack attack, FireVehicleFire vehicle, ScenarioA1FireReference reference,
         IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
     {
@@ -1113,7 +1131,22 @@ public static class ScenarioA1FireCalculator
         }
 
         // D3.5 (pass 50): a BMG or CMG makes one fire attack a Player Turn, in the fire phase the vehicle's other weapons fire in.
-        if (named is null ? vehicle.FiredThisPlayerTurn == true && vehicle.RateOfFireShot != true : vehicle.OtherPhase == true || named.Any(item => item.Fired == true))
+        if (attack.FinalFireVersion == 1 && attack.Phase == "DFPh" && named is null)
+        {
+            if (vehicle.FinalFireMarker is not { } marker || !Enum.IsDefined(marker))
+            {
+                outside.Add("asl.a1.fire.final-fire-marker-unknown");
+            }
+            else if (ScenarioA1FinalFireCalculator.FinalFireRefusal(ScenarioA1FinalFireCalculator.VehicleFacts(attack, vehicle)) is { } refusal)
+            {
+                outside.Add("asl.a1.fire.final-fire:" + refusal);
+            }
+            if (vehicle.OtherPhase == true)
+            {
+                outside.Add("asl.a1.fire.firer-already-fired");
+            }
+        }
+        else if (named is null ? vehicle.FiredThisPlayerTurn == true && vehicle.RateOfFireShot != true : vehicle.OtherPhase == true || named.Any(item => item.Fired == true))
         {
             outside.Add("asl.a1.fire.firer-already-fired");
         }
@@ -3202,7 +3235,8 @@ public static class ScenarioA1FireCalculator
         {
             if (vehicleBreakdown is not null)
             {
-                var outcomes = VehicleBreakdowns(vehicle.VehicleId!, VehicleBreakdownUse.MachineGun, arithmetic.OriginalDr);
+                var sustained = CurrentVehicleFinalFire(attack, vehicle)?.Sustained == true;
+                var outcomes = VehicleBreakdowns(vehicle.VehicleId!, VehicleBreakdownUse.MachineGun, arithmetic.OriginalDr, sustained);
                 if (outcomes is null)
                 {
                     return [];
@@ -3213,10 +3247,10 @@ public static class ScenarioA1FireCalculator
                     var outcome = outcomes[name];
                     var ma = name == FireOverrunEffect.MainArmament;
                     var rof = reference.Definitions[vehicle.DefinitionId!].RateOfFire;
-                    var retained = ma && !outcome.Failed && vehicle.Pinned != true && attack.Phase != "AFPh"
+                    var retained = ma && !sustained && !outcome.Failed && vehicle.Pinned != true && attack.Phase != "AFPh"
                         && rof is { } rate && arithmetic.Dice[0] <= rate - ScenarioA1NonQualifiedUseCalculator.RofLowering(vehicle.CapturedPenalty ?? 0);
                     return new FireWeaponEffect(vehicle.VehicleId!, outcome.Numbers.BNumber, outcome.Outcome == VehicleBreakdownOutcome.Malfunction,
-                        retained, false, index == 0 ? FireCounter() : null,
+                        retained, sustained, index == 0 ? FireCounter() : null,
                         usedRolls.Contains("weaponSelection:" + vehicle.VehicleId + ":" + name) ? attack.Rolls!.WeaponSelection![vehicle.VehicleId + ":" + name] : null)
                     {
                         VehicleWeapon = ma ? null : name,
@@ -3258,10 +3292,10 @@ public static class ScenarioA1FireCalculator
             })];
         }
 
-        private Dictionary<string, VehicleBreakdownResolved>? VehicleBreakdowns(string vehicleId, VehicleBreakdownUse use, int originalDr)
+        private Dictionary<string, VehicleBreakdownResolved>? VehicleBreakdowns(string vehicleId, VehicleBreakdownUse use, int originalDr, bool sustained = false)
         {
             var outcomes = ScenarioA1VehicleBreakdownResolutionCalculator.ResolveWeapons(vehicleId, vehicleBreakdown!.Weapons, use, originalDr,
-                attack.Rolls!.WeaponSelection, out var keys);
+                attack.Rolls!.WeaponSelection, out var keys, sustainedMainArmament: sustained);
             if (outcomes is null)
             {
                 undecided.Add("asl.a1.fire.roll-missing:weaponSelection:" + string.Join(",", keys));
@@ -4151,6 +4185,11 @@ public static class ScenarioA1FireCalculator
             var range = attack.Range!.Value;
             var multipliers = new List<FireModifier>();
 
+            if (CurrentVehicleFinalFire(attack, vehicle)?.AreaFire == true)
+            {
+                multipliers.Add(new FireModifier("final-fire", 0.5m, "A8.4"));
+            }
+
             // A7.21 (ruling R10.4; pass 55): PBF at an adjacent target at most one level above the firer, as for Infantry. A record made before
             // the pass is at the firer's level.
             if (range == 1 && (attack.SameLevel == true ? 0 : attack.TargetLevelAbove ?? 0) <= 1)
@@ -4259,7 +4298,11 @@ public static class ScenarioA1FireCalculator
 
                     // Keeps its answer (the A8.41 claim, ruling RA8.6): a weapon's Area Fire is read here from its unit's First Fire counter, so an
                     // unmarked MG fired alone by a First-Fire-marked unit is halved; ScenarioA1FinalFireCalculator.Verdict reads the weapon's own.
-                    var multipliers = Multipliers(range, mg.Range!.Value, vsConcealed, IsFinalFireAgain(attack, firer), IsSustained(attack, weapon, reference), LevelAboveOf(attack, firer), firer);
+                    var finalArea = attack.FinalFireVersion == 1
+                        ? attack.Phase == "DFPh" && ScenarioA1FinalFireCalculator.Verdict(
+                            ScenarioA1FinalFireCalculator.InfantryFacts(attack, firer, weapon, reference)).AreaFire
+                        : IsFinalFireAgain(attack, firer);
+                    var multipliers = Multipliers(range, mg.Range!.Value, vsConcealed, finalArea, IsSustained(attack, weapon, reference), LevelAboveOf(attack, firer), firer);
                     if (mg.IsFt)
                     {
                         // A22.1, A22.32 (ruling R15.1): never raised for PBF or TPBF, not halved in the AFPh, and halved at a target two levels away.

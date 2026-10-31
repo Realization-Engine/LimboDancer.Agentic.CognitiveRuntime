@@ -9,7 +9,8 @@ public enum VehicleBreakdownUse
 /// <summary>
 /// Authoritative supplemental facts for a new vehicle weapon reading. Printed numbers are null only when absent, not hidden.
 /// WinterReduction is the existing E3.741 weather fact (0, 1 or 2); Captured and NonQualified are the two independent A21.11/.13 penalties.
-/// These facts are separate from frozen shot/attack records. Mounted weapons do not acquire SW inexperience or Sustained Fire penalties.
+/// These facts are supplemental to shot/attack records. Mounted weapons do not acquire SW inexperience penalties.
+/// The resolver separately takes the Final Fire calculator's Sustained Fire verdict for a vehicle MA MG (A9.3's exception).
 /// </summary>
 public sealed record VehicleBreakdownUseFacts(
     [property: System.Text.Json.Serialization.JsonRequired] VehicleBreakdownWeapon Weapon,

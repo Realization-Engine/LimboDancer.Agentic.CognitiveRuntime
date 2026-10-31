@@ -77,6 +77,58 @@ public sealed class ScenarioA1FireVehicleBreakdownAdapterTests
     }
 
     [Fact]
+    public void CurrentFinalFireMaMgUsesSustainedNumbersAndForfeitsRof()
+    {
+        var plain = Shot();
+        var attack = plain with
+        {
+            Phase = "DFPh",
+            FiringSide = "non-phasing",
+            Range = 1,
+            FinalFireVersion = 1,
+            VehicleFire = plain.VehicleFire! with
+            {
+                FiredThisPlayerTurn = true,
+                FinalFireMarker = FireMarker.FirstFire,
+            },
+        };
+        var facts = Supplement(("ma", Facts(VehicleBreakdownWeapon.MainArmament, 12)));
+        Assert.Contains("asl.a1.fire.firer-already-fired", ScenarioA1FireCalculator.Precheck(attack with
+        {
+            FinalFireVersion = null
+        }, Reference));
+        Assert.Contains(ScenarioA1FireCalculator.Precheck(attack with
+        {
+            Range = 3
+        }, Reference), reason => reason.StartsWith("asl.a1.fire.final-fire:", StringComparison.Ordinal));
+        foreach (var dice in new int[][] { [1, 2], [5, 5], [6, 6] })
+        {
+            var result = Complete(attack with
+            {
+                Rolls = new FireRolls(dice, null, null, null)
+            }, facts);
+            Assert.Equal(FireResolution.Resolved, result.Disposition);
+            var effect = Assert.Single(result.WeaponEffects!);
+            Assert.True(effect.SustainedFire);
+            Assert.False(effect.RateOfFireRetained);
+            Assert.Equal("final-fire", effect.FireCounter);
+            Assert.Equal(new VehicleBreakdownNumbers(10, 12, false, false), effect.VehicleBreakdown!.Numbers);
+            Assert.Equal(dice.Sum() == 12 ? VehicleBreakdownOutcome.Disabled
+                : dice.Sum() == 10 ? VehicleBreakdownOutcome.Malfunction : VehicleBreakdownOutcome.None, effect.VehicleBreakdown.Outcome);
+            var normal = Complete(attack with
+            {
+                VehicleFire = attack.VehicleFire! with
+                {
+                    FinalFireMarker = FireMarker.None
+                },
+                Rolls = new FireRolls([5, 6], null, null, null)
+            }, facts);
+            Assert.True(normal.Disposition == FireResolution.Resolved, string.Join(", ", normal.Reasons));
+            Assert.Equal(normal.Arithmetic!.TotalFirepower / 2, result.Arithmetic!.TotalFirepower);
+        }
+    }
+
+    [Fact]
     public void NewLowAmmoReadingDoesNotChangeTheLegacyAttackOrResolution()
     {
         var attack = Shot();

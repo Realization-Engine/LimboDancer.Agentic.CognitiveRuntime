@@ -60,6 +60,25 @@ public sealed class ScenarioA1PlacedDcCalculatorTests
     }
 
     [Fact]
+    public void WiringSettlementAndDeadlineAdaptersKeepTheBoundaries()
+    {
+        Assert.False(ScenarioA1DemolitionChargeRules.PlacementSettled(false, false, false));
+        Assert.True(ScenarioA1DemolitionChargeRules.PlacementSettled(true, false, false));
+        Assert.True(ScenarioA1DemolitionChargeRules.PlacementSettled(false, true, false));
+        Assert.True(ScenarioA1DemolitionChargeRules.PlacementSettled(false, false, true));
+        Assert.True(ScenarioA1DemolitionChargeRules.PlacementFailed(false, true, false));
+        Assert.True(ScenarioA1DemolitionChargeRules.PlacementFailed(true, false, false));
+        Assert.True(ScenarioA1DemolitionChargeRules.PlacementFailed(false, false, true));
+        Assert.False(ScenarioA1DemolitionChargeRules.PlacementFailed(false, false, false));
+        Assert.False(ScenarioA1DemolitionChargeRules.DetonationDue(true, false, false));
+        Assert.True(ScenarioA1DemolitionChargeRules.DetonationDue(true, false, true));
+        Assert.True(ScenarioA1DemolitionChargeRules.DetonationDue(true, true, false));
+        Assert.False(ScenarioA1DemolitionChargeRules.DetonationDue(false, true, true));
+        Assert.Contains("G11.8331", ScenarioA1DemolitionChargeRules.PlacementRefusal(Squad, true), StringComparison.Ordinal);
+        Assert.Equal(ScenarioA1DemolitionChargeRules.PlacementRefusal(Squad), ScenarioA1DemolitionChargeRules.PlacementRefusal(Squad, false));
+    }
+
+    [Fact]
     public void AnEnemyAfvNeedsAPaatcOfAPlacerA116DoesNotExempt()
     {
         Assert.True(ScenarioA1DemolitionChargeRules.PlacementNeedsPaatc(true, false));

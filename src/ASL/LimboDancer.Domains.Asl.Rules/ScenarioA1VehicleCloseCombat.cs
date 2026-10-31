@@ -281,13 +281,13 @@ public static class ScenarioA1VehicleCloseCombat
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(reference);
-        var reasons = Precheck(facts, reference);
+        var reasons = Precheck(facts, reference, context);
         if (reasons.Count != 0)
         {
             return Refused(CloseCombatResolution.Abstained, reasons);
         }
 
-        if (context is not null && facts.ByVehicle != true && AttackersRefusal(facts, context) is { } refusal)
+        if (context is not null && facts.ByVehicle != true && AttackersRefusal(facts, reference, context) is { } refusal)
         {
             return Refused(CloseCombatResolution.Abstained, [refusal]);
         }
@@ -322,12 +322,13 @@ public static class ScenarioA1VehicleCloseCombat
     /// A11.5, A20.5, E6.2: the first attacker <see cref="ScenarioA1CloseCombatValueCalculator.AttackerRefusal"/> refuses, after <see cref="Precheck"/> has
     /// admitted each as an enemy, unbroken, and uncaptured; null when none.
     /// </summary>
-    private static string? AttackersRefusal(VehicleCloseCombatFacts facts, CcvContext context)
+    private static string? AttackersRefusal(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, CcvContext context)
     {
         foreach (var id in facts.Attackers!)
         {
             var unit = facts.Units!.First(item => item.UnitId == id);
-            if (ScenarioA1CloseCombatValueCalculator.AttackerRefusal(true, unit.Side != facts.Vehicle!.Side, unit.Broken == true, unit.Captured == true,
+            var infantryOrCavalry = ScenarioA1CloseCombatValueCalculator.InfantryOrCavalry(reference.Definitions[unit.DefinitionId!].Kind);
+            if (ScenarioA1CloseCombatValueCalculator.AttackerRefusal(infantryOrCavalry, unit.Side != facts.Vehicle!.Side, unit.Broken == true, unit.Captured == true,
                 unit.Unarmed == true, context.IsSwimming(id)) is { } refusal)
             {
                 return refusal;
@@ -443,6 +444,20 @@ public static class ScenarioA1VehicleCloseCombat
         return reasons;
     }
 
+    /// <summary>Current-context defense requires the experience fact used by A11.62; null context retains the recorded reading.</summary>
+    public static IReadOnlyList<string> Precheck(VehicleCloseCombatFacts facts, ScenarioA1CloseCombatReference reference, CcvContext? context)
+    {
+        var reasons = Precheck(facts, reference);
+        if (reasons.Count != 0 || context is null || facts.ByVehicle != true)
+        {
+            return reasons;
+        }
+
+        return facts.Units!.Any(unit => facts.Defenders!.Contains(unit.UnitId!, StringComparer.Ordinal)
+            && Inexperience(reference.Definitions[unit.DefinitionId!]) && unit.Inexperienced is null)
+            ? ["asl.a1.cc-vehicle.fact-missing:inexperienced"] : reasons;
+    }
+
     private static bool IsSmc(FireDefinition definition) => definition.IsLeader || definition.IsHero;
 
     private static bool Inexperience(FireDefinition definition) => definition.Class is "green" or "conscript";
@@ -535,7 +550,10 @@ public static class ScenarioA1VehicleCloseCombat
             attackers.Any(item => item.Facts.Pinned == true),
             facts.Reaction == true && facts.FireMarked?.Any(id => facts.Attackers!.Contains(id)) == true,
             context?.VehicleConcealed == true, context is not null && attackers.Any(item => context.IsOutnumberedGuard(item.Facts.UnitId!)),
-            context?.NationalOf(main.Facts.UnitId!) ?? NationalCcv.None));
+            context?.NationalOf(main.Facts.UnitId!) ?? NationalCcv.None)
+        {
+            Guard = context is not null && attackers.Any(item => context.IsGuard(item.Facts.UnitId!))
+        });
         var modifiers = ccv.Modifiers;
         var kill = ccv.Ccv;
 
