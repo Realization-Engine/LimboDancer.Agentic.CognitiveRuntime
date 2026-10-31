@@ -96,7 +96,7 @@ foreach (var workload in new[] { "gun", "canister", "mortar-solo", "mortar-pair"
         if (value is not OrdnanceShot shot) return value?.ToString() ?? "null";
         var participation = shot.GetType().GetProperty("Participation")?.GetValue(shot);
         var hasSecond = participation?.GetType().GetProperty("Second")?.GetValue(participation) is not null;
-        return $"type={shot.TargetType};use={shot.UseMultiple};participants={(hasSecond ? 2 : 1)}";
+        return $"type={shot.TargetType};use={shot.UseMultiple?.ToString() ?? "null"};participants={(hasSecond ? 2 : 1)}";
     }
     foreach (var cold in new[] { false, true })
     foreach (var operation in new[] { "from-state", "target-advice" })
@@ -155,8 +155,10 @@ foreach (var workload in new[] { "gun", "canister", "mortar-solo", "mortar-pair"
     var fired = lastEvents.Select(item => item.Payload).OfType<OrdnanceFired>().Single();
     var paired = fired.Facts.TryGetProperty("participation", out var evidence)
         && evidence.TryGetProperty("second", out var additional) && additional.ValueKind == JsonValueKind.Object;
+    int? useMultiple = fired.Facts.TryGetProperty("useMultiple", out var recordedUse) ? recordedUse.GetInt32() : null;
     var commandRow = new { workload, game, operation = "fire-command", cold = false,
-        answer = new { events = eventCount, participants = paired ? 2 : 1, useMultiple = fired.Facts.GetProperty("useMultiple").GetInt32() },
+        answer = new { events = eventCount, participants = paired ? 2 : 1, useMultiple, fired.RateOfFireKept, fired.Acquisition },
+        eventTypes = lastEvents.Select(item => item.Payload.GetType().Name).ToArray(),
         iterations = 20, bytes = commandSamples.Select(sample => sample.Bytes).Order().ElementAt(4),
         medianUs = commandSamples.Select(sample => sample.Microseconds).Order().ElementAt(4),
         p90Us = commandSamples.Select(sample => sample.Microseconds).Order().ElementAt(8), samples = commandSamples };

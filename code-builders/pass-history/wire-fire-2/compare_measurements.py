@@ -28,7 +28,18 @@ for item in sorted(keys):
     for number in (1, 2):
         baseline = indexed[f"baseline-{number}"][item]
         current = indexed[f"current-{number}"][item]
-        if current["answer"] != baseline["answer"] and workload != "mortar-pair":
+        expected = baseline["answer"]
+        # Main omits A21.13's multiple for light mortars. Participation records
+        # its calculator-derived zero without changing the shot's outcome.
+        if workload.startswith("mortar") and operation == "from-state":
+            expected = expected.replace("use=null", "use=0")
+        elif workload.startswith("mortar") and operation == "fire-command":
+            expected = {**expected, "useMultiple": 0}
+        if workload == "mortar-pair" and operation == "from-state":
+            expected = expected.replace("participants=1", "participants=2")
+        elif workload == "mortar-pair" and operation == "fire-command":
+            expected = {**expected, "participants": 2, "events": expected["events"] + 1, "RateOfFireKept": True}
+        if current["answer"] != expected:
             stops.append(f"Unexpected answer difference: {item}, pair {number}")
         if operation == "fire-command":
             byte_limit = max(65536, baseline["bytes"] * .10)

@@ -244,13 +244,14 @@ public static class LiveOrdnance
             {
                 return (null, primaryRefusal);
             }
-            if (secondFirer is not null && ParticipantRefusal(state, gun.Id, secondFirer, director, spotter) is { } participantRefusal)
+            OrdnanceAdditionalFirer? additionalFirer = null;
+            if (secondFirer is not null && ParticipantRefusal(state, gun.Id, secondFirer, director, spotter, out additionalFirer) is { } participantRefusal)
             {
                 return (null, participantRefusal);
             }
 
             participation = new(ScenarioA1OrdnanceParticipationCalculator.CurrentVersion,
-                secondFirer is null ? null : ParticipantFacts(state, gun.Id, crew, secondFirer));
+                additionalFirer);
         }
 
         // C8.4 (pass 55, ruling R55.9): Canister is fired at an aim, not at a Location's units; each Location it attacks is a fire attack of its own,
@@ -557,9 +558,14 @@ public static class LiveOrdnance
     /// <summary>
     /// The same participant refusal used by the command and the owner-visible candidate list.
     /// </summary>
-    public static string? ParticipantRefusal(GameState state, string gunId, string secondId, string? director = null, string? spotter = null)
+    public static string? ParticipantRefusal(GameState state, string gunId, string secondId, string? director = null, string? spotter = null) =>
+        ParticipantRefusal(state, gunId, secondId, director, spotter, out _);
+
+    private static string? ParticipantRefusal(GameState state, string gunId, string secondId, string? director, string? spotter,
+        out OrdnanceAdditionalFirer? additionalFirer)
     {
         ArgumentNullException.ThrowIfNull(state);
+        additionalFirer = null;
         var gun = state.Find(gunId) as EquipmentInstance;
         if (ScenarioA1OrdnanceParticipationCalculator.WeaponRefusal(gun?.Kind) is { } weaponRefusal)
         {
@@ -572,8 +578,9 @@ public static class LiveOrdnance
         }
 
         var second = state.Unit(secondId);
+        additionalFirer = ParticipantFacts(state, gunId, primary, secondId);
         var refusal = ScenarioA1OrdnanceParticipationCalculator.CandidateRefusal(primary.Id, primary.Kind, second?.Kind,
-            ParticipantFacts(state, gunId, primary, secondId), director, spotter, ScenarioA1OrdnanceEligibility.FirePhase(state.Phase));
+            additionalFirer, director, spotter, ScenarioA1OrdnanceEligibility.FirePhase(state.Phase));
         return refusal ?? ScenarioA1OrdnanceParticipationCalculator.CandidateRefusal(secondId, second?.Kind, primary.Kind,
             ParticipantFacts(state, gunId, second!, primary.Id), director, spotter, ScenarioA1OrdnanceEligibility.FirePhase(state.Phase));
     }
@@ -598,7 +605,7 @@ public static class LiveOrdnance
             OpportunityFire = ScenarioA1OrdnanceEligibility.OpportunityFirer(state.Phase, true, Is(unit, Conditions.BoundingFire)),
         };
         return new(crew, unit is { Status: InstanceStatus.Active, Definition: not null }, unit?.Side == other.Side,
-            unit is { Position: MapPosition } && other.Position is MapPosition && state.Location(unitId)?.Location == state.Location(other.Id)?.Location,
+            unit is { Position: MapPosition unitPosition } && other.Position is MapPosition otherPosition && unitPosition.Location == otherPosition.Location,
             unit is null ? null : Is(unit, Conditions.Melee), unit is null ? null : Is(unit, Conditions.Captured), unit is null ? null : Is(unit, "asl:ti"),
             use.UsedOtherWeapon, use.DirectedFire, use.Spotted)
         {
