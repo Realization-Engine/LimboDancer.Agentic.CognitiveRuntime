@@ -8602,7 +8602,7 @@ else if (state is not null)
 
     private void ClearWeaponProposal(ActionDescriptor action)
     {
-        if (pending?.Action == action)
+        if (pending?.Action == action && pending.Result.Outcome is not (PlayOutcome.Committed or PlayOutcome.Replay))
         {
             pending = null;
             status = string.Empty;

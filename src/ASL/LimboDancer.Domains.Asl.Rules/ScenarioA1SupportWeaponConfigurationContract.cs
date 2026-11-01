@@ -7,8 +7,8 @@ internal static class ScenarioA1SupportWeaponConfigurationContract
     private static RuleContract Configuration() => new("a9.8-configuration", "Support Weapons: Configuration", [new("A9.8", 65)],
         [
             new("unitId", ContractFactType.Unit, true, ContractDisclosure.Owner, "The acting unit") { Concerns = "unitId" },
-            new("phase", ContractFactType.Text, true, ContractDisclosure.Owner, "Phase") { Concerns = "unitId" },
-            new("phasing", ContractFactType.Flag, true, ContractDisclosure.Owner, "Phasing") { Concerns = "unitId" },
+            new("phase", ContractFactType.Choice, false, ContractDisclosure.All, "The phase") { Choices = ScenarioA1RuleContracts.Phases },
+            new("phasing", ContractFactType.Flag, false, ContractDisclosure.All, "The acting side is phasing"),
             new("active", ContractFactType.Flag, true, ContractDisclosure.Owner, "Active") { Concerns = "unitId" },
             new("goodOrder", ContractFactType.Flag, true, ContractDisclosure.Owner, "Good Order") { Concerns = "unitId" },
             new("temporarilyImmobilized", ContractFactType.Flag, true, ContractDisclosure.Owner, "Temporarily Immobilized") { Concerns = "unitId" },
@@ -53,7 +53,7 @@ internal static class ScenarioA1SupportWeaponConfigurationContract
         }
 
         var input = new SupportWeaponConfigurationFacts(
-            facts.Text("phase")!,
+            facts.Text("phase")!.ToLowerInvariant(),
             facts.Flag("phasing")!.Value,
             facts.Flag("active")!.Value,
             facts.Flag("goodOrder")!.Value,

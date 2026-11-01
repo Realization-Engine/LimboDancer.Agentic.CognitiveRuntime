@@ -33,7 +33,7 @@
       "contract": "a9.72-repair",
       "facts": {
         "unitId": "G1",
-        "phase": "rph",
+        "phase": "RPh",
         "active": true,
         "goodOrder": true,
         "possessed": true,
@@ -58,7 +58,7 @@
       "contract": "a9.72-repair",
       "facts": {
         "unitId": "G1",
-        "phase": "rph",
+        "phase": "RPh",
         "active": true,
         "goodOrder": true,
         "possessed": true,
@@ -83,7 +83,7 @@
       "contract": "a9.72-repair",
       "facts": {
         "unitId": "G1",
-        "phase": "rph",
+        "phase": "RPh",
         "active": true,
         "goodOrder": true,
         "possessed": true,
@@ -108,7 +108,7 @@
       "contract": "a9.8-configuration",
       "facts": {
         "unitId": "G1",
-        "phase": "pfph",
+        "phase": "PFPh",
         "phasing": true,
         "active": true,
         "goodOrder": true,
@@ -134,7 +134,7 @@
       "contract": "a9.8-configuration",
       "facts": {
         "unitId": "G1",
-        "phase": "pfph",
+        "phase": "PFPh",
         "phasing": true,
         "active": true,
         "goodOrder": true,
@@ -160,7 +160,7 @@
       "contract": "a9.8-configuration",
       "facts": {
         "unitId": "G1",
-        "phase": "pfph",
+        "phase": "PFPh",
         "phasing": true,
         "active": true,
         "goodOrder": true,
@@ -189,7 +189,8 @@
         "smc": false,
         "wounded": false,
         "cx": false,
-        "retainedPp": 1
+        "retainedPp": 1,
+        "phase": "CCPh"
       },
       "expect": {
         "outcome": "allowed"
@@ -205,7 +206,8 @@
         "smc": false,
         "wounded": false,
         "cx": false,
-        "retainedPp": 6
+        "retainedPp": 6,
+        "phase": "CCPh"
       },
       "expect": {
         "outcome": "refused"
@@ -221,7 +223,8 @@
         "smc": false,
         "wounded": false,
         "cx": false,
-        "retainedPp": null
+        "retainedPp": null,
+        "phase": "CCPh"
       },
       "expect": {
         "outcome": "not-evaluated"
@@ -234,7 +237,7 @@
       "contract": "a4.44-recovery",
       "facts": {
         "unitId": "G1",
-        "phase": "mph",
+        "phase": "MPh",
         "phasing": true,
         "active": true,
         "goodOrder": true,
@@ -273,7 +276,7 @@
       "contract": "a4.44-recovery",
       "facts": {
         "unitId": "G1",
-        "phase": "mph",
+        "phase": "MPh",
         "phasing": true,
         "active": true,
         "goodOrder": true,
@@ -312,7 +315,7 @@
       "contract": "a4.431-transfer",
       "facts": {
         "unitId": "G1",
-        "phase": "aph",
+        "phase": "APh",
         "giver": "G1",
         "recipient": "G2",
         "weapon": "LMG",
@@ -347,7 +350,7 @@
       "contract": "a4.431-transfer",
       "facts": {
         "unitId": "G1",
-        "phase": "aph",
+        "phase": "APh",
         "giver": "G1",
         "recipient": "G2",
         "weapon": "LMG",

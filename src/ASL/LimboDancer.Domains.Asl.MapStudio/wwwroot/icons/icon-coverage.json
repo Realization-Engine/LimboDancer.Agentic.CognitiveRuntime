@@ -1435,6 +1435,13 @@
         },
         {
           "kind": "button",
+          "label": "Show all locations",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "Play"
+        },
+        {
+          "kind": "button",
           "label": "Propose: @WordsAt(guard) Deploys, first HS keeps spotting",
           "dynamic": true,
           "status": "needed",
@@ -3566,12 +3573,8 @@
     {
       "name": "SupportWeaponActionPanel",
       "path": "Components/Play/SupportWeaponActionPanel.razor",
-      "pages": [
-        "/games/play"
-      ],
-      "usedBy": [
-        "Play"
-      ],
+      "pages": [],
+      "usedBy": [],
       "controls": [
         {
           "kind": "button",
@@ -3604,6 +3607,32 @@
           "id": "propose-dismantle",
           "status": "needed",
           "strip": "SupportWeaponActionPanel action-fields"
+        }
+      ]
+    },
+    {
+      "name": "SupportWeaponWorkflow",
+      "path": "Components/Play/SupportWeaponWorkflow.razor",
+      "pages": [
+        "/games/play"
+      ],
+      "usedBy": [
+        "Play"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Show all locations",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "SupportWeaponWorkflow toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Propose: @Verb(weapon)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "SupportWeaponWorkflow"
         }
       ]
     },

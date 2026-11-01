@@ -7,7 +7,7 @@ internal static class ScenarioA1SupportWeaponRepairContract
     private static RuleContract Repair() => new("a9.72-repair", "Support Weapons: Repair", [new("A9.72", 65)],
         [
             new("unitId", ContractFactType.Unit, true, ContractDisclosure.Owner, "The acting unit") { Concerns = "unitId" },
-            new("phase", ContractFactType.Text, true, ContractDisclosure.Owner, "Phase") { Concerns = "unitId" },
+            new("phase", ContractFactType.Choice, false, ContractDisclosure.All, "The phase") { Choices = ScenarioA1RuleContracts.Phases },
             new("active", ContractFactType.Flag, true, ContractDisclosure.Owner, "Active") { Concerns = "unitId" },
             new("goodOrder", ContractFactType.Flag, true, ContractDisclosure.Owner, "Good Order") { Concerns = "unitId" },
             new("possessed", ContractFactType.Flag, true, ContractDisclosure.Owner, "Possessed") { Concerns = "unitId" },
@@ -53,7 +53,7 @@ internal static class ScenarioA1SupportWeaponRepairContract
         }
 
         var input = new SupportWeaponRepairFacts(
-            facts.Text("phase")!,
+            facts.Text("phase")!.ToLowerInvariant(),
             facts.Flag("active")!.Value,
             facts.Flag("goodOrder")!.Value,
             facts.Flag("possessed")!.Value,

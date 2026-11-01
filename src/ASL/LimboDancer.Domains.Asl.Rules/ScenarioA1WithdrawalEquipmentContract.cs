@@ -6,6 +6,7 @@ internal static class ScenarioA1WithdrawalEquipmentContract
     [RuleContract]
     private static RuleContract Load() => new("a11.21-retained-load", "Withdrawal equipment load", [new("A11.21", 73)],
         [
+            new("phase", ContractFactType.Choice, false, ContractDisclosure.All, "The withdrawal phase") { Choices = ["CCPh"] },
             new("unitId", ContractFactType.Unit, true, ContractDisclosure.Owner, "The withdrawing unit") { Concerns = "unitId" },
             new("smc", ContractFactType.Flag, true, ContractDisclosure.Owner, "The unit is a SMC") { Concerns = "unitId" },
             new("wounded", ContractFactType.Flag, true, ContractDisclosure.Owner, "The unit is wounded") { Concerns = "unitId" },

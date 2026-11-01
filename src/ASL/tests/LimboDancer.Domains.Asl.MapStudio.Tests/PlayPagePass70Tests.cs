@@ -413,7 +413,7 @@ public sealed class PlayPagePass70Tests : IDisposable
         // (4 PP of 5) brings it within its IPC of 3, and the destinations follow.
         string?[] none = [.. page.FindAll(".cc-withdraw[data-unit='de-1'] option").Select(option => option.GetAttribute("value"))];
         Assert.Equal(string.Empty, Assert.Single(none));
-        Assert.Contains("once it drops enough", page.Find("#cc-withdrawals").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Leave enough equipment to withdraw", page.Find("#cc-withdrawals").TextContent, StringComparison.Ordinal);
         var target = page.Find(".cc-defender[data-unit='ru-gc']");
         Assert.StartsWith(DisplayText.Place(1, WideBoards.At(5)) + ": ", target.ParentElement!.TextContent.Trim(), StringComparison.Ordinal);
         page.Find(".cc-drop[data-weapon='de-mmg']").Change(true);

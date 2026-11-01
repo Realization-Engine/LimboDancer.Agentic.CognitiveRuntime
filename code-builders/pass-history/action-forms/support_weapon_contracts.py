@@ -21,8 +21,16 @@ def adapter(name, rule, page, entries):
             primitive = kind.rstrip('?')
             facttype, getter = {'bool': ('Flag', 'Flag'), 'int': ('Number', 'Number'), 'string': ('Text', 'Text')}[primitive]
             desc = re.sub(r'(?<!^)(?=[A-Z])', ' ', field) + (' (none when not aboard)' if field.endswith('Vehicle') else '')
-            declarations.append(f'            new("{key}", ContractFactType.{facttype}, true, ContractDisclosure.Owner, "{desc}") {{ Concerns = "unitId" }},')
-            # Nullable carriage IDs represent not aboard with an empty string in the adapter.
+            if field == 'Phase':
+                declarations.append('            new("phase", ContractFactType.Choice, false, ContractDisclosure.All, "The phase") { Choices = ScenarioA1RuleContracts.Phases },')
+            elif field == 'Phasing':
+                declarations.append('            new("phasing", ContractFactType.Flag, false, ContractDisclosure.All, "The acting side is phasing"),')
+            else:
+                if field in ('Giver', 'Recipient'):
+                    facttype = 'Unit'
+                concerns = key if field in ('Giver', 'Recipient') else ('recipient' if field.startswith('Recipient') else 'giver' if field.startswith('Giver') else 'unitId')
+                declarations.append(f'            new("{key}", ContractFactType.{facttype}, true, ContractDisclosure.Owner, "{desc}") {{ Concerns = "{concerns}" }},')
+            # Nullable carriage IDs use the explicit known-absent value "none".
             guards.append(f'facts.{getter}("{key}") is null')
             if primitive == 'int':
                 guards.append(f'facts.Number("{key}") != decimal.Truncate(facts.Number("{key}")!.Value)')
@@ -30,6 +38,8 @@ def adapter(name, rule, page, entries):
                 args.append(f'checked((int)facts.Number("{key}")!.Value)')
             elif primitive == 'bool':
                 args.append(f'facts.Flag("{key}")!.Value')
+            elif field == 'Phase':
+                args.append('facts.Text("phase")!.ToLowerInvariant()')
             elif field.endswith('Vehicle'):
                 args.append(f'facts.Text("{key}") == "none" ? null : facts.Text("{key}")')
             else:

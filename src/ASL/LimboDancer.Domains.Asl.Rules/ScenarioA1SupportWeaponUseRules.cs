@@ -26,7 +26,7 @@ public static class ScenarioA1SupportWeaponUseRules
         }
         if (requested.Any(configured.Contains))
         {
-            return "A configured weapon has used all its fire allowance this phase.";
+            return "play.fire-sw-limit: A configured weapon has used all its fire allowance this phase (A9.8).";
         }
         var weapons = used.Concat(requested).Distinct(StringComparer.Ordinal).Count();
         return weapons + (inherentUsed || inherentRequested ? 1 : 0) > Capacity(kind)

@@ -16,6 +16,11 @@ checks = []
 
 
 def check(name, contract, facts, outcome='allowed'):
+    facts = dict(facts)
+    if 'phase' in facts:
+        facts['phase'] = {'rph': 'RPh', 'pfph': 'PFPh', 'mph': 'MPh', 'aph': 'APh'}[facts['phase']]
+    elif contract == 'a11.21-retained-load':
+        facts['phase'] = 'CCPh'
     checks.append(dict(name=name, position='setup', viewer='german', contract=contract,
                        facts=dict(unitId='G1', **facts), expect=dict(outcome=outcome)))
 

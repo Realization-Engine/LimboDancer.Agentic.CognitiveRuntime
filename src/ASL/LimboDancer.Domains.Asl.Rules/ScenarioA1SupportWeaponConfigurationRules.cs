@@ -41,7 +41,7 @@ public static class ScenarioA1SupportWeaponConfigurationRules
 
         if (!facts.TypePermitted)
         {
-            return SupportWeaponReadiness.Refused("This weapon type cannot be dismantled.", applicable: false);
+            return SupportWeaponReadiness.Refused("play.dismantle-weapon: This weapon type cannot be dismantled (A9.8).", applicable: false);
         }
 
         if (!facts.SupportedConfiguration)
@@ -51,7 +51,7 @@ public static class ScenarioA1SupportWeaponConfigurationRules
 
         if (facts.WeaponUsed)
         {
-            return SupportWeaponReadiness.Refused("This weapon has already been used this phase.");
+            return SupportWeaponReadiness.Refused("play.dismantle-weapon: This weapon has already been used this phase (A9.8).");
         }
 
         if (facts.Capacity is null)
