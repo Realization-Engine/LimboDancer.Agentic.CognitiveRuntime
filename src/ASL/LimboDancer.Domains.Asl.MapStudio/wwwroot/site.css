@@ -2193,8 +2193,10 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     margin: 0 0 0.5rem;
 }
 
+/* On a very wide screen the form keeps a working width rather than stretching its panels across the window. */
 .card-editor-form {
     --card-bar: 4.5rem;
+    max-width: 96rem;
     display: grid;
     grid-template-columns: 11rem minmax(0, 1fr);
     gap: 1rem 1.25rem;
@@ -2273,11 +2275,20 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     display: none;
 }
 
+/* The shown section is one panel, framed like the map above it; the fieldsets inside it draw nothing of their own. */
+.card-section {
+    padding: 1.1rem 1.5rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
 .card-section > .card-fields,
 .card-section .card-fields {
     margin: 0;
     padding: 0;
     border: 0;
+    background: transparent;
     min-width: 0;
 }
 
@@ -2325,8 +2336,10 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     max-width: 44rem;
 }
 
+/* A text field grows with the panel up to a readable line, not across a wide screen. */
 .card-field-grow {
     flex: 1 1 12rem;
+    max-width: 40rem;
 }
 
 .card-field-short input {
@@ -2481,6 +2494,7 @@ details.card-group-fields[open] > summary {
 }
 
 .card-group-actions {
+    max-width: none;
     margin: 0.75rem 0 0;
     text-align: right;
 }
@@ -2538,11 +2552,59 @@ li.card-area .card-area-line {
     max-width: 100%;
 }
 
-/* A group's counter lines scroll on their own on a phone, rather than run off the page. */
+/* A group's areas and its counter lines sit side by side where the panel has room for both, and stack where it does not. */
+.card-group-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+    gap: 1rem 2rem;
+    align-items: start;
+    margin-top: 0.25rem;
+}
+
+.card-group-areas,
+.card-group-lines {
+    min-width: 0;
+}
+
+.card-section .card-subhead {
+    display: block;
+    margin: 0 0 0.4rem;
+    padding: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: left;
+}
+
+/* A group's counter lines take the width they need, and scroll on their own on a phone rather than run off the page. */
 details.card-group-fields table.card-rows {
     display: block;
+    width: fit-content;
     max-width: 100%;
     overflow-x: auto;
+}
+
+.card-add-line {
+    margin-top: 0.9rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line-soft);
+}
+
+.card-add-line .card-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.5rem;
+}
+
+.card-add-line .card-picker select {
+    max-width: 100%;
+}
+
+/* The counter list is as wide as its longest name; it takes the row's space left over, so count, area, and Add stay on its line. */
+.card-add-line .card-picker > select:first-child {
+    flex: 1 1 10rem;
+    width: 10rem;
 }
 
 .card-rules-list {
@@ -2636,6 +2698,10 @@ li.card-outcome {
     .card-editor-bar {
         position: static;
         margin: 0 -1.25rem 0.5rem;
+    }
+
+    .card-section {
+        padding: 0.75rem 0.75rem 1rem;
     }
 
     .card-editor-form,

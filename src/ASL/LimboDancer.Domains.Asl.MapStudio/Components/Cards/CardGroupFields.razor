@@ -39,48 +39,59 @@
             <input id="@($"{Id}-dummies")" value="@Group.Dummies" @onchange="@(args => Set(() => Group.Dummies = Text(args)))" placeholder="0" inputmode="numeric" />
         </div>
     </div>
-    <p class="card-subhead">Setup or entry areas</p>
-    <ul class="card-areas">
-        @for (var index = 0; index < Group.Areas.Count; index++)
-        {
-            var at = index;
-            var area = Group.Areas[at];
-            <CardAreaFields @key="area" Id="@($"{Id}-area-{at}")" Label="@($"side {SideLabel} group {Index + 1} area {at + 1}")" Area="@area" Boards="@Boards" Picking="@ReferenceEquals(Picking, area)"
-                            Pick="@(() => OnPick.InvokeAsync(area))" Remove="@(() => Set(() => Group.Areas.Remove(area)))" Changed="@Changed"
-                            Renamed="@(id => RenameArea.InvokeAsync((area, id)))" />
-        }
-    </ul>
-    <button id="@($"{Id}-area-add")" type="button" @onclick="@(() => Set(() => Group.Areas.Add(new AreaDraft { Id = NewAreaId() })))">Add an area</button>
-    <table class="card-rows library compact" id="@($"{Id}-units")">
-        <caption>Counter lines</caption>
-        <thead><tr><th scope="col">Counter</th><th scope="col">Count</th><th scope="col">Area</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
-        <tbody>
-            @for (var index = 0; index < Group.Units.Count; index++)
-            {
-                var at = index;
-                var unit = Group.Units[at];
-                <tr @key="unit">
-                    <td title="@unit.Definition">@(Catalog.Definition(unit.Definition) is { } definition ? ScenarioCards.Describe(definition) : unit.Definition)</td>
-                    <td><input id="@($"{Id}-unit-{at}-count")" value="@unit.Count" @onchange="@(args => Set(() => unit.Count = Text(args)))" size="2" aria-label="@($"Group {Index + 1} line {at + 1} count")" /></td>
-                    <td>
-                        <select id="@($"{Id}-unit-{at}-area")" value="@unit.Area" @onchange="@(args => Set(() => unit.Area = Text(args)))" aria-label="@($"Group {Index + 1} line {at + 1} area")">
-                            <option value="">any of the group's</option>
-                            @foreach (var id in AreaIds)
-                            {
-                                <option value="@id">@id</option>
-                            }
-                            @if (unit.Area.Length > 0 && !AreaIds.Contains(unit.Area))
-                            {
-                                <option value="@unit.Area">@unit.Area (no such area)</option>
-                            }
-                        </select>
-                    </td>
-                    <td><button id="@($"{Id}-unit-{at}-remove")" type="button" @onclick="@(() => Set(() => Group.Units.Remove(unit)))" aria-label="@($"Remove group {Index + 1} line {at + 1}")">Remove</button></td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    <span class="card-area-line">Add a counter line: <ObCounterPicker Id="@($"{Id}-pick")" Label="@($"group {Index + 1}")" Side="@Side" Definitions="@Definitions" Areas="@AreaIds" AddRequested="@AddUnit" /></span>
+    @* The areas and the counter lines sit side by side where the panel has room (site.css, .card-group-body). *@
+    <div class="card-group-body">
+        <div class="card-group-areas">
+            <p class="card-subhead">Setup or entry areas</p>
+            <ul class="card-areas">
+                @for (var index = 0; index < Group.Areas.Count; index++)
+                {
+                    var at = index;
+                    var area = Group.Areas[at];
+                    <CardAreaFields @key="area" Id="@($"{Id}-area-{at}")" Label="@($"side {SideLabel} group {Index + 1} area {at + 1}")" Area="@area" Boards="@Boards" Picking="@ReferenceEquals(Picking, area)"
+                                    Pick="@(() => OnPick.InvokeAsync(area))" Remove="@(() => Set(() => Group.Areas.Remove(area)))" Changed="@Changed"
+                                    Renamed="@(id => RenameArea.InvokeAsync((area, id)))" />
+                }
+            </ul>
+            <button id="@($"{Id}-area-add")" type="button" @onclick="@(() => Set(() => Group.Areas.Add(new AreaDraft { Id = NewAreaId() })))">Add an area</button>
+        </div>
+        <div class="card-group-lines">
+            <p class="card-subhead" aria-hidden="true">Counter lines</p>
+            <table class="card-rows library compact" id="@($"{Id}-units")">
+                <caption class="visually-hidden">Counter lines</caption>
+                <thead><tr><th scope="col">Counter</th><th scope="col">Count</th><th scope="col">Area</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
+                <tbody>
+                    @for (var index = 0; index < Group.Units.Count; index++)
+                    {
+                        var at = index;
+                        var unit = Group.Units[at];
+                        <tr @key="unit">
+                            <td title="@unit.Definition">@(Catalog.Definition(unit.Definition) is { } definition ? ScenarioCards.Describe(definition) : unit.Definition)</td>
+                            <td><input id="@($"{Id}-unit-{at}-count")" value="@unit.Count" @onchange="@(args => Set(() => unit.Count = Text(args)))" size="2" aria-label="@($"Group {Index + 1} line {at + 1} count")" /></td>
+                            <td>
+                                <select id="@($"{Id}-unit-{at}-area")" value="@unit.Area" @onchange="@(args => Set(() => unit.Area = Text(args)))" aria-label="@($"Group {Index + 1} line {at + 1} area")">
+                                    <option value="">any of the group's</option>
+                                    @foreach (var id in AreaIds)
+                                    {
+                                        <option value="@id">@id</option>
+                                    }
+                                    @if (unit.Area.Length > 0 && !AreaIds.Contains(unit.Area))
+                                    {
+                                        <option value="@unit.Area">@unit.Area (no such area)</option>
+                                    }
+                                </select>
+                            </td>
+                            <td><button id="@($"{Id}-unit-{at}-remove")" type="button" @onclick="@(() => Set(() => Group.Units.Remove(unit)))" aria-label="@($"Remove group {Index + 1} line {at + 1}")">Remove</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="card-add-line">
+                <span class="card-subhead">Add a counter line</span>
+                <ObCounterPicker Id="@($"{Id}-pick")" Label="@($"group {Index + 1}")" Side="@Side" Definitions="@Definitions" Areas="@AreaIds" AddRequested="@AddUnit" />
+            </div>
+        </div>
+    </div>
     <p class="card-group-actions"><button id="@($"{Id}-remove")" type="button" class="danger" @onclick="@(() => RemoveGroup.InvokeAsync())">Remove the group</button></p>
 </details>
 
