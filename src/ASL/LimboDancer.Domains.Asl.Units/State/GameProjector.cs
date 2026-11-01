@@ -13,6 +13,8 @@ namespace LimboDancer.Domains.Asl.Units.State;
 /// </summary>
 public static partial class GameProjector
 {
+    private static readonly Lazy<Rules.ScenarioA1FireReference> SupportWeaponFireReference = new(() => new Rules.ScenarioA1FirePackage().Reference);
+
     public static GameHistory Project(IReadOnlyList<GameEvent> events, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
         ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null, IFireRecordVerifier? fire = null,
         IRallyRecordVerifier? rally = null, ICloseCombatRecordVerifier? closeCombat = null, IOrdnanceRecordVerifier? ordnance = null) =>
@@ -325,8 +327,11 @@ public static partial class GameProjector
                         _ => null,
                     } : null;
                     var weaponCount = firer.TryGetProperty("weapons", out var weaponsFact) && weaponsFact.ValueKind == JsonValueKind.Array ? weaponsFact.GetArrayLength() : 0;
-                    var firingKind = next.Unit(firingId)?.Kind ?? string.Empty;
-                    if (Rules.ScenarioA1SupportWeaponUseRules.UsesInherentFp(inherent, firingKind, firingKind == "asl:hero", weaponCount))
+                    var firingUnitInstance = next.Unit(firingId);
+                    var firingDefinition = firingUnitInstance?.Definition is { } firingReference
+                        ? SupportWeaponFireReference.Value.Definitions.GetValueOrDefault(firingReference.Definition) : null;
+                    if (Rules.ScenarioA1SupportWeaponUseRules.UsesInherentFp(inherent, firingDefinition?.Kind ?? firingUnitInstance?.Kind ?? string.Empty,
+                        firingDefinition?.IsHero == true, weaponCount))
                     {
                         uses.Add(new SupportWeaponPhaseUse(firingId, null, next.Phase));
                     }
@@ -3999,6 +4004,7 @@ public static partial class GameProjector
                         OrdnanceShotsHere = transition.ClearsShotsHere ? [] : next.OrdnanceShotsHere,
                         Movement = movement with
                         {
+                            // This expenditure's participant; Members retains the original moving stack.
                             Movers = [unit.Id],
                             Location = recoveryLocation,
                             HalfMfInLocation = transition.HalfMfInLocation,

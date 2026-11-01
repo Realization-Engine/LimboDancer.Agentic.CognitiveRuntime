@@ -9,12 +9,12 @@ public static class ScenarioA1WithdrawalEquipmentRules
     public static bool MayChooseDrop(string? phase, bool withdrawalEligible, bool unitActive, bool weaponActive, bool possessed) =>
         phase == "ccph" && withdrawalEligible && unitActive && weaponActive && possessed;
 
-    public static WithdrawalEquipmentLoad Load(bool smc, bool wounded, bool cx, IReadOnlyList<int>? retained)
+    public static WithdrawalEquipmentLoad Load(string unitId, bool smc, bool wounded, bool cx, IReadOnlyList<int>? retained)
     {
         var capacity = ScenarioA1MovementCalculator.PortageCapacity(smc, wounded, cx);
         var readiness = retained is null ? SupportWeaponReadiness.NotEvaluated("A carried weapon's PP is not available.")
-            : ScenarioA1MovementCalculator.Laden(smc, wounded, cx, retained)
-                ? SupportWeaponReadiness.Refused("play.cc-withdrawal-portage: Leave enough equipment to withdraw.") : SupportWeaponReadiness.Allowed;
+            : ScenarioA1CloseCombatRules.WithdrawalPortageBar(unitId, ScenarioA1MovementCalculator.Laden(smc, wounded, cx, retained)) is { } refusal
+                ? SupportWeaponReadiness.Refused(refusal) : SupportWeaponReadiness.Allowed;
         return new WithdrawalEquipmentLoad(retained?.Sum(), capacity, readiness);
     }
 }

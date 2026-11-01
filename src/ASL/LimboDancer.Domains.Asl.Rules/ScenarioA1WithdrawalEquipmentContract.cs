@@ -20,12 +20,12 @@ internal static class ScenarioA1WithdrawalEquipmentContract
 
     private static ContractVerdict Verdict(ContractFacts facts)
     {
-        if (facts.Text("unitId") is null || facts.Flag("smc") is not { } smc || facts.Flag("wounded") is not { } wounded
+        if (facts.Text("unitId") is not { } unitId || facts.Flag("smc") is not { } smc || facts.Flag("wounded") is not { } wounded
             || facts.Flag("cx") is not { } cx || facts.Number("retainedPp") is not { } pp || pp < 0 || pp > int.MaxValue || pp != decimal.Truncate(pp))
         {
             return new(ContractVerdict.NotEvaluated, [], []);
         }
-        var load = ScenarioA1WithdrawalEquipmentRules.Load(smc, wounded, cx, [checked((int)pp)]);
+        var load = ScenarioA1WithdrawalEquipmentRules.Load(unitId, smc, wounded, cx, [checked((int)pp)]);
         return new(load.Readiness.Status == SupportWeaponReadinessStatus.Allowed ? "allowed" : "refused",
             load.Readiness.Reason is null ? [] : [new(load.Readiness.Reason, "A11.21", 73)], []);
     }

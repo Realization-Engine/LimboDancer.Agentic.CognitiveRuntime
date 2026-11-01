@@ -68,7 +68,7 @@ public sealed class SupportWeaponScopeTests
         var facts = TransferFacts();
         Assert.Equal(SupportWeaponReadinessStatus.Allowed, ScenarioA1SupportWeaponPossessionRules.TransferRefusal(facts).Status);
         foreach (var unknown in new[] { facts with { GiverGoodOrder = null }, facts with { RecipientGoodOrder = null },
-            facts with { KnownWirePresent = true }, facts with { GiverVehicle = "truck" }, facts with { Phase = null } })
+            facts with { KnownWirePresent = true }, facts with { VehicleInMotion = true }, facts with { Phase = null } })
         {
             Assert.Equal(SupportWeaponReadinessStatus.NotEvaluated, ScenarioA1SupportWeaponPossessionRules.TransferRefusal(unknown).Status);
         }
@@ -184,9 +184,12 @@ public sealed class SupportWeaponScopeTests
     [Fact]
     public void WithdrawalNeedsKnownRetainedLoadWithinCapacity()
     {
-        Assert.Equal(SupportWeaponReadinessStatus.Refused, ScenarioA1WithdrawalEquipmentRules.Load(false, false, false, [5, 1]).Readiness.Status);
-        Assert.Equal(SupportWeaponReadinessStatus.Allowed, ScenarioA1WithdrawalEquipmentRules.Load(false, false, false, [1]).Readiness.Status);
-        Assert.Equal(SupportWeaponReadinessStatus.NotEvaluated, ScenarioA1WithdrawalEquipmentRules.Load(false, false, false, null).Readiness.Status);
+        // A11.21, PDF p. 73, and A4.43, p. 50: the shared verdict retains the unit and rule references.
+        var refused = ScenarioA1WithdrawalEquipmentRules.Load("g1", false, false, false, [5, 1]).Readiness;
+        Assert.Equal(SupportWeaponReadinessStatus.Refused, refused.Status);
+        Assert.Equal(ScenarioA1CloseCombatRules.WithdrawalPortageBar("g1", true), refused.Reason);
+        Assert.Equal(SupportWeaponReadinessStatus.Allowed, ScenarioA1WithdrawalEquipmentRules.Load("g1", false, false, false, [1]).Readiness.Status);
+        Assert.Equal(SupportWeaponReadinessStatus.NotEvaluated, ScenarioA1WithdrawalEquipmentRules.Load("g1", false, false, false, null).Readiness.Status);
     }
 
     [Theory]

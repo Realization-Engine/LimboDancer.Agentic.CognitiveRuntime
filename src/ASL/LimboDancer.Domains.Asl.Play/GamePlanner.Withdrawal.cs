@@ -35,7 +35,7 @@ public sealed partial class GamePlanner
             weapon.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)).Select(weapon => weapon.Id)];
 
     public WithdrawalEquipmentLoad WithdrawalEquipmentLoad(GameState state, UnitInstance unit, IReadOnlyCollection<string> dropped) =>
-        ScenarioA1WithdrawalEquipmentRules.Load(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Portage(state, unit, dropped));
+        ScenarioA1WithdrawalEquipmentRules.Load(unit.Id, vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Portage(state, unit, dropped));
 
     /// <summary>
     /// The SW named in the arguments' <c>drops</c>, by the withdrawing or infiltrating unit that possesses each (A11.21, A4.43; ruling R70.26), or why the

@@ -24,9 +24,13 @@ public static class ScenarioA1SupportWeaponPossessionRules
         {
             return SupportWeaponReadiness.NotEvaluated("A participant's condition cannot be evaluated.");
         }
-        if (facts.GiverVehicle is not null || facts.RecipientVehicle is not null || facts.VehicleInMotion)
+        if (facts.VehicleInMotion)
         {
-            return SupportWeaponReadiness.NotEvaluated("Transfer involving vehicle carriage is not supported by this workflow (A4.431, D6.31).");
+            return SupportWeaponReadiness.NotEvaluated("Transfer involving a Motion vehicle requires its own carriage facts (A4.431).");
+        }
+        if (ScenarioA1PassengerActionRules.TransferBar(facts.Giver, facts.GiverVehicle, facts.Recipient, facts.RecipientVehicle) is { } passengerRefusal)
+        {
+            return SupportWeaponReadiness.Refused(passengerRefusal);
         }
         if (!facts.DifferentUnits || facts.GiverGoodOrder != true || facts.RecipientGoodOrder != true || facts.GiverPinned || facts.RecipientPinned
             || !facts.SameSide || !facts.SameLocation || !facts.BothInfantry)
