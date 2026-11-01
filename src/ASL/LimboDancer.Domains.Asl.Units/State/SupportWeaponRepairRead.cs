@@ -34,7 +34,7 @@ public static class SupportWeaponRepairRead
         return ScenarioA1SupportWeaponRepairRules.Evaluate(new SupportWeaponRepairFacts(state.Phase, active, goodOrder,
             weapon is { Holding.Role: HoldingRole.Possessed } && weapon.Holding.Holder == unitId,
             weapon?.Status == InstanceStatus.Active, weapon is not null && GameState.Condition(weapon, Conditions.Malfunctioned) == ConditionState.True,
-            captured, repairNumber, state.RallyPhaseActions.Contains(unitId) || state.RallyAttemptsThisPlayerTurn.Contains(unitId) || state.SupportWeaponTransferParticipants.Contains(unitId),
-            attempted, attempts, unit is null ? null : ScenarioA1SupportWeaponUseRules.Capacity(unit.Kind), weapon?.Kind == "asl:gun"));
+            captured, repairNumber, state.RallyPhaseActions.Contains(unitId) || state.SupportWeaponTransferParticipants.Contains(unitId),
+            attempted, attempts, unit?.Kind, weapon?.Kind == "asl:gun", state.RallyAttemptsThisPlayerTurn.Contains(unitId)));
     }
 }

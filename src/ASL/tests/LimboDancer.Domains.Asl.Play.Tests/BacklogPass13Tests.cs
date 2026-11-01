@@ -602,6 +602,51 @@ public sealed class BacklogPass13Tests : IDisposable
     }
 
     [Fact]
+    public async Task ConfigurationAfterFirstFireRetainsOnlyAdjacentFinalFire()
+    {
+        // A7.353 (PDF p. 56), A8.4 (p. 61), A9.8 (p. 65): the earlier LMG use does not consume restored inherent FP after configuring the MMG.
+        await SetupAt(2, "russian", Unit("g1", "attacker-squad", "C3", "german"), Mg("gl", "attacker-lmg", "g1", "german"),
+            Mg("gm", "attacker-mmg", "g1", "german"), Unit("r1", "defender-squad", "C5", "russian"));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = R1,
+            to = L("C4")
+        }));
+        Committed(await Do(GameActions.Fire, Once(6, 4, 3, 3), new
+        {
+            firers = G1,
+            weapons = new Dictionary<string, string[]> { ["g1"] = ["gl"] },
+            withoutInherent = G1,
+            target = L("C4"),
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        await Advance();
+        Committed(await Do(GameActions.Dismantle, NoRoll(), new
+        {
+            unitId = "g1",
+            equipmentId = "gm"
+        }));
+        Refused(await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = G1,
+            target = L("C6")
+        }), "final-fire-outside");
+        Committed(await Do(GameActions.Fire, Once(6, 4, 3, 3), new
+        {
+            firers = G1,
+            target = L("C4")
+        }));
+        Assert.True(store.Read(Scope)!.Events.Select(item => item.Payload).OfType<FireResolved>().Last()
+            .Facts.GetProperty("firers")[0].GetProperty("firstFireMarked").GetBoolean());
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task ARussianSquadFiresACapturedGermanLmgWithItsPenalties()
     {
         await SetupAt(1, "russian", Unit("r1", "defender-squad", "E5", "russian"), Mg("gm", "attacker-lmg", "r1", "russian"), Unit("g1", "attacker-squad", "E6", "german"));

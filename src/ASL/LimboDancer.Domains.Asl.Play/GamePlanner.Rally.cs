@@ -339,43 +339,9 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, currentRepairBar);
         }
 
-        if (ScenarioA1RallyRules.SwRepairPhaseBar(state.Phase) is { } phaseBar)
-        {
-            return Refused(scope, label, expected, phaseBar);
-        }
-
-        if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || !ScenarioA1RallyRules.SwRepairGoodOrderAsPlanned(RuleBool(GameState.Condition(unit, Conditions.Broken))))
-        {
-            return Refused(scope, label, expected, ScenarioA1RallyRules.SwRepairUnitText(unitId));
-        }
-
-        if (ScenarioA1RallyRules.SwRepairRalliedBar(unitId, state.RallyAttemptsThisPlayerTurn.Contains(unit.Id)) is { } ralliedBar)
-        {
-            return Refused(scope, label, expected, ralliedBar);
-        }
-
-        if (ScenarioA1RallyRules.SwRepairActionBar(unitId, state.RallyPhaseActions.Contains(unit.Id)) is { } actionBar)
-        {
-            return Refused(scope, label, expected, actionBar);
-        }
-
-        if (state.Find(equipmentId) is not EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding } equipment
-            || !ScenarioA1RallyRules.SwRepairWeaponAllowed(holding.Holder == unit.Id, GameState.Condition(equipment, Conditions.Malfunctioned) == ConditionState.True))
-        {
-            return Refused(scope, label, expected, ScenarioA1RallyRules.SwRepairWeaponText(equipmentId, unitId));
-        }
-
-        if (ScenarioA1RallyRules.SwRepairCapturedBar(equipmentId, LiveFire.CapturedBy(equipment.Definition?.Definition, unit) == true) is { } capturedBar)
-        {
-            return Refused(scope, label, expected, capturedBar);
-        }
-
+        var unit = state.Unit(unitId)!;
+        var equipment = (EquipmentInstance)state.Find(equipmentId)!;
         var printed = equipment.Definition is null ? null : FireReference.Value.Definitions.GetValueOrDefault(equipment.Definition.Definition)?.Repair;
-        if (ScenarioA1RallyRules.SwRepairNumberBar(equipmentId, printed) is { } numberBar)
-        {
-            return Refused(scope, label, expected, numberBar);
-        }
-
         var repairNumber = printed!.Value;
         var package = ScenarioA1FirePackage.Identity.ToString();
         var withheld = ScenarioA1RallyRules.RepairWithheld(GameState.Condition(unit, Conditions.Concealed) == ConditionState.True, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True)
@@ -421,12 +387,14 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(state);
         var unit = state.Unit(unitId);
         var weapon = state.Find(equipmentId) as EquipmentInstance;
-        var repair = weapon?.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Repair : null;
-        var weaponNation = weapon?.Definition is { } weaponReference ? FireReference.Value.Definitions.GetValueOrDefault(weaponReference.Definition)?.Nationality : null;
-        var unitNation = unit?.Definition is { } unitReference ? FireReference.Value.Definitions.GetValueOrDefault(unitReference.Definition)?.Nationality : null;
-        bool? captured = weaponNation is null || unitNation is null ? null : ScenarioA1FireEligibility.CapturedBy(weaponNation, unitNation) == true;
+        var weaponDefinition = weapon?.Definition is { } weaponReference && weaponReference.Catalog == state.Catalog
+            ? FireReference.Value.Definitions.GetValueOrDefault(weaponReference.Definition) : null;
+        var unitDefinition = unit?.Definition is { } unitReference && unitReference.Catalog == state.Catalog
+            ? FireReference.Value.Definitions.GetValueOrDefault(unitReference.Definition) : null;
+        var captured = ScenarioA1SupportWeaponRepairRules.CapturedForRepair(weaponDefinition is not null && unitDefinition is not null,
+            weaponDefinition?.Nationality, unitDefinition?.Nationality);
         return SupportWeaponRepairRead.Evaluate(state, unitId, equipmentId,
-            captured, repair);
+            captured, weaponDefinition?.Repair);
     }
 
     private static UnitDefinition? VehicleRepairDefinition(GameState state, UnitInstance vehicle) => VehicleArmamentFacts.Definition(state, vehicle);

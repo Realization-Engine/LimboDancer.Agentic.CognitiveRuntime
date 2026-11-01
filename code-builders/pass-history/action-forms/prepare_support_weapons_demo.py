@@ -18,6 +18,8 @@ selected = (args.phase,) if args.phase else phases
 targets = [args.destination / f"{args.prefix}-{phase}.game.json" for phase in selected]
 if not args.destination.is_dir():
     raise SystemExit("The destination must be an existing live-game directory.")
+if args.destination.name != "5a7d1f000000400080000000000057d0":
+    raise SystemExit("Use the Studio tenant directory below units/live, not units/live itself.")
 if any(path.exists() for path in targets):
     raise SystemExit("Refusing to overwrite an existing review position; choose a new prefix.")
 

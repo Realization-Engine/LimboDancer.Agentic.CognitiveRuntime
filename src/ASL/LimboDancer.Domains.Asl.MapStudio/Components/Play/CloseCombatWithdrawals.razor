@@ -4,12 +4,12 @@
 <div class="action-form" id="cc-withdrawals">
     @foreach (var unit in Units)
     {
-        <ActionFormGroup Legend="@Say(unit.Label)">
+        <ActionFormGroup @key="unit.Id" Legend="@Say(unit.Label)">
         @if (unit.MustTry) { <p class="toolbar-note">Broken: must try to withdraw.</p> }
         @if (unit.Drops.Count > 0)
         {
             <p class="toolbar-note">@unit.Load</p>
-            <details open="@(unit.Destinations.Count == 0 || unit.Drops.Any(weapon => Dropped.Contains(weapon.Id)))">
+            <details open>
                 <summary>Equipment to leave behind</summary>
                 @foreach (var weapon in unit.Drops)
                 {

@@ -304,7 +304,7 @@ def check_carried(claims, wiring, branch, base, faults):
                           f"{other} to merge before building on it (AGENTS.md, step 3)")
 
 
-def check_wiring_rules_merged(wiring, faults):
+def check_wiring_rules_merged(wiring, faults, combined=None):
     """A wiring claim opened since the ruling owns only rows whose rule claims are merged into main."""
     merged = None
     for name, claim in wiring.items():
@@ -315,6 +315,8 @@ def check_wiring_rules_merged(wiring, faults):
             print(f"NOTE: main's merges are not in this checkout; wiring claim {name}'s rule claims are not checked")
             return
         for row, rule_claim, rule_branch in claim["rules"]:
+            if (name, rule_claim) in (combined or {}):
+                continue
             if rule_branch not in merged:
                 faults.append(f"wiring claim {name} owns {row}, whose rule claim {rule_claim} ({rule_branch}) is not merged into main "
                               "(AGENTS.md, wiring claims: built is no longer enough)")
@@ -374,25 +376,43 @@ def out_of_scope(paths):
     return sorted(path for path in paths if path.startswith("src/") and not path.endswith(".md") and not path.startswith(CLAIM_SCOPE))
 
 
-def approved_support_weapon_wiring(branch, path):
-    """The user's isolated combined-delivery exception; normal claims and all other paths keep their gate."""
-    if branch != "codex/support-weapons-implementation":
-        return False
-    approved = {
-        "LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor",
-        "LimboDancer.Domains.Asl.MapStudio/wwwroot/site.css",
-    }
-    approved.update("LimboDancer.Domains.Asl.MapStudio/Components/Play/" + name + ".razor" for name in (
-        "AdvanceActionPanel", "AmbushWithdrawalActions", "CloseCombatInfiltrationChoices", "CloseCombatPanel",
-        "CloseCombatWithdrawals", "InfantryMovementAction", "SupportWeaponWorkflow"))
-    approved.update("LimboDancer.Domains.Asl.Play/" + name + ".cs" for name in (
-        "GamePlanner.CloseCombat", "GamePlanner.Fire", "GamePlanner.Movement", "GamePlanner.Ordnance",
-        "GamePlanner.Rally", "GamePlanner.SupportWeapons", "GamePlanner.Withdrawal", "LiveFire", "LiveOrdnance"))
-    approved.update("LimboDancer.Domains.Asl.Units/State/" + name + ".cs" for name in (
-        "FireRecords", "GameEvent", "GameEventReader", "GameEventWriter", "GameProjector", "GameState", "LiveRecords",
-        "OrdnanceRecords", "SupportWeaponConfigurationRead", "SupportWeaponRecoveryRead", "SupportWeaponRepairRead",
-        "SupportWeaponRepairUse", "SupportWeaponTransferRead"))
-    return path.removeprefix("src/ASL/") in approved
+COMBINED_HEADER = "| Exception | Rule claims | Wiring claims | Approved | State | Wiring gate | Conditions |"
+
+
+def combined_deliveries(lines, claims, wiring, faults):
+    """Read user-approved combined deliveries from the board, never from a branch allowlist."""
+    result = {}
+    if COMBINED_HEADER not in lines:
+        return result
+    for name, rules, wires, approved, state, gate, conditions in table(lines, COMBINED_HEADER, 7, faults, "combined deliveries"):
+        rule_ids = [item.strip() for item in rules.split(",")]
+        wire_ids = [item.strip() for item in wires.split(",")]
+        if state != "approved":
+            continue
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", approved) or not gate or not conditions:
+            faults.append(f"combined delivery {name}: approval date, wiring gate and conditions are required")
+            continue
+        if any(item not in claims for item in rule_ids) or any(item not in wiring for item in wire_ids):
+            faults.append(f"combined delivery {name}: every rule and wiring claim must exist")
+            continue
+        branches = {claims[item]["branch"] for item in rule_ids} | {wiring[item]["branch"] for item in wire_ids}
+        if len(branches) != 1:
+            faults.append(f"combined delivery {name}: claims must share one delivery branch")
+            continue
+        for wire in wire_ids:
+            for _, rule, _ in wiring[wire]["rules"]:
+                if rule not in rule_ids:
+                    faults.append(f"combined delivery {name}: {wire} owns unapproved rule claim {rule}")
+                else:
+                    result[wire, rule] = name
+    return result
+
+
+def combined_path(branch, path, wiring, combined):
+    holders = [claim for name, claim in wiring.items()
+               if claim["branch"] == branch and any(wire == name for wire, _ in combined)]
+    return bool(holders) and (path.startswith("src/ASL/tests/")
+                             or any(path.removeprefix("src/ASL/") in claim["files"] for claim in holders))
 
 
 def outside_rules(paths):
@@ -452,10 +472,11 @@ def main():
         return args[args.index(flag) + 1] if flag in args else None
 
     faults = []
-    lines, _ = inventory_table.read_lines()
+    lines, _ = inventory_table.read_lines(value("--inventory") or inventory_table.PATH)
     claims = check_ledger(lines, faults)
     wiring = check_wiring(lines, claims, faults)
-    check_wiring_rules_merged(wiring, faults)
+    combined = combined_deliveries(lines, claims, wiring, faults)
+    check_wiring_rules_merged(wiring, faults, combined)
     branch = value("--branch")
     if value("--pr-base") is not None:
         if not branch:
@@ -473,6 +494,8 @@ def main():
         if wiring_branch:
             if value("--base") is not None:
                 check_wiring_branch(wiring, branch, changed_files(value("--base")) or [], faults)
+            if any(claim["branch"] == branch for claim in claims.values()):
+                check_branch(claims, branch, files, faults)
         else:
             check_branch(claims, branch, files, faults)
     if "--touched" in args:
@@ -485,7 +508,7 @@ def main():
         if any(claim["branch"] == branch for claim in claims.values()):
             # A rule claim merges without a gate of its own only because it stays in its scope (the plan's section 4.3, 2026-10-29).
             for path in out_of_scope(changed_files(value("--base")) or []):
-                if approved_support_weapon_wiring(branch, path):
+                if combined_path(branch, path, wiring, combined):
                     continue
                 faults.append(f"{path} is outside a rule claim's scope (the Rules conventions, section 2): its callers are track 3's, "
                               "and a rule claim merges without a gate only while it stays in Rules")

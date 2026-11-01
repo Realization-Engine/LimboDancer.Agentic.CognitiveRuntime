@@ -4,65 +4,64 @@ namespace LimboDancer.Domains.Asl.Rules;
 public static class ScenarioA1SupportWeaponPossessionRules
 {
     /// <summary>A4.431/.44, PDF p. 50: voluntary transfer, retaining the established R13.4/R14.5 reading.</summary>
-    public static string? TransferRefusal(SupportWeaponTransferFacts facts)
+    public static SupportWeaponReadiness TransferRefusal(SupportWeaponTransferFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
+        if (facts.Phase is not ("rph" or "pfph" or "mph" or "dfph" or "afph" or "rtph" or "aph" or "ccph"))
+        {
+            return SupportWeaponReadiness.NotEvaluated("The phase is not known.");
+        }
         if (facts.KnownWirePresent)
         {
-            return "Transfer across Wire cannot be evaluated: above/below-Wire positions are not recorded.";
+            return SupportWeaponReadiness.NotEvaluated("Transfer across Wire cannot be evaluated: above/below-Wire positions are not recorded.");
         }
-        if (facts.Phase is not ("rph" or "aph"))
+        if (!ScenarioA1SupportWeaponRules.TransferPhase(facts.Phase, true))
         {
-            return "play.transfer-phase: a SW is transferred in the RPh or at the start of the APh (A4.431)";
+            return SupportWeaponReadiness.Refused("play.transfer-phase: a SW is transferred in the RPh or at the start of the APh (A4.431)");
         }
 
         if (facts.GiverGoodOrder is null || facts.RecipientGoodOrder is null)
         {
-            return "A participant's condition cannot be evaluated.";
+            return SupportWeaponReadiness.NotEvaluated("A participant's condition cannot be evaluated.");
         }
-        if (facts.VehicleInMotion)
+        if (facts.GiverVehicle is not null || facts.RecipientVehicle is not null || facts.VehicleInMotion)
         {
-            return "A vehicle in Motion prevents this transfer.";
+            return SupportWeaponReadiness.NotEvaluated("Transfer involving vehicle carriage is not supported by this workflow (A4.431, D6.31).");
         }
         if (!facts.DifferentUnits || facts.GiverGoodOrder != true || facts.RecipientGoodOrder != true || facts.GiverPinned || facts.RecipientPinned
             || !facts.SameSide || !facts.SameLocation || !facts.BothInfantry)
         {
-            return "play.transfer-unit: a SW passes between Good Order unpinned Infantry of one side in one Location (A4.431)";
-        }
-
-        if (ScenarioA1PassengerActionRules.TransferBar(facts.Giver, facts.GiverVehicle, facts.Recipient, facts.RecipientVehicle) is { } aboardBar)
-        {
-            return aboardBar;
+            return SupportWeaponReadiness.Refused("play.transfer-unit: a SW passes between Good Order unpinned Infantry of one side in one Location (A4.431)");
         }
 
         if (facts.RecipientUnarmed)
         {
-            return $"play.transfer-unarmed: {facts.Recipient} is Unarmed and uses no SW (A20.5)";
+            return SupportWeaponReadiness.Refused($"play.transfer-unarmed: {facts.Recipient} is Unarmed and uses no SW (A20.5)");
         }
 
         if (!facts.Possessed)
         {
-            return $"play.transfer-weapon: {facts.Giver} does not possess '{facts.Weapon}'";
+            return SupportWeaponReadiness.Refused($"play.transfer-weapon: {facts.Giver} does not possess '{facts.Weapon}'");
         }
 
         if (facts.RecoveredThisPhase)
         {
-            return $"play.transfer-weapon: {facts.Weapon} was Recovered this phase and is not transferred in it (A4.44)";
+            return SupportWeaponReadiness.Refused($"play.transfer-weapon: {facts.Weapon} was Recovered this phase and is not transferred in it (A4.44)");
         }
 
         if (facts.Phase == "rph" && (facts.GiverRallyAction || facts.RecipientRallyAction))
         {
             var acted = facts.GiverRallyAction ? facts.Giver : facts.Recipient;
-            return $"play.rph-action: {acted} has already taken a different Rally phase action (A3.1)";
+            return SupportWeaponReadiness.Refused($"play.rph-action: {acted} has already taken a different Rally phase action (A3.1)");
         }
 
-        return facts.Phase == "aph" && (!facts.Phasing || facts.AdvanceStarted)
-            ? "play.transfer-phase: transfer before any unit advances (A4.431)" : null;
+        return !ScenarioA1SupportWeaponRules.TransferPhase(facts.Phase, facts.Phasing) || facts.Phase == "aph" && facts.AdvanceStarted
+            ? SupportWeaponReadiness.Refused("play.transfer-phase: transfer before any unit advances (A4.431)") : SupportWeaponReadiness.Allowed;
     }
 
     /// <summary>A4.43: withdrawal and rout equipment choices belong to their enclosing action, not a standalone drop.</summary>
     public static string? DropRefusal(string? phase, bool phasing, bool active, bool possessed, bool onMap,
-        bool broken, bool movementEnded)
+        bool broken, bool movementEnded, bool advanced = false)
     {
         if (!active || !possessed || !onMap)
         {
@@ -73,8 +72,8 @@ public static class ScenarioA1SupportWeaponPossessionRules
         {
             "ccph" => "Choose equipment to leave in the withdrawal workflow.",
             "rtph" => "Choose the equipment to carry in the rout workflow.",
-            "mph" when phasing && !broken && !movementEnded => null,
-            "aph" when phasing && !broken => null,
+            "mph" when ScenarioA1SupportWeaponRules.DropPhase(phase, phasing) && !broken && !movementEnded => null,
+            "aph" when ScenarioA1SupportWeaponRules.DropPhase(phase, phasing) && !broken && !advanced => null,
             _ => "Drop a weapon during its unbroken holder's movement or Advance phase.",
         };
     }
@@ -85,6 +84,15 @@ public static class ScenarioA1SupportWeaponPossessionRules
 
     /// <summary>A4.44: ordinary MPh recovery costs one MF; the friendly broken-holder exception costs none.</summary>
     public static int RecoveryMf(string? phase, bool fromBrokenHolder) => phase == "mph" && !fromBrokenHolder ? 1 : 0;
+
+    /// <summary>A4.44 (p. 50), A8.1 (p. 59), C6.17 (p. 173): spending MF in place opens fire without resetting shots in that Location.</summary>
+    public static SupportWeaponRecoveryMovement RecoveryMovement(string? phase, bool fromBrokenHolder,
+        bool sameMoverInLocation, int priorHalfMf, int priorStep, int priorShots)
+    {
+        var cost = RecoveryMf(phase, fromBrokenHolder);
+        return new(cost > 0, cost * 2 + (sameMoverInLocation ? priorHalfMf : 0), priorStep + (cost > 0 ? 1 : 0),
+            cost > 0 && ScenarioA1SequenceProjection.ClearsShotsHere(!sameMoverInLocation, priorShots));
+    }
 
     public static bool RecoveryWindowOpen(bool rallyAttempted, bool repaired, bool otherAction, bool transferred) =>
         !rallyAttempted && !repaired && !otherAction && !transferred;
@@ -97,92 +105,104 @@ public static class ScenarioA1SupportWeaponPossessionRules
         known && !unarmed && ScenarioA1RoutCalculator.Armed(vehicle, abandoned);
 
     /// <summary>A4.44: phase, participant, possession and repeat-attempt checks for routine recovery.</summary>
-    public static string? RecoveryRefusal(SupportWeaponRecoveryFacts facts)
+    public static SupportWeaponReadiness RecoveryRefusal(SupportWeaponRecoveryFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
+        if (facts.Phase is not ("rph" or "pfph" or "mph" or "dfph" or "afph" or "rtph" or "aph" or "ccph"))
+        {
+            return SupportWeaponReadiness.NotEvaluated("The phase is not known.");
+        }
         if (facts.KnownWirePresent)
         {
-            return "Recovery across Wire cannot be evaluated: above/below-Wire positions are not recorded.";
+            return SupportWeaponReadiness.NotEvaluated("Recovery across Wire cannot be evaluated: above/below-Wire positions are not recorded.");
         }
         if (!facts.ConditionsKnown)
         {
-            return "The recovering unit's condition cannot be evaluated.";
+            return SupportWeaponReadiness.NotEvaluated("The recovering unit's condition cannot be evaluated.");
         }
         if (facts.Terrain is null)
         {
-            return "Recovery cannot be evaluated without this Location's terrain.";
+            return SupportWeaponReadiness.NotEvaluated("Recovery cannot be evaluated without this Location's terrain.");
         }
         if (facts.Aboard || facts.Terrain.Contains("wire", StringComparison.OrdinalIgnoreCase)
             || facts.Terrain.Contains("panji", StringComparison.OrdinalIgnoreCase) || facts.Terrain.Contains("crest", StringComparison.OrdinalIgnoreCase)
             || facts.Terrain.Contains("jungle", StringComparison.OrdinalIgnoreCase) || facts.Terrain.Contains("kunai", StringComparison.OrdinalIgnoreCase)
             || facts.Terrain.Contains("bamboo", StringComparison.OrdinalIgnoreCase))
         {
-            return "Recovery in this terrain or vehicle position is not supported.";
+            return SupportWeaponReadiness.NotEvaluated("Recovery in this terrain or vehicle position is not supported.");
         }
         var fromBrokenHolder = FromBrokenHolder(facts.Held, facts.FriendlyHolder, facts.BrokenHolder, facts.RecoveringSmc);
         if (!ScenarioA1SupportWeaponRules.RecoverPhase(facts.Phase, facts.Phasing))
         {
-            return "Recover during Rally or the recovering unit's Movement phase.";
+            return SupportWeaponReadiness.Refused("Recover during Rally or the recovering unit's Movement phase.");
         }
 
         if (facts.Phase == "rph" && !facts.RallyRecoveryWindowOpen)
         {
-            return "The Rally recovery step has ended.";
+            return SupportWeaponReadiness.Refused("The Rally recovery step has ended.");
         }
 
         if (facts.Phase == "mph" && (facts.ReactionPending || facts.AnotherMoverActive))
         {
-            return facts.ReactionPending ? "Resolve defensive fire first." : "Finish the current unit's move first.";
+            return SupportWeaponReadiness.Refused(facts.ReactionPending ? "Resolve defensive fire first." : "Finish the current unit's move first.");
         }
 
-        if (!facts.Active || !facts.GoodOrder || facts.Pinned || !facts.Infantry || facts.Unarmed || facts.Bypassing)
+        if (!facts.Active || !facts.GoodOrder || facts.Pinned || !facts.Infantry || facts.Unarmed)
         {
-            return "Recovery needs unpinned, armed, Good Order Infantry outside Bypass.";
+            return SupportWeaponReadiness.Refused("Recovery needs unpinned, armed, Good Order Infantry outside Bypass.");
+        }
+
+        if (ScenarioA1SupportWeaponRules.RecoveryBypassBar("The recovering unit", facts.Bypassing) is { } bypass)
+        {
+            return SupportWeaponReadiness.Refused(bypass);
         }
 
         if (!facts.WeaponActive || !facts.SameLocation)
         {
-            return "Choose a weapon in the recovering unit's Location.";
+            return SupportWeaponReadiness.Refused("Choose a weapon in the recovering unit's Location.");
         }
 
         if (facts.Held && !fromBrokenHolder)
         {
-            return "Only a SMC may recover a possessed weapon from a friendly broken unit.";
+            return SupportWeaponReadiness.Refused("Only a SMC may recover a possessed weapon from a friendly broken unit.");
         }
 
         if (facts.ArmedKnownEnemy)
         {
-            return "An armed Known enemy in this Location prevents recovery.";
+            return SupportWeaponReadiness.Refused("An armed Known enemy in this Location prevents recovery.");
         }
 
         if (facts.Attempted)
         {
-            return "This unit already attempted to recover this weapon this phase.";
+            return SupportWeaponReadiness.Refused("This unit already attempted to recover this weapon this phase.");
         }
 
         if (facts.Phase == "rph" && facts.RallyActionTaken)
         {
-            return "This unit has already taken its Rally phase action.";
+            return SupportWeaponReadiness.Refused("This unit has already taken its Rally phase action.");
         }
 
         if (facts.Phase == "mph" && facts.MovementEnded)
         {
-            return "This unit has finished moving.";
+            return SupportWeaponReadiness.Refused("This unit has finished moving.");
         }
 
         if (RecoveryMf(facts.Phase, fromBrokenHolder) > 0 && facts.HalfMfRemaining is null)
         {
-            return "The unit's available MF cannot be evaluated.";
+            return SupportWeaponReadiness.NotEvaluated("The unit's available MF cannot be evaluated.");
         }
 
-        if (RecoveryMf(facts.Phase, fromBrokenHolder) > 0 && (facts.TemporarilyImmobilized || facts.HalfMfRemaining < 2))
+        if (RecoveryMf(facts.Phase, fromBrokenHolder) > 0
+            && (facts.TemporarilyImmobilized || ScenarioA1SupportWeaponRules.RecoveryMfShort(facts.HalfMfRemaining!.Value / 2, 0, false)))
         {
-            return "No MF available for recovery.";
+            return SupportWeaponReadiness.Refused("No MF available for recovery.");
         }
 
-        return null;
+        return SupportWeaponReadiness.Allowed;
     }
 }
+
+public sealed record SupportWeaponRecoveryMovement(bool OpensFireWindow, int HalfMfInLocation, int Step, bool ClearsShotsHere);
 
 /// <summary>Observed participants, possession and activity for the current voluntary-transfer reading.</summary>
 public sealed record SupportWeaponTransferFacts(string? Phase, string Giver, string Recipient, string Weapon,

@@ -550,12 +550,13 @@ public sealed partial class GamePlanner
         foreach (var (unitId, destination) in withdrawals)
         {
             // A11.21, A4.43 (ruling R5.5): a withdrawing unit carries no more than its IPC, after the SW it drops.
-            if (ScenarioA1CloseCombatRules.WithdrawalPortageBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } laden && Laden(state, laden, DropsOf(unitId))) is { } portageBar)
+            if (state.Unit(unitId) is { Status: InstanceStatus.Active } laden
+                && WithdrawalEquipmentLoad(state, laden, DropsOf(unitId)).Readiness.Reason is { } portageBar)
             {
                 return Refused(scope, label, expected, portageBar);
             }
 
-            if (ScenarioA1CloseCombatRules.WithdrawalBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } unit && state.Location(unit.Id)?.Location == location && Is(unit, Conditions.Melee)
+            if (ScenarioA1CloseCombatRules.WithdrawalBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } unit && state.Location(unit.Id)?.Location == location && MeleeWithdrawalEligible(state, unit, location)
                 && BoardLocation.TryParse(destination, out var to) && WithdrawalDestinations(state, unit, location, DropsOf(unitId)).Contains(to)) is { } withdrawalBar)
             {
                 return Refused(scope, label, expected, withdrawalBar);
@@ -574,7 +575,8 @@ public sealed partial class GamePlanner
         // A11.22 (ruling R14.8): each Infiltration destination is one a withdrawal could reach.
         foreach (var (unitId, destination) in infiltrations)
         {
-            if (ScenarioA1CloseCombatRules.WithdrawalPortageBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } laden && Laden(state, laden, DropsOf(unitId))) is { } portageBar)
+            if (state.Unit(unitId) is { Status: InstanceStatus.Active } laden
+                && WithdrawalEquipmentLoad(state, laden, DropsOf(unitId)).Readiness.Reason is { } portageBar)
             {
                 return Refused(scope, label, expected, portageBar);
             }

@@ -404,19 +404,20 @@ public static class LiveFire
             }
 
             // A3.3, A7.1, A7.351: the phase's limits on a firer; the Prep Fire scan and the count of its other fired weapons are read when asked.
-            if (!legacyConfiguration && SupportWeaponConfigurationRead.FireRefusal(state, unit.Id,
+            var configurationUse = legacyConfiguration ? new SupportWeaponFireUse(null, false) : SupportWeaponConfigurationRead.FireUse(state, unit.Id,
                 [.. (used ?? []).Select(weapon => weapon.EquipmentId).OfType<string>()],
-                unit.Kind != "asl:leader" && withoutInherent?.Contains(unit.Id) != true) is { } configurationBar)
+                unit.Kind != "asl:leader" && withoutInherent?.Contains(unit.Id) != true);
+            if (configurationUse.Reason is { } configurationBar)
             {
                 return (null, configurationBar);
             }
 
-            if (ScenarioA1FireEligibility.FirerLimitBar(new FirerLimitFacts(unit.Id, state.Phase, Is(unit, Conditions.BoundingFire), unit.Kind == "asl:squad",
+            if (ScenarioA1SupportWeaponUseRules.FirerLimitBar(new FirerLimitFacts(unit.Id, state.Phase, Is(unit, Conditions.BoundingFire), unit.Kind == "asl:squad",
                 withoutInherent?.Contains(unit.Id) == true, Fired(unit), used is { Count: > 0 },
                 () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } prepped && prepped.Holder == unit.Id
                     && Is(item, Conditions.PrepFire)),
                 () => state.Equipment.Count(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holder && holder.Holder == unit.Id
-                    && !(used ?? []).Any(weapon => weapon.EquipmentId == item.Id) && (Fired(item) || Is(item, Conditions.FirstFire))))) is { } limit)
+                    && !(used ?? []).Any(weapon => weapon.EquipmentId == item.Id) && (Fired(item) || Is(item, Conditions.FirstFire)))), configurationUse.RestoresInherent) is { } limit)
             {
                 return (null, limit);
             }
@@ -445,12 +446,12 @@ public static class LiveFire
                 }
             }
 
-            firerFacts.Add(ScenarioA1FireEligibility.Firer(new FirerRecordFacts(unit.Id, unit.Definition!.Definition, at.ToString(), Is(unit, Conditions.Broken),
+            firerFacts.Add(ScenarioA1SupportWeaponUseRules.Firer(new FirerRecordFacts(unit.Id, unit.Definition!.Definition, at.ToString(), Is(unit, Conditions.Broken),
                 Is(unit, Conditions.Pinned), Is(unit, Conditions.Concealed), Fired(unit), used is not null,
                 unit.Group is not null ? state.ElrOf(unit) : null, Is(unit, Conditions.FirstFire), Is(unit, Conditions.FinalFire), state.Phase, swOnly,
                 state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal), unit.Kind == "asl:squad", leader, withoutInherent?.Contains(unit.Id) == true, used,
                 Is(unit, Conditions.Fanatic), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Is(unit, Conditions.BoundingFire), state.Encircled(unit), partner,
-                molUser == unit.Id, GreenInexperienced(state, unit), Is(unit, Conditions.Berserk), UnderscoredElr(state, unit))));
+                molUser == unit.Id, GreenInexperienced(state, unit), Is(unit, Conditions.Berserk), UnderscoredElr(state, unit)), configurationUse.RestoresInherent));
         }
 
         FireDirector Director((UnitInstance Unit, BoardLocation At) item) =>

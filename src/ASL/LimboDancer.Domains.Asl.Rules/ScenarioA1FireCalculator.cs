@@ -4272,8 +4272,7 @@ public static class ScenarioA1FireCalculator
         private static bool UsesInherent(FireFirer firer, FireDefinition definition)
         {
             var weapons = firer.Weapons ?? [];
-            return firer.UsesInherentFp != false && !(definition.Kind == "asl:squad" && weapons.Count >= 2)
-                && !((definition.Kind == "asl:half-squad" || definition.IsHero) && weapons.Count >= 1);
+            return ScenarioA1SupportWeaponUseRules.UsesInherentFp(firer.UsesInherentFp, definition.Kind, definition.IsHero, weapons.Count);
         }
 
         private IEnumerable<FirerFirepower> Firepower(bool vsConcealed)

@@ -19,7 +19,9 @@
   ],
   "units": {
     "G1": "german",
-    "G2": "german"
+    "G2": "german",
+    "R1": "russian",
+    "R2": "russian"
   },
   "example": {
     "source": "Manufactured fact positions under R0.3; quantities and states are supplied explicitly.",
@@ -44,8 +46,9 @@
         "otherRallyAction": false,
         "attemptedThisPlayerTurn": false,
         "attemptsThisPhase": 1,
-        "capacity": 2,
-        "gun": false
+        "unitKind": "asl:squad",
+        "gun": false,
+        "ralliedThisPlayerTurn": false
       },
       "expect": {
         "outcome": "allowed"
@@ -69,8 +72,9 @@
         "otherRallyAction": false,
         "attemptedThisPlayerTurn": false,
         "attemptsThisPhase": 2,
-        "capacity": 2,
-        "gun": false
+        "unitKind": "asl:squad",
+        "gun": false,
+        "ralliedThisPlayerTurn": false
       },
       "expect": {
         "outcome": "refused"
@@ -94,8 +98,9 @@
         "otherRallyAction": false,
         "attemptedThisPlayerTurn": false,
         "attemptsThisPhase": 1,
-        "capacity": 2,
-        "gun": false
+        "unitKind": "asl:squad",
+        "gun": false,
+        "ralliedThisPlayerTurn": false
       },
       "expect": {
         "outcome": "not-evaluated"
@@ -115,11 +120,13 @@
         "temporarilyImmobilized": false,
         "possessed": true,
         "weaponActive": true,
-        "supportedConfiguration": true,
+        "weaponKind": "asl:mg",
         "weaponUsed": false,
         "usesThisPhase": 1,
-        "capacity": 2,
-        "typePermitted": true,
+        "unitKind": "asl:squad",
+        "weaponNationality": "german",
+        "weaponSize": "medium",
+        "printedPortage": 3,
         "inherentFireUsed": false,
         "aboard": false
       },
@@ -141,11 +148,13 @@
         "temporarilyImmobilized": false,
         "possessed": true,
         "weaponActive": true,
-        "supportedConfiguration": true,
+        "weaponKind": "asl:mg",
         "weaponUsed": false,
         "usesThisPhase": 1,
-        "capacity": 2,
-        "typePermitted": true,
+        "unitKind": "asl:squad",
+        "weaponNationality": "german",
+        "weaponSize": "medium",
+        "printedPortage": 3,
         "inherentFireUsed": true,
         "aboard": false
       },
@@ -167,16 +176,77 @@
         "temporarilyImmobilized": false,
         "possessed": true,
         "weaponActive": true,
-        "supportedConfiguration": true,
+        "weaponKind": "asl:mg",
         "weaponUsed": false,
         "usesThisPhase": 1,
-        "capacity": 2,
-        "typePermitted": true,
+        "unitKind": "asl:squad",
+        "weaponNationality": "german",
+        "weaponSize": "medium",
+        "printedPortage": 3,
         "inherentFireUsed": false,
         "aboard": true
       },
       "expect": {
         "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Half-squad has no second configuration slot",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a9.8-configuration",
+      "facts": {
+        "unitId": "G1",
+        "phase": "PFPh",
+        "phasing": true,
+        "active": true,
+        "goodOrder": true,
+        "temporarilyImmobilized": false,
+        "possessed": true,
+        "weaponActive": true,
+        "weaponKind": "asl:mg",
+        "weaponUsed": false,
+        "usesThisPhase": 1,
+        "unitKind": "asl:half-squad",
+        "weaponNationality": "german",
+        "weaponSize": "medium",
+        "printedPortage": 3,
+        "inherentFireUsed": false,
+        "aboard": false
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Enemy configuration facts remain hidden",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a9.8-configuration",
+      "facts": {
+        "unitId": null,
+        "phase": "PFPh",
+        "phasing": null,
+        "active": null,
+        "goodOrder": null,
+        "temporarilyImmobilized": null,
+        "possessed": null,
+        "weaponActive": null,
+        "weaponKind": null,
+        "weaponUsed": null,
+        "usesThisPhase": null,
+        "unitKind": null,
+        "weaponNationality": null,
+        "weaponSize": null,
+        "printedPortage": null,
+        "inherentFireUsed": null,
+        "aboard": null
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "unitId": "german"
       }
     },
     {
@@ -309,6 +379,84 @@
       }
     },
     {
+      "name": "Unsupported recovery terrain is not evaluated",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a4.44-recovery",
+      "facts": {
+        "unitId": "G1",
+        "phase": "MPh",
+        "phasing": true,
+        "active": true,
+        "goodOrder": true,
+        "pinned": false,
+        "infantry": true,
+        "unarmed": false,
+        "bypassing": false,
+        "weaponActive": true,
+        "sameLocation": true,
+        "held": false,
+        "friendlyHolder": false,
+        "brokenHolder": false,
+        "recoveringSmc": false,
+        "armedKnownEnemy": false,
+        "attempted": false,
+        "rallyActionTaken": false,
+        "movementEnded": false,
+        "temporarilyImmobilized": false,
+        "halfMfRemaining": 2,
+        "rallyRecoveryWindowOpen": true,
+        "reactionPending": false,
+        "anotherMoverActive": false,
+        "terrain": "jungle",
+        "aboard": false,
+        "conditionsKnown": true,
+        "knownWirePresent": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Russian recovery uses its own known facts",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a4.44-recovery",
+      "facts": {
+        "unitId": "R1",
+        "phase": "MPh",
+        "phasing": true,
+        "active": true,
+        "goodOrder": true,
+        "pinned": false,
+        "infantry": true,
+        "unarmed": false,
+        "bypassing": false,
+        "weaponActive": true,
+        "sameLocation": true,
+        "held": false,
+        "friendlyHolder": false,
+        "brokenHolder": false,
+        "recoveringSmc": false,
+        "armedKnownEnemy": false,
+        "attempted": false,
+        "rallyActionTaken": false,
+        "movementEnded": false,
+        "temporarilyImmobilized": false,
+        "halfMfRemaining": 2,
+        "rallyRecoveryWindowOpen": true,
+        "reactionPending": false,
+        "anotherMoverActive": false,
+        "terrain": "open",
+        "aboard": false,
+        "conditionsKnown": true,
+        "knownWirePresent": false
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
       "name": "Transfer before advance",
       "position": "setup",
       "viewer": "german",
@@ -376,6 +524,76 @@
       },
       "expect": {
         "outcome": "refused"
+      }
+    },
+    {
+      "name": "Unknown recipient condition is not evaluated",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a4.431-transfer",
+      "facts": {
+        "unitId": "G1",
+        "phase": "APh",
+        "giver": "G1",
+        "recipient": "G2",
+        "weapon": "LMG",
+        "differentUnits": true,
+        "giverGoodOrder": true,
+        "recipientGoodOrder": null,
+        "giverPinned": false,
+        "recipientPinned": false,
+        "sameSide": true,
+        "sameLocation": true,
+        "bothInfantry": true,
+        "giverVehicle": "none",
+        "recipientVehicle": "none",
+        "recipientUnarmed": false,
+        "possessed": true,
+        "recoveredThisPhase": false,
+        "giverRallyAction": false,
+        "recipientRallyAction": false,
+        "phasing": true,
+        "advanceStarted": false,
+        "vehicleInMotion": false,
+        "knownWirePresent": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Russian transfer selects friendly participants",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "a4.431-transfer",
+      "facts": {
+        "unitId": "R1",
+        "phase": "APh",
+        "giver": "R1",
+        "recipient": "R2",
+        "weapon": "LMG",
+        "differentUnits": true,
+        "giverGoodOrder": true,
+        "recipientGoodOrder": true,
+        "giverPinned": false,
+        "recipientPinned": false,
+        "sameSide": true,
+        "sameLocation": true,
+        "bothInfantry": true,
+        "giverVehicle": "none",
+        "recipientVehicle": "none",
+        "recipientUnarmed": false,
+        "possessed": true,
+        "recoveredThisPhase": false,
+        "giverRallyAction": false,
+        "recipientRallyAction": false,
+        "phasing": true,
+        "advanceStarted": false,
+        "vehicleInMotion": false,
+        "knownWirePresent": false
+      },
+      "expect": {
+        "outcome": "allowed"
       }
     }
   ]

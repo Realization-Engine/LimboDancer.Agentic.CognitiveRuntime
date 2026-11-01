@@ -486,8 +486,8 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The selected transfer's Rules verdict, shared by the command and the controls.</summary>
-    public static string? SupportWeaponTransferRefusal(GameState state, string fromId, string weaponId, string toId) =>
-        SupportWeaponTransferRead.Refusal(state, fromId, weaponId, toId);
+    public string? SupportWeaponTransferRefusal(GameState state, string fromId, string weaponId, string toId) =>
+        SupportWeaponTransferRead.Refusal(state, fromId, weaponId, toId, vocabulary);
 
     /// <summary>Drop in the holder's Location; rout and withdrawal equipment choices use their enclosing action.</summary>
     private GamePlan PlanDrop(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
@@ -530,7 +530,8 @@ public sealed partial class GamePlanner
         return ScenarioA1SupportWeaponPossessionRules.DropRefusal(state.Phase, holder?.Side == state.PhasingSide,
             holder?.Status == InstanceStatus.Active && weapon?.Status == InstanceStatus.Active, holder is not null,
             holder is not null && state.Location(holder.Id) is not null,
-            holder is not null && Is(holder, Conditions.Broken), holder?.MovementEnded == true);
+            holder is not null && Is(holder, Conditions.Broken), holder?.MovementEnded == true,
+            holder is not null && state.Advances.Any(item => item.Unit == holder.Id));
     }
 
     /// <summary>
@@ -590,7 +591,7 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         return ScenarioA1SupportWeaponPossessionRules.RecoveryRefusal(SupportWeaponRecoveryRead.Facts(state, unitId, equipmentId,
-            catalogs, vocabulary, RecoveryTerrain(state, unitId)));
+            catalogs, vocabulary, RecoveryTerrain(state, unitId))).Reason;
     }
 
     private string? RecoveryTerrain(GameState state, string unitId) => state.Location(unitId)?.Location is { } at && ReadLocation(state, at) is { } read

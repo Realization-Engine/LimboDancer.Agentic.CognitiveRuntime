@@ -18,8 +18,9 @@ internal static class ScenarioA1SupportWeaponRepairContract
             new("otherRallyAction", ContractFactType.Flag, true, ContractDisclosure.Owner, "Other Rally Action") { Concerns = "unitId" },
             new("attemptedThisPlayerTurn", ContractFactType.Flag, true, ContractDisclosure.Owner, "Attempted This Player Turn") { Concerns = "unitId" },
             new("attemptsThisPhase", ContractFactType.Number, true, ContractDisclosure.Owner, "Attempts This Phase") { Concerns = "unitId" },
-            new("capacity", ContractFactType.Number, true, ContractDisclosure.Owner, "Capacity") { Concerns = "unitId" },
+            new("unitKind", ContractFactType.Text, true, ContractDisclosure.Owner, "Unit Kind") { Concerns = "unitId" },
             new("gun", ContractFactType.Flag, true, ContractDisclosure.Owner, "Gun") { Concerns = "unitId" },
+            new("ralliedThisPlayerTurn", ContractFactType.Flag, true, ContractDisclosure.Owner, "Rallied This Player Turn") { Concerns = "unitId" },
         ],
         ["allowed", "refused", ContractVerdict.NotEvaluated], [], new("RPh", "1.22B"))
     {
@@ -44,10 +45,9 @@ internal static class ScenarioA1SupportWeaponRepairContract
             facts.Number("attemptsThisPhase") is null ||
             facts.Number("attemptsThisPhase") != decimal.Truncate(facts.Number("attemptsThisPhase")!.Value) ||
             facts.Number("attemptsThisPhase") < 0 || facts.Number("attemptsThisPhase") > int.MaxValue ||
-            facts.Number("capacity") is null ||
-            facts.Number("capacity") != decimal.Truncate(facts.Number("capacity")!.Value) ||
-            facts.Number("capacity") < 0 || facts.Number("capacity") > int.MaxValue ||
-            facts.Flag("gun") is null)
+            facts.Text("unitKind") is null ||
+            facts.Flag("gun") is null ||
+            facts.Flag("ralliedThisPlayerTurn") is null)
         {
             return new(ContractVerdict.NotEvaluated, [new("Supply the acting side's known facts; integer quantities must be whole numbers.", "A9.72", 65)], []);
         }
@@ -64,8 +64,9 @@ internal static class ScenarioA1SupportWeaponRepairContract
             facts.Flag("otherRallyAction")!.Value,
             facts.Flag("attemptedThisPlayerTurn")!.Value,
             checked((int)facts.Number("attemptsThisPhase")!.Value),
-            checked((int)facts.Number("capacity")!.Value),
-            facts.Flag("gun")!.Value);
+            facts.Text("unitKind")!,
+            facts.Flag("gun")!.Value,
+            facts.Flag("ralliedThisPlayerTurn")!.Value);
         var readiness = ScenarioA1SupportWeaponRepairRules.Evaluate(input);
         var outcome = readiness.Status switch
         {

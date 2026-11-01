@@ -48,7 +48,7 @@ public static class ScenarioA1MovementCalculator
     }
 
     /// <summary>A4.42, A4.52: the same IPC used by movement and withdrawal load checks.</summary>
-    public static int PortageCapacity(bool smc, bool wounded, bool cx) => Math.Max((smc ? (wounded ? 0 : 1) : 3) - (cx ? 1 : 0), 0);
+    public static int PortageCapacity(bool smc, bool wounded, bool cx) => Math.Max(ScenarioA1SupportWeaponRules.RoutIpc(smc, wounded) - (cx ? 1 : 0), 0);
 
     /// <summary>
     /// Whether a Good Order MMC moving with a Good Order leader of its nationality, who began the MPh with it and has moved with it at every step, has

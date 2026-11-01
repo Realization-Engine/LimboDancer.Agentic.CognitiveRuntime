@@ -1,6 +1,6 @@
 # Support Weapons Studio demo
 
-Status: all eight phase demos approved, Rules contracts and focused checks complete. Historical compatibility gate and CI remain before release. The user's latest instruction is to pause before merging the PR. This is not a completed rule-claim acceptance record.
+Status: all eight phase demos approved. PR 96 review corrections are implemented and undergoing fresh focused verification; earlier test evidence below is historical. Historical compatibility gate and CI remain before release. The user's latest instruction is to pause before merging the PR. This is not a completed rule-claim acceptance record.
 
 ## Checkout and authorization
 
@@ -65,7 +65,7 @@ Build corrections included formatting and an incorrect component parameter. A ma
 
 ## Remaining release verification
 
-The user approved all eight phase workflows, including the final one-checkbox-per-row CC equipment layout, and authorized commit, push and merge after green CI on 2026-10-31. Final review found an unsupported aboard-configuration case: the shared reader now supplies the carriage fact and Rules returns NotEvaluated. The seven focused Rules boundary checks pass. Four contract adapters and the manufactured `support-weapon-scope` bundle cover recovery, transfer, repair, configuration and retained withdrawal load. The contract adapter uses `none` for a known absent vehicle; unknown remains unknown. No broad local suite was run. Compatibility gate and final CI results will be appended below when complete.
+The user approved all eight phase workflows, including the final one-checkbox-per-row CC equipment layout, then paused merging PR 96. No merge or auto-merge is authorized without a fresh instruction. Final review found an unsupported aboard-configuration case: the shared reader supplies the carriage fact and Rules returns NotEvaluated. The initial seven focused Rules checks and thirteen bundle checks were historical checkpoints; PR 96 adds corrections and requires fresh evidence. Four contract adapters and the manufactured `support-weapon-scope` bundle cover recovery, transfer, repair, configuration and retained withdrawal load. The contract adapter uses `none` for a known absent vehicle; unknown remains unknown. Compatibility gate and final CI results will be appended below when complete.
 
 - Four Rules contracts, independent review, seven Rules checks and thirteen minigame checks are complete. Finish the compatibility gate and CI. No broad test suite ran during Studio implementation. Do not claim replay equivalence from these browser checks.
 - Independently exercise exceptional Ambush/infiltration outcomes, supported PRC transfer, hidden/unknown boundaries, repeated defensive-fire ordnance after recovery and MG-assistant configuration sequences. Their wiring is implemented; normal Melee is the browser-proven withdrawal case.

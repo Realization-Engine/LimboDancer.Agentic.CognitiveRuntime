@@ -45,9 +45,7 @@ def adapter(name, rule, page, entries):
             else:
                 args.append(f'facts.Text("{key}")!')
         contractid = rule.lower() + '-' + method.lower()
-        verdict = (f'var refusal = ScenarioA1{name}Rules.{call}(input);\n'
-                   '        var outcome = refusal is null ? "allowed" : "refused";\n'
-                   f'        return new(outcome, refusal is null ? [] : [new(refusal, "{rule}", {page})], []);') if call.endswith('Refusal') else (
+        verdict = (
                    f'var readiness = ScenarioA1{name}Rules.{call}(input);\n'
                    '        var outcome = readiness.Status switch\n        {\n'
                    '            SupportWeaponReadinessStatus.Allowed => "allowed",\n'

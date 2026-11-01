@@ -318,7 +318,15 @@ public static partial class GameProjector
                         continue;
                     }
 
-                    if (!firer.TryGetProperty("usesInherentFp", out var inherent) || inherent.ValueKind != JsonValueKind.False)
+                    bool? inherent = firer.TryGetProperty("usesInherentFp", out var inherentFact) ? inherentFact.ValueKind switch
+                    {
+                        JsonValueKind.True => true,
+                        JsonValueKind.False => false,
+                        _ => null,
+                    } : null;
+                    var weaponCount = firer.TryGetProperty("weapons", out var weaponsFact) && weaponsFact.ValueKind == JsonValueKind.Array ? weaponsFact.GetArrayLength() : 0;
+                    var firingKind = next.Unit(firingId)?.Kind ?? string.Empty;
+                    if (Rules.ScenarioA1SupportWeaponUseRules.UsesInherentFp(inherent, firingKind, firingKind == "asl:hero", weaponCount))
                     {
                         uses.Add(new SupportWeaponPhaseUse(firingId, null, next.Phase));
                     }
@@ -2674,9 +2682,10 @@ public static partial class GameProjector
                 return Fail<GameState>("UNIT-STATE-028", $"The Repair record's roll '{repair.Roll}' is not one recorded die.");
             }
 
-            var printed = equipment.Definition is { } reference && catalog?.Definition(reference.Definition) is { } definition
-                ? definition.Printed("malfunctioned", "asl:repair")?.Value?.Number
-                : null;
+            var definition = equipment.Definition is { } reference
+                && (repair.SupportWeaponRepairVersion is null || reference.Catalog == catalog?.Identity)
+                ? catalog?.Definition(reference.Definition) : null;
+            var printed = definition?.Printed("malfunctioned", "asl:repair")?.Value?.Number;
             if (repair.SupportWeaponRepairVersion is { } swVersion)
             {
                 if (swVersion != 1)
@@ -2684,9 +2693,10 @@ public static partial class GameProjector
                     return Fail<GameState>("UNIT-STATE-SW-REPAIR", "Unsupported SW repair version.");
                 }
 
-                var weaponNation = equipment.Definition is { } weaponReference ? catalog?.Definition(weaponReference.Definition)?.Nationality : null;
-                var unitNation = unit.Definition is { } unitReference ? catalog?.Definition(unitReference.Definition)?.Nationality : null;
-                bool? captured = weaponNation is null || unitNation is null ? null : Rules.ScenarioA1FireEligibility.CapturedBy(weaponNation, unitNation) == true;
+                var unitDefinition = unit.Definition is { } unitReference && unitReference.Catalog == catalog?.Identity
+                    ? catalog?.Definition(unitReference.Definition) : null;
+                var captured = Rules.ScenarioA1SupportWeaponRepairRules.CapturedForRepair(definition is not null && unitDefinition is not null,
+                    definition?.Nationality, unitDefinition?.Nationality);
                 if (SupportWeaponRepairRead.Evaluate(state, unit.Id, equipment.Id, captured, (int?)printed).Reason is { } reason)
                 {
                     return Fail<GameState>("UNIT-STATE-SW-REPAIR", reason);
@@ -3947,7 +3957,7 @@ public static partial class GameProjector
                     return Fail<GameState>("UNIT-STATE-SW-RECOVERY", "Unsupported recovery reading.");
                 }
                 currentFacts = SupportWeaponRecoveryRead.Facts(state, recovery.Unit, recovery.Weapon, catalogs, vocabulary, recovery.Terrain);
-                if (Rules.ScenarioA1SupportWeaponPossessionRules.RecoveryRefusal(currentFacts) is { } reason)
+                if (Rules.ScenarioA1SupportWeaponPossessionRules.RecoveryRefusal(currentFacts).Reason is { } reason)
                 {
                     return Fail<GameState>("UNIT-STATE-SW-RECOVERY", reason);
                 }
@@ -3975,25 +3985,32 @@ public static partial class GameProjector
             {
                 MfSpent = unit.MfSpent + cost
             })! : state;
-            if (currentFacts is not null && cost > 0 && state.Location(unit.Id)?.Location is { } recoveryLocation)
+            if (currentFacts is not null && state.Location(unit.Id)?.Location is { } recoveryLocation)
             {
                 var movement = state.Movement ?? new MovementState([unit.Id], recoveryLocation, 0, 0, false, false);
-                next = next with
+                var transition = Rules.ScenarioA1SupportWeaponPossessionRules.RecoveryMovement(state.Phase,
+                    Rules.ScenarioA1SupportWeaponPossessionRules.FromBrokenHolder(currentFacts.Held, currentFacts.FriendlyHolder, currentFacts.BrokenHolder, currentFacts.RecoveringSmc),
+                    state.Movement is { } prior && prior.Location == recoveryLocation && prior.Movers.Contains(unit.Id),
+                    movement.HalfMfInLocation, movement.Step, state.OrdnanceShotsHere.Count);
+                if (transition.OpensFireWindow)
                 {
-                    OrdnanceShotsHere = [],
-                    Movement = movement with
+                    next = next with
                     {
-                        Movers = [unit.Id],
-                        Location = recoveryLocation,
-                        HalfMfInLocation = cost * 2,
-                        Step = movement.Step + 1,
-                        WindowOpen = true,
-                        From = null,
-                        RoadRate = false,
-                        MinimumMove = false,
-                        Dash = null,
-                    },
-                };
+                        OrdnanceShotsHere = transition.ClearsShotsHere ? [] : next.OrdnanceShotsHere,
+                        Movement = movement with
+                        {
+                            Movers = [unit.Id],
+                            Location = recoveryLocation,
+                            HalfMfInLocation = transition.HalfMfInLocation,
+                            Step = transition.Step,
+                            WindowOpen = transition.OpensFireWindow,
+                            From = null,
+                            RoadRate = false,
+                            MinimumMove = false,
+                            Dash = null,
+                        },
+                    };
+                }
             }
             return next with
             {
@@ -4778,7 +4795,7 @@ public static partial class GameProjector
             }
 
             if (transfer.TransferredBy is { } giver
-                && SupportWeaponTransferRead.Refusal(state, giver, transfer.Id, transfer.Holding?.Holder ?? string.Empty) is { } refusal)
+                && SupportWeaponTransferRead.Refusal(state, giver, transfer.Id, transfer.Holding?.Holder ?? string.Empty, vocabulary) is { } refusal)
             {
                 return Fail<GameState>("UNIT-STATE-SW-TRANSFER", refusal);
             }

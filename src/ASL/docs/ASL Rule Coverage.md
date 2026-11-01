@@ -590,3 +590,8 @@ The plan's section 22.1 is rewritten from the inventory and awaits the user's ap
 - **Some foundations must come before what was planned to use them:** wind and Environmental Conditions before SMOKE, Fog, and Drifts; the vertex LOS and Wall Advantage before Hull Down, Rowhouses, and bocage; Impulse Movement before Platoon Movement, Human Wave, and Convoys.
 - **Fortifications still want attention before they are built**, since their counters are ignored today; the repairs pass adds a refusal as a stopgap.
 
+## Support Weapons PR 96 review
+
+Branch audit, not a merged acceptance: A4.43/.431/.44, A9.72/.8 and A11.21 now have shared Rules readiness and contracts, with caller wiring held under SW-01. The inventory's existing partial coverage classifications and totals are unchanged. Recovery/Transfer distinguish unknown and unsupported facts from refusals; capacity and configuration type decisions are in Rules. Repair retains the known-definition/missing-nationality reading. RSW.1 governs withdrawal-only CCPh drops. C6.17 recovery expenditure preserves shots for the same mover and resets for a new mover.
+
+The bundle adds Recovery/Transfer boundaries, a concealed-enemy fact check, Russian actors/viewers and squad/half-squad capacity cases. These prove the supported slice, not complete Support Weapons coverage. Immediate SMC recovery, deliberate destruction, additional dismantled counters and exceptional terrain/PRC relationships remain in backlog 93. The wiring gate and CI evidence is recorded in the Support Weapons Studio Demo document when complete.

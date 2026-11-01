@@ -28,7 +28,7 @@
                 </label>
             }
         </ActionFormGroup>
-        @if (weapon.Length > 0 && Details(weapon, participant) is { Length: > 0 } details)
+        @if (weapon.Length > 0 && detailText is { Length: > 0 } details)
         {
             <p class="toolbar-note">@details</p>
         }
@@ -53,6 +53,7 @@
     [Parameter, EditorRequired] public Func<string, string> Verb { get; set; } = _ => string.Empty;
     [Parameter] public EventCallback<Choice> OnPropose { get; set; }
     [Parameter, EditorRequired] public string ContextKey { get; set; } = string.Empty;
+    [Parameter] public object? Snapshot { get; set; }
     [Parameter] public EventCallback OnDraftChanged { get; set; }
     [Parameter] public bool ScopeOwnedByParent { get; set; }
     [Parameter] public bool HideWhenScopeEmpty { get; set; }
@@ -69,6 +70,8 @@
     private string? previousContext;
     private long seenPick = -1;
     private string? feedback = "Choose a weapon.";
+    private string? detailText;
+    private object? lastSnapshot;
     private IReadOnlyList<PlayChoice> participants = [];
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
     private IReadOnlyList<PlayChoice> ShownWeapons => scope is null ? Weapons : [.. Weapons.Where(item => InHex(item.Id, scope))];
@@ -77,6 +80,8 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        var refresh = Snapshot is null || !ReferenceEquals(lastSnapshot, Snapshot) || previousContext != ContextKey;
+        lastSnapshot = Snapshot;
         var before = (weapon, participant, scope);
         if (previousContext != ContextKey)
         {
@@ -93,7 +98,7 @@
             scope = Picked is { } picked && (HideWhenScopeEmpty || Weapons.Any(item => InHex(item.Id, picked))) ? picked : null;
         else if (!HideWhenScopeEmpty && scope is { } current && !Weapons.Any(item => InHex(item.Id, current))) scope = null;
         if (!ShownWeapons.Any(item => item.Id == weapon)) weapon = participant = string.Empty;
-        Refresh();
+        if (refresh || before != (weapon, participant, scope)) Refresh();
         if (before != (weapon, participant, scope)) await OnDraftChanged.InvokeAsync();
     }
 
@@ -119,11 +124,13 @@
         feedback = weapon.Length == 0 ? "Choose a weapon."
             : RequiresParticipant && participant.Length == 0 ? $"{ParticipantLabel}: choose a unit."
             : Refusal(weapon, participant);
+        detailText = weapon.Length == 0 ? null : Details(weapon, participant);
     }
 
     private async Task ReleaseScope()
     {
         scope = null;
+        Refresh();
         await OnDraftChanged.InvokeAsync();
     }
     private Task Propose() => feedback is null && weapon.Length > 0

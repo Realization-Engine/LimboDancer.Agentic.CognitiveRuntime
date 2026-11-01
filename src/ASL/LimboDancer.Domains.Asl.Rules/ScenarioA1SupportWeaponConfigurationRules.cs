@@ -39,12 +39,18 @@ public static class ScenarioA1SupportWeaponConfigurationRules
             return SupportWeaponReadiness.Refused("Choose a weapon this unit possesses.");
         }
 
-        if (!facts.TypePermitted)
+        if (facts.UnitKind is null || facts.WeaponKind is null || facts.WeaponNationality is null || facts.WeaponSize is null || facts.PrintedPortage is null)
+        {
+            return SupportWeaponReadiness.NotEvaluated("The unit or weapon definition is not known.");
+        }
+
+        if (!ScenarioA1FireEligibility.Dismantlable(facts.WeaponKind, facts.WeaponNationality == "none" ? null : facts.WeaponNationality,
+            facts.WeaponSize == "none" ? null : facts.WeaponSize, facts.PrintedPortage))
         {
             return SupportWeaponReadiness.Refused("play.dismantle-weapon: This weapon type cannot be dismantled (A9.8).", applicable: false);
         }
 
-        if (!facts.SupportedConfiguration)
+        if (!SupportsConfiguration(facts.WeaponKind, facts.WeaponNationality, facts.WeaponSize))
         {
             return SupportWeaponReadiness.NotEvaluated("This weapon has no supported dismantled configuration.");
         }
@@ -54,12 +60,7 @@ public static class ScenarioA1SupportWeaponConfigurationRules
             return SupportWeaponReadiness.Refused("play.dismantle-weapon: This weapon has already been used this phase (A9.8).");
         }
 
-        if (facts.Capacity is null)
-        {
-            return SupportWeaponReadiness.NotEvaluated("The weapon-use capacity for this unit is not available.");
-        }
-
-        if (facts.UsesThisPhase >= facts.Capacity - (facts.InherentFireUsed ? 1 : 0))
+        if (facts.UsesThisPhase >= ScenarioA1SupportWeaponUseRules.Capacity(facts.UnitKind) - (facts.InherentFireUsed ? 1 : 0))
         {
             return SupportWeaponReadiness.Refused("This unit has used its weapon allowance this phase.");
         }
@@ -70,5 +71,6 @@ public static class ScenarioA1SupportWeaponConfigurationRules
 
 /// <summary>Use history includes earlier configuration even when no ordinary fire counter is placed.</summary>
 public sealed record SupportWeaponConfigurationFacts(string? Phase, bool Phasing, bool Active, bool? GoodOrder,
-    bool TemporarilyImmobilized, bool Possessed, bool WeaponActive, bool SupportedConfiguration,
-    bool WeaponUsed, int UsesThisPhase, int? Capacity, bool TypePermitted, bool InherentFireUsed = false, bool Aboard = false);
+    bool TemporarilyImmobilized, bool Possessed, bool WeaponActive, string? WeaponKind,
+    bool WeaponUsed, int UsesThisPhase, string? UnitKind, string? WeaponNationality, string? WeaponSize, int? PrintedPortage,
+    bool InherentFireUsed = false, bool Aboard = false);

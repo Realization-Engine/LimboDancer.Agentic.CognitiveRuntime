@@ -104,9 +104,14 @@ internal static class ScenarioA1SupportWeaponPossessionContract
             facts.Flag("aboard")!.Value,
             facts.Flag("conditionsKnown")!.Value,
             facts.Flag("knownWirePresent")!.Value);
-        var refusal = ScenarioA1SupportWeaponPossessionRules.RecoveryRefusal(input);
-        var outcome = refusal is null ? "allowed" : "refused";
-        return new(outcome, refusal is null ? [] : [new(refusal, "A4.44", 50)], []);
+        var readiness = ScenarioA1SupportWeaponPossessionRules.RecoveryRefusal(input);
+        var outcome = readiness.Status switch
+        {
+            SupportWeaponReadinessStatus.Allowed => "allowed",
+            SupportWeaponReadinessStatus.Refused => "refused",
+            _ => ContractVerdict.NotEvaluated,
+        };
+        return new(outcome, readiness.Reason is null ? [] : [new(readiness.Reason, "A4.44", 50)], []);
     }
 
     [RuleContract]
@@ -196,8 +201,13 @@ internal static class ScenarioA1SupportWeaponPossessionContract
             facts.Flag("advanceStarted")!.Value,
             facts.Flag("vehicleInMotion")!.Value,
             facts.Flag("knownWirePresent")!.Value);
-        var refusal = ScenarioA1SupportWeaponPossessionRules.TransferRefusal(input);
-        var outcome = refusal is null ? "allowed" : "refused";
-        return new(outcome, refusal is null ? [] : [new(refusal, "A4.431", 50)], []);
+        var readiness = ScenarioA1SupportWeaponPossessionRules.TransferRefusal(input);
+        var outcome = readiness.Status switch
+        {
+            SupportWeaponReadinessStatus.Allowed => "allowed",
+            SupportWeaponReadinessStatus.Refused => "refused",
+            _ => ContractVerdict.NotEvaluated,
+        };
+        return new(outcome, readiness.Reason is null ? [] : [new(readiness.Reason, "A4.431", 50)], []);
     }
 }

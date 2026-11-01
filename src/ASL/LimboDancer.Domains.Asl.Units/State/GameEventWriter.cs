@@ -1068,7 +1068,10 @@ public static class GameEventWriter
                 if (recovery.RecoveryVersion is { } recoveryVersion)
                 {
                     writer.WriteNumber("recoveryVersion", recoveryVersion);
-                    writer.WriteString("terrain", recovery.Terrain);
+                    if (recovery.Terrain is { } recoveryTerrain)
+                    {
+                        writer.WriteString("terrain", recoveryTerrain);
+                    }
                 }
                 writer.WriteString("unit", recovery.Unit);
                 writer.WriteString("weapon", recovery.Weapon);

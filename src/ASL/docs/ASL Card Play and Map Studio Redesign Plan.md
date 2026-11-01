@@ -1830,7 +1830,7 @@ Moved in, with no estimate: a berserk charge into a Location holding an enemy ve
 
 **Pass 73: Infantry VI: the movement and fire leftovers** (18 rows of the inventory; new tasks). Counters: none. Needs first: 40, 45; 72, since a malfunctioned weapon's Residual FP (A8.221) reads Ammunition Shortage.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 20 rows: 18 partly, 2 not built. Claims: 19 open, 1 built (owners: A4.43 (Codex)). A rule decided outside Rules on 1 row. Wiring: 0 of 20. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 20 rows: 18 partly, 2 not built. Claims: 19 open, 1 built (owners: A4.43 (Codex)). Wiring: 0 of 20. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2114,7 +2114,7 @@ Moved here by pass 72 (2026-10-27), with no task renumbered: Wire as 1 MF in a b
 
 **Pass 125: Terrain I: Depressions and water** (planned at 5:30 of build; 57 rows of the inventory). Counters: Crest, ford, and Current markers as states; a depth setting on a card. Needs first: 35, 40.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 60 rows: 11 partly, 15 refused, 34 not built. Claims: 59 open, 1 built (owners: A4.43 (Codex)). A rule decided outside Rules on 1 row. Wiring: 0 of 60. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 60 rows: 11 partly, 15 refused, 34 not built. Claims: 59 open, 1 built (owners: A4.43 (Codex)). Wiring: 0 of 60. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|

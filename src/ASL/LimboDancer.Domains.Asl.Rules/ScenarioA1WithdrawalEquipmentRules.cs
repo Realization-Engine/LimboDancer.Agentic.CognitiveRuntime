@@ -14,7 +14,7 @@ public static class ScenarioA1WithdrawalEquipmentRules
         var capacity = ScenarioA1MovementCalculator.PortageCapacity(smc, wounded, cx);
         var readiness = retained is null ? SupportWeaponReadiness.NotEvaluated("A carried weapon's PP is not available.")
             : ScenarioA1MovementCalculator.Laden(smc, wounded, cx, retained)
-                ? SupportWeaponReadiness.Refused("Leave enough equipment to withdraw.") : SupportWeaponReadiness.Allowed;
+                ? SupportWeaponReadiness.Refused("play.cc-withdrawal-portage: Leave enough equipment to withdraw.") : SupportWeaponReadiness.Allowed;
         return new WithdrawalEquipmentLoad(retained?.Sum(), capacity, readiness);
     }
 }

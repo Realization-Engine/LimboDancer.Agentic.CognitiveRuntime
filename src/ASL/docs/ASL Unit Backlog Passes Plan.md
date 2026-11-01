@@ -940,3 +940,9 @@ Each pass adds its rulings here, R5.1 onward for pass 5, subject to the referee'
 ## Appendix A. The Docker Linux check
 
 The script is committed at `src/ASL/tools/docker-check/docker_check.sh` (2026-09-29; earlier passes kept a copy in each session's scratchpad). Run it from Git Bash with Docker Desktop running, after the commit: `bash src/ASL/tools/docker-check/docker_check.sh <branch>`. It clones the committed branch into a clean `mcr.microsoft.com/dotnet/sdk:10.0` container and runs what the GitHub CI runs: a locked restore, a Release build with warnings as errors, every test project of the solution (the rules tests among them, since 2026-10-02; before then they ran as a separate step), and the source verification and pending comparison regenerations, each compared byte for byte with the committed file. Every step must report `== exit 0`. The chart supplement regeneration needs `jq`, so the merge gate runs it locally: build the Authoring CLI in Release and compare the JSON with sorted keys.
+
+## Support Weapons review amendment RSW.1
+
+Approved by the user on 2026-10-31: "Approve withdrawal-only CCPh drops". This amends R13.5 for new commands. A4.43 (PDF p. 50) and A11.21 (p. 73): equipment choices are part of a valid withdrawal, and commit with it. Cancelling a draft drops nothing. Historical standalone drop records retain their recorded reading. The APh window remains before that unit advances. R31d.1's best-load result is unchanged; the approved Rout workflow commits its required drops with the rout rather than offering a separate draft action.
+
+The SW-01 combined Rules/caller delivery and its narrow claim-lock sequence were separately approved. Wiring gate and green CI are mandatory. Merge remains paused until a fresh user instruction.

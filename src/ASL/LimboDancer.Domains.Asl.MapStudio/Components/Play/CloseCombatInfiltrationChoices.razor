@@ -5,11 +5,11 @@
     <p class="toolbar-note">Destinations used only if infiltration is triggered (A11.22).</p>
     @foreach (var unit in Units)
     {
-        <ActionFormGroup Legend="@Say(unit.Id)">
+        <ActionFormGroup @key="unit.Id" Legend="@Say(unit.Id)">
         @if (unit.Drops.Count > 0)
         {
             <p class="toolbar-note">@unit.Load</p>
-            <details open="@(unit.Destinations.Count == 0)">
+            <details open>
                 <summary>Equipment to leave if infiltration occurs</summary>
                 @foreach (var weapon in unit.Drops)
                 {

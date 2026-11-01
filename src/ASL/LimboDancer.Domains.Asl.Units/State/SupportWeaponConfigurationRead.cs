@@ -13,9 +13,6 @@ public static class SupportWeaponConfigurationRead
         var weapon = state.Find(weaponId) as EquipmentInstance;
         var definition = weapon?.Definition is { } reference && catalog?.Identity == reference.Catalog ? catalog.Definition(reference.Definition) : null;
         var size = definition?.Printed("front", "asl:size")?.Value?.Text;
-        var typePermitted = ScenarioA1FireEligibility.Dismantlable(weapon?.Kind, definition?.Nationality, size,
-            (int?)definition?.Printed("front", "asl:portage")?.Value?.Number);
-        var supported = ScenarioA1SupportWeaponConfigurationRules.SupportsConfiguration(weapon?.Kind, definition?.Nationality, size);
         bool Condition(string name) => unit is not null && GameState.Condition(unit, name) == ConditionState.True;
         var active = unit?.Status == InstanceStatus.Active;
         bool? goodOrder = unit is not null && !SupportWeaponRecoveryRead.ConditionsKnown(unit) ? null
@@ -29,8 +26,9 @@ public static class SupportWeaponConfigurationRead
         return ScenarioA1SupportWeaponConfigurationRules.Evaluate(new SupportWeaponConfigurationFacts(state.Phase,
             unit?.Side == state.PhasingSide, active, goodOrder, Condition("asl:ti"),
             weapon is { Holding.Role: HoldingRole.Possessed } && weapon.Holding.Holder == unitId,
-            weapon?.Status == InstanceStatus.Active, supported, used, uses.Length,
-            unit is null ? null : ScenarioA1SupportWeaponUseRules.Capacity(unit.Kind), typePermitted,
+            weapon?.Status == InstanceStatus.Active, weapon?.Kind, used, uses.Length,
+            unit?.Kind, definition is null ? null : definition.Nationality ?? "none", definition is null ? null : size ?? "none",
+            (int?)definition?.Printed("front", "asl:portage")?.Value?.Number,
             history.Any(use => use.Weapon is null), state.Aboard(unitId) is not null));
     }
 
@@ -39,14 +37,23 @@ public static class SupportWeaponConfigurationRead
 
     public static bool HasConfiguration(GameState state, string unitId) => UsesFor(state, unitId).Any(use => use.Configured);
 
-    public static string? FireRefusal(GameState state, string unitId, IReadOnlyList<string> requested, bool inherent)
+    public static string? FireRefusal(GameState state, string unitId, IReadOnlyList<string> requested, bool inherent) =>
+        FireUse(state, unitId, requested, inherent).Reason;
+
+    public static SupportWeaponFireUse FireUse(GameState state, string unitId, IReadOnlyList<string> requested, bool inherent)
     {
         var history = UsesFor(state, unitId).ToArray();
-        return ScenarioA1SupportWeaponUseRules.FireAfterConfiguration(state.Phase, state.Unit(unitId)?.Kind ?? string.Empty,
+        var unit = state.Unit(unitId);
+        return ScenarioA1SupportWeaponUseRules.ConfigurationFireUse(state.Phase, unit?.Kind ?? string.Empty,
             [.. history.Where(use => use.Weapon is not null).Select(use => use.Weapon!).Distinct(StringComparer.Ordinal)],
             [.. history.Where(use => use.Configured && use.Weapon is not null).Select(use => use.Weapon!).Distinct(StringComparer.Ordinal)],
             history.Any(use => use.Weapon is null), requested, inherent,
-            state.SupportWeaponPhaseUses.Any(use => use.Unit == unitId && use.Configured && use.Phase == "pfph"));
+            state.SupportWeaponPhaseUses.Any(use => use.Unit == unitId && use.Configured && use.Phase == "pfph"),
+            unit is not null && GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True,
+            [.. history.Where(use => use.Phase == state.Phase && use.Weapon is not null).Select(use => use.Weapon!).Distinct(StringComparer.Ordinal)],
+            history.Any(use => use.Phase == state.Phase && use.Weapon is null),
+            state.Equipment.Any(weapon => weapon.Holding is { Role: HoldingRole.Possessed } holder && holder.Holder == unitId
+                && GameState.Condition(weapon, Conditions.FirstFire) == ConditionState.True));
     }
 }
 

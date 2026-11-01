@@ -1,6 +1,6 @@
 # Support Weapons implementation record
 
-Status: historical checkpoint, superseded by [Support Weapons Studio Demo](<ASL Support Weapons Studio Demo.md>). The sections below describe the earlier partial implementation, not the current code. The user approved all phase demos and authorized merge after green CI on 2026-10-31. Current release evidence belongs in the demo document.
+Status: historical checkpoint, superseded by [Support Weapons Studio Demo](<ASL Support Weapons Studio Demo.md>). The sections below describe the earlier partial implementation, not the current code. The user approved all phase demos, then paused merging. PR 96 must not merge or enable auto-merge without a fresh instruction. Current release evidence belongs in the demo document.
 
 ## Authorization and checkout
 
@@ -11,7 +11,7 @@ Document-only claim commit `c2d03ac3` was pushed to main as the required claim l
 ## Implemented so far
 
 - Standalone Drop delegates to `ScenarioA1SupportWeaponPossessionRules.DropRefusal`. Its offers use that same check, eliminating the generic CC drop route and its enemy-presence check. Rout and CC already have separate integrated equipment paths; neither calls `PlanDrop`.
-- Corrected the proposed APh restriction after independent review of A4.43, PDF p. 50: dropping is allowed during APh, not only before advancing. Portage history still needs explicit verification.
+- The initial review incorrectly widened the APh drop window. PR 96 restores the established before-advance restriction through the shared Rules verdict and an Advance fact. This supersedes that checkpoint's conclusion.
 - Added `SupportWeaponWorkflow.razor` and connected Drop. It supports map scope, release, participant inputs when needed, selected-action refusal, context resets and draft-change notification. The other operations still use the old UI.
 - Added initial recovery, repair and configuration fact models/calculators. Recovery, repair and configuration are NOT wired. Repair/configuration use structured readiness to distinguish missing support from refusal.
 - Added an eight-phase demo generator, `code-builders/pass-history/action-forms/prepare_support_weapons_demo.py`. It refuses overwrites. Generated `ui-sw-review-01-{rph,pfph,mph,dfph,afph,rtph,aph,ccph}` in the shared live-game folder. These are development fixtures, not accepted full-demo evidence.

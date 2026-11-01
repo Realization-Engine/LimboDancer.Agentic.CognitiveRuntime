@@ -14,11 +14,13 @@ internal static class ScenarioA1SupportWeaponConfigurationContract
             new("temporarilyImmobilized", ContractFactType.Flag, true, ContractDisclosure.Owner, "Temporarily Immobilized") { Concerns = "unitId" },
             new("possessed", ContractFactType.Flag, true, ContractDisclosure.Owner, "Possessed") { Concerns = "unitId" },
             new("weaponActive", ContractFactType.Flag, true, ContractDisclosure.Owner, "Weapon Active") { Concerns = "unitId" },
-            new("supportedConfiguration", ContractFactType.Flag, true, ContractDisclosure.Owner, "Supported Configuration") { Concerns = "unitId" },
+            new("weaponKind", ContractFactType.Text, true, ContractDisclosure.Owner, "Weapon Kind") { Concerns = "unitId" },
             new("weaponUsed", ContractFactType.Flag, true, ContractDisclosure.Owner, "Weapon Used") { Concerns = "unitId" },
             new("usesThisPhase", ContractFactType.Number, true, ContractDisclosure.Owner, "Uses This Phase") { Concerns = "unitId" },
-            new("capacity", ContractFactType.Number, true, ContractDisclosure.Owner, "Capacity") { Concerns = "unitId" },
-            new("typePermitted", ContractFactType.Flag, true, ContractDisclosure.Owner, "Type Permitted") { Concerns = "unitId" },
+            new("unitKind", ContractFactType.Text, true, ContractDisclosure.Owner, "Unit Kind") { Concerns = "unitId" },
+            new("weaponNationality", ContractFactType.Text, true, ContractDisclosure.Owner, "Weapon Nationality") { Concerns = "unitId" },
+            new("weaponSize", ContractFactType.Text, true, ContractDisclosure.Owner, "Weapon Size") { Concerns = "unitId" },
+            new("printedPortage", ContractFactType.Number, true, ContractDisclosure.Owner, "Printed Portage") { Concerns = "unitId" },
             new("inherentFireUsed", ContractFactType.Flag, true, ContractDisclosure.Owner, "Inherent Fire Used") { Concerns = "unitId" },
             new("aboard", ContractFactType.Flag, true, ContractDisclosure.Owner, "Aboard") { Concerns = "unitId" },
         ],
@@ -37,15 +39,17 @@ internal static class ScenarioA1SupportWeaponConfigurationContract
             facts.Flag("temporarilyImmobilized") is null ||
             facts.Flag("possessed") is null ||
             facts.Flag("weaponActive") is null ||
-            facts.Flag("supportedConfiguration") is null ||
+            facts.Text("weaponKind") is null ||
             facts.Flag("weaponUsed") is null ||
             facts.Number("usesThisPhase") is null ||
             facts.Number("usesThisPhase") != decimal.Truncate(facts.Number("usesThisPhase")!.Value) ||
             facts.Number("usesThisPhase") < 0 || facts.Number("usesThisPhase") > int.MaxValue ||
-            facts.Number("capacity") is null ||
-            facts.Number("capacity") != decimal.Truncate(facts.Number("capacity")!.Value) ||
-            facts.Number("capacity") < 0 || facts.Number("capacity") > int.MaxValue ||
-            facts.Flag("typePermitted") is null ||
+            facts.Text("unitKind") is null ||
+            facts.Text("weaponNationality") is null ||
+            facts.Text("weaponSize") is null ||
+            facts.Number("printedPortage") is null ||
+            facts.Number("printedPortage") != decimal.Truncate(facts.Number("printedPortage")!.Value) ||
+            facts.Number("printedPortage") < 0 || facts.Number("printedPortage") > int.MaxValue ||
             facts.Flag("inherentFireUsed") is null ||
             facts.Flag("aboard") is null)
         {
@@ -60,11 +64,13 @@ internal static class ScenarioA1SupportWeaponConfigurationContract
             facts.Flag("temporarilyImmobilized")!.Value,
             facts.Flag("possessed")!.Value,
             facts.Flag("weaponActive")!.Value,
-            facts.Flag("supportedConfiguration")!.Value,
+            facts.Text("weaponKind")!,
             facts.Flag("weaponUsed")!.Value,
             checked((int)facts.Number("usesThisPhase")!.Value),
-            checked((int)facts.Number("capacity")!.Value),
-            facts.Flag("typePermitted")!.Value,
+            facts.Text("unitKind")!,
+            facts.Text("weaponNationality")!,
+            facts.Text("weaponSize")!,
+            checked((int)facts.Number("printedPortage")!.Value),
             facts.Flag("inherentFireUsed")!.Value,
             facts.Flag("aboard")!.Value);
         var readiness = ScenarioA1SupportWeaponConfigurationRules.Evaluate(input);

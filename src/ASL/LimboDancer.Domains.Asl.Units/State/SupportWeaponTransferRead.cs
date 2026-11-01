@@ -1,11 +1,12 @@
 using LimboDancer.Domains.Asl.Rules;
+using LimboDancer.Domains.Asl.Units.Vocabulary;
 
 namespace LimboDancer.Domains.Asl.Units.State;
 
 /// <summary>Shared state facts for voluntary transfer proposals and current transfer records.</summary>
 public static class SupportWeaponTransferRead
 {
-    public static string? Refusal(GameState state, string fromId, string weaponId, string toId)
+    public static string? Refusal(GameState state, string fromId, string weaponId, string toId, UnitVocabulary vocabulary)
     {
         ArgumentNullException.ThrowIfNull(state);
         var giver = state.Unit(fromId);
@@ -21,13 +22,13 @@ public static class SupportWeaponTransferRead
             state.Phase, fromId, toId, weaponId, fromId != toId, GoodOrder(giver), GoodOrder(taker), Is(giver, Conditions.Pinned), Is(taker, Conditions.Pinned),
             giver is not null && taker is not null && giver.Side == taker.Side,
             state.Location(fromId)?.Location is { } at && state.Location(toId)?.Location == at,
-            giver is not null && taker is not null && giver.Kind != "asl:vehicle" && taker.Kind != "asl:vehicle",
+            giver is not null && taker is not null && !vocabulary.IsA(giver.Kind, "asl:vehicle") && !vocabulary.IsA(taker.Kind, "asl:vehicle"),
             state.Aboard(fromId), state.Aboard(toId), Is(taker, Conditions.Unarmed),
             weapon is { Status: InstanceStatus.Active, Holding.Role: HoldingRole.Possessed } && weapon.Holding.Holder == fromId,
             state.RecoveredThisPhase.Contains(weaponId), OtherAction(fromId), OtherAction(toId), giver?.Side == state.PhasingSide,
             state.Advances.Count > 0,
             state.Aboard(fromId) is { } giverVehicle && Is(state.Unit(giverVehicle), Conditions.Motion)
                 || state.Aboard(toId) is { } recipientVehicle && Is(state.Unit(recipientVehicle), Conditions.Motion),
-            SupportWeaponRecoveryRead.KnownWirePresent(state, fromId) || SupportWeaponRecoveryRead.KnownWirePresent(state, toId)));
+            SupportWeaponRecoveryRead.KnownWirePresent(state, fromId) || SupportWeaponRecoveryRead.KnownWirePresent(state, toId))).Reason;
     }
 }
