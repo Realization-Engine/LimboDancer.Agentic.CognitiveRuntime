@@ -167,6 +167,20 @@ public sealed class RenderEndpointTests(StudioFactory factory) : IClassFixture<S
         Assert.Equal(BoardRenderer.Fragment(FakeBoardProvider.Board.Render, boardView, layer), await response.Content.ReadAsStringAsync());
     }
 
+    // Large Campaign Map Plan, task 4: the labels as data, as JSON, cached apart from the SVG labels layer, which is still served.
+    [Fact]
+    public async Task LabelIndexIsServedAsJsonBesideTheSvgLabels()
+    {
+        using var client = factory.CreateClient();
+        using var response = await client.GetAsync(new Uri($"{Base}/exact/labels.json", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/json", response.Content.Headers.ContentType!.MediaType);
+        Assert.NotNull(response.Headers.ETag);
+        Assert.Equal(BoardRenderer.LabelIndex(FakeBoardProvider.Board.Render), await response.Content.ReadAsStringAsync());
+        var svg = await client.GetStringAsync(new Uri($"{Base}/exact/labels.svg", UriKind.Relative));
+        Assert.Equal(BoardRenderer.Fragment(FakeBoardProvider.Board.Render, BoardView.Exact, "labels"), svg);
+    }
+
     [Fact]
     public async Task DocumentIsServedWhole()
     {

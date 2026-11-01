@@ -1757,3 +1757,17 @@ Written on 2026-11-01 for the [Campaign Intelligence and ASL Rulebook Intelligen
 | Radio reports during play | The analysis, section 7.5 | C1.2 to C1.23, p. 163 | A new ASL rule or a pause in play | Reports cross only at the result, by the I10 channel |
 | An orders rule for the Scenario Defender | The analysis, section 7.6 | E1.21, p. 223 | The orders-group SSR in use and play-tested | The orders-group SSR applies to the Scenario Attacker only |
 | The module Campaign Games' Recon and civilian rules | The analysis, section 10 | P8.622, O11.622, SSR KGP18, SSR PB21 (index only) | The module rulebooks | Not used; E1.23 and E2.4 are the printed models |
+
+## 96. Deferred by the Large Campaign Map Plan
+
+Written on 2026-11-01 for the [Large Campaign Map Analysis](<Memory-And-Performance/ASL Map Studio Large Campaign Map Analysis.md>) and [Plan](<Memory-And-Performance/ASL Map Studio Large Campaign Map Plan.md>); the first wave's results are in the analysis, section 10. Rendering and measurement only: no rule is involved.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Raster tiles for the static layers (B4): terrain, elevation, grid as image tiles per zoom level | Decision P3; the first wave missed the 50 frames per second threshold (about 9 on Goodwood) | None | The user's word on B4 | A drag on Goodwood paints the terrain and elevation paths each frame: 129 to 141 ms frames |
+| The measurement in an ordinary browser (M1) | Plan, task 2 | None | The user's browser, or the user running `mapProbe()` with `?mapMetrics=1` | Every figure is from the Claude browser pane |
+| The setup panel's renders and the setup-closing step (M3, C1 to C4) | The analysis's order | None | Their own measurement | A setup click re-renders the whole Play page and its O(placements squared) counter model |
+| Terrain level of detail (B5) and counters by view (B6) | The analysis's options | None | B4's decision | Not needed at 548 stacks |
+| The Campaign host's memory after a hand-off (D1) and the Studio's import peak (D2) | The analysis, section 3.4 | None | Their own measurement | PilotHost holds about 2.2 GB after the Goodwood hand-off; the Studio peaked at about 4 GB during it |
+| A drag pans by the pane's width, not by the viewBox's fit | Found by the plan's task 6 test | None | A pointer test of a letterboxed drag | A letterboxed map pans slower than the pointer (half speed at a 2:1 letterbox); unchanged since before the plan |
+| Pan by a compositor transform (B3) | Measured worse in the pane's Chromium (analysis, 10.2) | None | B4, or a browser that keeps the transformed layer's raster | Not built |

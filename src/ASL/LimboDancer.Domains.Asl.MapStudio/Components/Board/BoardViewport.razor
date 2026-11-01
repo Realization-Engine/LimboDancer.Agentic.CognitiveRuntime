@@ -109,7 +109,11 @@
 
     // Preserve the board/view identity for pan and zoom, but invalidate immutable SVG responses when rendering changes.
     private static string RenderQuery(string query) =>
-        (string.IsNullOrEmpty(query) ? "?" : query + "&") + "renderer=" + BoardRenderer.RendererVersion;
+        (string.IsNullOrEmpty(query) ? "?" : query + "&") + "renderer=" + BoardRenderer.RendererVersion + "&layers=" + LayersVersion;
+
+    // Raised when a layer's drawing changes but the renderer version must not (Large Campaign Map Plan, task 5: raising RendererVersion would
+    // make every board's fidelity report stale): the browser keeps layers as immutable, so a new token makes it fetch them again.
+    private const int LayersVersion = 2;
 
     public ValueTask SetVisible(IReadOnlyList<string> visible) => Send("setVisible", visible);
 

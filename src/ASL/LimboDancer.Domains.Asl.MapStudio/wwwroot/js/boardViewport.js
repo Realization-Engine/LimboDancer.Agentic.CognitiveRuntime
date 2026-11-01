@@ -4,6 +4,8 @@
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 const hoverInterval = 100;
+// The quiet time after the last wheel event at which a gesture is taken as ended (Large Campaign Map Plan, A4 and B3).
+const gestureRest = 200;
 const rotationKey = "studio.map.rotated";
 
 // Views are scoped to game/viewer and the exact rendered board version. Storage failure falls back to this page.
@@ -41,7 +43,16 @@ export function create(host, dotnet) {
     // Pass 29: the turn is remembered for each shape of the map's pane, so turning a tall pane never turns a wide one. A pane resized into the
     // other shape takes that shape's choice.
     // A view still at its fit is fitted again when the pane changes size, such as when the context above it grows.
-    const shapeWatcher = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => {
+    // Large Campaign Map Plan, A2: the drawing's own size comes from this observer, never from clientWidth read in an event, since that read
+    // forces the browser to lay out the whole map. The SVG is observed itself: side by side it is half the host.
+    const shapeWatcher = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(entries => {
+        for (const entry of entries) {
+            if (entry.target === svg) {
+                state.size = { width: entry.contentRect.width, height: entry.contentRect.height };
+                state.rect = null;
+            }
+        }
+
         applyShape(state);
         if (state.fitted) {
             reset(state);
@@ -51,6 +62,14 @@ export function create(host, dotnet) {
         }
     });
     shapeWatcher?.observe(host);
+    shapeWatcher?.observe(svg);
+
+    // The view is saved when a gesture ends, and when the page is hidden (A4).
+    const onHide = () => rememberView(state);
+    globalThis.addEventListener?.("pagehide", onHide);
+    const onScroll = () => { state.rect = null; };
+    globalThis.addEventListener?.("scroll", onScroll, { capture: true, passive: true });
+    svg.addEventListener("pointerenter", () => takeRect(state));
     try {
         localStorage.removeItem(rotationKey);
     } catch {
@@ -65,7 +84,9 @@ export function create(host, dotnet) {
         }
 
         event.preventDefault();
-        zoomAt(state, toBoard(state, event.clientX, event.clientY), event.deltaY < 0 ? 0.8 : 1.25);
+        zoomAt(state, toBoard(state, event.clientX, event.clientY), event.deltaY < 0 ? 0.8 : 1.25, true);
+        clearTimeout(state.wheelRest);
+        state.wheelRest = setTimeout(() => gestureEnded(state), gestureRest);
     }, { passive: false });
 
     svg.addEventListener("pointerdown", event => {
@@ -74,6 +95,7 @@ export function create(host, dotnet) {
         }
 
         host.focus({ preventScroll: true });
+        takeRect(state);
 
         // Pointer capture retargets pointerup to the SVG root. Remember the actual unit hit here.
         const unitId = event.target.closest?.("[data-unit-id]")?.getAttribute("data-unit-id");
@@ -81,7 +103,11 @@ export function create(host, dotnet) {
             id: event.pointerId, x: event.clientX, y: event.clientY, box: { ...state.box }, moved: false, unitId,
             start: toBoard(state, event.clientX, event.clientY),
         };
-        svg.setPointerCapture(event.pointerId);
+        try {
+            svg.setPointerCapture(event.pointerId);
+        } catch {
+            // A pointer the browser does not know (the pan probe's dispatched events) cannot be captured; the drag works without it.
+        }
     });
 
     svg.addEventListener("pointermove", event => {
@@ -111,9 +137,9 @@ export function create(host, dotnet) {
         }
 
         // Turned a quarter clockwise (pass 29), the map's x runs down the screen and its y runs to the left.
-        const unitsPerPixel = drag.box.width / svg.clientWidth;
+        const unitsPerPixel = drag.box.width / paneSize(state).width;
         const [mx, my] = state.rotated ? [dy, -dx] : [dx, dy];
-        setBox(state, { ...drag.box, x: drag.box.x - mx * unitsPerPixel, y: drag.box.y - my * unitsPerPixel });
+        setBox(state, { ...drag.box, x: drag.box.x - mx * unitsPerPixel, y: drag.box.y - my * unitsPerPixel }, false, true);
     });
 
     svg.addEventListener("pointerup", event => {
@@ -125,6 +151,7 @@ export function create(host, dotnet) {
 
         const point = toBoard(state, event.clientX, event.clientY);
         if (drag.moved) {
+            gestureEnded(state);
             if (state.tool === "move") {
                 clearOverlay(state);
                 state.dotnet.invokeMethodAsync("OnBoardDrag", drag.start.x, drag.start.y, point.x, point.y);
@@ -226,6 +253,9 @@ export function create(host, dotnet) {
         dispose: () => {
             rememberView(state);
 
+            clearTimeout(state.wheelRest);
+            globalThis.removeEventListener?.("pagehide", onHide);
+            globalThis.removeEventListener?.("scroll", onScroll, { capture: true });
             shapeWatcher?.disconnect();
             host.removeEventListener("keydown", onKey);
             host.replaceChildren();
@@ -233,17 +263,106 @@ export function create(host, dotnet) {
     };
 }
 
+// Large Campaign Map Plan, task 4: the Exact view's hex labels come as data (labels.json) and are drawn only for the hexes in view, so a large
+// map no longer holds one element per hex. Other views keep their SVG label layer.
+function labelsAsData(baseUrl, layer) {
+    return layer === "labels" && baseUrl.endsWith("/exact");
+}
+
 async function fetchGroups(baseUrl, query, layers) {
+    let labelIndex = null;
     const texts = await Promise.all(layers.map(async layer => {
-        const response = await fetch(`${baseUrl}/${layer}.svg${query}`);
+        const asData = labelsAsData(baseUrl, layer);
+        const response = await fetch(asData ? `${baseUrl}/labels.json${query}` : `${baseUrl}/${layer}.svg${query}`);
         if (!response.ok) {
             throw new Error(`Layer ${layer} failed: ${response.status}`);
+        }
+
+        if (asData) {
+            labelIndex = await response.json();
+            return null;
         }
 
         return response.text();
     }));
     const parser = new DOMParser();
-    return texts.map(text => document.importNode(parser.parseFromString(text, "image/svg+xml").documentElement.firstElementChild, true));
+    const groups = texts.map((text, index) => text === null
+        ? labelGroup(labelIndex)
+        : document.importNode(parser.parseFromString(text, "image/svg+xml").documentElement.firstElementChild, true));
+    return { groups, labelIndex };
+}
+
+// The same group the SVG labels layer has (BoardRenderer.WriteLabels), empty: its texts are the labels in view, filled each frame.
+function labelGroup(index) {
+    const layer = document.createElementNS(svgNamespace, "g");
+    layer.setAttribute("id", "layer-labels");
+    const texts = document.createElementNS(svgNamespace, "g");
+    for (const [name, value] of [["font-family", "Arial, sans-serif"], ["font-size", String(index.fontSize ?? 9)], ["text-anchor", "middle"],
+        ["fill", "#000000"], ["fill-opacity", "0.75"], ["pointer-events", "none"]]) {
+        texts.setAttribute(name, value);
+    }
+
+    layer.appendChild(texts);
+    return layer;
+}
+
+// The indexes of the labels whose positions lie in the box widened by a margin on each side, in the index's order.
+export function labelsInView(index, box, margin = 0.1) {
+    const left = box.x - box.width * margin;
+    const right = box.x + box.width * (1 + margin);
+    const top = box.y - box.height * margin;
+    const bottom = box.y + box.height * (1 + margin);
+    const found = [];
+    for (let i = 0; i < index.x.length; i++) {
+        const x = index.x[i];
+        const y = index.y[i];
+        if (x >= left && x <= right && y >= top && y <= bottom) {
+            found.push(i);
+        }
+    }
+
+    return found;
+}
+
+function updateLabels(state) {
+    const index = state.labelIndex;
+    const layer = state.svg.querySelector("#layer-labels");
+    if (!index || !layer) {
+        return;
+    }
+
+    const shown = state.box && layer.getAttribute("data-detail-visible") === "true" && layer.getAttribute("data-layer-hidden") !== "true";
+    const wanted = shown ? labelsInView(index, state.box) : [];
+    for (const svg of [state.svg, state.side]) {
+        const texts = svg?.querySelector("#layer-labels")?.firstElementChild;
+        if (texts) {
+            fillLabels(texts, index, wanted);
+        }
+    }
+}
+
+// Reuses the group's text elements: each keeps the index it shows, and is changed only when that index changes.
+function fillLabels(texts, index, wanted) {
+    const nodes = texts.children;
+    for (let slot = 0; slot < wanted.length; slot++) {
+        const i = wanted[slot];
+        let node = nodes[slot];
+        if (!node) {
+            node = document.createElementNS(svgNamespace, "text");
+            texts.appendChild(node);
+        }
+
+        if (node.dataset?.label !== String(i)) {
+            node.setAttribute("x", index.x[i]);
+            node.setAttribute("y", index.y[i]);
+            node.textContent = index.names[i];
+            node.setAttribute("data-label", String(i));
+        }
+    }
+
+    while (nodes.length > wanted.length) {
+        texts.lastElementChild.remove();
+    }
 }
 
 async function load(state, baseUrl, query, viewBox, layers, visible) {
@@ -251,11 +370,16 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
     state.loadMetrics = new URLSearchParams(globalThis.location?.search ?? "").get("mapMetrics") === "1"
         ? { generation, started: performance.now(), reported: false } : null;
     if (state.loadMetrics) state.host.dataset.mapMetricStatus = "loading";
-    const groups = await fetchGroups(baseUrl, query, layers);
+    const { groups, labelIndex } = await fetchGroups(baseUrl, query, layers);
     if (generation !== state.generation) {
         return;
     }
 
+    state.labelIndex = labelIndex;
+    if (state.loadMetrics) {
+        probeStates.add(state);
+        globalThis.mapProbe = options => runProbe(probeTarget(), options);
+    }
     const [x, y, width, height] = viewBox.split(" ").map(Number);
     const home = { x, y, width, height };
     const viewKey = state.host.dataset.viewKey ? state.host.dataset.viewKey + "/" + baseUrl : null;
@@ -284,9 +408,13 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
 // Replaces the named layers in place, keeping the view: after an edit, for layers the patch does not cover.
 async function reloadLayers(state, baseUrl, query, layers) {
     const generation = state.generation;
-    const groups = await fetchGroups(baseUrl, query, layers);
+    const { groups, labelIndex } = await fetchGroups(baseUrl, query, layers);
     if (generation !== state.generation) {
         return;
+    }
+
+    if (labelIndex) {
+        state.labelIndex = labelIndex;
     }
 
     for (const group of groups) {
@@ -299,6 +427,7 @@ async function reloadLayers(state, baseUrl, query, layers) {
 
     applyComparison(state);
     updateLabelDetail(state);
+    updateLabels(state);
 }
 
 // Applies a render patch (section 5.4): per-feature upserts in paint order and removals, by element id.
@@ -336,6 +465,7 @@ function setVisible(state, visible) {
     }
 
     applyComparison(state);
+    updateLabels(state);
 }
 
 function setTool(state, tool) {
@@ -448,6 +578,8 @@ function applyComparison(state) {
         if (state.box) {
             state.side.setAttribute("viewBox", `${state.box.x} ${state.box.y} ${state.box.width} ${state.box.height}`);
         }
+
+        updateLabels(state);
     }
 }
 
@@ -461,7 +593,7 @@ function focusPoint(state, x, y) {
     setBox(state, { x: x - width / 2, y: y - height / 2, width, height });
 }
 
-function zoomAt(state, point, factor) {
+function zoomAt(state, point, factor, gesture = false) {
     const width = clamp(state.box.width * factor, state.home.width / 40, state.home.width * 2);
     const scale = width / state.box.width;
     setBox(state, {
@@ -469,7 +601,7 @@ function zoomAt(state, point, factor) {
         y: point.y - (point.y - state.box.y) * scale,
         width,
         height: state.box.height * scale,
-    });
+    }, false, gesture);
 }
 
 // Brings a point into view at the same zoom, only when it lies outside the view or close to its edge (Claude Design's review: a hex picked
@@ -495,8 +627,7 @@ function fitRect(state, x, y, width, height) {
         return;
     }
 
-    const paneWidth = state.svg.clientWidth;
-    const paneHeight = state.svg.clientHeight;
+    const { width: paneWidth, height: paneHeight } = paneSize(state);
     const aspect = paneWidth > 0 && paneHeight > 0 ? paneWidth / paneHeight : state.home.width / state.home.height;
     const boxWidth = Math.max(width, height * aspect);
     const boxHeight = boxWidth / aspect;
@@ -526,8 +657,7 @@ function reset(state) {
 // length; a turned board that fits whole, or one in a wide pane, is shown whole.
 function fitBox(state) {
     const home = { ...state.home };
-    const width = state.svg.clientWidth;
-    const height = state.svg.clientHeight;
+    const { width, height } = paneSize(state);
     if (!state.rotated || width === 0 || height === 0 || paneShape(state) !== "portrait") {
         return home;
     }
@@ -683,6 +813,124 @@ function reportMeasuredScene(state) {
     }));
 }
 
+// The pan probe (Large Campaign Map Plan, task 1): with ?mapMetrics=1, mapProbe() in the console drags the map for a second and sends a burst
+// of wheel events, both through the real handlers, times a label layer switch, and reports frames, the longest frame, and the browser's
+// Long Animation Frames. It restores the view and the layer choice it found. The record is logged and kept on the host as data-map-probe.
+// The maps a page has loaded with metrics on; the probe measures the largest one still on the page (a hand-over or hidden map may have loaded
+// last).
+const probeStates = new Set();
+
+function probeTarget() {
+    let best = null;
+    let bestArea = 0;
+    for (const state of probeStates) {
+        if (!state.svg.isConnected) {
+            probeStates.delete(state);
+            continue;
+        }
+
+        const rect = state.svg.getBoundingClientRect();
+        if (rect.width * rect.height > bestArea) {
+            best = state;
+            bestArea = rect.width * rect.height;
+        }
+    }
+
+    if (!best) throw new Error("No map is on the page.");
+    return best;
+}
+
+export function summarizeFrames(times) {
+    const gaps = times.slice(1).map((time, index) => time - times[index]);
+    const span = times.length > 1 ? times[times.length - 1] - times[0] : 0;
+    return {
+        frames: gaps.length,
+        spanMs: Math.round(span),
+        framesPerSecond: span > 0 ? Math.round(gaps.length * 10000 / span) / 10 : 0,
+        longestFrameMs: Math.round(Math.max(0, ...gaps)),
+        medianFrameMs: gaps.length ? Math.round([...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)]) : 0,
+    };
+}
+
+async function runProbe(state, options = {}) {
+    if (!state.box || !state.home) throw new Error("No board is loaded.");
+    const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
+    const rect = state.svg.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const saved = { box: { ...state.box }, fitted: state.fitted };
+    const animationFrames = [];
+    const observer = typeof PerformanceObserver !== "undefined"
+        && PerformanceObserver.supportedEntryTypes?.includes("long-animation-frame")
+        ? new PerformanceObserver(list => animationFrames.push(...list.getEntries())) : null;
+    observer?.observe({ type: "long-animation-frame", buffered: false });
+    const pointer = (type, x, y) => state.svg.dispatchEvent(new PointerEvent(type, {
+        bubbles: true, cancelable: true, pointerId: 91, pointerType: "mouse", button: 0, buttons: type === "pointerup" ? 0 : 1, clientX: x, clientY: y,
+    }));
+    const loafSince = start => {
+        animationFrames.push(...(observer?.takeRecords() ?? []));
+        const entries = animationFrames.filter(entry => entry.startTime >= start);
+        const forced = entries.reduce((sum, entry) => sum + (entry.scripts ?? []).reduce((s, script) => s + (script.forcedStyleAndLayoutDuration ?? 0), 0), 0);
+        return { longAnimationFrames: entries.length, longestAnimationFrameMs: Math.round(Math.max(0, ...entries.map(entry => entry.duration))),
+            forcedStyleAndLayoutMs: Math.round(forced) };
+    };
+
+    // A drag of a fixed screen distance over about a second: one move per animation frame.
+    const dragMs = options.dragMs ?? 1000;
+    const distance = Math.min(rect.width, rect.height) / 4;
+    await frame();
+    const dragStart = performance.now();
+    const dragTimes = [dragStart];
+    pointer("pointerdown", cx, cy);
+    for (let elapsed = 0; elapsed < dragMs; elapsed = performance.now() - dragStart) {
+        pointer("pointermove", cx + distance * elapsed / dragMs, cy);
+        dragTimes.push(await frame());
+    }
+    pointer("pointerup", cx + distance, cy);
+    dragTimes.push(await frame());
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const drag = { ...summarizeFrames(dragTimes), ...loafSince(dragStart) };
+
+    // A burst of wheel events in one task, as a trackpad sends them, then the frames until the map settles.
+    setBox(state, saved.box, saved.fitted);
+    await frame();
+    const wheelStart = performance.now();
+    for (let index = 0; index < (options.wheelEvents ?? 20); index++) {
+        state.svg.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: index % 2 ? 100 : -100, clientX: cx, clientY: cy }));
+    }
+    const wheelTimes = [wheelStart, await frame(), await frame()];
+    // Long Animation Frame entries are delivered after their frame: one more frame and a short wait before they are read.
+    await frame();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const wheel = { settleMs: Math.round(wheelTimes[2] - wheelStart), ...loafSince(wheelStart) };
+
+    // The label layer switch: off and on again, as the page's layer choice does it.
+    setBox(state, saved.box, saved.fitted);
+    const shown = [...state.svg.children].filter(group => group.id.startsWith("layer-") && group.getAttribute("data-layer-hidden") === "false")
+        .map(group => group.id.substring(6));
+    let labelSwitchMs = null;
+    if (shown.includes("labels")) {
+        await frame();
+        const switchStart = performance.now();
+        setVisible(state, shown.filter(layer => layer !== "labels"));
+        await frame();
+        setVisible(state, shown);
+        await frame();
+        labelSwitchMs = Math.round(performance.now() - switchStart);
+    }
+
+    observer?.disconnect();
+    setBox(state, saved.box, saved.fitted);
+    const record = {
+        when: new Date().toISOString(), board: state.baseUrl, elements: state.svg.getElementsByTagName("*").length,
+        counters: state.svg.querySelectorAll("#layer-units [data-unit-id]").length, viewport: [Math.round(rect.width), Math.round(rect.height)],
+        boxWidth: Math.round(saved.box.width), drag, wheel, labelSwitchMs, userAgent: globalThis.navigator?.userAgent,
+    };
+    state.host.dataset.mapProbe = JSON.stringify(record);
+    console.info("map probe", record);
+    return record;
+}
+
 // Unit detail tiers (Unit Display Design, section 7.1): the overlay carries every tier, and zoom picks one from the
 // face size on screen, so zooming never asks the server again.
 export function unitTier(faceSize, clientWidth, boxWidth) {
@@ -696,7 +944,7 @@ function updateUnitTier(state) {
         return;
     }
 
-    const tier = unitTier(Number(layer.getAttribute("data-face-size")) || 0, state.svg.clientWidth, state.box.width);
+    const tier = unitTier(Number(layer.getAttribute("data-face-size")) || 0, paneSize(state).width, state.box.width);
     if (layer.getAttribute("data-active-tier") !== tier) {
         layer.setAttribute("data-active-tier", tier);
     }
@@ -708,8 +956,11 @@ function updateLabelDetail(state) {
     const labels = state.svg.querySelector("#layer-labels");
     if (!labels || !state.box) return;
     const fontSize = Number(labels.firstElementChild?.getAttribute("font-size")) || 9;
-    const readable = fontSize * state.svg.clientWidth / state.box.width >= 6;
-    labels.setAttribute("data-detail-visible", String(readable));
+    const readable = String(fontSize * paneSize(state).width / state.box.width >= 6);
+    // Written only on change (Large Campaign Map Plan, A3): rewriting it invalidates the style of every label beneath.
+    if (labels.getAttribute("data-detail-visible") !== readable) {
+        labels.setAttribute("data-detail-visible", readable);
+    }
 }
 
 function highlight(state, points) {
@@ -727,18 +978,73 @@ function highlight(state, points) {
     state.svg.appendChild(state.highlight);
 }
 
-function setBox(state, box, fitted = false) {
+// Large Campaign Map Plan, A1: the box changes at once, so every caller (and a burst of wheel events) works from the newest box, while the
+// drawing is written once per animation frame. A gesture's view is saved when it ends (A4); any other change is saved at once.
+function setBox(state, box, fitted = false, gesture = false) {
     state.box = box;
     state.fitted = fitted;
-    const value = `${box.x} ${box.y} ${box.width} ${box.height}`;
-    state.svg.setAttribute("viewBox", value);
-    state.side?.setAttribute("viewBox", value);
-    rememberView(state);
-    updateUnitTier(state);
-    updateLabelDetail(state);
+    if (!gesture) {
+        rememberView(state);
+    }
+
+    if (typeof requestAnimationFrame !== "function") {
+        flushBox(state);
+        return;
+    }
+
+    if (!state.flushPending) {
+        state.flushPending = true;
+        requestAnimationFrame(() => flushBox(state));
+    }
 }
 
+function flushBox(state) {
+    state.flushPending = false;
+    if (!state.box) {
+        return;
+    }
+
+    // Taken before any write, while the layout of the last frame still holds, so reading it costs nothing (A2).
+    takeRect(state);
+    const value = `${state.box.x} ${state.box.y} ${state.box.width} ${state.box.height}`;
+    if (state.svg.getAttribute?.("viewBox") !== value) {
+        state.svg.setAttribute("viewBox", value);
+    }
+    state.side?.setAttribute("viewBox", value);
+    updateUnitTier(state);
+    updateLabelDetail(state);
+    updateLabels(state);
+}
+
+function gestureEnded(state) {
+    clearTimeout(state.wheelRest);
+    rememberView(state);
+}
+
+// The drawing's size in CSS pixels, before any turn: from the size observer (A2), or read once where there is none.
+function paneSize(state) {
+    return state.size ?? { width: state.svg.clientWidth, height: state.svg.clientHeight };
+}
+
+function takeRect(state) {
+    state.rect = typeof state.svg.getBoundingClientRect === "function" ? state.svg.getBoundingClientRect() : null;
+}
+
+// From a pointer to board coordinates without the screen matrix, which would lay out the map (A2): the drawing's rectangle on screen, the
+// quarter turn when the map is turned (site.css, .board-host.rotated: translateX(100cqw) rotate(90deg) from the top left), and the viewBox's
+// default fit (xMidYMid meet). The screen matrix stays the answer when no rectangle or size is known yet.
 function toBoard(state, clientX, clientY) {
+    const rect = state.rect;
+    const size = state.size;
+    const box = state.box;
+    if (rect && size && box && size.width > 0 && size.height > 0) {
+        const [lx, ly] = state.rotated ? [clientY - rect.top, rect.right - clientX] : [clientX - rect.left, clientY - rect.top];
+        const scale = Math.min(size.width / box.width, size.height / box.height);
+        const offsetX = (size.width - box.width * scale) / 2;
+        const offsetY = (size.height - box.height * scale) / 2;
+        return { x: box.x + (lx - offsetX) / scale, y: box.y + (ly - offsetY) / scale };
+    }
+
     const point = state.svg.createSVGPoint();
     point.x = clientX;
     point.y = clientY;
