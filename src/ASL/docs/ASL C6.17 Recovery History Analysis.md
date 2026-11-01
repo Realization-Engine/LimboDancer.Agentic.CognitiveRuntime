@@ -1,6 +1,6 @@
 # C6.17 recovery history analysis
 
-Status: approved 2026-11-01. The Rules-only stage is implemented on `codex/c617-recovery-history`; corrections from Claude's PR 98 review await re-review. Play and Units wiring remains pending the Rules PR's separately approved merge. The diagnosis below describes the pre-wiring application behavior.
+Status: approved 2026-11-01. The Rules-only stage is implemented on `codex/c617-recovery-history`. Claude re-reviewed head `5a0365e3`: all nine findings are resolved or bounded; the remaining RC617.2 wording correction is recorded below. Play and Units wiring remains pending the Rules PR's separately approved merge and the user's authorization to start wiring. The diagnosis below describes the pre-wiring application behavior.
 
 Base: main `6cbf7df027e26dbb4696a14b080f109a26852521`, fetched before creating `codex/c617-recovery-history`. Worktree: `C:/Users/dland/.codex/worktrees/c617-recovery-history/LimboDancer.MCP`. Tool work folder: `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex`.
 

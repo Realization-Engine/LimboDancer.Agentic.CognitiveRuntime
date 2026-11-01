@@ -1,6 +1,6 @@
 # C6.17 recovery history implementation design
 
-Status: approved 2026-11-01. Rules-only implementation on `codex/c617-recovery-history`, based on main `6cbf7df0` plus claim lock `235404fe`. Claude reviewed head `0943317a`; the corrections below await his re-review. Wiring has not started and awaits the Rules delivery and its separately approved merge.
+Status: approved 2026-11-01. Rules-only implementation on `codex/c617-recovery-history`, based on main `6cbf7df0` plus claim lock `235404fe`. Claude re-reviewed head `5a0365e3`: all nine findings are resolved or bounded; section 11 contains the final RC617.2 wording correction. Wiring has not started and awaits the Rules delivery, its separately approved merge and the user's authorization to start wiring.
 
 Companion: [analysis and rulebook evidence](<../ASL C6.17 Recovery History Analysis.md>). Rules references below use physical PDF pages: A4.2 p. 49, A4.44 p. 50, A8.1-.12 p. 59, C6.17 pp. 173-174.
 
