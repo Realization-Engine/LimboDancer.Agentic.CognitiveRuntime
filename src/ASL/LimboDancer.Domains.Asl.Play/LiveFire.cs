@@ -217,7 +217,7 @@ public static class LiveFire
     public static (FireAttack? Attack, string? Reason) FromState(GameState state, IReadOnlyList<string> firerIds, IReadOnlyList<string> directorIds,
         BoardLocation target, IReadOnlyDictionary<string, IReadOnlyList<string>>? weapons = null, IReadOnlyCollection<string>? withoutInherent = null,
         IReadOnlyDictionary<string, string>? partners = null, string? molUser = null, bool embarking = true, bool wrecks = true,
-        bool legacyVehicleBreakdown = false)
+        bool legacyVehicleBreakdown = false, bool legacyConfiguration = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(firerIds);
@@ -387,7 +387,7 @@ public static class LiveFire
                     state.AssaultWeaponUsers.Contains(unit.Id, StringComparer.Ordinal), withoutInherent?.Contains(unit.Id) == true,
                     () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } other && other.Holder == unit.Id
                         && !named.Contains(item.Id, StringComparer.Ordinal) && (Fired(item) || Is(item, Conditions.FirstFire))),
-                    () => state.SupportWeaponUses.Any(item => item.Unit == unit.Id))) is { } weaponBar)
+                    () => state.SupportWeaponUses.Any(item => item.Unit == unit.Id) && (legacyConfiguration || !SupportWeaponConfigurationRead.HasConfiguration(state, unit.Id)))) is { } weaponBar)
                 {
                     return (null, weaponBar);
                 }
@@ -404,6 +404,13 @@ public static class LiveFire
             }
 
             // A3.3, A7.1, A7.351: the phase's limits on a firer; the Prep Fire scan and the count of its other fired weapons are read when asked.
+            if (!legacyConfiguration && SupportWeaponConfigurationRead.FireRefusal(state, unit.Id,
+                [.. (used ?? []).Select(weapon => weapon.EquipmentId).OfType<string>()],
+                unit.Kind != "asl:leader" && withoutInherent?.Contains(unit.Id) != true) is { } configurationBar)
+            {
+                return (null, configurationBar);
+            }
+
             if (ScenarioA1FireEligibility.FirerLimitBar(new FirerLimitFacts(unit.Id, state.Phase, Is(unit, Conditions.BoundingFire), unit.Kind == "asl:squad",
                 withoutInherent?.Contains(unit.Id) == true, Fired(unit), used is { Count: > 0 },
                 () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } prepped && prepped.Holder == unit.Id
@@ -431,6 +438,11 @@ public static class LiveFire
                 }
 
                 partner = helper!.Id;
+                if (!legacyConfiguration && SupportWeaponConfigurationRead.FireRefusal(state, partner,
+                    [.. (used ?? []).Select(weapon => weapon.EquipmentId!)], false) is { } partnerConfigurationBar)
+                {
+                    return (null, partnerConfigurationBar);
+                }
             }
 
             firerFacts.Add(ScenarioA1FireEligibility.Firer(new FirerRecordFacts(unit.Id, unit.Definition!.Definition, at.ToString(), Is(unit, Conditions.Broken),
@@ -1401,7 +1413,8 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             // Pass 65 (ruling R65.14): the (un)loaders are targets only of an attack whose record names them; an older one is read as it was made. So is a
             // wreck (ruling R65.23).
             (expected, reason) = LiveFire.FromState(state, fire.Firers, directors, target, weapons, alone, partners is { Count: > 0 } ? partners : null, mol,
-                recorded.Embarking is not null, recorded.Vehicles?.Any(item => item.Wreck == true) == true, recorded.VehicleBreakdown is null);
+                recorded.Embarking is not null, recorded.Vehicles?.Any(item => item.Wreck == true) == true, recorded.VehicleBreakdown is null,
+                legacyConfiguration: fire.ConfigurationUseVersion is null);
         }
 
         if (expected is null)

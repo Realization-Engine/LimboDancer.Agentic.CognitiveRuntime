@@ -374,6 +374,27 @@ def out_of_scope(paths):
     return sorted(path for path in paths if path.startswith("src/") and not path.endswith(".md") and not path.startswith(CLAIM_SCOPE))
 
 
+def approved_support_weapon_wiring(branch, path):
+    """The user's isolated combined-delivery exception; normal claims and all other paths keep their gate."""
+    if branch != "codex/support-weapons-implementation":
+        return False
+    approved = {
+        "LimboDancer.Domains.Asl.MapStudio/Components/Pages/Play.razor",
+        "LimboDancer.Domains.Asl.MapStudio/wwwroot/site.css",
+    }
+    approved.update("LimboDancer.Domains.Asl.MapStudio/Components/Play/" + name + ".razor" for name in (
+        "AdvanceActionPanel", "AmbushWithdrawalActions", "CloseCombatInfiltrationChoices", "CloseCombatPanel",
+        "CloseCombatWithdrawals", "InfantryMovementAction", "SupportWeaponWorkflow"))
+    approved.update("LimboDancer.Domains.Asl.Play/" + name + ".cs" for name in (
+        "GamePlanner.CloseCombat", "GamePlanner.Fire", "GamePlanner.Movement", "GamePlanner.Ordnance",
+        "GamePlanner.Rally", "GamePlanner.SupportWeapons", "GamePlanner.Withdrawal", "LiveFire", "LiveOrdnance"))
+    approved.update("LimboDancer.Domains.Asl.Units/State/" + name + ".cs" for name in (
+        "FireRecords", "GameEvent", "GameEventReader", "GameEventWriter", "GameProjector", "GameState", "LiveRecords",
+        "OrdnanceRecords", "SupportWeaponConfigurationRead", "SupportWeaponRecoveryRead", "SupportWeaponRepairRead",
+        "SupportWeaponRepairUse", "SupportWeaponTransferRead"))
+    return path.removeprefix("src/ASL/") in approved
+
+
 def outside_rules(paths):
     return {path for path in paths if path.startswith("src/") and not path.startswith(RULES_DIR) and not path.endswith(".md")}
 
@@ -464,6 +485,8 @@ def main():
         if any(claim["branch"] == branch for claim in claims.values()):
             # A rule claim merges without a gate of its own only because it stays in its scope (the plan's section 4.3, 2026-10-29).
             for path in out_of_scope(changed_files(value("--base")) or []):
+                if approved_support_weapon_wiring(branch, path):
+                    continue
                 faults.append(f"{path} is outside a rule claim's scope (the Rules conventions, section 2): its callers are track 3's, "
                               "and a rule claim merges without a gate only while it stays in Rules")
     batch_gate(lines, claims, branch, faults)

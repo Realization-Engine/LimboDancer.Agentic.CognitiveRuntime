@@ -723,7 +723,7 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
         IReadOnlyCollection<string> drops = dropped ?? (Laden(state, unit) ? PossessedSw(state, unit) : Array.Empty<string>());
-        if (Laden(state, unit, drops))
+        if (WithdrawalEquipmentLoad(state, unit, drops).Readiness.Status != SupportWeaponReadinessStatus.Allowed)
         {
             return [];
         }

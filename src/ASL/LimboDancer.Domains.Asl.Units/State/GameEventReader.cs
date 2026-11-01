@@ -307,7 +307,10 @@ public static class GameEventReader
                 var transferredId = fields.RequiredString(payload, "id", path);
                 var holding = ReadHolding(payload, path, fields, diagnostics);
                 var left = payload.TryGetProperty("position", out _) ? ReadPosition(payload, "position", path, fields, diagnostics) : null;
-                return transferredId is null ? null : new EquipmentTransferred(transferredId, holding, left);
+                return transferredId is null ? null : new EquipmentTransferred(transferredId, holding, left)
+                {
+                    TransferredBy = fields.OptionalString(payload, "transferredBy", path),
+                };
             case "conditions-changed":
             case "crew-exposure-changed":
             case "concealment-lost":
@@ -316,7 +319,10 @@ public static class GameEventReader
             case "desperation-morale":
                 var changedId = fields.RequiredString(payload, "id", path);
                 var conditions = ReadConditions(payload, path, diagnostics);
-                return changedId is null ? null : new ConditionsChanged(changedId, conditions);
+                return changedId is null ? null : new ConditionsChanged(changedId, conditions)
+                {
+                    ConfiguredBy = fields.OptionalString(payload, "configuredBy", path),
+                };
             case "setup-concealed":
                 var concealedId = fields.RequiredString(payload, "id", path);
                 return concealedId is null ? null : new SetupConcealed(concealedId);
@@ -440,6 +446,7 @@ public static class GameEventReader
                         MovementStep = fields.OptionalInteger(payload, "movementStep", path),
                         VehicleArmamentEvidence = ArmamentEvidence(payload, path, diagnostics),
                         SmokeWiringVersion = fields.OptionalInteger(payload, "smokeWiringVersion", path),
+                        ConfigurationUseVersion = fields.OptionalInteger(payload, "configurationUseVersion", path),
                         TurretFacing = fields.OptionalString(payload, "turretFacing", path) is { } turretText && UnitFacings.TryParse(turretText, out var turretFacing)
                             ? turretFacing : null,
                     };
@@ -470,6 +477,7 @@ public static class GameEventReader
                     {
                         Weapon = fields.OptionalString(payload, "weapon", path),
                         VehicleRepairVersion = fields.OptionalInteger(payload, "vehicleRepairVersion", path),
+                        SupportWeaponRepairVersion = fields.OptionalInteger(payload, "supportWeaponRepairVersion", path),
                         VehicleArmamentEvidence = ArmamentEvidence(payload, path, diagnostics),
                         Hero = fields.OptionalString(payload, "hero", path),
                     };
@@ -887,7 +895,11 @@ public static class GameEventReader
                 var recoveryDrm = fields.OptionalInteger(payload, "drm", path);
                 return recoveryUnit is null || recoveryWeapon is null || recoveryRoll is null || recoveryDrm is null
                     ? Missing(diagnostics, "A Recovery attempt names its unit, SW, roll, and DRM.", path)
-                    : new RecoveryAttempted(recoveryUnit, recoveryWeapon, recoveryRoll, recoveryDrm.Value, fields.OptionalBoolean(payload, "recovered", path));
+                    : new RecoveryAttempted(recoveryUnit, recoveryWeapon, recoveryRoll, recoveryDrm.Value, fields.OptionalBoolean(payload, "recovered", path))
+                    {
+                        RecoveryVersion = fields.OptionalInteger(payload, "recoveryVersion", path),
+                        Terrain = fields.OptionalString(payload, "terrain", path),
+                    };
             case "opportunity-fire-declared":
                 return new OpportunityFireDeclared(fields.StringList(payload, "units", path));
             case "encirclement-placed":
@@ -1050,6 +1062,7 @@ public static class GameEventReader
                         ordnanceFacts.Clone(), ordnanceResolution.Clone())
                     {
                         SpotterWiringVersion = fields.OptionalInteger(payload, "spotterWiringVersion", path),
+                        ConfigurationUseVersion = fields.OptionalInteger(payload, "configurationUseVersion", path),
                         VehicleArmamentEvidence = ArmamentEvidence(payload, path, diagnostics),
                         SmokeWiringVersion = fields.OptionalInteger(payload, "smokeWiringVersion", path),
                     };

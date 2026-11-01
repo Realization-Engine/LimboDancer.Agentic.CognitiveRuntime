@@ -4085,6 +4085,8 @@ button[data-working]::after {
 .action-form .fire-unit input { flex-shrink: 0; }
 .action-form .fire-unit-weapons { display: grid; gap: .4rem; margin-left: 1.5rem; }
 .action-form .fire-unit-weapons:not(:empty) { margin-top: .4rem; }
+#cc-withdrawals details > label { display: flex; align-items: baseline; gap: .4rem; margin-top: .4rem; overflow-wrap: anywhere; }
+#cc-withdrawals .cc-drop { flex-shrink: 0; }
 #rout-route-help { flex-basis: 100%; }
 
 /* Close Combat: location, declaration, review, then proposal. */

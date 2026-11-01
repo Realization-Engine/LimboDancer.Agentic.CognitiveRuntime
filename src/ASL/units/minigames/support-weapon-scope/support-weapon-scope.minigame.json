@@ -1,0 +1,379 @@
+{
+  "id": "support-weapon-scope",
+  "title": "Support Weapons phase scope",
+  "card": "support-weapon-scope",
+  "rules": [
+    "A4.43",
+    "A4.431",
+    "A4.44",
+    "A9.72",
+    "A9.8",
+    "A11.21"
+  ],
+  "contracts": [
+    "a9.72-repair",
+    "a9.8-configuration",
+    "a11.21-retained-load",
+    "a4.44-recovery",
+    "a4.431-transfer"
+  ],
+  "units": {
+    "G1": "german",
+    "G2": "german"
+  },
+  "example": {
+    "source": "Manufactured fact positions under R0.3; quantities and states are supplied explicitly.",
+    "page": 50
+  },
+  "checks": [
+    {
+      "name": "Second repair uses the remaining squad allowance",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a9.72-repair",
+      "facts": {
+        "unitId": "G1",
+        "phase": "rph",
+        "active": true,
+        "goodOrder": true,
+        "possessed": true,
+        "weaponActive": true,
+        "malfunctioned": true,
+        "captured": false,
+        "repairNumber": 3,
+        "otherRallyAction": false,
+        "attemptedThisPlayerTurn": false,
+        "attemptsThisPhase": 1,
+        "capacity": 2,
+        "gun": false
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "Third repair refused",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a9.72-repair",
+      "facts": {
+        "unitId": "G1",
+        "phase": "rph",
+        "active": true,
+        "goodOrder": true,
+        "possessed": true,
+        "weaponActive": true,
+        "malfunctioned": true,
+        "captured": false,
+        "repairNumber": 3,
+        "otherRallyAction": false,
+        "attemptedThisPlayerTurn": false,
+        "attemptsThisPhase": 2,
+        "capacity": 2,
+        "gun": false
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Captured status unknown",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a9.72-repair",
+      "facts": {
+        "unitId": "G1",
+        "phase": "rph",
+        "active": true,
+        "goodOrder": true,
+        "possessed": true,
+        "weaponActive": true,
+        "malfunctioned": true,
+        "captured": null,
+        "repairNumber": 3,
+        "otherRallyAction": false,
+        "attemptedThisPlayerTurn": false,
+        "attemptsThisPhase": 1,
+        "capacity": 2,
+        "gun": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Second configuration uses the remaining squad allowance",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a9.8-configuration",
+      "facts": {
+        "unitId": "G1",
+        "phase": "pfph",
+        "phasing": true,
+        "active": true,
+        "goodOrder": true,
+        "temporarilyImmobilized": false,
+        "possessed": true,
+        "weaponActive": true,
+        "supportedConfiguration": true,
+        "weaponUsed": false,
+        "usesThisPhase": 1,
+        "capacity": 2,
+        "typePermitted": true,
+        "inherentFireUsed": false,
+        "aboard": false
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "Inherent fire exhausts the remaining allowance",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a9.8-configuration",
+      "facts": {
+        "unitId": "G1",
+        "phase": "pfph",
+        "phasing": true,
+        "active": true,
+        "goodOrder": true,
+        "temporarilyImmobilized": false,
+        "possessed": true,
+        "weaponActive": true,
+        "supportedConfiguration": true,
+        "weaponUsed": false,
+        "usesThisPhase": 1,
+        "capacity": 2,
+        "typePermitted": true,
+        "inherentFireUsed": true,
+        "aboard": false
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Vehicle configuration is unsupported",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a9.8-configuration",
+      "facts": {
+        "unitId": "G1",
+        "phase": "pfph",
+        "phasing": true,
+        "active": true,
+        "goodOrder": true,
+        "temporarilyImmobilized": false,
+        "possessed": true,
+        "weaponActive": true,
+        "supportedConfiguration": true,
+        "weaponUsed": false,
+        "usesThisPhase": 1,
+        "capacity": 2,
+        "typePermitted": true,
+        "inherentFireUsed": false,
+        "aboard": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Leave HMG and retain LMG",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a11.21-retained-load",
+      "facts": {
+        "unitId": "G1",
+        "smc": false,
+        "wounded": false,
+        "cx": false,
+        "retainedPp": 1
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "Both weapons exceed withdrawal capacity",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a11.21-retained-load",
+      "facts": {
+        "unitId": "G1",
+        "smc": false,
+        "wounded": false,
+        "cx": false,
+        "retainedPp": 6
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Retained load unknown",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a11.21-retained-load",
+      "facts": {
+        "unitId": "G1",
+        "smc": false,
+        "wounded": false,
+        "cx": false,
+        "retainedPp": null
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Recover during movement with one MF",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a4.44-recovery",
+      "facts": {
+        "unitId": "G1",
+        "phase": "mph",
+        "phasing": true,
+        "active": true,
+        "goodOrder": true,
+        "pinned": false,
+        "infantry": true,
+        "unarmed": false,
+        "bypassing": false,
+        "weaponActive": true,
+        "sameLocation": true,
+        "held": false,
+        "friendlyHolder": false,
+        "brokenHolder": false,
+        "recoveringSmc": false,
+        "armedKnownEnemy": false,
+        "attempted": false,
+        "rallyActionTaken": false,
+        "movementEnded": false,
+        "temporarilyImmobilized": false,
+        "halfMfRemaining": 2,
+        "rallyRecoveryWindowOpen": true,
+        "reactionPending": false,
+        "anotherMoverActive": false,
+        "terrain": "open",
+        "aboard": false,
+        "conditionsKnown": true,
+        "knownWirePresent": false
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "No recovery while another mover is active",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a4.44-recovery",
+      "facts": {
+        "unitId": "G1",
+        "phase": "mph",
+        "phasing": true,
+        "active": true,
+        "goodOrder": true,
+        "pinned": false,
+        "infantry": true,
+        "unarmed": false,
+        "bypassing": false,
+        "weaponActive": true,
+        "sameLocation": true,
+        "held": false,
+        "friendlyHolder": false,
+        "brokenHolder": false,
+        "recoveringSmc": false,
+        "armedKnownEnemy": false,
+        "attempted": false,
+        "rallyActionTaken": false,
+        "movementEnded": false,
+        "temporarilyImmobilized": false,
+        "halfMfRemaining": 2,
+        "rallyRecoveryWindowOpen": true,
+        "reactionPending": false,
+        "anotherMoverActive": true,
+        "terrain": "open",
+        "aboard": false,
+        "conditionsKnown": true,
+        "knownWirePresent": false
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Transfer before advance",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a4.431-transfer",
+      "facts": {
+        "unitId": "G1",
+        "phase": "aph",
+        "giver": "G1",
+        "recipient": "G2",
+        "weapon": "LMG",
+        "differentUnits": true,
+        "giverGoodOrder": true,
+        "recipientGoodOrder": true,
+        "giverPinned": false,
+        "recipientPinned": false,
+        "sameSide": true,
+        "sameLocation": true,
+        "bothInfantry": true,
+        "giverVehicle": "none",
+        "recipientVehicle": "none",
+        "recipientUnarmed": false,
+        "possessed": true,
+        "recoveredThisPhase": false,
+        "giverRallyAction": false,
+        "recipientRallyAction": false,
+        "phasing": true,
+        "advanceStarted": false,
+        "vehicleInMotion": false,
+        "knownWirePresent": false
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "No transfer after advance begins",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a4.431-transfer",
+      "facts": {
+        "unitId": "G1",
+        "phase": "aph",
+        "giver": "G1",
+        "recipient": "G2",
+        "weapon": "LMG",
+        "differentUnits": true,
+        "giverGoodOrder": true,
+        "recipientGoodOrder": true,
+        "giverPinned": false,
+        "recipientPinned": false,
+        "sameSide": true,
+        "sameLocation": true,
+        "bothInfantry": true,
+        "giverVehicle": "none",
+        "recipientVehicle": "none",
+        "recipientUnarmed": false,
+        "possessed": true,
+        "recoveredThisPhase": false,
+        "giverRallyAction": false,
+        "recipientRallyAction": false,
+        "phasing": true,
+        "advanceStarted": true,
+        "vehicleInMotion": false,
+        "knownWirePresent": false
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    }
+  ]
+}

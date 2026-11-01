@@ -2,7 +2,7 @@
    adjudicator only and reads each unit's destinations from the planner. The user, 2026-10-21 (sixty buttons, one per unit and Location): one form,
    the units ticked and one destination open to all of them; each unit still withdraws by a proposal of its own, made in turn. *@
 <div id="cc-ambush-withdrawal">
-    <p class="toolbar action-fields-note">Ambush Withdrawal (A11.41): each of your units may withdraw now, declining Close Combat, or after its attacks before Melee, or stay and fight.</p>
+    <p class="toolbar-note">Ambush withdrawal: choose units and a shared destination.</p>
     <UnitSelectionList Rows="@Units" Selected="@ChosenSet" CssClass="ambush-withdraw-unit" Legend="Units withdrawing" Empty="none may withdraw."
                        OnToggle="@Toggle" />
     <div class="toolbar action-fields">

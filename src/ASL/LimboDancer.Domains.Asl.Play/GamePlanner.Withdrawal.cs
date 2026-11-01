@@ -14,6 +14,29 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
+    public static bool MeleeWithdrawalEligible(GameState state, UnitInstance unit, BoardLocation location) =>
+        ScenarioA1WithdrawalEquipmentRules.MayPrepareMelee(state.Phase, state.CloseCombats.Any(item => item.Location == location),
+            unit.Status == InstanceStatus.Active, Is(unit, Conditions.Melee), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk),
+            Is(unit, Conditions.Disrupted), Is(unit, Conditions.Captured));
+
+    public static bool AmbushWithdrawalEligible(GameState state, UnitInstance unit, BoardLocation location)
+    {
+        var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
+        return ScenarioA1PrisonerCalculator.AmbushWithdrawalPhaseBar(state.Phase, entry?.Ambusher is not null,
+                entry is { } begun && begun.Rounds.Count > 0 && !begun.Closed) is null
+            && ScenarioA1PrisonerCalculator.AmbushWithdrawer(unit.Status == InstanceStatus.Active, unit.Side == entry?.Ambusher,
+                state.Location(unit.Id)?.Location == location, Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk),
+                Is(unit, Conditions.Disrupted), Is(unit, Conditions.Captured), LiveFire.IsVehicle(unit));
+    }
+
+    public static IReadOnlyList<string> WithdrawalEquipmentChoices(GameState state, UnitInstance unit) =>
+        [.. state.Equipment.Where(weapon => ScenarioA1WithdrawalEquipmentRules.MayChooseDrop(state.Phase, true,
+            unit.Status == InstanceStatus.Active, weapon.Status == InstanceStatus.Active,
+            weapon.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)).Select(weapon => weapon.Id)];
+
+    public WithdrawalEquipmentLoad WithdrawalEquipmentLoad(GameState state, UnitInstance unit, IReadOnlyCollection<string> dropped) =>
+        ScenarioA1WithdrawalEquipmentRules.Load(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Portage(state, unit, dropped));
+
     /// <summary>
     /// The SW named in the arguments' <c>drops</c>, by the withdrawing or infiltrating unit that possesses each (A11.21, A4.43; ruling R70.26), or why the
     /// list is refused: a SW that no such unit possesses.
@@ -22,7 +45,9 @@ public sealed partial class GamePlanner
     {
         var moving = movers.ToHashSet(StringComparer.Ordinal);
         string[] named = [.. Strings(arguments, "drops").Distinct(StringComparer.Ordinal)];
-        string? Holder(string weapon) => state.Find(weapon) is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding } ? holding.Holder : null;
+        string? Holder(string weapon) => state.Find(weapon) is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } item
+            && ScenarioA1WithdrawalEquipmentRules.MayChooseDrop(state.Phase, moving.Contains(holding.Holder),
+                state.Unit(holding.Holder)?.Status == InstanceStatus.Active, item.Status == InstanceStatus.Active, true) ? holding.Holder : null;
         if (ScenarioA1Withdrawal.ForeignDrop(named, weapon => Holder(weapon) is { } holder && moving.Contains(holder)) is { } foreign)
         {
             return (new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal), ScenarioA1CloseCombatRules.DropBarText(foreign));

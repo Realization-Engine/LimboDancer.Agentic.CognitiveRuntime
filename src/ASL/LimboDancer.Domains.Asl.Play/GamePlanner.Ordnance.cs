@@ -978,6 +978,7 @@ public sealed partial class GamePlanner
                 JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
             {
                 SpotterWiringVersion = facts.Spotter is not null ? 1 : null,
+                ConfigurationUseVersion = 1,
                 VehicleArmamentEvidence = facts.VehicleBreakdown is not null && state.Unit(facts.Gun.GunId!) is { } firingVehicle
                     ? VehicleArmamentFacts.Evidence(state, firingVehicle) : null,
             },

@@ -334,6 +334,11 @@ public sealed partial class GamePlanner
             return PlanCurrentVehicleRepair(scope, attemptId, expected, label, actor, state, named, weaponName, heroId);
         }
 
+        if (SupportWeaponRepairReadiness(state, unitId, equipmentId).Reason is { } currentRepairBar)
+        {
+            return Refused(scope, label, expected, currentRepairBar);
+        }
+
         if (ScenarioA1RallyRules.SwRepairPhaseBar(state.Phase) is { } phaseBar)
         {
             return Refused(scope, label, expected, phaseBar);
@@ -384,7 +389,7 @@ public sealed partial class GamePlanner
             var events = new List<GameEvent>
             {
                 Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "repair", 1, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null),
-                Event(scope, attemptId, 2, expected, "repair-attempted", new RepairAttempted(unit.Id, equipment.Id, rollId, repairNumber, result), package, withheld),
+                Event(scope, attemptId, 2, expected, "repair-attempted", new RepairAttempted(unit.Id, equipment.Id, rollId, repairNumber, result) { SupportWeaponRepairVersion = 1 }, package, withheld),
             };
             if (result == RepairAttempted.Repaired)
             {
@@ -410,7 +415,32 @@ public sealed partial class GamePlanner
     }
 
 
+    /// <summary>Selected SW repair readiness, without constructing events or rolling.</summary>
+    public static SupportWeaponReadiness SupportWeaponRepairReadiness(GameState state, string unitId, string equipmentId)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var unit = state.Unit(unitId);
+        var weapon = state.Find(equipmentId) as EquipmentInstance;
+        var repair = weapon?.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Repair : null;
+        var weaponNation = weapon?.Definition is { } weaponReference ? FireReference.Value.Definitions.GetValueOrDefault(weaponReference.Definition)?.Nationality : null;
+        var unitNation = unit?.Definition is { } unitReference ? FireReference.Value.Definitions.GetValueOrDefault(unitReference.Definition)?.Nationality : null;
+        bool? captured = weaponNation is null || unitNation is null ? null : ScenarioA1FireEligibility.CapturedBy(weaponNation, unitNation) == true;
+        return SupportWeaponRepairRead.Evaluate(state, unitId, equipmentId,
+            captured, repair);
+    }
+
     private static UnitDefinition? VehicleRepairDefinition(GameState state, UnitInstance vehicle) => VehicleArmamentFacts.Definition(state, vehicle);
+
+    public static string? SupportWeaponRepairDetails(GameState state, string unitId, string equipmentId)
+    {
+        if (state.Unit(unitId) is not { } unit || state.Find(equipmentId) is not EquipmentInstance { Definition: { } reference }
+            || FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Repair is not { } repair)
+        {
+            return null;
+        }
+        var used = state.SupportWeaponRepairs.Count(item => item.Unit == unitId && item.PlayerTurn == state.PlayerTurnOrdinal);
+        return $"Repair on dr ≤ {repair}; 6 eliminates it. Attempts used: {used} of {ScenarioA1SupportWeaponUseRules.Capacity(unit.Kind)} this Player Turn.";
+    }
 
     private string? RepairParticipantBar(GameState state, JsonElement arguments)
     {

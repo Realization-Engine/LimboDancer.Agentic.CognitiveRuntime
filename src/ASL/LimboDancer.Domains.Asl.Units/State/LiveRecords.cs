@@ -47,6 +47,13 @@ public sealed record ResidualFire(BoardLocation Location, int Fp, string Fire);
 /// </summary>
 public sealed record RepairAttempted(string Unit, string Equipment, string Roll, int RepairNumber, string Result) : EventPayload
 {
+    /// <summary>Current SW eligibility and per-weapon accounting. Null retains legacy record verification.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? SupportWeaponRepairVersion
+    {
+        get; init;
+    }
+
     /// <summary>Versioned repair source values. Null preserves the earlier catalog read.</summary>
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public VehicleArmamentEvidence? VehicleArmamentEvidence
@@ -864,7 +871,21 @@ public sealed record RallyPhaseActionTaken(IReadOnlyList<string> Units, string A
 /// <c>recovery-attempted</c>: a unit's attempt to Recover a SW (A4.44; ruling R13.5): the dr, its DRM, and whether it succeeded; in the MPh it costs one
 /// MF. A successful Recovery's transfer of the SW follows.
 /// </summary>
-public sealed record RecoveryAttempted(string Unit, string Weapon, string Roll, int Drm, bool Recovered) : EventPayload;
+public sealed record RecoveryAttempted(string Unit, string Weapon, string Roll, int Drm, bool Recovered) : EventPayload
+{
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? RecoveryVersion
+    {
+        get; init;
+    }
+
+    /// <summary>Terrain read from the recorded map version for current recovery eligibility.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? Terrain
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>opportunity-fire-declared</c>: Infantry marked with a Bounding Fire counter in their PFPh as Opportunity Firers (A7.25; backlog pass 12, ruling

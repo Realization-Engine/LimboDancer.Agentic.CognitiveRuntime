@@ -21,6 +21,7 @@
 }
 <div class="action-form">
     <UnitSelectionList Rows="@ShownUnits" Selected="@Selected" CssClass="advance-unit" Legend="Units advancing" Empty="none may advance now." OnToggle="@OnToggle" />
+    @WeaponHandling?.Invoke(scope)
 @if (Selected.Count > 0)
 {
 <ActionFormGroup Legend="Destination">
@@ -53,6 +54,7 @@ else if (Units.Count > 0)
     [Parameter] public IReadOnlyDictionary<string, string?> Locations { get; set; } = new Dictionary<string, string?>();
     [Parameter] public EventCallback OnClear { get; set; }
     private string? scope;
+    [Parameter] public RenderFragment<string?>? WeaponHandling { get; set; }
     private string? lastPicked;
     private long seenPick = -1;
     private IReadOnlyList<UnitSelectionList.Row> ShownUnits => scope is null ? Units : [.. Units.Where(unit => InHex(unit.Id, scope))];

@@ -289,6 +289,69 @@ public static partial class GameProjector
                 };
             }
 
+            if (gameEvent.Payload is PhaseChanged)
+            {
+                next = next with
+                {
+                    SupportWeaponTransferParticipants = [],
+                    SupportWeaponPhaseUses = previous?.PlayerTurnOrdinal == next.PlayerTurnOrdinal ? next.SupportWeaponPhaseUses : [],
+                };
+            }
+            else if (gameEvent.Payload is EquipmentTransferred { TransferredBy: { } giver, Holding: { } recipient })
+            {
+                next = next with
+                {
+                    SupportWeaponTransferParticipants = [.. next.SupportWeaponTransferParticipants.Append(giver).Append(recipient.Holder).Distinct(StringComparer.Ordinal)],
+                    RallyPhaseActions = Rules.ScenarioA1SupportWeaponPossessionRules.RecordsRallyTransfer(next.Phase)
+                        ? [.. next.RallyPhaseActions.Append(giver).Append(recipient.Holder).Distinct(StringComparer.Ordinal)] : next.RallyPhaseActions,
+                };
+            }
+
+            if (gameEvent.Payload is FireResolved weaponFire && weaponFire.Facts.TryGetProperty("firers", out var weaponFirers)
+                && weaponFirers.ValueKind == JsonValueKind.Array)
+            {
+                var uses = new HashSet<SupportWeaponPhaseUse>(next.SupportWeaponPhaseUses);
+                foreach (var firer in weaponFirers.EnumerateArray())
+                {
+                    if (!firer.TryGetProperty("unitId", out var firingUnit) || firingUnit.GetString() is not { } firingId)
+                    {
+                        continue;
+                    }
+
+                    if (!firer.TryGetProperty("usesInherentFp", out var inherent) || inherent.ValueKind != JsonValueKind.False)
+                    {
+                        uses.Add(new SupportWeaponPhaseUse(firingId, null, next.Phase));
+                    }
+
+                    if (firer.TryGetProperty("weapons", out var firingWeapons) && firingWeapons.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var usedWeapon in firingWeapons.EnumerateArray())
+                        {
+                            if (usedWeapon.TryGetProperty("equipmentId", out var equipment) && equipment.GetString() is { } weaponId)
+                            {
+                                uses.Add(new SupportWeaponPhaseUse(firingId, weaponId, next.Phase));
+                                if (firer.TryGetProperty("partner", out var partner) && partner.ValueKind == JsonValueKind.String && partner.GetString() is { } partnerId)
+                                {
+                                    uses.Add(new SupportWeaponPhaseUse(partnerId, weaponId, next.Phase));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                next = next with
+                {
+                    SupportWeaponPhaseUses = [.. uses],
+                };
+            }
+            else if (gameEvent.Payload is OrdnanceFired { Crew: { } crewId } weaponShot)
+            {
+                next = next with
+                {
+                    SupportWeaponPhaseUses = [.. next.SupportWeaponPhaseUses.Append(new SupportWeaponPhaseUse(crewId, weaponShot.Gun, next.Phase)).Distinct()],
+                };
+            }
+
             // D5.42 (pass 65, the boundary review): a vehicle whose crew left it this Player Turn, by a voluntary Abandonment or an Abandoned condition.
             var crewLeft = gameEvent.Payload switch
             {
@@ -1368,6 +1431,18 @@ public static partial class GameProjector
         /// </summary>
         private GameState? Ordnance(GameState state, OrdnanceFired fired)
         {
+            if (fired.ConfigurationUseVersion is { } configurationVersion)
+            {
+                if (configurationVersion != 1)
+                {
+                    return Fail<GameState>("UNIT-STATE-SW-FIRE", "Unsupported configuration-use reading.");
+                }
+                if (SupportWeaponConfigurationRead.FireRefusal(state, fired.Crew, [fired.Gun], false) is { } configurationRefusal)
+                {
+                    return Fail<GameState>("UNIT-STATE-SW-FIRE", configurationRefusal);
+                }
+            }
+
             if (ordnanceVerifier is null)
             {
                 return Fail<GameState>("UNIT-STATE-023", "An ordnance record can be replayed only with the Ordnance verifier.");
@@ -2092,6 +2167,38 @@ public static partial class GameProjector
 
         private GameState? Fire(GameState state, FireResolved fire, GameEvent gameEvent)
         {
+            if (fire.ConfigurationUseVersion is { } version)
+            {
+                if (version != 1)
+                {
+                    return Fail<GameState>("UNIT-STATE-SW-FIRE", "Unsupported configuration-use reading.");
+                }
+                if (fire.Facts.TryGetProperty("firers", out var firers) && firers.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var firer in firers.EnumerateArray())
+                    {
+                        if (!firer.TryGetProperty("unitId", out var unitId) || unitId.ValueKind != JsonValueKind.String)
+                        {
+                            return Fail<GameState>("UNIT-STATE-SW-FIRE", "A firing unit is required.");
+                        }
+                        var id = unitId.GetString()!;
+                        string[] weapons = firer.TryGetProperty("weapons", out var named) && named.ValueKind == JsonValueKind.Array
+                            ? [.. named.EnumerateArray().Where(item => item.TryGetProperty("equipmentId", out var equipment) && equipment.ValueKind == JsonValueKind.String)
+                                .Select(item => item.GetProperty("equipmentId").GetString()!)] : [];
+                        var inherent = !firer.TryGetProperty("usesInherentFp", out var value) || value.ValueKind != JsonValueKind.False;
+                        if (SupportWeaponConfigurationRead.FireRefusal(state, id, weapons, inherent) is { } refusal)
+                        {
+                            return Fail<GameState>("UNIT-STATE-SW-FIRE", refusal);
+                        }
+                        if (firer.TryGetProperty("partner", out var partner) && partner.ValueKind == JsonValueKind.String
+                            && SupportWeaponConfigurationRead.FireRefusal(state, partner.GetString()!, weapons, false) is { } partnerRefusal)
+                        {
+                            return Fail<GameState>("UNIT-STATE-SW-FIRE", partnerRefusal);
+                        }
+                    }
+                }
+            }
+
             var eventId = gameEvent.EventId;
             // Fire in Live Play: the record must reproduce through the Fire package, which the Units project does not
             // reference, so replay refuses it without a verifier.
@@ -2442,6 +2549,11 @@ public static partial class GameProjector
 
         private GameState? Repair(GameState state, RepairAttempted repair)
         {
+            if (repair.SupportWeaponRepairVersion is { } version && (version != 1 || repair.Unit == repair.Equipment))
+            {
+                return Fail<GameState>("UNIT-STATE-SW-REPAIR", "Unsupported or inapplicable SW repair version.");
+            }
+
             var repairState = state;
             if (repair.VehicleArmamentEvidence is { } evidence)
             {
@@ -2565,6 +2677,22 @@ public static partial class GameProjector
             var printed = equipment.Definition is { } reference && catalog?.Definition(reference.Definition) is { } definition
                 ? definition.Printed("malfunctioned", "asl:repair")?.Value?.Number
                 : null;
+            if (repair.SupportWeaponRepairVersion is { } swVersion)
+            {
+                if (swVersion != 1)
+                {
+                    return Fail<GameState>("UNIT-STATE-SW-REPAIR", "Unsupported SW repair version.");
+                }
+
+                var weaponNation = equipment.Definition is { } weaponReference ? catalog?.Definition(weaponReference.Definition)?.Nationality : null;
+                var unitNation = unit.Definition is { } unitReference ? catalog?.Definition(unitReference.Definition)?.Nationality : null;
+                bool? captured = weaponNation is null || unitNation is null ? null : Rules.ScenarioA1FireEligibility.CapturedBy(weaponNation, unitNation) == true;
+                if (SupportWeaponRepairRead.Evaluate(state, unit.Id, equipment.Id, captured, (int?)printed).Reason is { } reason)
+                {
+                    return Fail<GameState>("UNIT-STATE-SW-REPAIR", reason);
+                }
+            }
+
             var dr = roll.Values[0];
             var expected = RepairResult(Rules.ScenarioA1RallyRules.SwRepairResult(dr, repair.RepairNumber));
             if (!Rules.ScenarioA1RoutRallyProjection.SwRepairRecordAgrees(printed, repair.RepairNumber, repair.Result == expected))
@@ -2576,6 +2704,8 @@ public static partial class GameProjector
             return state with
             {
                 RepairsThisPhase = state.RepairsThisPhase.Contains(unit.Id) ? state.RepairsThisPhase : [.. state.RepairsThisPhase, unit.Id],
+                SupportWeaponRepairs = [.. state.SupportWeaponRepairs.Where(item => item.PlayerTurn == state.PlayerTurnOrdinal),
+                    new SupportWeaponRepairUse(unit.Id, equipment.Id, state.PlayerTurnOrdinal)],
             };
         }
 
@@ -3809,6 +3939,26 @@ public static partial class GameProjector
         /// <summary>A Recovery attempt (A4.44; ruling R13.5): in the RPh as the unit's action, or in its MPh for one MF, once per SW per phase, its dr agreeing.</summary>
         private GameState? AttemptRecovery(GameState state, RecoveryAttempted recovery)
         {
+            Rules.SupportWeaponRecoveryFacts? currentFacts = null;
+            if (recovery.RecoveryVersion is { } version)
+            {
+                if (version != 1)
+                {
+                    return Fail<GameState>("UNIT-STATE-SW-RECOVERY", "Unsupported recovery reading.");
+                }
+                currentFacts = SupportWeaponRecoveryRead.Facts(state, recovery.Unit, recovery.Weapon, catalogs, vocabulary, recovery.Terrain);
+                if (Rules.ScenarioA1SupportWeaponPossessionRules.RecoveryRefusal(currentFacts) is { } reason)
+                {
+                    return Fail<GameState>("UNIT-STATE-SW-RECOVERY", reason);
+                }
+
+                if (recovery.Drm != Rules.ScenarioA1SupportWeaponRules.RecoveryDrm(
+                    state.Unit(recovery.Unit) is { } actor && GameState.Condition(actor, Conditions.Cx) == ConditionState.True, state.Night))
+                {
+                    return Fail<GameState>("UNIT-STATE-SW-RECOVERY", "The Recovery DRM does not match the recorded conditions.");
+                }
+            }
+
             var key = recovery.Unit + "|" + recovery.Weapon;
             if (state.Phase is not ("rph" or "mph") || Active(state, recovery.Unit) is not UnitInstance unit || state.Find(recovery.Weapon) is not EquipmentInstance
                 || !rolls.TryGetValue(recovery.Roll, out var roll) || roll.Count != 1 || roll.Sides != 6 || Rules.ScenarioA1OrdnanceProjection.Recovered(roll.Values[0], recovery.Drm) != recovery.Recovered
@@ -3818,10 +3968,33 @@ public static partial class GameProjector
                 return Fail<GameState>("UNIT-STATE-041", "A Recovery attempt is made once per SW in the RPh or MPh, and its dr agrees with its result (A4.44).");
             }
 
-            var next = state.Phase == "mph" && state.Find(recovery.Weapon) is EquipmentInstance { Holding: null } ? Replace(state, unit with
+            var cost = currentFacts is null ? state.Phase == "mph" && state.Find(recovery.Weapon) is EquipmentInstance { Holding: null } ? 1 : 0
+                : Rules.ScenarioA1SupportWeaponPossessionRules.RecoveryMf(state.Phase,
+                    Rules.ScenarioA1SupportWeaponPossessionRules.FromBrokenHolder(currentFacts.Held, currentFacts.FriendlyHolder, currentFacts.BrokenHolder, currentFacts.RecoveringSmc));
+            var next = cost > 0 ? Replace(state, unit with
             {
-                MfSpent = unit.MfSpent + 1
+                MfSpent = unit.MfSpent + cost
             })! : state;
+            if (currentFacts is not null && cost > 0 && state.Location(unit.Id)?.Location is { } recoveryLocation)
+            {
+                var movement = state.Movement ?? new MovementState([unit.Id], recoveryLocation, 0, 0, false, false);
+                next = next with
+                {
+                    OrdnanceShotsHere = [],
+                    Movement = movement with
+                    {
+                        Movers = [unit.Id],
+                        Location = recoveryLocation,
+                        HalfMfInLocation = cost * 2,
+                        Step = movement.Step + 1,
+                        WindowOpen = true,
+                        From = null,
+                        RoadRate = false,
+                        MinimumMove = false,
+                        Dash = null,
+                    },
+                };
+            }
             return next with
             {
                 RecoveryAttempts = [.. next.RecoveryAttempts, key],
@@ -4599,6 +4772,17 @@ public static partial class GameProjector
                 return Fail<GameState>("UNIT-STATE-012", $"'{transfer.Id}' is not equipment.");
             }
 
+            if (transfer.TransferredBy is not null && (transfer.Holding is not { Role: HoldingRole.Possessed } || transfer.Position is not null))
+            {
+                return Fail<GameState>("UNIT-STATE-SW-TRANSFER", "A voluntary transfer gives possession to its recipient.");
+            }
+
+            if (transfer.TransferredBy is { } giver
+                && SupportWeaponTransferRead.Refusal(state, giver, transfer.Id, transfer.Holding?.Holder ?? string.Empty) is { } refusal)
+            {
+                return Fail<GameState>("UNIT-STATE-SW-TRANSFER", refusal);
+            }
+
             var position = transfer.Holding is { Role: not HoldingRole.Manned } ? null : transfer.Position;
             if (position is null && (transfer.Holding is null || transfer.Holding.Role == HoldingRole.Manned))
             {
@@ -4667,6 +4851,31 @@ public static partial class GameProjector
                 return null;
             }
 
+            if (change.ConfiguredBy is { } configuringUnit)
+            {
+                var readiness = SupportWeaponConfigurationRead.Evaluate(state, configuringUnit, change.Id, catalog);
+                if (readiness.Reason is { } configurationRefusal)
+                {
+                    return Fail<GameState>("UNIT-STATE-014", configurationRefusal);
+                }
+
+                var expected = GameState.Condition(item, Conditions.Dismantled) == ConditionState.True ? ConditionState.False : ConditionState.True;
+                var marked = Rules.ScenarioA1GunflashCalculator.PlacesFireCounter(Rules.GunflashCause.DismantleOrAssemble, state.Night);
+                var marker = Rules.ScenarioA1SupportWeaponConfigurationRules.FireCounter(state.Phase);
+                if (!change.Conditions.TryGetValue(Conditions.Dismantled, out var configured) || configured != expected
+                    || change.Conditions.Count != (marked ? 2 : 1)
+                    || marked && change.Conditions.GetValueOrDefault(marker) != ConditionState.True)
+                {
+                    return Fail<GameState>("UNIT-STATE-014", "The configuration change does not match its weapon use.");
+                }
+
+                state = state with
+                {
+                    SupportWeaponPhaseUses = [.. state.SupportWeaponPhaseUses.Append(new SupportWeaponPhaseUse(configuringUnit, item.Id, state.Phase, true)).Distinct()],
+                    SupportWeaponUses = [.. state.SupportWeaponUses.Append(new SupportWeaponUse(configuringUnit, item.Id)).Distinct()],
+                };
+            }
+
             var merged = new Dictionary<string, ConditionState>(item.Conditions, StringComparer.Ordinal);
             foreach (var (name, value) in change.Conditions)
             {
@@ -4687,7 +4896,19 @@ public static partial class GameProjector
             }
 
             // A9.8 (table player, pass 13): dismantling or assembling a MG in the PFPh is its possessor's use of a SW, so it does not move in the MPh.
-            if (item is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } dismantler }
+            if (change.ConfiguredBy is null && state.SetupClosed && item is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } legacyHolder }
+                && change.Conditions.TryGetValue(Conditions.Dismantled, out var legacyConfiguration)
+                && legacyConfiguration != ConditionState.Unknown && legacyConfiguration != GameState.Condition(item, Conditions.Dismantled)
+                && Rules.ScenarioA1SupportWeaponRules.DismantlePhase(state.Phase, state.Unit(legacyHolder.Holder)?.Side == state.PhasingSide)
+                && change.Conditions.GetValueOrDefault(Rules.ScenarioA1SupportWeaponConfigurationRules.FireCounter(state.Phase)) == ConditionState.True)
+            {
+                state = state with
+                {
+                    SupportWeaponPhaseUses = [.. state.SupportWeaponPhaseUses.Append(new SupportWeaponPhaseUse(legacyHolder.Holder, item.Id, state.Phase, true)).Distinct()],
+                };
+            }
+
+            if (change.ConfiguredBy is null && item is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } dismantler }
                 && Rules.ScenarioA1SequenceProjection.DismantlingUsesSupportWeapon(true, state.Phase, change.Conditions.ContainsKey(Conditions.Dismantled)))
             {
                 state = state with
