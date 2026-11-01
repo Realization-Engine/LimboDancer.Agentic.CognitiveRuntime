@@ -2,7 +2,7 @@
 
 Date: 1 November 2026
 
-Status: research and proposal. Nothing here is built by this document, and no ruling is made. The rulings in section 9 need the user's word before a design follows. The design would follow the pattern of the [Campaign Supply to ASL Glue Design](<Designs/Campaign Supply to ASL Glue Design.md>).
+Status: research and proposal; the rulings of section 9 were approved by the user on 2026-11-01. Nothing here is built by this document. The design would follow the pattern of the [Campaign Supply to ASL Glue Design](<Designs/Campaign Supply to ASL Glue Design.md>).
 
 ## 1. Question and conclusion
 
@@ -347,9 +347,9 @@ Disclosure follows the ASL discipline, extended to the Campaign:
 - A report's `Deceptive` flag is adjudicator-only, always.
 - No Campaign surface (a disabled action's reason, a route highlight, a tactical preview, a computer side's choice) may reveal ground truth the viewer's picture does not hold. The Campaign needs a viewer-scoped view of its state, as `GameView` is for ASL, before any of this is built.
 
-## 9. Rulings needed
+## 9. Rulings
 
-Each carries a proposal.
+Approved: the user approved every proposal of this section on 2026-11-01. Each ruling below holds as its proposal is written. I6 and I12 are recorded in the backlog, section 95.
 
 | Id | Question | Proposal |
 |---|---|---|
