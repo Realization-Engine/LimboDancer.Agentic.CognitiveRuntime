@@ -6,7 +6,7 @@ Status: proposed design. Nothing is built. Implementation waits for the user's a
 
 Built on it:
 
-- [Campaign Supply to ASL Glue Design](<Campaign Supply to ASL Glue Design.md>) (its rulings G1 to G7 still need the user's word);
+- [Campaign Supply to ASL Glue Design](<Campaign Supply to ASL Glue Design.md>) (its rulings G1 to G7 approved 2026-11-01);
 - [Campaign Intelligence Design](<Campaign Intelligence Design.md>) and [Campaign Intelligence to ASL Glue Design](<Campaign Intelligence to ASL Glue Design.md>) (on rulings I1 to I12, approved 2026-11-01);
 - [Campaign Dynamic SSR Design](<Campaign Dynamic SSR Design.md>), which turns the Campaign's terms into the card's special rules and gives them an authoring workflow.
 

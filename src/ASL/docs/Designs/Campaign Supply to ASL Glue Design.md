@@ -2,9 +2,9 @@
 
 Date: 1 November 2026
 
-Status: proposed design. Nothing is built. Implementation waits for the user's approval of this design and of the rulings in section 10. The user said on 2026-10-31 that the Campaign's supply mechanics may be redesigned; this design therefore states what the Campaign's supply model must provide, and proposes that model, rather than adapting to the prototype's current packages.
+Status: proposed design. Nothing is built. The rulings of section 10 (G1 to G7) were approved by the user on 2026-11-01. Implementation waits for the user's approval of the design itself. The user said on 2026-10-31 that the Campaign's supply mechanics may be redesigned; this design therefore states what the Campaign's supply model must provide, and proposes that model, rather than adapting to the prototype's current packages.
 
-Amended 2026-11-01: at the user's request, the foundation shared with intelligence moved to the [Campaign Core and Situation Boundary Design](<Campaign Core and Situation Boundary Design.md>): the library the supply model lives in, the boundary event the Supply Determination is a section of, the handoff onto a card (formerly task S3, now the core's CB6), the `CampaignTerms` field the Supply Terms ride in, and the result intake the Supply Report is a section of. The card's supply SSRs are generated through the [Campaign Dynamic SSR Design](<Campaign Dynamic SSR Design.md>). The rulings of section 10 are unchanged and still need the user's word.
+Amended 2026-11-01: at the user's request, the foundation shared with intelligence moved to the [Campaign Core and Situation Boundary Design](<Campaign Core and Situation Boundary Design.md>): the library the supply model lives in, the boundary event the Supply Determination is a section of, the handoff onto a card (formerly task S3, now the core's CB6), the `CampaignTerms` field the Supply Terms ride in, and the result intake the Supply Report is a section of. The card's supply SSRs are generated through the [Campaign Dynamic SSR Design](<Campaign Dynamic SSR Design.md>). The rulings of section 10 were unchanged by the amendment, and the user approved them as amended on 2026-11-01.
 
 Source analysis: [Campaign Supply and ASL Rulebook Supply Hooks Analysis](<../Campaign Supply and ASL Rulebook Supply Hooks Analysis.md>), which lists the rulebook's supply rules, their pages, and their state in the code. Section 8 of that analysis gives the findings this design rests on.
 
@@ -177,9 +177,9 @@ PilotHost references ASL's Play and Units projects (for the handoff) and asks Ru
 
 Arnhem (Situation 10), British side. The Campaign finds the British 1st Airborne formations at the bridge `Isolated` in one pocket at boundary 3, as they were at boundary 2; attrition moves their `Ammunition` from `Low` to `Exhausted`. They hold all the British on-board squad-equivalents, so the card carries a generated SSR (numbered after the Situation's own SSRs), `ammo-shortage:allied` (the token names the card's side id; the Campaign's cards use `allied` and `german`, with the nationality `british`), public text "The British on-board OB has Ammunition Shortages (A19.131)." The British side's private part of `CampaignTerms` adds the cause, "1st Airborne Division at the bridge: isolated since boundary 2"; the German side does not see it. There is no compatible stock at a receiving point in the pocket, so no Ammo Dump. The formations cannot be committed to an attack mission; this Situation is a defense, so they are committed. At the end, every British formation that fired loses one step (already `Exhausted`), British losses and Replacements return to the roster, and German captured weapons go to the German side.
 
-## 10. Rulings needed
+## 10. Rulings
 
-Each carries a proposal.
+Approved: the user approved every proposal of this section on 2026-11-01, as amended onto the core (G7's work is the core's task CB6). Each ruling below holds as its proposal is written.
 
 | Id | Question | Proposal |
 |---|---|---|
@@ -195,7 +195,7 @@ Each carries a proposal.
 
 | Task | Work | Depends on |
 |---|---|---|
-| S1 | Rulings G1 to G7 | This design |
+| S1 | Rulings G1 to G7: done, approved 2026-11-01 | This design |
 | S2 | Campaign supply state and Supply Determination (sections 3, 4) as the boundary event's Supply section, with tests over the 17 Situations | G1, G3; core CB1 to CB5 |
 | S3 | Moved to the core as CB6: the handoff builds a Scenario Card | |
 | S4 | `SupplyTerms` in `CampaignTerms`, and `ammo-shortage:<side>` on the card through its term rule (5.1, 5.2) | S2, G2; core CB6, CB7; Dynamic SSR design DS3 |
