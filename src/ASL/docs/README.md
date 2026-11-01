@@ -126,6 +126,8 @@ Scenario A1 state changes only in live games: the Map Studio's registered game a
 
 [Campaign Supply and ASL Rulebook Supply Hooks Analysis](<Campaign Supply and ASL Rulebook Supply Hooks Analysis.md>) surveys the whole rulebook for supply rules (A19.131 Ammunition Shortages, E10 Ammo Vehicles and Dumps, C1.211 Plentiful and Scarce OBA, the module Campaign Game rules) and proposes how campaign supply state maps onto them. Status: analysis and proposal, 2026-10-31.
 
+[Campaign Supply to ASL Glue Design](<Designs/Campaign Supply to ASL Glue Design.md>) designs the connection: per-formation supply steps and a Supply Determination at each Situation boundary in the Campaign, supply terms on the Scenario Card, and a Supply Report applied once at the result. Status: proposed design, 2026-11-01.
+
 [Western Theater Situation Catalog and Decision Cascade](<Western Theater Situation Catalog and Decision Cascade.md>) surveys the legacy Panzer Leader cards, prioritizes additional campaign situations and maps their source constraints to proposed command decisions.
 
 [Ardennes Command Decision Contract Specification](<Ardennes Command Decision Contract Specification.md>) defines the first optional command/supply/leadership window using PL14 and PL15, with finite allocations, timed delivery, explicit variants, deterministic choices and acceptance cases. Status: proposed contract, 9 October 2026.
