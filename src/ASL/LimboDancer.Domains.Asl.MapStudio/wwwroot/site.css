@@ -2201,8 +2201,18 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     align-items: start;
 }
 
-.card-editor-form.with-map {
-    grid-template-columns: 11rem minmax(0, 1fr) minmax(18rem, 38%);
+/* The map stands above the section it serves, at every width (the user, 2026-10-31). */
+.card-editor-form.with-map .card-sections {
+    grid-row: 1 / span 2;
+}
+
+.card-editor-form.with-map .card-map-dock {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.card-editor-form.with-map .card-section-body {
+    grid-column: 2;
 }
 
 .card-sections {
@@ -2590,10 +2600,6 @@ li.card-outcome {
 }
 
 .card-map-dock {
-    position: sticky;
-    top: var(--card-bar);
-    max-height: calc(100vh - var(--card-bar) - 1rem);
-    overflow: auto;
     padding: 0.5rem;
     background: var(--surface);
     border: 1px solid var(--line);
@@ -2607,6 +2613,11 @@ li.card-outcome {
     min-height: 14rem;
 }
 
+/* Above the form on a wide screen, the whole board would fill the window: it shrinks to fit, centred, so the form starts on the first screen. */
+.card-map .board-host:not(.rotated) > .board-svg {
+    max-height: 40vh;
+}
+
 .card-map-dock > summary {
     font-size: 0.85rem;
     color: var(--muted);
@@ -2618,27 +2629,6 @@ li.card-outcome {
     border-radius: var(--radius);
     background: var(--surface-2);
     font-size: 0.85rem;
-}
-
-@media (max-width: 1279.98px) {
-    .card-editor-form.with-map {
-        grid-template-columns: 10rem minmax(0, 1fr);
-    }
-
-    .card-editor-form.with-map .card-map-dock {
-        grid-column: 2;
-        grid-row: 1;
-        position: static;
-        max-height: none;
-    }
-
-    .card-editor-form.with-map .card-section-body {
-        grid-column: 2;
-    }
-
-    .card-editor-form.with-map .card-sections {
-        grid-row: 1 / span 2;
-    }
 }
 
 @media (max-width: 767.98px) {
