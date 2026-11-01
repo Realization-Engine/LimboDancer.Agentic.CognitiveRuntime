@@ -25,4 +25,15 @@ for arguments in ({"rules": "missing"}, {"wires": "missing"}, {"approved": ""}, 
     assert not combined and faults, arguments
 combined, faults, _ = check_record(state="proposed")
 assert not combined and not faults
+combined, _, _ = check_record()
+claims = {"R": {"branch": "feature", "state": "wired", "files": {"Held.cs": False}}}
+faults = []
+c.check_branch(claims, "feature", ["Held.cs"], faults, combined)
+assert not faults
+for branch, files, approval in (("feature", ["Other.cs"], combined),
+                                ("other", ["Held.cs"], combined),
+                                ("feature", ["Held.cs"], {})):
+    faults = []
+    c.check_branch(claims, branch, files, faults, approval)
+    assert faults, (branch, files, approval)
 print("Combined-delivery approval and held-file checks passed.")

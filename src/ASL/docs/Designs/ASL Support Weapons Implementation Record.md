@@ -6,7 +6,7 @@ Status: historical checkpoint, superseded by [Support Weapons Studio Demo](<ASL 
 
 The user approved implementing Rules and callers together on this branch before merge. The exception is recorded in the proposed design. Worktree: `C:/Users/dland/.codex/worktrees/support-weapons-implementation/LimboDancer.MCP`; branch `codex/support-weapons-implementation`.
 
-Document-only claim commit `c2d03ac3` was pushed to main as the required claim lock. No application implementation has been merged. Claims A4.43 (including A4.431/.44), A9.72, A9.8 and A11.21 remain claimed, not built/reviewed. Their Rules file holds are in the inventory.
+Document-only claim commit `c2d03ac3` was pushed to main as the required claim lock. No application implementation has been merged. At this checkpoint, claims A4.43 (including A4.431/.44), A9.72, A9.8 and A11.21 were claimed, not yet built or reviewed. Their current states and Rules file holds are in the inventory.
 
 ## Implemented so far
 

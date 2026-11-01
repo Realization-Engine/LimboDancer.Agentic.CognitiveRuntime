@@ -426,8 +426,13 @@ def branch_ref(branch):
     return None
 
 
-def check_branch(claims, branch, files, faults):
-    held = {file for claim in claims.values() if claim["branch"] == branch and claim["state"] in HOLDING for file in claim["files"]}
+def check_branch(claims, branch, files, faults, combined=None):
+    # A combined delivery reaches wired before its single PR merges. Its approved
+    # Rules file list still authorizes that diff, without broadening any hold.
+    completed = {rule for _, rule in (combined or {})}
+    held = {file for name, claim in claims.items() if claim["branch"] == branch
+            and (claim["state"] in HOLDING or claim["state"] == "wired" and name in completed)
+            for file in claim["files"]}
     for file in files:
         if file not in held:
             faults.append(f"{file} is a Rules file this branch changes, and no claim of branch {branch} holds it (claim it first: AGENTS.md)")
@@ -495,7 +500,7 @@ def main():
             if value("--base") is not None:
                 check_wiring_branch(wiring, branch, changed_files(value("--base")) or [], faults)
             if any(claim["branch"] == branch for claim in claims.values()):
-                check_branch(claims, branch, files, faults)
+                check_branch(claims, branch, files, faults, combined)
         else:
             check_branch(claims, branch, files, faults)
     if "--touched" in args:

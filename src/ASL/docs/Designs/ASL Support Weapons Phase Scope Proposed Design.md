@@ -2,6 +2,12 @@
 
 Status: implementation approved. Based on the [phase scope analysis](<../ASL Support Weapons Phase Scope Analysis.md>) at main `7b5655ac`.
 
+Follow-up review, 2026-11-01: the A11.21 retained-load verdict takes the unit id and calls `ScenarioA1CloseCombatRules.WithdrawalPortageBar`, preserving the command's unit-specific refusal and citations. Transfer calls the existing D6.31 `TransferBar` for stationary carriage: a Passenger can transfer to another PRC of its vehicle or Infantry on foot in its Location; Infantry cannot pass a weapon into a vehicle through ordinary transfer. Motion remains not-evaluated until its additional relationships are supplied.
+
+Recovery deliberately keeps only the recovering unit in `Movement.Movers`, the participants in this MF expenditure, while preserving `Movement.Members`, the original moving stack. A4.44 (PDF p. 50) charges the recovering unit; A8.1 (p. 59) permits Defensive First Fire against units expending MF. Including the other stack members in this expenditure would expose units that paid none. Under A4.2 (p. 49), the preserved members can continue or end their movement before unrelated units move. `EndMovement` removes only ended members and `Settle` retains the context until all members finish. This records the existing distinction, not a new rule reading.
+
+This does not establish complete C6.17 accounting when members alternate expenditures. The current single-context MF/shot history can discard a returning member's unused allowance. Backlog section 94 records the reproducer and the required per-target history; retaining every member in `Movers` would not fix it. Same-spender recovery retains its current-Location shots and adds only its own MF.
+
 Task-specific authorization: the user approved implementing the Rules prerequisites and dependent UI together on `codex/support-weapons-implementation` in the isolated `support-weapons-implementation` worktree, before either merges. This overrides this document's separate-merge sequencing requirement for this task only. Rule ownership, the Rules-only decision boundary, targeted verification, replay compatibility and claim coordination still apply. Prepare a full Studio demo for review; do not merge this work without the user's approval.
 
 ## 1. User experience
@@ -30,7 +36,7 @@ Use separate Recover, Transfer and Repair workflows during Rally. Keep configura
 | Repair | Holder's eligible or relevant malfunctioned weapons, actual repair number/outcome information when known, remaining permitted attempts where Rules supplies them, then `Propose repair`. Vehicle repair keeps its established workflow and calculator. |
 | Configure | Selected weapon's present state and exactly one applicable `Propose assemble` or `Propose dismantle` button. Show PP/use consequences. Do not require selecting the weapon for an attack or having a fire target. Malfunctioned but configurable weapons must remain reachable. |
 | Rout preparation | `Carry` and `Leave behind`, with the Rules-approved load choices. Required retained equipment cannot be freely unchecked. Recompute route readiness after changing the load. |
-| CC withdrawal | Per withdrawing unit: carried PP/capacity, permitted drops, destination and readiness. A short instruction such as `Leave enough equipment to withdraw` appears only when needed. Rules determines whether voluntary drops below the capacity limit are permitted; the page must not assume an overload is the sole reason to offer them. |
+| CC withdrawal | Per withdrawing unit: carried PP/capacity, permitted drops, destination and readiness. When overloaded, present the shared unit-specific refusal with A11.21/A4.43 citations. Rules determines whether voluntary drops below the capacity limit are permitted; the page must not assume an overload is the sole reason to offer them. |
 
 If configuration is eligible but the unit cannot otherwise fire, its weapon row still appears in a compact configuration group within the phase workflow. Configuration availability must not depend on Fire's attacker-candidate list. Likewise, movement weapon handling must remain reachable without first plotting a route.
 

@@ -1,6 +1,6 @@
 # Support Weapons: phase scope analysis
 
-Status: proposal for approval, 2026-10-31. No application or Rules implementation is authorized by this analysis.
+Status: analysis approved, 2026-10-31. The findings below describe the original baseline. Implementation was subsequently approved under SW-01; current verification and merge restrictions are recorded in the [Studio demo](<Designs/ASL Support Weapons Studio Demo.md>).
 
 Base: `origin/main` at `7b5655ac7c2c433a524803b1ccd3307ae38db0cf`, fetched before creating branch `codex/support-weapons-phase-scope`. Worktree: `C:/Users/dland/.codex/worktrees/support-weapons-phase-scope/LimboDancer.MCP`.
 
@@ -79,7 +79,7 @@ This table describes ordinary opportunities. Every row remains subject to Rules 
 | Defensive Fire, defending side | Fire and weapon configuration as in PFPh, with DFPh-specific eligibility and previous use. No routine transfer/drop/recovery section. |
 | Advancing Fire, phasing side | Weapon selection under Fire/ordnance, with movement/use restrictions decided by their calculators. No ordinary management section. Preserve supported German dm MG fire behavior. |
 | Rout, both sides in sequence | Show “Carry” and “Leave behind” inside each selected router's preparation, with Rules-computed valid loads and feedback. Freeze preparation when rout starts. No generic Support weapons form. |
-| Advance, phasing side | Weapon handling contains eligible Transfer and Drop operations for the selected units/Location. Transfer has its start-of-phase window; A4.43 permits dropping during the APh, including after advancement. Only a drop before advancing receives the start-of-phase unpossessed treatment. Keep carried-load consequences with destination readiness and preserve prior portage. Do not turn a normal transfer into an implicit part of an advance. |
+| Advance, phasing side | Weapon handling contains eligible Transfer and Drop operations for the selected units/Location. Transfer has its start-of-phase window. PR 96 review preserves the established A4.43 reading: the holder may drop only before advancing. Keep carried-load consequences with destination readiness and preserve prior portage. Do not turn a normal transfer into an implicit part of an advance. |
 | Close Combat | No generic Support weapons section or SW-counter attack selector (A11.13). Put permitted drop choices beneath a withdrawing unit, with carried PP and destination readiness. Treat ordinary Melee withdrawal, Ambush withdrawal and infiltration as distinct contexts requiring their own eligibility, rather than extending start-of-Melee permission automatically. Weapon loss/destruction remains a resolution effect, not a management button. |
 | Triggered opportunity in any phase | A dedicated pending Recovery opportunity for an eligible SMC after the qualifying event, with explicit attempt/decline and expiry. This needs Rules and event/projector work before it can be offered. It is not a freely reusable phase action. |
 
@@ -87,4 +87,4 @@ This table describes ordinary opportunities. Every row remains subject to Rules 
 
 The proposal was checked against the current source, PDF passages, existing inventory and backlog section 92. Review corrections incorporated: distinguish per-Location CC timing from a global flag; retain existing withdrawal load support; distinguish ordinary and exceptional recovery; preserve Rout's required load rather than importing it into CC; distinguish a Rules restriction from missing implementation/counter data; and avoid treating main's broad “built” inventory labels as proof of complete eligibility.
 
-A presentation-only fix cannot satisfy the requested Rules ownership. The proposed delivery starts with Rules audits/contracts, then their callers and contextual UI. No claims were taken, no tests/builds were run, and no application behavior changed. Support for additional capabilities is explicitly listed in backlog section 94 rather than silently assumed. Approval of the proposed design is needed before implementation.
+A presentation-only fix cannot satisfy the requested Rules ownership. The approved delivery starts with Rules audits/contracts, then their callers and contextual UI. This analysis itself changed no application behavior. The subsequent implementation follows the approved design and SW-01 exception. Additional capabilities remain in backlog section 94.
