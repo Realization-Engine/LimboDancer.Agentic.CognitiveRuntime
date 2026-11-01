@@ -68,6 +68,8 @@ The `rule_sites.py C6.17 --words OrdnanceShotsHere,RecoveryMovement` scan was fo
 
 ## Recommendation
 
+RC617.2 is a bounded simplification, not full C6.17 coverage (p. 173). The per-Location minimum may over-allow a shot in a Location where the target spent less than 1 MF, in a hex where that weapon already had an allowance against it in another Location, including one where it spent 1 MF or more. The gap is not restricted to two sub-1-MF Locations.
+
 Maintain a phase-scoped history per personnel target and full Location, with a separate shot count for each gun that has fired at that target there. Leaving and returning to a Location does not invent a fresh shot allowance: retain its earlier MF and shots. Keep attack-window eligibility separate. Record the new reading explicitly on ordnance events and facts; preserve the old path for events without it. Build the history from accepted events even during legacy replay so a continued old game can make a correct new proposal without rewriting its past.
 
 Supported successor targets inherit and rebase the predecessor's history before its id is retired. Broken/pinned targets retain it through the open window. Known excluded relationships explicitly retain the old reading for the target set; incomplete ordinary history must instead report not-evaluated. These are separate cases, not permission to fall back when the new calculation fails.
