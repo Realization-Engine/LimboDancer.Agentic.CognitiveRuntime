@@ -409,6 +409,13 @@ public sealed record OrdnanceCanisterAttack(string LocationId, IReadOnlyList<Fir
 /// </summary>
 public sealed record OrdnanceMovement(int? MpInLos, bool? NonAssault, bool? OpenGround, int? SpentHere, int? ShotsHere)
 {
+    /// <summary>C6.17 per-target reading. Null retains the serialized scalar reading; version 1 replaces its ceiling.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DefensiveFirstFirePersonnelFacts? PersonnelHistory
+    {
+        get; init;
+    }
+
     /// <summary>
     /// The MP of the moving vehicle the Gun's earlier shots at it in this Location already claimed (C6.17 and its EX): they count neither
     /// toward this shot's Case J1 or J2 nor toward its limit. Null is none.

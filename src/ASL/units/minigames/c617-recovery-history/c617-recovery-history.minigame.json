@@ -1,0 +1,231 @@
+{
+  "id": "c617-recovery-history",
+  "title": "C6.17 recovery history",
+  "card": "c617-recovery-history",
+  "rules": [
+    "C6.17"
+  ],
+  "contracts": [
+    "c6.17-personnel-history"
+  ],
+  "units": {
+    "g1": "german",
+    "r1": "russian",
+    "r2": "russian"
+  },
+  "example": {
+    "source": "Manufactured under R0.3; not a printed example or a played recovery sequence.",
+    "page": 173
+  },
+  "checks": [
+    {
+      "name": "B entered and recovered: first shot",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": "g1",
+        "targetId": "r2",
+        "weaponId": "gun1",
+        "location": "bd01:G5:0",
+        "halfMfSpent": 4,
+        "shotsHere": 0,
+        "inCurrentWindow": true
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "B retains a second shot",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": "g1",
+        "targetId": "r2",
+        "weaponId": "gun1",
+        "location": "bd01:G5:0",
+        "halfMfSpent": 4,
+        "shotsHere": 1,
+        "inCurrentWindow": true
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "B allowance exhausted",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": "g1",
+        "targetId": "r2",
+        "weaponId": "gun1",
+        "location": "bd01:G5:0",
+        "halfMfSpent": 4,
+        "shotsHere": 2,
+        "inCurrentWindow": true
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Firing side sees an exhausted allowance without target identity",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": "g1",
+        "targetId": null,
+        "weaponId": "gun1",
+        "location": "bd01:G5:0",
+        "halfMfSpent": 4,
+        "shotsHere": 2,
+        "inCurrentWindow": true
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Half-MF rounds down",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": "g1",
+        "targetId": "r2",
+        "weaponId": "gun1",
+        "location": "bd01:G5:0",
+        "halfMfSpent": 3,
+        "shotsHere": 1,
+        "inCurrentWindow": true
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Minimum one",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": "g1",
+        "targetId": "r2",
+        "weaponId": "gun1",
+        "location": "bd01:G5:0",
+        "halfMfSpent": 0,
+        "shotsHere": 0,
+        "inCurrentWindow": true
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "History does not reopen a window",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": "g1",
+        "targetId": "r2",
+        "weaponId": "gun1",
+        "location": "bd01:G5:0",
+        "halfMfSpent": 4,
+        "shotsHere": 0,
+        "inCurrentWindow": false
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Unknown MF is not permission",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": "g1",
+        "targetId": "r2",
+        "weaponId": "gun1",
+        "location": "bd01:G5:0",
+        "halfMfSpent": null,
+        "shotsHere": 0,
+        "inCurrentWindow": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Fractional half-MF is invalid",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": "g1",
+        "targetId": "r2",
+        "weaponId": "gun1",
+        "location": "bd01:G5:0",
+        "halfMfSpent": 1.5,
+        "shotsHere": 0,
+        "inCurrentWindow": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Firing side evaluates announced history without target identity",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": "g1",
+        "targetId": null,
+        "weaponId": "gun1",
+        "location": "bd01:G5:0",
+        "halfMfSpent": 4,
+        "shotsHere": 0,
+        "inCurrentWindow": true
+      },
+      "expect": {
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "Weapon identity hidden from target side",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "c6.17-personnel-history",
+      "facts": {
+        "phase": "MPh",
+        "firerId": null,
+        "targetId": "r2",
+        "weaponId": null,
+        "location": "bd01:G5:0",
+        "halfMfSpent": 4,
+        "shotsHere": 0,
+        "inCurrentWindow": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    }
+  ]
+}

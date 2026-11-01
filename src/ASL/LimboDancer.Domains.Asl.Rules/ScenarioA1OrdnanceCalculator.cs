@@ -31,7 +31,7 @@ public static class ScenarioA1OrdnanceCalculator
     {
         ArgumentNullException.ThrowIfNull(shot);
         ArgumentNullException.ThrowIfNull(reference);
-        var missing = Missing(shot);
+        var missing = Missing(shot, reference);
         if (missing.Count != 0)
         {
             return Refused(OrdnanceResolution.Indeterminate, missing);
@@ -284,7 +284,7 @@ public static class ScenarioA1OrdnanceCalculator
         return shot.Ammunition == ScenarioA1CanisterCalculator.Ammunition && shot.VehicleTarget is null;
     }
 
-    private static List<string> Missing(OrdnanceShot shot)
+    private static List<string> Missing(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
     {
         var missing = new List<string>();
         void Need(object? value, string name)
@@ -351,8 +351,11 @@ public static class ScenarioA1OrdnanceCalculator
         else if (shot.FireKind is not null)
         {
             Need(shot.Movement, "movement");
-            Need(shot.Movement?.SpentHere, "movement.spentHere");
-            Need(shot.Movement?.ShotsHere, "movement.shotsHere");
+            if (shot.Movement?.PersonnelHistory is null)
+            {
+                Need(shot.Movement?.SpentHere, "movement.spentHere");
+                Need(shot.Movement?.ShotsHere, "movement.shotsHere");
+            }
             if (shot.VehicleTarget is not null)
             {
                 Need(shot.Movement?.MpInLos, "movement.mpInLos");
@@ -362,6 +365,12 @@ public static class ScenarioA1OrdnanceCalculator
                 Need(shot.Movement?.NonAssault, "movement.nonAssault");
                 Need(shot.Movement?.OpenGround, "movement.openGround");
             }
+        }
+
+        if (shot.Movement?.PersonnelHistory is not null
+            && ScenarioA1DefensiveFirstFireHistoryCalculator.MovementFactsRefusal(shot, PersonnelHistoryTargets(shot, reference)) is not null)
+        {
+            missing.Add(Prefix + "fact-missing:movement.personnelHistory");
         }
 
         // Rulings R9.2, R9.4, R9.7: a Spotter, a directing leader, and the Panzerfaust's own facts.
@@ -590,8 +599,10 @@ public static class ScenarioA1OrdnanceCalculator
 
         // C6.17 (ruling R8.1): no more Defensive First Fire shots at a target in a Location than the MF or MP it spent there, a minimum of one;
         // against a vehicle the MP earlier shots claimed are spent (the C6.17 EX).
-        if (shot.Movement is { ShotsHere: { } shots, SpentHere: { } spent } movementFacts
-            && (shots >= Math.Max(spent, 1) || (shots > 0 && shot.VehicleTarget is not null && (movementFacts.MpClaimed ?? 0) >= spent)))
+        if (shot.Movement?.PersonnelHistory is { } historyFacts
+            ? ScenarioA1DefensiveFirstFireHistoryCalculator.ShotRefusal(historyFacts) is not null
+            : shot.Movement is { ShotsHere: { } shots, SpentHere: { } spent } movementFacts
+                && ScenarioA1DefensiveFirstFireHistoryCalculator.LegacyLimit(shots, spent, shot.VehicleTarget is not null, movementFacts.MpClaimed))
         {
             outside.Add(Prefix + "first-fire-limit");
         }
@@ -1478,6 +1489,15 @@ public static class ScenarioA1OrdnanceCalculator
         gun.LatwType == "atr" && gun.Caliber != 20 && shot.Hit!.GunTarget is { CrewUnitId: { } crew }
             ? [.. shot.Hit.Targets!.Where(item => item.UnitId == crew)]
             : shot.Hit!.Targets!;
+
+    /// <summary>The same personnel selection as resolution, also used by C6.17 binding and the future history projector.</summary>
+    public static IReadOnlyList<FireTarget>? PersonnelHistoryTargets(OrdnanceShot shot, ScenarioA1OrdnanceReference reference)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        ArgumentNullException.ThrowIfNull(reference);
+        return shot.Hit?.Targets is not null && shot.Gun?.DefinitionId is { } definition && reference.Weapon(definition) is { } gun
+            ? HitTargets(shot, gun) : null;
+    }
 
     /// <summary>
     /// The vehicles of the target Location an Infantry Target Type hit can affect (C3.32, A7.308, D.8B, p. 169; pass 60, ruling R60.8): each
