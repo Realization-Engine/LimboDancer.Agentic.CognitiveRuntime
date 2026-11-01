@@ -21,7 +21,7 @@ Read physical PDF pages in `eASLRB_v3_01.pdf`:
 | A4.2 | 49 | Units in an original moving stack can continue separately; its members finish before an unrelated unit starts. Membership and the current expenditure's participants are different facts. |
 | A4.44 | 50 | Ordinary MPh recovery spends one MF, whether the attempt succeeds or fails. The friendly broken-holder SMC exception spends none. |
 | A8.1, A8.11, A8.12 | 59 | Defensive First Fire concerns the current moving unit/stack, including MF spent in place. Past expenditures do not reopen a closed opportunity by themselves. |
-| C6.17 | 173-174 | A weapon's shot ceiling concerns that target's expenditure in that Location, rounded down with a minimum of one. ROF and Intensive Fire do not override the ceiling. |
+| C6.17 | 173-174 | A weapon's shot ceiling concerns that target's expenditure in that Location, rounded down with a minimum of once per hex. ROF and Intensive Fire do not override the ceiling. |
 | A8.14 | 59 | Breaking or pinning does not remove a target from follow-up attacks during its current open window. `MovementEnded` alone must not erase its history. |
 | A7.302, A19.13 | 55, 86 | Casualty reduction/replacement continues the target with a different counter. The implementation's new id must not create fresh MF or erase gun shots. The proposed transfer is limited to supported one-to-one successors. |
 | A17.2, A15.21 | 85, 83 | Carrying and creation of an additional hero have different movement relationships. These pages do not justify treating zero personal MF or a copied counter total as a complete new target history. |
