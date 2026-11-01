@@ -81,7 +81,11 @@ export function create(host, dotnet) {
             id: event.pointerId, x: event.clientX, y: event.clientY, box: { ...state.box }, moved: false, unitId,
             start: toBoard(state, event.clientX, event.clientY),
         };
-        svg.setPointerCapture(event.pointerId);
+        try {
+            svg.setPointerCapture(event.pointerId);
+        } catch {
+            // A pointer the browser does not know (the pan probe's dispatched events) cannot be captured; the drag works without it.
+        }
     });
 
     svg.addEventListener("pointermove", event => {
@@ -256,6 +260,7 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
         return;
     }
 
+    if (state.loadMetrics) globalThis.mapProbe = options => runProbe(state, options);
     const [x, y, width, height] = viewBox.split(" ").map(Number);
     const home = { x, y, width, height };
     const viewKey = state.host.dataset.viewKey ? state.host.dataset.viewKey + "/" + baseUrl : null;
@@ -681,6 +686,100 @@ function reportMeasuredScene(state) {
         state.host.dataset.mapNavigationToSceneMs = now.toFixed(2);
         state.host.dataset.mapMetricStatus = "ready";
     }));
+}
+
+// The pan probe (Large Campaign Map Plan, task 1): with ?mapMetrics=1, mapProbe() in the console drags the map for a second and sends a burst
+// of wheel events, both through the real handlers, times a label layer switch, and reports frames, the longest frame, and the browser's
+// Long Animation Frames. It restores the view and the layer choice it found. The record is logged and kept on the host as data-map-probe.
+export function summarizeFrames(times) {
+    const gaps = times.slice(1).map((time, index) => time - times[index]);
+    const span = times.length > 1 ? times[times.length - 1] - times[0] : 0;
+    return {
+        frames: gaps.length,
+        spanMs: Math.round(span),
+        framesPerSecond: span > 0 ? Math.round(gaps.length * 10000 / span) / 10 : 0,
+        longestFrameMs: Math.round(Math.max(0, ...gaps)),
+        medianFrameMs: gaps.length ? Math.round([...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)]) : 0,
+    };
+}
+
+async function runProbe(state, options = {}) {
+    if (!state.box || !state.home) throw new Error("No board is loaded.");
+    const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
+    const rect = state.svg.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const saved = { box: { ...state.box }, fitted: state.fitted };
+    const animationFrames = [];
+    const observer = typeof PerformanceObserver !== "undefined"
+        && PerformanceObserver.supportedEntryTypes?.includes("long-animation-frame")
+        ? new PerformanceObserver(list => animationFrames.push(...list.getEntries())) : null;
+    observer?.observe({ type: "long-animation-frame", buffered: false });
+    const pointer = (type, x, y) => state.svg.dispatchEvent(new PointerEvent(type, {
+        bubbles: true, cancelable: true, pointerId: 91, pointerType: "mouse", button: 0, buttons: type === "pointerup" ? 0 : 1, clientX: x, clientY: y,
+    }));
+    const loafSince = start => {
+        animationFrames.push(...(observer?.takeRecords() ?? []));
+        const entries = animationFrames.filter(entry => entry.startTime >= start);
+        const forced = entries.reduce((sum, entry) => sum + (entry.scripts ?? []).reduce((s, script) => s + (script.forcedStyleAndLayoutDuration ?? 0), 0), 0);
+        return { longAnimationFrames: entries.length, longestAnimationFrameMs: Math.round(Math.max(0, ...entries.map(entry => entry.duration))),
+            forcedStyleAndLayoutMs: Math.round(forced) };
+    };
+
+    // A drag of a fixed screen distance over about a second: one move per animation frame.
+    const dragMs = options.dragMs ?? 1000;
+    const distance = Math.min(rect.width, rect.height) / 4;
+    await frame();
+    const dragStart = performance.now();
+    const dragTimes = [dragStart];
+    pointer("pointerdown", cx, cy);
+    for (let elapsed = 0; elapsed < dragMs; elapsed = performance.now() - dragStart) {
+        pointer("pointermove", cx + distance * elapsed / dragMs, cy);
+        dragTimes.push(await frame());
+    }
+    pointer("pointerup", cx + distance, cy);
+    dragTimes.push(await frame());
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const drag = { ...summarizeFrames(dragTimes), ...loafSince(dragStart) };
+
+    // A burst of wheel events in one task, as a trackpad sends them, then the frames until the map settles.
+    setBox(state, saved.box, saved.fitted);
+    await frame();
+    const wheelStart = performance.now();
+    for (let index = 0; index < (options.wheelEvents ?? 20); index++) {
+        state.svg.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: index % 2 ? 100 : -100, clientX: cx, clientY: cy }));
+    }
+    const wheelTimes = [wheelStart, await frame(), await frame()];
+    // Long Animation Frame entries are delivered after their frame: one more frame and a short wait before they are read.
+    await frame();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const wheel = { settleMs: Math.round(wheelTimes[2] - wheelStart), ...loafSince(wheelStart) };
+
+    // The label layer switch: off and on again, as the page's layer choice does it.
+    setBox(state, saved.box, saved.fitted);
+    const shown = [...state.svg.children].filter(group => group.id.startsWith("layer-") && group.getAttribute("data-layer-hidden") === "false")
+        .map(group => group.id.substring(6));
+    let labelSwitchMs = null;
+    if (shown.includes("labels")) {
+        await frame();
+        const switchStart = performance.now();
+        setVisible(state, shown.filter(layer => layer !== "labels"));
+        await frame();
+        setVisible(state, shown);
+        await frame();
+        labelSwitchMs = Math.round(performance.now() - switchStart);
+    }
+
+    observer?.disconnect();
+    setBox(state, saved.box, saved.fitted);
+    const record = {
+        when: new Date().toISOString(), board: state.baseUrl, elements: state.svg.getElementsByTagName("*").length,
+        counters: state.svg.querySelectorAll("#layer-units [data-unit-id]").length, viewport: [Math.round(rect.width), Math.round(rect.height)],
+        boxWidth: Math.round(saved.box.width), drag, wheel, labelSwitchMs, userAgent: globalThis.navigator?.userAgent,
+    };
+    state.host.dataset.mapProbe = JSON.stringify(record);
+    console.info("map probe", record);
+    return record;
 }
 
 // Unit detail tiers (Unit Display Design, section 7.1): the overlay carries every tier, and zoom picks one from the

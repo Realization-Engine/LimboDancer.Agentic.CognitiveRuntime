@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
-const { create, unitTier } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+const { create, unitTier, summarizeFrames } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -91,6 +91,12 @@ test("the unit tier follows the face size on screen", () => {
     assert.equal(unitTier(35, 1000, 1000), "mid");
     assert.equal(unitTier(35, 2000, 1000), "near");
     assert.equal(unitTier(20, 0, 0), "mid");
+});
+
+test("the pan probe summarizes frames from their times", () => {
+    assert.deepEqual(summarizeFrames([0, 16, 32, 132, 148]),
+        { frames: 4, spanMs: 148, framesPerSecond: 27, longestFrameMs: 100, medianFrameMs: 16 });
+    assert.deepEqual(summarizeFrames([5]), { frames: 0, spanMs: 0, framesPerSecond: 0, longestFrameMs: 0, medianFrameMs: 0 });
 });
 
 test("zooming switches the tier the units layer shows", async () => {
