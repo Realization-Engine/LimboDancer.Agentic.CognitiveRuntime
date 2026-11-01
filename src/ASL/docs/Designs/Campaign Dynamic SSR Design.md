@@ -2,7 +2,7 @@
 
 Date: 1 November 2026
 
-Status: proposed design. Nothing is built. Implementation waits for the user's approval. Its decisions (section 12) were made under the user's instruction of 2026-11-01 to resolve open questions and act on the best recommendation; each is open to the user's veto.
+Status: proposed design. Nothing is built. Implementation waits for the user's approval. Its decisions (section 12) were made under the user's instruction of 2026-11-01 to resolve open questions and act on the best recommendation; DS-D4 and DS-D12 were approved by the user that day, and the others are open to veto.
 
 Built on the [Campaign Core and Situation Boundary Design](<Campaign Core and Situation Boundary Design.md>). Used by the [Campaign Supply to ASL Glue Design](<Campaign Supply to ASL Glue Design.md>) and the [Campaign Intelligence to ASL Glue Design](<Campaign Intelligence to ASL Glue Design.md>).
 
@@ -129,7 +129,7 @@ The Rules project publishes one list of every SSR token family the game reads: i
 
 The registry is Rules code, not a rule's verdict, and it is split by the board's tracks:
 
-- **The list, a rule claim (Claude's track).** A claim with id `ssr-tokens`, which maps to no inventory row; its claims-table row lists the files it touches (the token parsers in `ScenarioA1NightAndWeather`, `ScenarioA1UnitSubstitution`, `ScenarioA1Definitions`, `ScenarioA1StealthCalculator.SsrRulesBar`, `ScenarioA1FactoryCalculator`, and the others the survey names), shared where other claims hold them. Its scope is the list and a formatting method per family: no rule's answer changes. A claim without inventory rows is a new case for the claim board; this design proposes it and leaves the form to the board's check.
+- **The list, a rule claim (Claude's track).** A claim with id `ssr-tokens`, which maps to no inventory row; its claims-table row lists the files it touches (the token parsers in `ScenarioA1NightAndWeather`, `ScenarioA1UnitSubstitution`, `ScenarioA1Definitions`, `ScenarioA1StealthCalculator.SsrRulesBar`, `ScenarioA1FactoryCalculator`, and the others the survey names), shared where other claims hold them. Its scope is the list and a formatting method per family: no rule's answer changes. A claim without inventory rows is a new case for the claim board; the user approved it on 2026-11-01 (decision DS-D12). `claim_check.py` may need to accept a claims-table row with no inventory rows; that change, if needed, goes with the claim.
 - **Its use, a wiring row (track 3).** Refusing unknown prefixes in `ScenarioCards.Validate` (Play) and offering registered tokens in the card editor (MapStudio). This is backlog section 42's row.
 
 New families (`ammo-dump:`, `recon:`, `civilians:`, `orders-group:`) join the registry with the claims that build their rules.
@@ -229,7 +229,7 @@ Then each subject's term rules: the Supply glue design's S4 and S6, the intellig
 | DS-D1 | How authors express a dynamic SSR | Parameters and texts of C# term rules; no scripting language | Logic stays tested code; the Rules boundary stays clear; authors still control thresholds, tables, and words |
 | DS-D2 | Where provenance lives | An optional public `Origin` on `ScenarioCardRule`; causes in `CampaignTerms`' private parts | The card is public; the optional field keeps existing cards' identity |
 | DS-D3 | A new status for generated rules | No: origin is separate from status | Status says how the game enforces a rule; origin says where it came from |
-| DS-D4 | Hand edits to a generated rule | Not allowed; the adjudicator may suppress a term rule's output with a recorded reason | A hand-edited token would bypass the term rule and its tests |
+| DS-D4 | Hand edits to a generated rule | Not allowed; the adjudicator may suppress a term rule's output with a recorded reason. Approved by the user, 2026-11-01 | A hand-edited token would bypass the term rule and its tests |
 | DS-D5 | Where the workflow lives | The Studio, for both the library and the review | It holds the card editor, the card checks, and the registry's readers; the Campaign app links to it |
 | DS-D6 | One token registry | Required for generated cards, by a Rules claim | Backlog section 42 asks for it; unknown prefixes pass silently today |
 | DS-D7 | Generated card identity | A new id per Situation and boundary; immutable once a game starts | The planner binds a game to a card's id and SHA |
@@ -237,7 +237,7 @@ Then each subject's term rules: the Supply glue design's S4 and S6, the intellig
 | DS-D9 | Who writes token strings | PilotHost, through the registry; term rules emit structured terms | The Domain library may not hold ASL grammar (a reviewer's finding) |
 | DS-D10 | Suppression and identity | The suppression set is an input of the card; suppressing a term rule drops all its card terms | A suppression must not reuse an id with a new SHA |
 | DS-D11 | A base card and a term rule both setting one thing | Refused; the printed value becomes the term rule's parameter | No order should decide a conflict |
-| DS-D12 | The registry claim | A rule claim for the list (`ssr-tokens`, no inventory rows) and a wiring row for its use | The refusal and the picker are Play and MapStudio work |
+| DS-D12 | The registry claim | A rule claim for the list (`ssr-tokens`, no inventory rows) and a wiring row for its use. Approved by the user, 2026-11-01, including a claim with no inventory rows | The refusal and the picker are Play and MapStudio work |
 
 ## Related documents
 
