@@ -1745,3 +1745,15 @@ Written on 2026-10-31 for the [phase scope analysis](<ASL Support Weapons Phase 
 | C6.17 once-per-hex minimum across Locations | RC617.2, Claude PR 98 finding P3-5 | C6.17, p. 173 | Hex-level minimum tracking while retaining Location-specific expenditure and full Location identities | Version 1 retains the existing minimum once per Location as a bounded simplification. Two sub-1-MF Locations within one hex can therefore receive more shots than the printed once-per-hex minimum. This exact boundary remains open and must not be described as complete C6.17 coverage. |
 | Reviewed claim file holds before merge | Claude PR 98 finding P3-9 | AGENTS.md steps 1, 3 and 4 | User-approved process decision and a separately scoped checker correction | The checker releases reviewed claims although a reviewed unmerged branch still changes its held files. C6.17 is built while Claude's findings await re-review. No standing exception is adopted; decide how reviewed unmerged claims retain holds before changing the checker or treating the claim as cleared for merge. |
 | Representative allocation comparison for Support Weapons candidate caches | Performance acceptance follow-up | Presentation/data gathering only | Comparable before/after Studio workloads and allocation measurements | Caches retain only the latest state/view and bounded draft choices. Independent review checked their invalidation; no measured allocation improvement is claimed. |
+
+## 95. Deferred by the Campaign intelligence rulings
+
+Written on 2026-11-01 for the [Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis](<Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis.md>), whose section 9 rulings the user approved that day. These are later work, not rule claims.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The patrol as a playable night Situation | Ruling I6 | E1.2, E1.21, E1.4, E1.8, E1.86, E1.9 to E1.93, A12.152, E2, p. 223 to 228 | The night rules claimed and built; the Campaign's collection actions; victory conditions on information | A Campaign patrol order is resolved by the Campaign's collection rules; no ASL scenario is made for it |
+| A computer-run side decides only from what its briefed units know | Ruling I12 | E1.21 (model), p. 223; A12.1, p. 76 | A computer-run side; the orders-group SSR (ruling I11) | No computer-run side exists; when one is built, it reads only its own side's view and, under the orders-group SSR, only its briefed units' knowledge |
+| Radio reports during play | The analysis, section 7.5 | C1.2 to C1.23, p. 163 | A new ASL rule or a pause in play | Reports cross only at the result, by the I10 channel |
+| An orders rule for the Scenario Defender | The analysis, section 7.6 | E1.21, p. 223 | The orders-group SSR in use and play-tested | The orders-group SSR applies to the Scenario Attacker only |
+| The module Campaign Games' Recon and civilian rules | The analysis, section 10 | P8.622, O11.622, SSR KGP18, SSR PB21 (index only) | The module rulebooks | Not used; E1.23 and E2.4 are the printed models |
