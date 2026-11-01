@@ -69,7 +69,7 @@ The user approved all eight phase workflows, including the final one-checkbox-pe
 
 - Four Rules contracts, independent review, seven Rules checks and thirteen minigame checks are complete. Finish the compatibility gate and CI. No broad test suite ran during Studio implementation. Do not claim replay equivalence from these browser checks.
 - Independently exercise exceptional Ambush/infiltration outcomes, supported PRC transfer, hidden/unknown boundaries, repeated defensive-fire ordnance after recovery and MG-assistant configuration sequences. Their wiring is implemented; normal Melee is the browser-proven withdrawal case.
-- Known Wire without recorded above/below relationships returns cannot-evaluate feedback for recovery/transfer. Special terrain/carriage relationships, triggered any-phase recovery, deliberate destruction and missing dismantled representations remain separate capabilities in backlog section 93.
+- Known Wire without recorded above/below relationships returns cannot-evaluate feedback for recovery/transfer. Special terrain/carriage relationships, triggered any-phase recovery, deliberate destruction and missing dismantled representations remain separate capabilities in backlog section 94.
 - The condition-knowledge guard is conservative. Review relevant unknown facts before broadening it. Do not turn missing facts into permission.
 - State-scoped candidate memoization and bounded derived histories remain. A representative allocation comparison is still required for final performance acceptance.
 - No merge without explicit user approval and green CI.

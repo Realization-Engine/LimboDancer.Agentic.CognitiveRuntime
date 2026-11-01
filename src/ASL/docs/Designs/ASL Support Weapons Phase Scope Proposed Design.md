@@ -84,7 +84,7 @@ Phase flags alone cannot prove a start window. Audit existing events for the fac
 
 CC checks must refer to the current Location/round and declaration context, not whether any CC has been resolved anywhere. Retain the two-side declaration workflow and both sides' own private drafts, including the distinct handling of sequential CC. Do not add a SW-counter attack selector: A11.13 (PDF p. 72) prohibits such use. Preserve the existing resolution effects for weapon losses and destruction. Dropping for withdrawal is part of the declared withdrawal package, not an earlier independent mutation that can survive cancellation. Audit when equipment is left if withdrawal fails or the unit is eliminated; do not assume drops occur only on arrival. Existing `CloseCombatEffects` already contains departure/drop handling that must be preserved or deliberately corrected by Rules.
 
-Immediate A4.44 recovery requires a durable causal opportunity and its own closure/accounting. Do not create it merely because an unheld weapon is visible. The ordinary Recover command must not be extended to arbitrary phases as a substitute. This new capability is separately proposed in backlog section 93.
+Immediate A4.44 recovery requires a durable causal opportunity and its own closure/accounting. Do not create it merely because an unheld weapon is visible. The ordinary Recover command must not be extended to arbitrary phases as a substitute. This new capability is separately proposed in backlog section 94.
 
 ### Recorded-game compatibility
 
@@ -110,7 +110,7 @@ Review the application sites listed in the analysis, the relevant Rules contract
 
 ### C. Explicit separate capabilities
 
-The first delivery does not claim full rulebook completion. Immediate any-phase SMC recovery, A9.73 deliberate damage, missing dm counter/catalog representations, and unsupported special terrain/vehicle cases need approved capability work and the required facts/events before controls are exposed. Track these in backlog section 93. Existing supported vehicle/terrain behavior must not be removed under this boundary.
+The first delivery does not claim full rulebook completion. Immediate any-phase SMC recovery, A9.73 deliberate damage, missing dm counter/catalog representations, and unsupported special terrain/vehicle cases need approved capability work and the required facts/events before controls are exposed. Track these in backlog section 94. Existing supported vehicle/terrain behavior must not be removed under this boundary.
 
 For an unsupported case encountered in a supported workflow, show an honest not-evaluated/capability message. Never substitute a stricter invented ASL rule or silently enable the operation. This boundary permits an honest contextual UI without pretending absent rules are complete.
 

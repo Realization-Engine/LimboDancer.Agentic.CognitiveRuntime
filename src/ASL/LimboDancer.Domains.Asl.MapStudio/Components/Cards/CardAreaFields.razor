@@ -2,7 +2,17 @@
 @using LimboDancer.Domains.Asl.Units.State
 @* Pass 28 (ruling R28.1): one setup or entry area of an OB group (rulings R17.8, R19.4, R25.2), its fields by kind. A building or an entry's hexes
    may be picked on the map (ruling R28.2): a click on a building picks the whole building, a click on an entry hex adds or removes it. *@
-<li class="card-area" id="@Id">
+<li class="card-area@(Picking ? " picking" : string.Empty)" id="@Id">
+    @* The Card editor redesign (2026-10-31): an area reads as one line, opened to edit; a new area starts open. *@
+    <details open="@startOpen">
+    <summary class="card-area-chip">
+        <span class="card-area-id">@(Area.Id.Length > 0 ? Area.Id : "no id")</span>
+        <span>@Summary</span>
+        @if (Picking)
+        {
+            <span class="card-chip card-chip-on">picking on the map</span>
+        }
+    </summary>
     <span class="card-area-line">
         <label>@(Area.Kind == "building" ? "anchor hex" : "id") <input id="@($"{Id}-id")" aria-label="@($"{Label} id")" value="@Area.Id" @onchange="@(args => Renamed.InvokeAsync(Text(args).Trim()))" size="6" /></label>
         <label>
@@ -78,6 +88,7 @@
             </label>
         }
     </span>
+    </details>
 </li>
 
 @code {
@@ -111,6 +122,24 @@
 
     [Parameter]
     public EventCallback Changed { get; set; }
+
+    // Read once, so a re-render never opens or closes the area under the author's hand.
+    private bool startOpen;
+
+    protected override void OnInitialized() => startOpen = Area.Hexes.Trim().Length == 0 && Area.From.Trim().Length == 0 && Area.Edge.Length == 0;
+
+    private string Summary => Area.Kind switch
+    {
+        "building" => Area.Hexes.Trim().Length > 0 ? $"building {Hexes(Area.Hexes)}" : "building, not picked yet",
+        "hex-numbers" => $"hex numbers {Or(Area.From)} to {Or(Area.To)}{(Area.Board.Length > 0 ? $" on {Area.Board}" : string.Empty)}",
+        "entry" => $"enters {(Area.Edge.Length > 0 ? $"from the {Area.Edge} edge" : "from an edge not chosen yet")}{(Area.Turn.Trim().Length > 0 ? $" on turn {Area.Turn.Trim()}" : string.Empty)}"
+            + (Area.Hexes.Trim().Length > 0 ? $" at {Hexes(Area.Hexes)}" : string.Empty),
+        _ => $"{Area.Kind}{(Area.Hexes.Trim().Length > 0 ? $" {Hexes(Area.Hexes)}" : string.Empty)}",
+    };
+
+    private static string Or(string text) => text.Trim().Length > 0 ? text.Trim() : "?";
+
+    private static string Hexes(string hexes) => string.Join(" ", CardDraft.Words(hexes).Select(hex => $"[{hex}]"));
 
     private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
 

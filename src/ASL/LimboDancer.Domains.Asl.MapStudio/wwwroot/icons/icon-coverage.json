@@ -423,6 +423,25 @@
       ]
     },
     {
+      "name": "CardEditorForm",
+      "path": "Components/Cards/CardEditorForm.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [
+        "CardEditor"
+      ],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@CardSections.Label(key, Draft) @if (key != CardSections.Json) { @if (count \u003E...",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "CardEditorForm"
+        }
+      ]
+    },
+    {
       "name": "CardGroupFields",
       "path": "Components/Cards/CardGroupFields.razor",
       "pages": [
@@ -434,13 +453,6 @@
       "controls": [
         {
           "kind": "button",
-          "label": "Remove the group",
-          "dynamic": false,
-          "status": "needed",
-          "strip": "CardGroupFields"
-        },
-        {
-          "kind": "button",
           "label": "Add an area",
           "dynamic": false,
           "status": "needed",
@@ -449,6 +461,13 @@
         {
           "kind": "button",
           "label": "Remove",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "CardGroupFields"
+        },
+        {
+          "kind": "button",
+          "label": "Remove the group",
           "dynamic": false,
           "status": "needed",
           "strip": "CardGroupFields"
@@ -497,7 +516,7 @@
         "/units/cards/edit"
       ],
       "usedBy": [
-        "CardMapFields"
+        "CardEditorForm"
       ],
       "controls": [
         {
@@ -556,19 +575,11 @@
       "controls": [
         {
           "kind": "button",
-          "label": "@(Source is { Length: \u003E 0 } kept \u0026\u0026 RenameTo is { Length: \u003E 0 } other \u0026\u0026 othe...",
-          "dynamic": true,
-          "id": "edit-save",
-          "status": "needed",
-          "strip": "CardSaveActions card-save-actions"
-        },
-        {
-          "kind": "button",
           "label": "Rename \u0027@source\u0027 to \u0027@target\u0027",
           "dynamic": true,
           "id": "edit-rename",
           "status": "needed",
-          "strip": "CardSaveActions card-save-actions"
+          "strip": "CardSaveActions"
         },
         {
           "kind": "button",
@@ -576,7 +587,23 @@
           "dynamic": false,
           "id": "edit-delete",
           "status": "needed",
-          "strip": "CardSaveActions card-save-actions"
+          "strip": "CardSaveActions"
+        },
+        {
+          "kind": "button",
+          "label": "View the card as JSON",
+          "dynamic": false,
+          "id": "edit-show-json",
+          "status": "needed",
+          "strip": "CardSaveActions"
+        },
+        {
+          "kind": "button",
+          "label": "@(Source is { Length: \u003E 0 } kept \u0026\u0026 RenameTo is { Length: \u003E 0 } other \u0026\u0026 othe...",
+          "dynamic": true,
+          "id": "edit-save",
+          "status": "needed",
+          "strip": "CardSaveActions"
         },
         {
           "kind": "button",
@@ -1255,6 +1282,31 @@
           "icon": "rotate",
           "status": "icon",
           "strip": "BoardViewer"
+        }
+      ]
+    },
+    {
+      "name": "CardEditor",
+      "path": "Components/Pages/CardEditor.razor",
+      "pages": [
+        "/units/cards/edit"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "@(diagnostics.Count == 0 ? \u0022Valid\u0022 : diagnostics.Count == 1 ? \u00221 problem\u0022 : $...",
+          "dynamic": true,
+          "id": "edit-problems-toggle",
+          "status": "needed",
+          "strip": "CardEditor"
+        },
+        {
+          "kind": "button",
+          "label": "@CardSections.Label(key, draft) (@list.Count)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "CardEditor"
         }
       ]
     },

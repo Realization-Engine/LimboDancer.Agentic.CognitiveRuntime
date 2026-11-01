@@ -9,10 +9,8 @@
 
 <PageHeader Title="Card editor">
     <p>
-        Every game starts from a scenario card (rulings R22.1 to R22.4, R28.1 to R28.4). Start from a minimal card (boards and two sides, for a game with no
-        scenario), a copy of a built-in card, or one of your cards. Every field is a form: compose the boards or take a saved map's, pick setup, entry, and
-        exit hexes on the map, and add counter lines from the catalog. The card is checked against the catalog and its boards as you edit it, and only a valid
-        card is saved, under the boards folder beside the saved maps.
+        Every game starts from a scenario card (rulings R22.1 to R22.4, R28.1 to R28.4). Fill in the card section by section; each section lists its own
+        problems, and only a valid card is saved, beside your saved maps.
     </p>
 </PageHeader>
 
@@ -22,11 +20,37 @@
 }
 else
 {
-    <div class="toolbar">
-        <label>
-            Start from
-            <CardPicker Id="edit-source" Cards="@choices" Value="@source" ValueChanged="@ChooseSource" EmptyLabel="a minimal card" />
+    @* The Card editor redesign (2026-10-31): the card's name, its state, its problems, and its actions stay on screen while the sections scroll. *@
+    <div class="card-editor-bar" id="edit-bar">
+        <div class="card-editor-name">
+            <strong id="edit-heading">@(draft.Title.Trim().Length > 0 ? draft.Title.Trim() : "Untitled card")</strong>
+            <span class="card-editor-state"><code id="edit-id-shown">@(draft.Id.Trim().Length > 0 ? draft.Id.Trim() : "no id")</code> <span id="edit-state">@State</span></span>
+        </div>
+        <button id="edit-problems-toggle" type="button" class="card-problem-count @(diagnostics.Count == 0 ? "valid" : "invalid")" aria-controls="edit-problems"
+                aria-expanded="@(problemsOpen ? "true" : "false")" @onclick="@(() => problemsOpen = !problemsOpen)">
+            @(diagnostics.Count == 0 ? "Valid" : diagnostics.Count == 1 ? "1 problem" : $"{diagnostics.Count} problems")
+        </button>
+        <label class="card-open">
+            Open
+            <CardPicker Id="edit-source" Cards="@choices" Value="@source" ValueChanged="@ChooseSource" EmptyLabel="a new minimal card" />
         </label>
+        <CardSaveActions Source="@editing" RenameTo="@draft.Id.Trim()" Games="@games" Note="@note" Outcome="@noteOutcome"
+                         OnSave="@Save" OnRename="@Rename" OnDelete="@Delete" OnJson="@(() => Go(CardSections.Json))" />
+    </div>
+    <div id="edit-problems" class="card-problems" hidden="@(!problemsOpen)">
+        @if (diagnostics.Count > 0)
+        {
+            <p class="card-problem-sections">
+                In
+                @foreach (var (key, list) in CardSections.Route(diagnostics, draft).Where(entry => entry.Key.Length > 0))
+                {
+                    <button type="button" id="@($"edit-problems-go-{key}")" @onclick="@(() => Go(key))">@CardSections.Label(key, draft) (@list.Count)</button>
+                }
+            </p>
+        }
+        <FindingList Id="edit-diagnostics" Items="@FindingList.Of(diagnostics)" EmptyId="edit-valid">
+            <Empty>The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version@(map is null ? "." : " and its boards.")</Empty>
+        </FindingList>
     </div>
     @if (minigameRefusal is { } refusal && source.Length == 0)
     {
@@ -34,19 +58,26 @@ else
     }
 
     <CardEditorForm Draft="@draft" Catalog="@catalog" Sides="@sides" BoardNames="@boardNames" SavedMaps="@savedMaps" Map="@map" MapProblems="@mapProblems"
-                    Json="@json" Changed="@Check" />
-
-    <FindingList Id="edit-diagnostics" Items="@FindingList.Of(diagnostics)" EmptyId="edit-valid">
-        <Empty>The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version@(map is null ? "." : " and its boards.")</Empty>
-    </FindingList>
-
-    <CardSaveActions Source="@editing" RenameTo="@draft.Id.Trim()" Games="@games" Note="@note" Outcome="@noteOutcome"
-                     OnSave="@Save" OnRename="@Rename" OnDelete="@Delete" />
+                    Json="@json" Changed="@Edited" Problems="@diagnostics" Section="@section" SectionChanged="@Go" IdFollowsTitle="@(editing is null)" />
 }
 
 @code {
     [SupplyParameterFromQuery]
     public string? Card { get; set; }
+
+    /// <summary>The section shown, so a reload keeps it.</summary>
+    [SupplyParameterFromQuery]
+    public string? Section { get; set; }
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    private string section = CardSections.Card;
+    private string? sectionAsked;
+    private bool problemsOpen;
+
+    // Whether a field changed since the card was opened or saved.
+    private bool dirty;
 
     private UnitCatalog? catalog;
     private string source = string.Empty;
@@ -91,6 +122,38 @@ else
         Refresh();
     }
 
+    // The section follows the address only when the address changes, so a re-render does not undo a section chosen in the list.
+    protected override void OnParametersSet()
+    {
+        if (Section != sectionAsked)
+        {
+            sectionAsked = Section;
+            section = CardSections.Known(Section, draft);
+        }
+    }
+
+    private void Go(string key)
+    {
+        section = CardSections.Known(key, draft);
+        problemsOpen = false;
+        sectionAsked = section;
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("section", section), replace: true);
+    }
+
+    private string State => (editing, source.Length > 0, dirty) switch
+    {
+        ({ }, _, false) => "your card, saved",
+        ({ }, _, true) => "your card, changed and not saved",
+        (null, true, _) => "a copy of a built-in card, not saved",
+        _ => "a new card, not saved",
+    };
+
+    private void Edited()
+    {
+        dirty = true;
+        Check();
+    }
+
     // UI review, pass 28: the library is listed and its cards read when it changes, not on every keystroke.
     private void ListCards()
     {
@@ -125,6 +188,7 @@ else
     /// <summary>The checks again, and the games that started from the card being edited (the game-to-card index; ruling R28.4).</summary>
     private void Refresh()
     {
+        dirty = false;
         ListCards();
         games = editing is { } user ? Live.GamesFrom(user) : [];
         Check();
@@ -184,7 +248,7 @@ else
         }
 
         Done($"Saved '{card.Id}'; start a game from it on the Play page.");
-        source = card.Id;
+        (source, dirty) = (card.Id, false);
         ListCards();
         games = Live.GamesFrom(source);
     }
@@ -208,7 +272,7 @@ else
         }
 
         Live.Cards.Delete(old);
-        source = card.Id;
+        (source, dirty) = (card.Id, false);
         ListCards();
         Done($"Renamed '{old}' to '{card.Id}'.");
         games = Live.GamesFrom(source);
