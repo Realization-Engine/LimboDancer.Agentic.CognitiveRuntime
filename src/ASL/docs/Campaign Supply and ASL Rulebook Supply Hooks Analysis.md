@@ -14,7 +14,7 @@ It does, but not in the form of a supply line. Chapters A to H have no rule for 
 2. Resupply on the map: Ammo Vehicles and Ammo Dumps, which also exist only by SSR or DYO purchase (section 4).
 3. The Campaign Game chapters of the historical modules, which decide isolation and replenishment between scenarios. Their text is not in the eASLRB (section 5).
 
-Vehicle fuel has no ASL rule at all (section 5.2).
+Vehicle fuel has no rule in Chapters A to H; the one published model is Kampfgruppe Peiper's Out-of-Gas DR, SSR KGP13 (section 5.2).
 
 No existing document maps the campaign's supply state onto these hooks. Section 6 proposes that mapping.
 
@@ -84,9 +84,24 @@ The index entries name the concepts: the Refit Phase (RePh); Isolated Area, Isol
 
 This is the closest published model of what the campaign layer does: between scenarios, a side's position decides which units are isolated, and isolation and ammunition change the next scenario's order of battle and rules. The rule texts themselves are not in the eASLRB. Reading them needs the module rulebooks, which are not among the reference folders recorded so far.
 
+The index gives each module's supply and isolation rules by number (read 2026-10-31):
+
+| Module | Rules the index cites |
+|---|---|
+| Red Barricades | Perimeter O11.2, its determination O11.605, Perimeter markers O11.6054; Pocket O11.2, in the RePh O11.6056; isolation in the RePh O11.6057; Isolated Area O11.606 and O11.6072; Isolated Unit O11.6061 |
+| Kampfgruppe Peiper | German ammunition P8.618; Isolated Area and Isolated Unit P8.6052; isolation in the RePh P8.6057 (upper levels); the Out-of-Gas DR, SSR KGP13; German vehicle Recall, SSR KGP12 |
+| Pegasus Bridge | Isolated Location Q9.2; Isolated Unit Q9.6052; isolation in the RePh Q9.6057; setup of an isolated unit in the RePh Q9.62021 |
+| A Bridge Too Far | the British ammunition shortage RCG17 (under A19.131). The index lists no Isolated Area, Location, or Unit entry for R9. |
+| Tarawa | Isolated Location T15.2; Isolated Unit T15.6072; setup of an isolated unit in the RePh T15.6201 |
+| Solitaire ASL | mission selection S17.22, the Campaign Roster S17.15, Retained S17.31, and the changes at Mission End (S17.4 to S17.7, including Rearming S17.623). No isolation or supply entry. |
+
+Secondary claims not yet checked. A summary of these rules from a secondary source (retailer and forum pages, not the rule texts; given by the user on 2026-10-31) adds details that the index does not confirm: a Line of Supply traced free of enemy LOS and an Isolation Attrition Table in Red Barricades; resupply containers dropped onto the map in A Bridge Too Far; supply that follows control of the bridges in Pegasus Bridge; a garrison permanently isolated in Tarawa; and isolation tied to a Friendly Front Line in Solitaire ASL. Some of these conflict with the index (it cites O11.605, not "9.605", and no isolation rule for R9). None is used in this analysis until the module texts are read.
+
 ### 5.2 Fuel
 
-No ASL rule governs vehicle fuel. The scan found 21 mentions on 15 pages. All are historical notes (vehicles lost to fuel shortage, for example pages 481, 519, and 522), the flamethrower rule above, aircraft recall (E7.31's note), or napalm. A campaign fuel shortage has no rule to drive. It can only reach an ASL scenario through the order of battle, for example by withholding vehicles or setting them up Immobile by SSR. That would be a rule the project writes, not one the rulebook prints, and it needs the user's ruling.
+Chapters A to H have no rule for vehicle fuel. The scan found 21 mentions on 15 pages. All are historical notes (vehicles lost to fuel shortage, for example pages 481, 519, and 522), the flamethrower rule above, aircraft recall (E7.31's note), or napalm.
+
+The one published fuel rule the index cites is Kampfgruppe Peiper's Out-of-Gas DR, SSR KGP13: a scenario rule of that module, outside the Campaign Game rule P8. Its text is not in the eASLRB. It is the model to read before the project writes a fuel rule of its own. Until then, a campaign fuel shortage can reach an ASL scenario only through the order of battle (for example withholding vehicles or setting them up Immobile by SSR), or through an Out-of-Gas DR modeled on SSR KGP13. Either is a rule the project writes, and it needs the user's ruling.
 
 ## 6. Proposed mapping
 
@@ -100,7 +115,7 @@ The campaign already says it should use "a published campaign expenditure rule" 
 | An ammunition package delivered to a receiving point inside the board area | E10.6 Ammo Dump at that hex | The receiving point already has a hex in the board supply binding |
 | An ammunition package assigned to a formation with circled-B# vehicles | E10.1 Ammo Vehicle, with a vehicle of the formation chosen under E10.11 | Rare in the current catalog, since no vehicle prints a circled B#; it becomes common under A19.131 |
 | Artillery ammunition allowance | C1.211 Plentiful or Scarce Ammunition for the battery | Waits on OBA (Pass 150); A25.33 sets the American default |
-| Fuel shortage | No ASL rule; an OB change written by the campaign | Needs a ruling and a label as manufactured |
+| Fuel shortage | No rule in Chapters A to H; an OB change written by the campaign, or an Out-of-Gas DR modeled on SSR KGP13 | Needs a ruling and a label as manufactured |
 
 ### 6.2 Scenario results back to the campaign
 
@@ -122,9 +137,9 @@ This follows the Rules boundary in AGENTS.md:
 
 ## 7. Open points
 
-1. Whether to obtain and read the module Campaign Game rules (O11, P8, Q9, R9, T15) as the model for isolation and refit between Situations.
+1. Whether to obtain and read the module Campaign Game rules (O11, P8, Q9, R9, T15) as the model for isolation and refit between Situations, and with them the secondary claims in section 5.1.
 2. The threshold at which a campaign ammunition state becomes an A19.131 SSR.
-3. Whether and how a fuel shortage reaches the order of battle.
+3. Whether and how a fuel shortage reaches the order of battle, and whether SSR KGP13's Out-of-Gas DR is read as its model.
 4. The order of work: W-E10's wiring and the OBA pass (150) both come before the full mapping works in play.
 
 ## Related documents
