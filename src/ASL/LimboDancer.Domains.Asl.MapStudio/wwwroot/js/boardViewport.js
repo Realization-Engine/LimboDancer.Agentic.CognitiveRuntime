@@ -376,7 +376,10 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
     }
 
     state.labelIndex = labelIndex;
-    if (state.loadMetrics) globalThis.mapProbe = options => runProbe(state, options);
+    if (state.loadMetrics) {
+        probeStates.add(state);
+        globalThis.mapProbe = options => runProbe(probeTarget(), options);
+    }
     const [x, y, width, height] = viewBox.split(" ").map(Number);
     const home = { x, y, width, height };
     const viewKey = state.host.dataset.viewKey ? state.host.dataset.viewKey + "/" + baseUrl : null;
@@ -813,6 +816,30 @@ function reportMeasuredScene(state) {
 // The pan probe (Large Campaign Map Plan, task 1): with ?mapMetrics=1, mapProbe() in the console drags the map for a second and sends a burst
 // of wheel events, both through the real handlers, times a label layer switch, and reports frames, the longest frame, and the browser's
 // Long Animation Frames. It restores the view and the layer choice it found. The record is logged and kept on the host as data-map-probe.
+// The maps a page has loaded with metrics on; the probe measures the largest one still on the page (a hand-over or hidden map may have loaded
+// last).
+const probeStates = new Set();
+
+function probeTarget() {
+    let best = null;
+    let bestArea = 0;
+    for (const state of probeStates) {
+        if (!state.svg.isConnected) {
+            probeStates.delete(state);
+            continue;
+        }
+
+        const rect = state.svg.getBoundingClientRect();
+        if (rect.width * rect.height > bestArea) {
+            best = state;
+            bestArea = rect.width * rect.height;
+        }
+    }
+
+    if (!best) throw new Error("No map is on the page.");
+    return best;
+}
+
 export function summarizeFrames(times) {
     const gaps = times.slice(1).map((time, index) => time - times[index]);
     const span = times.length > 1 ? times[times.length - 1] - times[0] : 0;
