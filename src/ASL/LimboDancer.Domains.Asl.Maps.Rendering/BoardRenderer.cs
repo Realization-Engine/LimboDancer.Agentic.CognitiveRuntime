@@ -374,22 +374,122 @@ public static partial class BoardRenderer
         }
     }
 
+    /// <summary>
+    /// The hex grid (Large Campaign Map Plan, task 5). One lattice serves the whole map, a composed one included, and its interior repeats every
+    /// two columns: one pair of columns is written once and placed with <c>use</c> across the map, and the columns the edge corrections touch
+    /// (<see cref="BoardGeometry.CenterDot"/>'s clamp, its vertices pulled onto the grid) are written hex by hex as before. The outlines are
+    /// opaque inside one group of opacity 0.45, so an edge two copies share is drawn once, as the single path drew it.
+    /// </summary>
     private static void WriteGrid(SvgWriter writer, BoardGeometry geometry)
     {
+        var (template, pairs, others) = GridColumns(geometry);
         var outlines = new PathData();
         var dots = new PathData();
-        foreach (var hex in geometry.Hexes())
+        foreach (var column in others)
         {
-            outlines.Polygon(geometry.Vertices(hex));
-            var center = geometry.CenterDot(hex);
-            dots.MoveTo(SvgValue.Number(center.X - 1), SvgValue.Number(center.Y - 1))
-                .Horizontal(SvgValue.Number(center.X + 1)).Vertical(SvgValue.Number(center.Y + 1))
-                .Horizontal(SvgValue.Number(center.X - 1)).Close();
+            for (var row = 0; row < geometry.RowCount(column); row++)
+            {
+                AddHex(outlines, dots, geometry, new HexIndex(column, row), 0);
+            }
         }
 
-        writer.Empty("path", ("fill", "none"), ("stroke", "#000000"), ("stroke-opacity", "0.45"), ("stroke-width", "0.75"),
-            ("pointer-events", "none"), ("d", outlines));
-        writer.Empty("path", ("fill", "#000000"), ("fill-opacity", "0.6"), ("pointer-events", "none"), ("d", dots));
+        if (template is { } first)
+        {
+            var pairOutlines = new PathData();
+            var pairDots = new PathData();
+            // Shifted to x = 0; each copy is placed at its own column's x.
+            var origin = first * geometry.HexWidth;
+            for (var column = first; column < first + 2; column++)
+            {
+                for (var row = 0; row < geometry.RowCount(column); row++)
+                {
+                    AddHex(pairOutlines, pairDots, geometry, new HexIndex(column, row), origin);
+                }
+            }
+
+            writer.Start("defs");
+            writer.Empty("path", ("id", "grid-pair-outlines"), ("d", pairOutlines));
+            writer.Empty("path", ("id", "grid-pair-dots"), ("d", pairDots));
+            writer.End();
+        }
+
+        writer.Start("g", ("fill", "none"), ("stroke", "#000000"), ("stroke-width", "0.75"), ("opacity", "0.45"), ("pointer-events", "none"));
+        foreach (var column in pairs)
+        {
+            writer.Empty("use", ("href", "#grid-pair-outlines"), ("x", SvgValue.Number(column * geometry.HexWidth)));
+        }
+
+        writer.Empty("path", ("d", outlines));
+        writer.End();
+        writer.Start("g", ("fill", "#000000"), ("fill-opacity", "0.6"), ("pointer-events", "none"));
+        foreach (var column in pairs)
+        {
+            writer.Empty("use", ("href", "#grid-pair-dots"), ("x", SvgValue.Number(column * geometry.HexWidth)));
+        }
+
+        writer.Empty("path", ("d", dots));
+        writer.End();
+    }
+
+    private static void AddHex(PathData outlines, PathData dots, BoardGeometry geometry, HexIndex hex, double originX)
+    {
+        var vertices = geometry.Vertices(hex).Select(vertex => new PixelPoint(vertex.X - originX, vertex.Y)).ToArray();
+        outlines.Polygon(vertices);
+        var center = geometry.CenterDot(hex);
+        var x = center.X - originX;
+        dots.MoveTo(SvgValue.Number(x - 1), SvgValue.Number(center.Y - 1))
+            .Horizontal(SvgValue.Number(x + 1)).Vertical(SvgValue.Number(center.Y + 1))
+            .Horizontal(SvgValue.Number(x - 1)).Close();
+    }
+
+    /// <summary>
+    /// How <see cref="WriteGrid"/> covers the columns: the first column of the pair written once (null when no pair is regular), the first
+    /// column of every pair it is placed at, and the columns written hex by hex. The pair is written shifted to x = 0, so a copy placed at
+    /// <c>x = column * HexWidth</c> lands on that column. A column is regular when every hex's center and
+    /// vertices equal the lattice's own, with no edge correction; a pair is placed where both its columns are regular and it starts on an
+    /// even column, so its odd column keeps the half-hex shift.
+    /// </summary>
+    public static (int? Template, IReadOnlyList<int> Pairs, IReadOnlyList<int> Others) GridColumns(BoardGeometry geometry)
+    {
+        ArgumentNullException.ThrowIfNull(geometry);
+        var regular = Enumerable.Range(0, geometry.WidthInHexes).Select(column => RegularColumn(geometry, column)).ToArray();
+        int? template = null;
+        var pairs = new List<int>();
+        var others = new List<int>();
+        for (var column = 0; column < geometry.WidthInHexes; column++)
+        {
+            if (column % 2 == 0 && column + 1 < geometry.WidthInHexes && regular[column] && regular[column + 1])
+            {
+                template ??= column;
+                pairs.Add(column);
+                column++;
+                continue;
+            }
+
+            others.Add(column);
+        }
+
+        return (template, pairs, others);
+    }
+
+    // A column repeats when no edge correction moved any of its x values: the center's clamp at the right edge, or a vertex pulled onto the
+    // left or right edge. Corrections in y (the top and bottom rows' vertices pulled onto the grid) depend only on the row and the column's
+    // parity, so they are the same in every column of that parity and repeat with the pair.
+    private static bool RegularColumn(BoardGeometry geometry, int column)
+    {
+        var hexside = geometry.HexWidth * 2.0 / 3.0;
+        var x = geometry.A1CenterX + (geometry.HexWidth * column);
+        double[] ideal = [(-hexside / 2.0) + x, (hexside / 2.0) + x, hexside + x, (hexside / 2.0) + x, (-hexside / 2.0) + x, -hexside + x];
+        for (var row = 0; row < geometry.RowCount(column); row++)
+        {
+            var hex = new HexIndex(column, row);
+            if (geometry.CenterDot(hex).X != x || !geometry.Vertices(hex).Select(vertex => vertex.X).SequenceEqual(ideal))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>

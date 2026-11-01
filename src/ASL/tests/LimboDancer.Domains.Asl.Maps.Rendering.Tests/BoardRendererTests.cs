@@ -84,6 +84,61 @@ public sealed class BoardRendererTests
         Assert.Equal(labels.Select(text => double.Parse((string)text.Attribute("y")!, CultureInfo.InvariantCulture)), ys);
     }
 
+    // Large Campaign Map Plan, task 5: the repeated column pair draws every hex of the columns it is placed at exactly, each column is drawn
+    // once, and the edge columns stay hex by hex.
+    [Theory]
+    [MemberData(nameof(GridGeometries))]
+    public void RepeatedGridPairDrawsEveryHexExactly(string name)
+    {
+        var geometry = GridGeometry(name);
+        var (template, pairs, others) = BoardRenderer.GridColumns(geometry);
+        var covered = pairs.SelectMany(column => new[] { column, column + 1 }).Concat(others).Order().ToArray();
+        Assert.Equal(Enumerable.Range(0, geometry.WidthInHexes), covered);
+        foreach (var column in pairs)
+        {
+            Assert.NotNull(template);
+            for (var offset = 0; offset < 2; offset++)
+            {
+                for (var row = 0; row < geometry.RowCount(column + offset); row++)
+                {
+                    var shift = (column - template!.Value) * geometry.HexWidth;
+                    var expected = geometry.Vertices(new HexIndex(column + offset, row));
+                    var fromTemplate = geometry.Vertices(new HexIndex(template.Value + offset, row));
+                    Assert.Equal(expected.Count, fromTemplate.Count);
+                    for (var vertex = 0; vertex < expected.Count; vertex++)
+                    {
+                        Assert.Equal(expected[vertex].X, fromTemplate[vertex].X + shift, 9);
+                        Assert.Equal(expected[vertex].Y, fromTemplate[vertex].Y, 9);
+                    }
+                }
+            }
+        }
+
+        if (name == "standard")
+        {
+            Assert.NotEmpty(pairs);
+            Assert.Contains(geometry.WidthInHexes - 1, others);
+        }
+    }
+
+    public static TheoryData<string> GridGeometries => ["synthetic", "standard", "double-width"];
+
+    private static BoardGeometry GridGeometry(string name) => name switch
+    {
+        "synthetic" => SyntheticBoard.Geometry,
+        "standard" => BoardGeometry.StandardGeomorphic,
+        _ => BoardGeometry.Standard(65, 10),
+    };
+
+    [Fact]
+    public void GridPlacesOneUseForEachRepeatedPair()
+    {
+        var grid = XDocument.Parse(BoardRenderer.Fragment(Synthetic.Value, BoardView.Exact, "grid"));
+        var (_, pairs, _) = BoardRenderer.GridColumns(Synthetic.Value.Grid.Geometry);
+        Assert.Equal(pairs.Count * 2, grid.Descendants(Svg + "use").Count());
+        Assert.All(grid.Descendants(Svg + "use"), use => Assert.StartsWith("#grid-pair-", (string)use.Attribute("href")!, StringComparison.Ordinal));
+    }
+
     [Fact]
     public void ViewNamesRoundTrip()
     {
