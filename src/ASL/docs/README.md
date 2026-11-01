@@ -128,6 +128,8 @@ Scenario A1 state changes only in live games: the Map Studio's registered game a
 
 [Campaign Supply to ASL Glue Design](<Designs/Campaign Supply to ASL Glue Design.md>) designs the connection: per-formation supply steps and a Supply Determination at each Situation boundary in the Campaign, supply terms on the Scenario Card, and a Supply Report applied once at the result. Status: proposed design, 2026-11-01.
 
+[Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis](<Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis.md>) surveys WWII combat intelligence by echelon and the rulebook's intelligence rules (E1.23 Recon, E2 Interrogation, E2.4 Civilians, concealment and HIP), and proposes a per-side Campaign picture that reaches ASL through HIP allowances, Dummies, Recon and Civilian SSRs, and a private briefing to the senior leader; radios and wire decide what returns to headquarters, and an optional orders-group SSR modeled on E1.21 Freedom of Movement spreads the briefing by proximity and radio. Status: research and proposal, 2026-11-01.
+
 [Western Theater Situation Catalog and Decision Cascade](<Western Theater Situation Catalog and Decision Cascade.md>) surveys the legacy Panzer Leader cards, prioritizes additional campaign situations and maps their source constraints to proposed command decisions.
 
 [Ardennes Command Decision Contract Specification](<Ardennes Command Decision Contract Specification.md>) defines the first optional command/supply/leadership window using PL14 and PL15, with finite allocations, timed delivery, explicit variants, deterministic choices and acceptance cases. Status: proposed contract, 9 October 2026.
