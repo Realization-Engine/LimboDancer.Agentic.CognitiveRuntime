@@ -2,7 +2,7 @@
 
 Date: 1 November 2026
 
-Status: proposed design. Nothing is built. It rests on rulings I1 to I12 of the [Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis](<../Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis.md>), approved by the user on 2026-11-01, and on the [Campaign Intelligence Design](<Campaign Intelligence Design.md>), which produces the pictures, briefings, and communications states this design reads. The decisions it makes on its own (section 12) were researched by sub-agents and are open to the user's veto. Implementation waits for the user's approval.
+Status: proposed design. Nothing is built. It rests on rulings I1 to I12 of the [Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis](<../Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis.md>), approved by the user on 2026-11-01, and on the [Campaign Intelligence Design](<Campaign Intelligence Design.md>), which produces the pictures, briefings, and communications states this design reads. It is built on the [Campaign Core and Situation Boundary Design](<Campaign Core and Situation Boundary Design.md>) (the card, the terms field, setup areas, the map ownership, the result intake), and its card terms become special rules through the [Campaign Dynamic SSR Design](<Campaign Dynamic SSR Design.md>). The decisions it makes on its own (section 12) were researched by sub-agents and are open to the user's veto. Implementation waits for the user's approval.
 
 ## 1. Purpose and scope
 
@@ -18,20 +18,19 @@ Out of scope: every ASL rule's effect (decided in the Rules project, by the clai
 1. **Printed rules only** (ruling I4), with one labeled exception, the optional orders-group SSR (ruling I11).
 2. **The Campaign decides whether and how many; Rules decides what follows.** A term's count is a Campaign rule. Its token's format, parsing, validation, and effects are Rules', by a rule claim.
 3. **Boundary only.** Intelligence crosses between the games at commitment and at the result, never during play (the Supply glue design, principle 3).
-4. **Every game is a card** (the user's ruling of 2026-09-29). The terms ride on the Scenario Card the Supply glue design's task S3 makes the handoff build.
-5. **The terms are computed in C#.** PilotHost computes them from the Campaign Domain library's records; they enter the handoff hash.
+4. **Every game is a card** (the user's ruling of 2026-09-29). The terms ride on the Scenario Card the core's task CB6 makes the handoff build.
+5. **The terms are computed in C#, in one place.** `IntelligenceTerms` holds inputs only. The card terms of section 4 are decided by the Dynamic SSR design's term rules in the Domain library (`intelligence.hidden-setup`, `intelligence.recon`, `intelligence.civilians`, `intelligence.orders-group`); PilotHost supplies the ASL counts they read, from Rules calculators (the core's principle 9), and writes their tokens through the registry. Everything enters the handoff hash through the core's `CampaignTerms` (core, section 8.2).
 
 ## 3. The Intelligence Terms record
 
-One `IntelligenceTerms` record per committed Situation, computed at the `Before` boundary:
+One `IntelligenceTerms` record per committed Situation, computed in the Terms section of the `Before` boundary event (core, section 7.2), and carried as the Intelligence section of the handoff's `CampaignTerms` (core, section 8.2), whose version, ids, boundary event, and hash it shares:
 
-- `Version`, `CampaignId`, `SituationId`, the boundary event it was computed from, and its hash;
 - the card's Scenario Defender and Attacker;
 - for each side: its grain over the Situation's area (the Campaign Intelligence Design, section 7.1), whether its formations hold their ground (prepared or hasty), whether it patrolled the area within one boundary, its time to brief, and its communications state;
-- the card terms (section 4), each with the inputs that produced it;
-- the two briefings (section 5), each visible to its side alone.
+- the Defender's on-board squad-equivalents S and each Defender group's squad-equivalents, counted by the Rules project's setup calculator (a squad or vehicle one, a half-squad or crew one half; A5.5, ruling R70.22) and fetched by PilotHost;
+- the two briefings (section 5), in the sides' private parts of `CampaignTerms`, each visible to its side alone.
 
-It travels with the handoff beside `CampaignContext` and enters the handoff hash. The handoff version moves to a new version, read alongside the old; a handoff without terms keeps its present hash (task IG2). It is a field of its own beside `CampaignContext`, not inside it: `CampaignContext` is an opaque string the prototype builds, and the terms are computed in C#.
+From these inputs the term rules decide the card terms of section 4 (the Dynamic SSR design, section 4), each kept with its origin.
 
 ## 4. Card terms
 
@@ -39,7 +38,7 @@ It travels with the handoff beside `CampaignContext` and enters the handoff hash
 
 The main lever. The Scenario Defender's HIP allowance (the `hip:<side>:<n>` token, built, ruling R23.5, read by `ScenarioA1Definitions.HipAllowance` as squad-equivalents) and the Dummies of each of its groups (`ScenarioCardGroup.Dummies`, built) are set from the **Attacker's grain** over the Situation's area and whether the **Defender is prepared** (its formations held their ground for at least one boundary) or hasty.
 
-S is the Defender's on-board squad-equivalents (a half-squad counts one half, A5.5). Every result is a whole number of squad-equivalents; "at least 1" applies only when S is 1 or more. FRU and FRD below are the rulebook's "fractions rounded up" and "fractions rounded down". By day:
+S is the Defender's on-board squad-equivalents, as counted by Rules and carried in `IntelligenceTerms` (section 3). Every result is a whole number of squad-equivalents; "at least 1" applies only when S is 1 or more. FRU and FRD below are the rulebook's "fractions rounded up" and "fractions rounded down". By day:
 
 | Attacker's grain | Prepared: HIP | Prepared: Dummies | Hasty: HIP | Hasty: Dummies |
 |---|---|---|---|---|
@@ -59,15 +58,15 @@ Rules the terms respect, as the code reads them today (`ScenarioA1SetupCalculato
 
 - **One token, the Campaign's own grant.** `HipAllowance` takes the largest n among a side's `hip:` tokens; it does not add them. The card therefore carries exactly one `hip:` token for the Defender, the Campaign's grant. Whether a grant by SSR adds to a grant by rule (E1.2 at night, G1.631 for the Japanese) is a question for those rules' claims (E1.2: not built, Pass 90), not for the Campaign: the Campaign never computes E1.2's 25% itself.
 - **What the grant counts.** A squad or a vehicle takes one squad-equivalent; a half-squad or a crew takes one half (ruling R70.22); the SMC set up with a hidden MMC hide with it (R23.5). Emplaced Guns use HIP by A12.34 (ruling R26.5), manned and with their crew, and do not count against the grant. Hidden Fortifications (A12.33) are refused by the code today; they gain nothing from this grant until a claim builds them (section 9).
-- **Dummies by group.** The side's Dummies are spread over its groups in proportion to each group's squads, rounded down, the remainder to the largest groups. Every "?" must be placed where A12.12 allows (red-listed terrain), which needs setup areas, not fixed positions (4.1, "Who sets up where").
+- **Dummies by group.** The side's Dummies are spread over its groups in proportion to each group's squad-equivalents (from section 3's Rules counts), rounded down, the remainder to the largest groups. Every "?" must be placed where A12.12 allows (red-listed terrain), which needs setup areas, not fixed positions (4.1, "Who sets up where").
 - **Concealment Terrain.** HIP is only in Concealment Terrain (A12.3, page 80). A grant larger than the Defender's setup areas can hold is legal but empty; a Rules diagnostic that warns of it is proposed to the A12.3 claim (section 8).
 - **Night.** Until E1.2 is built, a night Situation gets the same table as by day. When E1.2 is built, its claim decides how the Campaign's token combines with E1.2's grant; the Campaign's proposal to that claim is "the larger of the two, plus up to 10% (FRU, at most 3) when the Attacker's grain is None".
 - **Other nationalities.** G1.631 (Japanese) and the grant to the Chinese People's Volunteer Army (CPVA, W7) are outside the European theater the Campaign covers; their combination with this grant is G1.631's claim's.
 - **Balance.** Where a Situation's card is authored with a printed HIP level P, the "Presence only, prepared" cell is P, and every other cell is P times the ratio of its percentage to 15%, rounded as the cell rounds, within the cell's bounds. Dummies scale the same way from a printed Dummy count.
 
-**What the numbers disclose.** HIP and Dummy counts are public on a printed card, and stay public here. A Defender that knows S, whether it is prepared, and this table can infer roughly how well it was watched: one or two cells of the table. This is accepted. A real defender knew much of it too (the patrols it met, the aircraft overhead), and the inference names no report, source, or area. Under the Hidden OB option (4.7), where S itself is hidden from the Attacker, the HIP and Dummy counts are shown only to the Defender.
+**What the numbers disclose.** HIP and Dummy counts are public on a printed card, and stay public here. A Defender that knows S, whether it is prepared, and this table can infer roughly how well it was watched: one or two cells of the table. This is accepted. A real defender knew much of it too (the patrols it met, the aircraft overhead), and the inference names no report, source, or area. Under the Hidden OB option (4.7), where S itself is hidden from the Attacker, the HIP and Dummy counts are shown only to the Defender (the Dynamic SSR design, section 4.4, says how the public text and the card panel do it).
 
-**Who sets up where.** Today `SituationHandoff.Prepare` places every unit at its accepted deployment position with `Concealed` and `Hidden` set false (`SituationHandoff.cs:69`). Fixed positions leave a Dummy nowhere to go and leave the Attacker no setup in which to use a Recon dr (4.2). So when a handoff carries `IntelligenceTerms`, the card gives each group a setup area instead of fixed positions: the ASL hexes of the formation hex its parent formation occupies in the accepted deployment (the Military Command design, section 14.3: a parent hex is a coarse location, not an instruction to place every squad at its center). Setup then runs as on any printed card, in the Studio, by setup plans (`ScenarioSetupPlans`, which already carry `Hidden`, `Concealed`, and `Dummy` per placement): the Defender sets up first, choosing within the allowance which units are hidden or concealed and where its Dummies go; then any Recon dr; then the Attacker. A handoff without terms keeps today's fixed positions (task IG4).
+**Who sets up where.** Today `SituationHandoff.Prepare` places every unit at its accepted deployment position with `Concealed` and `Hidden` set false (`SituationHandoff.cs:69`). Fixed positions leave a Dummy nowhere to go and leave the Attacker no setup in which to use a Recon dr (4.2). So when a handoff carries `IntelligenceTerms`, those terms ask the core for setup areas (core, section 8.3): each group sets up in the ASL hexes of the formation hex its parent formation occupies in the accepted deployment. Setup then runs as on any printed card, in the Studio, by setup plans (`ScenarioSetupPlans`, which already carry `Hidden`, `Concealed`, and `Dummy` per placement): the Defender sets up first, choosing within the allowance which units are hidden or concealed and where its Dummies go; then any Recon dr; then the Attacker. A handoff without terms keeps today's fixed positions (task IG4).
 
 ### 4.2 Recon (E1.23)
 
@@ -130,7 +129,7 @@ The briefing (the Campaign Intelligence Design, section 9.1) travels in `Intelli
 
 ### 6.1 What PilotHost reads
 
-At the end of a game PilotHost replays its record and builds, for each side, that side's `GameView` at the last revision, then reads:
+At the end of a game PilotHost replays its record once for the core's result intake (core, section 9), and for this section builds, for each side, that side's `GameView` at the last revision, then reads:
 
 | Fact | Source in the record | Campaign meaning |
 |---|---|---|
@@ -141,11 +140,11 @@ At the end of a game PilotHost replays its record and builds, for each side, tha
 | Good Order leaders at the end | Each leader's status in the final state, judged by `ScenarioA1Definitions.GoodOrderOf` (Rules), never by PilotHost | The report channel (6.3) |
 | Radios and phones held | Each SW's possessor in the final state (once radios exist) | The report channel; capture sets `CodesCompromised` |
 
-Each ASL hex maps to a Campaign area through the Situation's map ownership (`SituationMapOwnership`). That map covers only the tactical centers each formation hex owns; the board's margin hexes have no parent. A margin hex maps to the parent of the nearest owned center, ties going to the lower formation hex id. The ownership map is documented as "never part of game history", so it is stored with the Situation's session at handoff and its hash enters `IntelligenceTerms`; the report reads the stored copy, never a regenerated one. A unit's kind gives its type; its squad-equivalents, summed per area, give the strength band.
+Each ASL hex maps to a Campaign area through the map ownership the core stores with the Situation's session (core, section 8.4), margin hexes included; the report reads the stored copy, never a regenerated one. A unit's kind gives its type; its squad-equivalents, summed per area, give the strength band.
 
 ### 6.2 What PilotHost hands over
 
-One `KnowledgeReportFacts` record per side, keyed by the ASL game id and its last revision, carrying the facts above in Campaign terms only (areas, types, bands, counts). The Campaign Domain library applies the intake (the Campaign Intelligence Design, section 10). No ASL type crosses into the Domain library.
+One `KnowledgeReportFacts` record per side, as the Intelligence part of the core's `SituationResultFacts` (keyed, like it, by the ASL game id and its last revision), carrying the facts above in Campaign terms only (areas, types, bands, counts). The Campaign Domain library applies it in the Intelligence section of the result event (the Campaign Intelligence Design, section 10). No ASL type crosses into the Domain library.
 
 ### 6.3 The channel before radio counters exist
 
@@ -162,9 +161,11 @@ Until the catalog has radio counters (4.5), the first case of the report channel
 
 | Part | Owner |
 |---|---|
-| The counts and switches of section 4 (which term, how many) | Campaign: computed in PilotHost from the Domain library's records |
-| `IntelligenceTerms`, the handoff's new version and hash | PilotHost |
-| Setup areas, and opening both sides' setups in the Studio with the allowance | PilotHost and MapStudio (task IG4) |
+| The counts and switches of section 4 (which term, how many) | The Domain library's term rules (the Dynamic SSR design) |
+| `IntelligenceTerms`: its inputs, with the ASL counts fetched from Rules | PilotHost assembles it; the Domain library defines it |
+| The handoff's version and hash | The core |
+| Opening both sides' setups in the Studio with the allowance, on the core's setup areas | PilotHost and MapStudio (task IG4) |
+| Turning the card terms into special rules | The Campaign Dynamic SSR Design |
 | `hip:` and group Dummies | Rules and Play, built (vehicle HIP by ruling R70.22); a claim on A12.3 for the Concealment Terrain warning; claims on A12.33 and E1.2 for hidden Fortifications and the night grant |
 | `recon:` token and E1.23 | Rules, by the E1.23 claim (Pass 90); its setup step, track 3 |
 | `civilians:` token and E2.4 | Rules, by the E2.4 claim (Pass 74) |
@@ -193,12 +194,12 @@ Goodwood (the only Situation the C# Campaign hands off today). Illustrative valu
 
 | Task | Work | Depends on |
 |---|---|---|
-| IG1 | `IntelligenceTerms` record and its computation in PilotHost (sections 3, 4.1) | Campaign Intelligence Design K6, K9; Supply glue design S3 |
-| IG2 | Handoff version, hash, and round trip; handoffs without terms keep their hash; the map ownership stored with the session | IG1 |
-| IG3 | HIP and Dummies on the card, spread over groups | IG1, IG2 |
-| IG4 | Setup areas from the deployment's formation hexes; both sides' setups opened in the Studio, Defender first, within the allowance | IG3 |
+| IG1 | `IntelligenceTerms` record, assembled in PilotHost with the Rules counts (section 3) | Campaign Intelligence Design K2, K5; core CB6 |
+| IG2 | The Intelligence section of `CampaignTerms`, with the briefings in the sides' private parts | IG1; core CB7 |
+| IG3 | The `intelligence.hidden-setup` term rule: HIP and Dummies on the card, spread over groups | IG2; Dynamic SSR design DS3, DS4 |
+| IG4 | Both sides' setups opened in the Studio, Defender first, within the allowance | IG3; core CB8 |
 | IG5 | The briefing panel, per perspective | IG2 |
-| IG6 | `KnowledgeReportFacts` from the record; the interim channel (6.3) | Campaign Intelligence Design K11 |
+| IG6 | `KnowledgeReportFacts` from the record; the interim channel (6.3) | Campaign Intelligence Design K6; core CB9 |
 | IG7 | `recon:`, `civilians:`, `orders-group:` on the card | Their rule claims |
 | IG8 | Hidden OB view | IG5 |
 | IG9 | Radio and Field Phone counters | C1 and the catalog |
@@ -239,6 +240,8 @@ Made on 2026-11-01 under the user's instruction to resolve open questions by exp
 
 ## Related documents
 
+- [Campaign Core and Situation Boundary Design](<Campaign Core and Situation Boundary Design.md>)
+- [Campaign Dynamic SSR Design](<Campaign Dynamic SSR Design.md>)
 - [Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis](<../Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis.md>)
 - [Campaign Intelligence Design](<Campaign Intelligence Design.md>)
 - [Campaign Supply to ASL Glue Design](<Campaign Supply to ASL Glue Design.md>)

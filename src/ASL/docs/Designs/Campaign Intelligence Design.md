@@ -4,14 +4,12 @@ Date: 1 November 2026
 
 Status: proposed design. Nothing is built. It rests on rulings I1 to I12 of the [Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis](<../Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis.md>), approved by the user on 2026-11-01. The decisions this design makes on its own (section 16) were researched by sub-agents and are open to the user's veto. Implementation waits for the user's approval of this design.
 
-Companion: the [Campaign Intelligence to ASL Glue Design](<Campaign Intelligence to ASL Glue Design.md>) maps what this design produces onto the Scenario Card and reads the ASL result back.
+It is built on the [Campaign Core and Situation Boundary Design](<Campaign Core and Situation Boundary Design.md>), which holds the foundation it shares with supply (the user, 2026-11-01). Companion: the [Campaign Intelligence to ASL Glue Design](<Campaign Intelligence to ASL Glue Design.md>) maps what this design produces onto the Scenario Card and reads the ASL result back.
 
 ## 1. Purpose and scope
 
-The design gives the Campaign layer what it needs to hold intelligence:
+On the core's event log, side view, and boundary (ruling I8 is met by the core's view), the design gives the Campaign layer what it needs to hold intelligence:
 
-- a record of Campaign events whose default visibility is the adjudicator alone;
-- a view of Campaign state for each side (ruling I8), which leaves out what the side may not know;
 - each side's picture of the enemy, made of reports (rulings I1, I2);
 - collection, security postures, and a communications state per formation (ruling I9);
 - the Intelligence Determination at every Situation boundary, with seeded draws (ruling I3);
@@ -20,72 +18,28 @@ The design gives the Campaign layer what it needs to hold intelligence:
 
 In scope: the Campaign side of all of the above. Out of scope: the card terms and the reading of the ASL game record (the glue design); the Campaign's movement, orders, and supply chains, which stay where they are until the Campaign's migration stages C02 and C06 of the [Implementation Plan](<../LimboDancer.Campaign Implementation Plan.md>); any ASL rule.
 
-## 2. What exists today
+## 2. Built on the core
 
-Surveyed on 2026-11-01:
-
-- **The C# Campaign** (`src/Campaign`) is a Goodwood terrain refinement and setup bridge into ASL: the Refinement library (Panzer Leader source boards to ASL terrain, 114 formations to 624 counters), PilotHost (a minimal web host on port 8093 that serves the JS prototype as static files and prepares the handoff), a command-line tool, and one test project. It has no campaign state, no event log, no boundaries, no supply, no side view, and no intake of ASL results.
-- **Campaign play** (the clock, the command log and its replay, supply, the 17 Situations, saves) lives in the browser prototype `prototypes/europe-hex-map`. Its `CampaignContext` reaches C# as an opaque JSON object, hashed into `SituationHandoff`.
-- **Determinism tools exist.** `SeedRandom` (`Refinement/SeedRandom.cs`, stream `sha256-counter-v1`) and content-addressed immutable JSON saves (`SituationSessions`).
-- **The direction is set.** The Campaign will move to C# and Blazor (the user, 2026-11-01; the Implementation Plan). C01 to C07 must build without references to ASL projects (Plan, line 21); its domain code must not depend on Razor, the DOM, or JavaScript (line 91); its event record carries a visibility policy (line 275); and it separates authoritative state from viewer-filtered knowledge (line 277).
-- **The patterns to mirror** are ASL's: `Perspective`, `GameEvent.Visibility`, and `GameView` (a side's view leaves out what the side cannot know), and the Rules boundary of AGENTS.md (a calculator takes facts and returns a verdict; its caller writes the events).
+The [Campaign Core and Situation Boundary Design](<Campaign Core and Situation Boundary Design.md>) provides what this design stands on: the library `src/Campaign/LimboDancer.Campaign.Domain` and PilotHost's place beside it (core, section 4); identities, the viewer, and the event log, adjudicator-only by default (section 5); the view per side (section 6); the boundary facts, the boundary event with its Supply, Intelligence, and Terms sections, and the seeded streams (section 7); the handoff onto a card with its `CampaignTerms` field and setup areas (section 8); and the result intake (section 9). What exists today, and why the core lives where it does, is in the core's sections 2 and 4.
 
 ## 3. Principles
 
-1. **Ground truth stays on the server.** A browser that holds the whole truth cannot keep it from its user. Every per-side value is computed in C# and sent to a viewer only through that viewer's view.
-2. **Hidden unless granted.** A Campaign event is visible to the adjudicator alone unless it names who else may see it. This is the reverse of ASL's `GameEvent`, where no list means public; in the Campaign, the safe failure is to hide.
-3. **The Determination is a calculator.** It takes facts, prior pictures, parameters, and a seed, and returns new pictures and terms. Its caller writes the boundary event. This is the Rules boundary applied inside the Campaign.
-4. **Pictures are records of what was told, never pointers into the truth.** A report can be wrong, late, or planted.
-5. **Every number is an authored parameter.** The record supplies the shape of each source; it does not supply probabilities (the Military Command design: "Unknown values remain unknown"). Parameters live in a versioned profile, labeled as authored, with their rationale.
-6. **One boundary for supply and intelligence.** Both are decided at the Situation boundary, in one event, from one input revision.
-7. **The core does not own campaign play.** Until C02 and C06, the Campaign's movement, orders, and supply are the prototype's. The core receives their result at each boundary as a facts snapshot.
+The core's principles hold (core, section 3). Two more are this subject's:
 
-## 4. Where it lives
+1. **Pictures are records of what was told, never pointers into the truth.** A report can be wrong, late, or planted.
+2. **Every number is an authored parameter.** The record supplies the shape of each source; it does not supply probabilities (the Military Command design: "Unknown values remain unknown"). Parameters live in a versioned profile, labeled as authored, with their rationale.
 
-**A new library, `src/Campaign/LimboDancer.Campaign.Domain`**: a plain net10.0 class library, with no Razor, no ASP.NET, and no ASL reference. Its tests are `src/Campaign/tests/LimboDancer.Campaign.Domain.Tests`. Both join `src/Campaign/Campaign.slnx`, so `campaign-ci.yml` runs them, outside the ASL gate (the user's ruling of 2026-10-15), with lock files restored in locked mode.
+## 4. The intelligence part of the view
 
-- It is the Implementation Plan's Domain and Application code, written before the Blazor app exists. When C01 starts, `LimboDancer.Campaign` references it rather than reimplementing it.
-- It is not part of Refinement, which references ASL Units and Maps and so cannot hold code that C01 to C07 must use.
-- Everything that touches ASL stays in **PilotHost**, which already references ASL Play: building the card terms into the handoff, and reading an ASL game record for the Knowledge Report (the glue design). PilotHost turns ASL facts into Campaign records; the Domain library applies Campaign rules to them. No ASL project references the Campaign.
+A side's view (core, section 6) holds, for intelligence: its picture (its `SideReport`s, section 7.1), its briefings (section 9), its collection tasks and their results, its own postures, and its communications state. It holds nothing of a report's `Deceptive` flag or of the formation behind a report.
 
-**`SeedRandom` moves** into the Domain library, with a small canonical serializer of its own for its string-array key, so the library needs no ASL reference. Refinement then references Domain. A golden-vector test proves the `sha256-counter-v1` stream is unchanged byte for byte, so every existing seed replays.
+## 5. The intelligence part of the boundary facts
 
-**In the prototype period**, PilotHost hosts the library behind two endpoints:
-
-- `POST /api/campaign/{campaignId}/boundaries`: the prototype submits a boundary's facts snapshot (section 5.4); PilotHost runs the Determination, appends the boundary event, and returns its id.
-- `GET /api/campaign/{campaignId}/view?viewer=<side>`: returns that side's view (its picture, its briefings, its communications state).
-
-During this period the prototype still holds the truth for movement and supply, so disclosure is not yet enforced against a determined user; the prototype's screens are labeled "disclosure not enforced in the prototype". What the period proves is the model, the API, and the card terms, which only C# computes. Enforcement becomes real when the Blazor app (C02) takes the Campaign state onto the server.
-
-## 5. The Campaign core
-
-Only what intelligence and supply need. Each record is immutable.
-
-### 5.1 Identities
-
-`CampaignId`, `SideId`, `FormationId` (opaque, taken from the prototype's formation ids, which the Refinement roster already carries as `SituationFormation.Id`), `AreaId` (a Campaign hex or an authored region), `SituationId`, `BoundaryId`, and `CampaignTime` (the prototype's campaign time, in minutes from the campaign's start).
-
-### 5.2 The viewer
-
-`CampaignViewer`: a side, or the adjudicator, who sees everything. It mirrors ASL's `Perspective` in shape (a name and an adjudicator constant) but is its own type: the Domain library may not reference ASL, and a Campaign viewer will become a headquarters later (ruling I1; the Military Command design's recipient knowledge), which an ASL perspective never will. The mapping between the two is in PilotHost.
-
-### 5.3 The event and the log
-
-`CampaignEvent`: the Implementation Plan's fields (line 275): `Id`, `CampaignId`, `Sequence`, `EffectiveAt`, `RecordedAt`, `Kind`, `PayloadVersion`, `CommandId`, `CorrelationId`, `AffectedEntityIds`, `Visibility`, and the hash of the log's prefix through this event. The prefix hash is this design's addition: the Military Command design binds its checkpoints to an event-prefix hash (section 7), and storing it on every event lets any revision be checked the same way.
-
-- `Visibility` is a list of viewers. An empty list means the adjudicator alone.
-- Recorded time comes from the host's clock; effective time is campaign time. Replays use the recorded values and never read the clock.
-
-`CampaignLog`: append-only, one writer, each append checked against the expected revision so a stale writer fails rather than overwrites. Stored as content-addressed immutable JSON, as `SituationSessions` stores saves today, one file per revision range.
-
-### 5.4 Boundary facts
-
-`BoundaryFacts` is the ground truth the Determination needs, submitted by the caller (the prototype now, the Blazor app later), hashed, and stored with the boundary event. It is visible to the adjudicator alone.
+The core's boundary facts (core, section 7.1) carry, for intelligence:
 
 | Part | Contents |
 |---|---|
-| Situation | `SituationId`, phase (`Before` commitment or `After` the result), campaign time, weather class per area, day or night |
-| Formations | For each formation: id, side, area, type class (infantry, armor, guns, mixed), strength band, the name an enemy would learn (its identity), quality class, and whether it holds its ground since the previous boundary |
+| Identities | For each formation: the name an enemy would learn (its identity) |
 | Notional formations | For each active deception: the notional formation's side, area, type, strength band, and name |
 | Collection | Each side's tasks for this boundary: source, target area, and the asset used (section 6) |
 | Postures | Each formation's security posture (section 6.3) |
@@ -93,11 +47,7 @@ Only what intelligence and supply need. Each record is immutable.
 | Orders | For a Situation about to be committed: the time each committed formation received its order, and the Situation's start time (section 9) |
 | Prisoners | Prisoners each side holds, by the formation they came from, and the boundary they were taken |
 
-### 5.5 The boundary event
-
-`SituationBoundaryEvent` is one Campaign event per boundary: `SituationId`, phase, the input revision, the facts hash, the boundary's seed, and one section per Determination: `Supply` (filled by the Supply glue design's Supply Determination when its task S2 is built; empty until then) and `Intelligence` (section 7). Supply runs first, because isolation and resupply change the communications state that intelligence reads.
-
-Each draw has a stream of its own: `SeedRandom(campaignSeed, boundaryId, "<section>", <taskId>)`, where the task id is the collection task's (or the notional formation's) stable id. A task added or removed therefore shifts no other task's draw, and a draw added to one section never shifts the other. Tasks are processed in the canonical order of their ids, so the event's contents are the same whoever submits them.
+The Intelligence section of the boundary event (core, section 7.2) runs after Supply, whose isolation it reads. Its draws use the core's streams (core, section 7.3), keyed by each collection task's or notional formation's stable id.
 
 ## 6. Collection, security, and communications
 
@@ -187,7 +137,7 @@ At every boundary, after Supply, the Intelligence section runs these pure steps 
 1. **Deliver.** Each collection task of the facts makes its draw (6.2, with its modifiers and the target's postures) and creates reports with `ObservedAt` = this boundary and a delivery boundary: a lag of N means the Nth boundary after this one (0, this one). `DeliveredAt` is that boundary's campaign time once it occurs. Reports whose delivery boundary has come join the side's picture.
 2. **Deceive.** Each notional formation feeds the channels the enemy tasked against its area (6.3).
 3. **Brief.** For a Situation about to be committed, build each side's briefing (section 9) from that side's view.
-4. **Terms.** Hand the two pictures, the truth, and the communications states to the glue design's terms step.
+4. **Hand over.** The Intelligence section ends here. The boundary event's separate Terms section (core, section 7.2) then reads the two pictures, the truth, and the communications states to build `IntelligenceTerms` (the glue design, section 3).
 
 The draws and their seeds are written in the boundary event. A replay reads them and never draws again; the same facts and seed always give the same pictures.
 
@@ -199,23 +149,9 @@ The draws and their seeds are written in the boundary event. A replay reads them
 
 A `NoneSeen` report has no step below it: it is dropped once one ageing interval of its source has passed. A contradiction (a `NoneSeen` and a positive report on one area, both current) is shown to the side with both reports. Because effective presence is a function of the reports and the current boundary, running the Determination at every boundary never applies ageing or corroboration twice.
 
-## 8. Views and leaks
+## 8. Leaks
 
-### 8.1 The view
-
-`CampaignView.Of(log, viewer)` is the viewer-scoped projection (ruling I8). Like ASL's `GameView`, it leaves out what the viewer may not know rather than marking it:
-
-- own formations in full;
-- the side's picture (its `SideReport`s), its briefings, its collection tasks and their results;
-- its own postures and communications state;
-- the events whose `Visibility` names it;
-- nothing of the enemy but what its reports say. Its type has no member that holds ground truth.
-
-A briefing builder, a computer-run side, and every Campaign screen take a `CampaignView`, never the log or the facts. The compiler then refuses a leak by construction: the types a side can reach have no field that holds the truth.
-
-### 8.2 The leak audit
-
-Every Campaign surface must pass the audit the Campaign analyses ask for (the Command analysis, lines 63 and 172; the Supply Integration analysis, line 182; the Formation to Squad analysis, line 157):
+The core's view (core, section 6) is the only seam a side reads; its intelligence part is section 4 above. Every Campaign surface must pass the leak audit the Campaign analyses ask for (the Command analysis, lines 63 and 172; the Supply Integration analysis, line 182; the Formation to Squad analysis, line 157):
 
 - a disabled action's reason;
 - route highlighting and path costs;
@@ -229,13 +165,13 @@ The audit is a test per surface: built from a fixture where the two sides' truth
 
 ### 9.1 The briefing
 
-For each side and each Situation about to be committed, the briefing lists the reports of that side's picture whose areas overlap the Situation's area: type and strength band, identity where known, source, and age ("enemy infantry, about a company, reported in the woods north of the village; patrol; 6 hours old"). It names Campaign areas, never ASL hexes, so a briefing never pinpoints a unit the card would hide. It is built from the side's view only (8.1), so it can be wrong.
+For each side and each Situation about to be committed, the briefing lists the reports of that side's picture whose areas overlap the Situation's area: type and strength band, identity where known, source, and age ("enemy infantry, about a company, reported in the woods north of the village; patrol; 6 hours old"). It names Campaign areas, never ASL hexes, so a briefing never pinpoints a unit the card would hide. It is built from the side's view only (section 4; core, section 6), so it can be wrong.
 
 The briefing is delivered to the side's senior leader (the analysis, section 7.6; its optional orders-group SSR is ruling I11). Who that leader is, and what follows on the board, is the glue design's.
 
 ### 9.2 The time to brief
 
-From the facts' order and start times (5.4), each committed formation's time to brief falls in a band:
+From the facts' order and start times (section 5), each committed formation's time to brief falls in a band:
 
 | Echelon receiving the order | Ample | Short | None |
 |---|---|---|---|
@@ -245,9 +181,9 @@ From the facts' order and start times (5.4), each committed formation's time to 
 
 German formations of good quality shift one band up at battalion and regiment (mission tactics; the 1933 Truppenführung); scratch and Volksgrenadier formations do not. The battalion row decides the card (the glue design). The rule of leaving two thirds of the time to subordinates is post-war US doctrine and serves here only as the rationale for the bands.
 
-## 10. The Knowledge Report intake
+## 10. The knowledge part of the result intake
 
-PilotHost reads the finished ASL game (the glue design) and gives the Domain library a `KnowledgeReportFacts` record per side: the enemy units revealed (with their Campaign area, kind, and size), the enemy stacks seen only as "?", the enemy units captured, the areas searched and found empty, and the side's Good Order leaders at the end with the radios and field phones they possess. The library applies the report channel rule (ruling I10):
+The core's result intake (core, section 9) carries, for intelligence, one `KnowledgeReportFacts` record per side, built by PilotHost (the glue design, section 6): the enemy units revealed (with their Campaign area, kind, and size), the enemy stacks seen only as "?", the enemy units captured, the areas searched and found empty, and the side's Good Order leaders at the end with the radios and field phones they possess. The Intelligence section of the `SituationResultEvent` applies the report channel rule (ruling I10):
 
 1. **Radio or wire: delivered at this boundary.** A Good Order leader on board with a working radio, or a field phone not eliminated: every report at full grain.
 2. **Carried back: next boundary, one step lower.** Otherwise, if any Good Order leader survives.
@@ -259,87 +195,68 @@ Then:
 - captured units become prisoners in the facts of the next boundary, where interrogation (6.2) can yield identity;
 - radios lost, broken, or captured change the communications state (6.4); a radio captured by the enemy sets `CodesCompromised` on its formation.
 
-The intake is one Campaign event, keyed by the ASL game id and its last revision. A second intake with the same key is refused; a later revision of a game already taken in is refused unless the Campaign explicitly reopens that result. This is the Supply Report's rule (the Supply glue design, section 6.3).
+The intake is applied exactly once by the core's rule (core, section 9).
 
 ## 11. Interaction with supply
 
-- One boundary event holds both sections; Supply runs first.
+- The boundary event's Supply section runs before Intelligence (core, section 7.2).
 - Isolation (the Supply Determination's `Isolated`) cuts `Wire` and blocks radio replacement through supply.
-- The Supply glue design's section 8 ("an enemy pocket is known only as far as the Campaign's intelligence rules disclose it") is met by this design: a side learns of an enemy pocket only through reports in its picture.
+- The Supply glue design's disclosure section ("an enemy pocket is known only as far as the Campaign's intelligence rules disclose it") is met by this design: a side learns of an enemy pocket only through reports in its picture.
 
 ## 12. Ownership
 
 | Part | Owner |
 |---|---|
-| Identities, viewer, event, log, view, boundary event, intelligence profile, reports, Determination, postures, communications state, briefing, time to brief, intake rules | `LimboDancer.Campaign.Domain` |
-| Boundary and view endpoints; reading the ASL game record into `KnowledgeReportFacts`; mapping viewers to ASL perspectives | `LimboDancer.Campaign.PilotHost` |
-| Submitting boundary facts; showing the view | The prototype now; the Blazor app from C02 |
-| The card terms and every ASL effect | The glue design; ASL Rules |
+| The intelligence profile, reports, the Intelligence Determination, postures, deception, the communications state, the briefing, the time to brief, the intake rules | `LimboDancer.Campaign.Domain` |
+| Reading the ASL game record into `KnowledgeReportFacts` | `LimboDancer.Campaign.PilotHost` (the glue design) |
+| The core's records, endpoints, card, and intake | The core design |
+| The card terms and every ASL effect | The glue design; the Campaign Dynamic SSR Design; ASL Rules |
 
 ## 13. Memory and performance
 
-Answers to the [guidelines'](<../Memory-And-Performance/ASL Memory and Performance Guidelines.md>) checklist:
-
-- **Work added.** The Determination runs once per Situation boundary: one draw per collection task (tens per side), one pass over each side's reports (hundreds at most). A view is projected per request from the log; no cache until a measurement asks for one. Nothing is added to any ASL Play step, render, or read path.
-- **Ownership, keys, lifetime.** Records are immutable and keyed by event sequence; facts by hash; the intake by game id and revision. The log grows by one boundary event and one intake event per Situation.
-- **Disclosure, snapshots, seams.** Section 8. The view is the only seam a side reads.
-- **Counters and fragments.** None; this design adds no ASL counter.
-- **Checks.** Unit tests in the Domain test project; the leak audit per surface; replay equality.
-- **Tests.** Fixtures built once per test class; the test project joins the Campaign solution and its CI.
-- **Benefit and noise.** No performance claim is made.
-- **Records.** Each task records its results, limits, backlog rows, and any build outputs outside the repository.
+The core's answers hold (core, section 11). For intelligence: the Determination makes one draw per collection task (tens per side) and reads each side's reports (hundreds at most) once per boundary; effective presence is computed per read, over that side's current reports only. Nothing is added to any ASL Play step, render, or read path, and no ASL counter is added.
 
 ## 14. Tasks, in order
 
+After the core's CB1 to CB5 (and CB9 for K6):
+
 | Task | Work | Tests |
 |---|---|---|
-| K0 | Scaffold `LimboDancer.Campaign.Domain` and its test project in `Campaign.slnx`, with lock files | Green Campaign CI |
-| K1 | Identities, `CampaignViewer`; move `SeedRandom`, Refinement references Domain | Golden vectors: the `sha256-counter-v1` stream is unchanged |
-| K2 | `CampaignEvent` and `CampaignLog` | Append, stale-revision refusal, prefix hash, adjudicator-only default, replay equals live |
-| K3 | `CampaignView` (I8) | No ground truth or `Deceptive` value reachable from a side's view |
-| K4 | `SideReport`, `AdjudicatorReport`, the picture, grain, ageing | Ageing from `ObservedAt`; grain per area |
-| K5 | `BoundaryFacts` and the boundary event with empty sections | Facts hash and seed recorded; Supply slot present |
-| K6 | The intelligence profile and the Determination (7.2) | Same facts and seed give the same picture; replay draws nothing; each historical case of the analysis, section 3.6, reproduced by a fixture |
-| K7 | Postures, deception, corroboration | Contact breaks deception; two channels confirm |
-| K8 | Communications state | Issue, loss, wire laid and cut, codes compromised |
-| K9 | Briefing and time to brief | Two sides get different briefings from one truth; bands by echelon |
-| K10 | PilotHost endpoints | Round trip; the prototype shows a side's view |
-| K11 | Knowledge Report intake rules | The three channel cases; applied once; second apply refused |
+| K1 | `SideReport`, `AdjudicatorReport`, the picture, grain, effective presence | Ageing from `ObservedAt`; corroboration; grain per area; no `Deceptive` reachable from a side's view |
+| K2 | The intelligence profile and the Determination (7.2) | Same facts and seed give the same picture; replay draws nothing; each historical case of the analysis, section 3.6, reproduced by a fixture |
+| K3 | Postures, deception, corroboration | Contact breaks deception; two channels confirm |
+| K4 | Communications state | Issue, loss, wire laid and cut, codes compromised |
+| K5 | Briefing and time to brief | Two sides get different briefings from one truth; bands by echelon |
+| K6 | Knowledge intake rules | The three channel cases |
 
-K0 to K9 and K11 are Campaign work with no ASL reference. K10, and the reading of the ASL record that feeds K11, are PilotHost's. The glue design's tasks follow.
+All are Campaign work with no ASL reference. The reading of the ASL record that feeds K6 is PilotHost's (the glue design). The glue design's tasks follow.
 
 ## 15. Acceptance
 
+The core's acceptance holds (core, section 14). For intelligence:
+
 - A side's view never contains a value from which the enemy's ground truth, or a report's `Deceptive` flag, can be read.
-- The same boundary facts and seed always give the same pictures, briefings, and terms; a replay draws nothing.
+- The same boundary facts and seed always give the same pictures and briefings; a replay draws nothing.
 - Every number the Determination uses comes from a pinned, versioned profile, labeled as authored.
 - A late report is never fresh.
-- An ASL result is taken in exactly once.
-- The Domain library references no ASL project, and no ASL project references the Campaign.
-- Existing `SeedRandom` seeds replay unchanged.
 
 ## 16. Decisions made in this design
 
-Made on 2026-11-01 under the user's instruction to resolve open questions by expert sub-agents and act on the best recommendation. Each is open to the user's veto.
+Made on 2026-11-01 under the user's instruction to resolve open questions by expert sub-agents and act on the best recommendation. Each is open to the user's veto. CD1 to CD7 (where the core lives, the viewer, default visibility, one boundary, `SeedRandom`, disclosure in the prototype period) moved with the core to the [Campaign Core and Situation Boundary Design](<Campaign Core and Situation Boundary Design.md>), section 13.
 
 | Id | Question | Decision | Basis |
 |---|---|---|---|
-| CD1 | Where the knowledge model lives | A new C# library, `src/Campaign/LimboDancer.Campaign.Domain`, with no ASL reference; PilotHost hosts it until the Blazor app does | An architecture sub-agent's review of the Implementation Plan and the Campaign code; the user's note that the Campaign moves to C# and Blazor |
-| CD2 | Where the planned Blazor app goes | Recommended, not decided: under `src/Campaign/` rather than the Plan's `src/LimboDancer.Campaign/`, so the Campaign CI trigger covers it. The decision belongs to C01 | The CI workflow triggers on `src/Campaign/**` |
-| CD3 | Reuse ASL's `Perspective` | No: a Campaign `CampaignViewer` of the same shape, mapped in PilotHost | The Plan's no-ASL-reference rule; viewers become headquarters later |
-| CD4 | Default visibility of a Campaign event | The adjudicator alone | Hiding is the safe failure |
-| CD5 | One boundary pipeline for supply and intelligence | Yes, one event with one section each, Supply first, separate random streams | Isolation feeds communications; streams keep sections independent |
-| CD6 | `SeedRandom`'s home | Move it into Domain with its own canonical key serializer; golden-vector test | Domain may not reference ASL Maps |
-| CD7 | Disclosure in the prototype period | Not enforced; labeled so on the prototype's screens | The prototype holds the truth in the browser until C02 |
 | CD8 | Starting values of the intelligence profile | The tables of section 6, labeled as authored | A historian sub-agent's proposal; every number is a tuning knob |
 | CD9 | A Miss produces a report or nothing | A `NoneSeen` report | Negative evidence exists and can be false |
 | CD10 | Corroboration | Two independent channels raise `Presence` one step | Lets planned multi-channel deception succeed, single-channel deception fail |
 | CD11 | Ageing and corroboration: stored or computed | Computed when a report is read, from its base and the current boundary; `NoneSeen` dropped after one interval | A reviewer found that applying them at every boundary would repeat them |
-| CD12 | Random streams | One stream per draw, keyed by the task's stable id, tasks in canonical order | A task added must not shift another task's draw |
+| CD12 | Random streams | The core's rule (core, section 7.3) applied to intelligence: one stream per collection task or notional formation, keyed by its stable id | A task added must not shift another task's draw |
 | CD13 | A deception area holding true formations | Contact draws against the true formations only; the notional contributes nothing | Otherwise a notional formation would hide real ones from patrols |
 
 ## Related documents
 
+- [Campaign Core and Situation Boundary Design](<Campaign Core and Situation Boundary Design.md>)
+- [Campaign Dynamic SSR Design](<Campaign Dynamic SSR Design.md>)
 - [Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis](<../Campaign Intelligence and ASL Rulebook Intelligence Hooks Analysis.md>)
 - [Campaign Intelligence to ASL Glue Design](<Campaign Intelligence to ASL Glue Design.md>)
 - [Campaign Supply to ASL Glue Design](<Campaign Supply to ASL Glue Design.md>)
