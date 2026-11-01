@@ -99,6 +99,62 @@ test("the pan probe summarizes frames from their times", () => {
     assert.deepEqual(summarizeFrames([5]), { frames: 0, spanMs: 0, framesPerSecond: 0, longestFrameMs: 0, medianFrameMs: 0 });
 });
 
+// Large Campaign Map Plan, A2: a pointer is read from the drawing's rectangle and observed size, not the screen matrix. A 200 by 100 drawing
+// of a 1000 by 1000 box fits at a tenth of a pixel per unit, letterboxed 50 pixels on each side.
+async function observedFixture(rect, rotated) {
+    const previous = globalThis.ResizeObserver;
+    let watch = null;
+    globalThis.ResizeObserver = class { constructor(callback) { watch = callback; } observe() {} disconnect() {} };
+    try {
+        const fixture = viewportFixture();
+        fixture.svg.getBoundingClientRect = () => rect;
+        await fixture.viewport.load("render/board/version/exact", "", "0 0 1000 1000", ["grid"], ["grid"]);
+        if (rotated) fixture.viewport.setRotation(true);
+        watch([{ target: fixture.svg, contentRect: { width: 200, height: 100 } }]);
+        return fixture;
+    } finally {
+        globalThis.ResizeObserver = previous;
+    }
+}
+
+test("a click is read from the drawing's rectangle, letterboxed, without the screen matrix", async () => {
+    const { svg, handlers, calls } = await observedFixture({ left: 10, top: 20, right: 210, bottom: 120 }, false);
+    svg.getScreenCTM = () => { throw new Error("the screen matrix lays out the map"); };
+    handlers.get("pointerdown")({ pointerId: 1, button: 0, clientX: 85, clientY: 50, target: svg });
+    handlers.get("pointerup")({ pointerId: 1, clientX: 85, clientY: 50, target: svg });
+    assert.deepEqual(calls.at(-1), ["OnBoardClick", 250, 300]);
+});
+
+test("a click on a turned map is read through the quarter turn", async () => {
+    // Turned, the 200 by 100 drawing covers 100 by 200 pixels of screen; its x runs down the screen and its y to the left.
+    const { svg, handlers, calls } = await observedFixture({ left: 10, top: 20, right: 110, bottom: 220 }, true);
+    svg.getScreenCTM = () => { throw new Error("the screen matrix lays out the map"); };
+    handlers.get("pointerdown")({ pointerId: 1, button: 0, clientX: 80, clientY: 95, target: svg });
+    handlers.get("pointerup")({ pointerId: 1, clientX: 80, clientY: 95, target: svg });
+    assert.deepEqual(calls.at(-1), ["OnBoardClick", 250, 300]);
+});
+
+test("a burst of wheel events compounds its zoom and draws once a frame", async () => {
+    const previousFrame = globalThis.requestAnimationFrame;
+    const frames = [];
+    try {
+        const { viewport, svg, handlers } = viewportFixture();
+        await viewport.load("render/board/version/exact", "", "0 0 1000 1000", ["grid"], ["grid"]);
+        globalThis.requestAnimationFrame = callback => frames.push(callback);
+        const before = svg.attributes.viewBox;
+        for (let index = 0; index < 3; index++) {
+            handlers.get("wheel")({ deltaY: -100, clientX: 10, clientY: 20, preventDefault() {} });
+        }
+        assert.equal(frames.length, 1);
+        assert.equal(svg.attributes.viewBox, before);
+        frames.shift()();
+        const width = Number(svg.attributes.viewBox.split(" ")[2]);
+        assert.ok(Math.abs(width - 1000 * 0.8 ** 3) < 1e-9);
+    } finally {
+        globalThis.requestAnimationFrame = previousFrame;
+    }
+});
+
 test("zooming switches the tier the units layer shows", async () => {
     const { viewport, svg } = viewportFixture();
     await viewport.load("render/board/version/exact", "", "0 0 1000 1000", ["grid"], ["grid"]);
@@ -171,6 +227,8 @@ test("optional scene timing waits for counters and paint opportunities and ignor
         const { viewport, host } = viewportFixture();
         await viewport.load("render/board/v1/exact", "", "0 0 100 100", ["grid"], ["grid"]);
         assert.equal(host.dataset.mapMetricStatus, "loading");
+        // The loaded box is drawn at the next frame (Large Campaign Map Plan, A1); the scene's two paint opportunities follow the counters.
+        frames.shift()();
         viewport.setUnits('<g id="layer-units" data-face-size="35"/>');
         assert.equal(host.dataset.mapMetricStatus, "loading");
         frames.shift()();

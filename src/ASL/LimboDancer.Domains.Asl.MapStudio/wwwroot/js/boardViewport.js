@@ -4,6 +4,8 @@
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 const hoverInterval = 100;
+// The quiet time after the last wheel event at which a gesture is taken as ended (Large Campaign Map Plan, A4 and B3).
+const gestureRest = 200;
 const rotationKey = "studio.map.rotated";
 
 // Views are scoped to game/viewer and the exact rendered board version. Storage failure falls back to this page.
@@ -41,7 +43,16 @@ export function create(host, dotnet) {
     // Pass 29: the turn is remembered for each shape of the map's pane, so turning a tall pane never turns a wide one. A pane resized into the
     // other shape takes that shape's choice.
     // A view still at its fit is fitted again when the pane changes size, such as when the context above it grows.
-    const shapeWatcher = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => {
+    // Large Campaign Map Plan, A2: the drawing's own size comes from this observer, never from clientWidth read in an event, since that read
+    // forces the browser to lay out the whole map. The SVG is observed itself: side by side it is half the host.
+    const shapeWatcher = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(entries => {
+        for (const entry of entries) {
+            if (entry.target === svg) {
+                state.size = { width: entry.contentRect.width, height: entry.contentRect.height };
+                state.rect = null;
+            }
+        }
+
         applyShape(state);
         if (state.fitted) {
             reset(state);
@@ -51,6 +62,14 @@ export function create(host, dotnet) {
         }
     });
     shapeWatcher?.observe(host);
+    shapeWatcher?.observe(svg);
+
+    // The view is saved when a gesture ends, and when the page is hidden (A4).
+    const onHide = () => rememberView(state);
+    globalThis.addEventListener?.("pagehide", onHide);
+    const onScroll = () => { state.rect = null; };
+    globalThis.addEventListener?.("scroll", onScroll, { capture: true, passive: true });
+    svg.addEventListener("pointerenter", () => takeRect(state));
     try {
         localStorage.removeItem(rotationKey);
     } catch {
@@ -65,7 +84,9 @@ export function create(host, dotnet) {
         }
 
         event.preventDefault();
-        zoomAt(state, toBoard(state, event.clientX, event.clientY), event.deltaY < 0 ? 0.8 : 1.25);
+        zoomAt(state, toBoard(state, event.clientX, event.clientY), event.deltaY < 0 ? 0.8 : 1.25, true);
+        clearTimeout(state.wheelRest);
+        state.wheelRest = setTimeout(() => gestureEnded(state), gestureRest);
     }, { passive: false });
 
     svg.addEventListener("pointerdown", event => {
@@ -74,6 +95,7 @@ export function create(host, dotnet) {
         }
 
         host.focus({ preventScroll: true });
+        takeRect(state);
 
         // Pointer capture retargets pointerup to the SVG root. Remember the actual unit hit here.
         const unitId = event.target.closest?.("[data-unit-id]")?.getAttribute("data-unit-id");
@@ -115,9 +137,9 @@ export function create(host, dotnet) {
         }
 
         // Turned a quarter clockwise (pass 29), the map's x runs down the screen and its y runs to the left.
-        const unitsPerPixel = drag.box.width / svg.clientWidth;
+        const unitsPerPixel = drag.box.width / paneSize(state).width;
         const [mx, my] = state.rotated ? [dy, -dx] : [dx, dy];
-        setBox(state, { ...drag.box, x: drag.box.x - mx * unitsPerPixel, y: drag.box.y - my * unitsPerPixel });
+        setBox(state, { ...drag.box, x: drag.box.x - mx * unitsPerPixel, y: drag.box.y - my * unitsPerPixel }, false, true);
     });
 
     svg.addEventListener("pointerup", event => {
@@ -129,6 +151,7 @@ export function create(host, dotnet) {
 
         const point = toBoard(state, event.clientX, event.clientY);
         if (drag.moved) {
+            gestureEnded(state);
             if (state.tool === "move") {
                 clearOverlay(state);
                 state.dotnet.invokeMethodAsync("OnBoardDrag", drag.start.x, drag.start.y, point.x, point.y);
@@ -230,6 +253,9 @@ export function create(host, dotnet) {
         dispose: () => {
             rememberView(state);
 
+            clearTimeout(state.wheelRest);
+            globalThis.removeEventListener?.("pagehide", onHide);
+            globalThis.removeEventListener?.("scroll", onScroll, { capture: true });
             shapeWatcher?.disconnect();
             host.removeEventListener("keydown", onKey);
             host.replaceChildren();
@@ -466,7 +492,7 @@ function focusPoint(state, x, y) {
     setBox(state, { x: x - width / 2, y: y - height / 2, width, height });
 }
 
-function zoomAt(state, point, factor) {
+function zoomAt(state, point, factor, gesture = false) {
     const width = clamp(state.box.width * factor, state.home.width / 40, state.home.width * 2);
     const scale = width / state.box.width;
     setBox(state, {
@@ -474,7 +500,7 @@ function zoomAt(state, point, factor) {
         y: point.y - (point.y - state.box.y) * scale,
         width,
         height: state.box.height * scale,
-    });
+    }, false, gesture);
 }
 
 // Brings a point into view at the same zoom, only when it lies outside the view or close to its edge (Claude Design's review: a hex picked
@@ -500,8 +526,7 @@ function fitRect(state, x, y, width, height) {
         return;
     }
 
-    const paneWidth = state.svg.clientWidth;
-    const paneHeight = state.svg.clientHeight;
+    const { width: paneWidth, height: paneHeight } = paneSize(state);
     const aspect = paneWidth > 0 && paneHeight > 0 ? paneWidth / paneHeight : state.home.width / state.home.height;
     const boxWidth = Math.max(width, height * aspect);
     const boxHeight = boxWidth / aspect;
@@ -531,8 +556,7 @@ function reset(state) {
 // length; a turned board that fits whole, or one in a wide pane, is shown whole.
 function fitBox(state) {
     const home = { ...state.home };
-    const width = state.svg.clientWidth;
-    const height = state.svg.clientHeight;
+    const { width, height } = paneSize(state);
     if (!state.rotated || width === 0 || height === 0 || paneShape(state) !== "portrait") {
         return home;
     }
@@ -795,7 +819,7 @@ function updateUnitTier(state) {
         return;
     }
 
-    const tier = unitTier(Number(layer.getAttribute("data-face-size")) || 0, state.svg.clientWidth, state.box.width);
+    const tier = unitTier(Number(layer.getAttribute("data-face-size")) || 0, paneSize(state).width, state.box.width);
     if (layer.getAttribute("data-active-tier") !== tier) {
         layer.setAttribute("data-active-tier", tier);
     }
@@ -807,8 +831,11 @@ function updateLabelDetail(state) {
     const labels = state.svg.querySelector("#layer-labels");
     if (!labels || !state.box) return;
     const fontSize = Number(labels.firstElementChild?.getAttribute("font-size")) || 9;
-    const readable = fontSize * state.svg.clientWidth / state.box.width >= 6;
-    labels.setAttribute("data-detail-visible", String(readable));
+    const readable = String(fontSize * paneSize(state).width / state.box.width >= 6);
+    // Written only on change (Large Campaign Map Plan, A3): rewriting it invalidates the style of every label beneath.
+    if (labels.getAttribute("data-detail-visible") !== readable) {
+        labels.setAttribute("data-detail-visible", readable);
+    }
 }
 
 function highlight(state, points) {
@@ -826,18 +853,72 @@ function highlight(state, points) {
     state.svg.appendChild(state.highlight);
 }
 
-function setBox(state, box, fitted = false) {
+// Large Campaign Map Plan, A1: the box changes at once, so every caller (and a burst of wheel events) works from the newest box, while the
+// drawing is written once per animation frame. A gesture's view is saved when it ends (A4); any other change is saved at once.
+function setBox(state, box, fitted = false, gesture = false) {
     state.box = box;
     state.fitted = fitted;
-    const value = `${box.x} ${box.y} ${box.width} ${box.height}`;
-    state.svg.setAttribute("viewBox", value);
+    if (!gesture) {
+        rememberView(state);
+    }
+
+    if (typeof requestAnimationFrame !== "function") {
+        flushBox(state);
+        return;
+    }
+
+    if (!state.flushPending) {
+        state.flushPending = true;
+        requestAnimationFrame(() => flushBox(state));
+    }
+}
+
+function flushBox(state) {
+    state.flushPending = false;
+    if (!state.box) {
+        return;
+    }
+
+    // Taken before any write, while the layout of the last frame still holds, so reading it costs nothing (A2).
+    takeRect(state);
+    const value = `${state.box.x} ${state.box.y} ${state.box.width} ${state.box.height}`;
+    if (state.svg.getAttribute?.("viewBox") !== value) {
+        state.svg.setAttribute("viewBox", value);
+    }
     state.side?.setAttribute("viewBox", value);
-    rememberView(state);
     updateUnitTier(state);
     updateLabelDetail(state);
 }
 
+function gestureEnded(state) {
+    clearTimeout(state.wheelRest);
+    rememberView(state);
+}
+
+// The drawing's size in CSS pixels, before any turn: from the size observer (A2), or read once where there is none.
+function paneSize(state) {
+    return state.size ?? { width: state.svg.clientWidth, height: state.svg.clientHeight };
+}
+
+function takeRect(state) {
+    state.rect = typeof state.svg.getBoundingClientRect === "function" ? state.svg.getBoundingClientRect() : null;
+}
+
+// From a pointer to board coordinates without the screen matrix, which would lay out the map (A2): the drawing's rectangle on screen, the
+// quarter turn when the map is turned (site.css, .board-host.rotated: translateX(100cqw) rotate(90deg) from the top left), and the viewBox's
+// default fit (xMidYMid meet). The screen matrix stays the answer when no rectangle or size is known yet.
 function toBoard(state, clientX, clientY) {
+    const rect = state.rect;
+    const size = state.size;
+    const box = state.box;
+    if (rect && size && box && size.width > 0 && size.height > 0) {
+        const [lx, ly] = state.rotated ? [clientY - rect.top, rect.right - clientX] : [clientX - rect.left, clientY - rect.top];
+        const scale = Math.min(size.width / box.width, size.height / box.height);
+        const offsetX = (size.width - box.width * scale) / 2;
+        const offsetY = (size.height - box.height * scale) / 2;
+        return { x: box.x + (lx - offsetX) / scale, y: box.y + (ly - offsetY) / scale };
+    }
+
     const point = state.svg.createSVGPoint();
     point.x = clientX;
     point.y = clientY;
