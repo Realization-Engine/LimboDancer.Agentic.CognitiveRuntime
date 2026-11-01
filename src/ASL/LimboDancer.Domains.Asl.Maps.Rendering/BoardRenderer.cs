@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Features;
@@ -389,6 +390,39 @@ public static partial class BoardRenderer
         writer.Empty("path", ("fill", "none"), ("stroke", "#000000"), ("stroke-opacity", "0.45"), ("stroke-width", "0.75"),
             ("pointer-events", "none"), ("d", outlines));
         writer.Empty("path", ("fill", "#000000"), ("fill-opacity", "0.6"), ("pointer-events", "none"), ("d", dots));
+    }
+
+    /// <summary>
+    /// The hex labels as data (Large Campaign Map Plan, task 4): each hex's name and the position <see cref="WriteLabels"/> gives its text, in
+    /// one JSON object of three parallel arrays, so the Studio draws only the labels in view instead of one element per hex.
+    /// </summary>
+    public static string LabelIndex(BoardRenderInput input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        var geometry = input.Grid.Geometry;
+        var builder = new StringBuilder();
+        var names = new StringBuilder();
+        var xs = new StringBuilder();
+        var ys = new StringBuilder();
+        var first = true;
+        foreach (var hex in geometry.Hexes())
+        {
+            var center = geometry.CenterDot(hex);
+            if (!first)
+            {
+                names.Append(',');
+                xs.Append(',');
+                ys.Append(',');
+            }
+
+            first = false;
+            names.Append('"').Append(geometry.NameOf(hex).ToString()).Append('"');
+            xs.Append(SvgValue.Number(center.X));
+            ys.Append(SvgValue.Number(center.Y - 22));
+        }
+
+        builder.Append("{\"fontSize\":9,\"names\":[").Append(names).Append("],\"x\":[").Append(xs).Append("],\"y\":[").Append(ys).Append("]}");
+        return builder.ToString();
     }
 
     private static void WriteLabels(SvgWriter writer, BoardGeometry geometry)

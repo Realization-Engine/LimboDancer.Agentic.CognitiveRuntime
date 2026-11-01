@@ -263,17 +263,106 @@ export function create(host, dotnet) {
     };
 }
 
+// Large Campaign Map Plan, task 4: the Exact view's hex labels come as data (labels.json) and are drawn only for the hexes in view, so a large
+// map no longer holds one element per hex. Other views keep their SVG label layer.
+function labelsAsData(baseUrl, layer) {
+    return layer === "labels" && baseUrl.endsWith("/exact");
+}
+
 async function fetchGroups(baseUrl, query, layers) {
+    let labelIndex = null;
     const texts = await Promise.all(layers.map(async layer => {
-        const response = await fetch(`${baseUrl}/${layer}.svg${query}`);
+        const asData = labelsAsData(baseUrl, layer);
+        const response = await fetch(asData ? `${baseUrl}/labels.json${query}` : `${baseUrl}/${layer}.svg${query}`);
         if (!response.ok) {
             throw new Error(`Layer ${layer} failed: ${response.status}`);
+        }
+
+        if (asData) {
+            labelIndex = await response.json();
+            return null;
         }
 
         return response.text();
     }));
     const parser = new DOMParser();
-    return texts.map(text => document.importNode(parser.parseFromString(text, "image/svg+xml").documentElement.firstElementChild, true));
+    const groups = texts.map((text, index) => text === null
+        ? labelGroup(labelIndex)
+        : document.importNode(parser.parseFromString(text, "image/svg+xml").documentElement.firstElementChild, true));
+    return { groups, labelIndex };
+}
+
+// The same group the SVG labels layer has (BoardRenderer.WriteLabels), empty: its texts are the labels in view, filled each frame.
+function labelGroup(index) {
+    const layer = document.createElementNS(svgNamespace, "g");
+    layer.setAttribute("id", "layer-labels");
+    const texts = document.createElementNS(svgNamespace, "g");
+    for (const [name, value] of [["font-family", "Arial, sans-serif"], ["font-size", String(index.fontSize ?? 9)], ["text-anchor", "middle"],
+        ["fill", "#000000"], ["fill-opacity", "0.75"], ["pointer-events", "none"]]) {
+        texts.setAttribute(name, value);
+    }
+
+    layer.appendChild(texts);
+    return layer;
+}
+
+// The indexes of the labels whose positions lie in the box widened by a margin on each side, in the index's order.
+export function labelsInView(index, box, margin = 0.1) {
+    const left = box.x - box.width * margin;
+    const right = box.x + box.width * (1 + margin);
+    const top = box.y - box.height * margin;
+    const bottom = box.y + box.height * (1 + margin);
+    const found = [];
+    for (let i = 0; i < index.x.length; i++) {
+        const x = index.x[i];
+        const y = index.y[i];
+        if (x >= left && x <= right && y >= top && y <= bottom) {
+            found.push(i);
+        }
+    }
+
+    return found;
+}
+
+function updateLabels(state) {
+    const index = state.labelIndex;
+    const layer = state.svg.querySelector("#layer-labels");
+    if (!index || !layer) {
+        return;
+    }
+
+    const shown = state.box && layer.getAttribute("data-detail-visible") === "true" && layer.getAttribute("data-layer-hidden") !== "true";
+    const wanted = shown ? labelsInView(index, state.box) : [];
+    for (const svg of [state.svg, state.side]) {
+        const texts = svg?.querySelector("#layer-labels")?.firstElementChild;
+        if (texts) {
+            fillLabels(texts, index, wanted);
+        }
+    }
+}
+
+// Reuses the group's text elements: each keeps the index it shows, and is changed only when that index changes.
+function fillLabels(texts, index, wanted) {
+    const nodes = texts.children;
+    for (let slot = 0; slot < wanted.length; slot++) {
+        const i = wanted[slot];
+        let node = nodes[slot];
+        if (!node) {
+            node = document.createElementNS(svgNamespace, "text");
+            texts.appendChild(node);
+        }
+
+        if (node.dataset?.label !== String(i)) {
+            node.setAttribute("x", index.x[i]);
+            node.setAttribute("y", index.y[i]);
+            node.textContent = index.names[i];
+            node.setAttribute("data-label", String(i));
+        }
+    }
+
+    while (nodes.length > wanted.length) {
+        texts.lastElementChild.remove();
+    }
 }
 
 async function load(state, baseUrl, query, viewBox, layers, visible) {
@@ -281,11 +370,12 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
     state.loadMetrics = new URLSearchParams(globalThis.location?.search ?? "").get("mapMetrics") === "1"
         ? { generation, started: performance.now(), reported: false } : null;
     if (state.loadMetrics) state.host.dataset.mapMetricStatus = "loading";
-    const groups = await fetchGroups(baseUrl, query, layers);
+    const { groups, labelIndex } = await fetchGroups(baseUrl, query, layers);
     if (generation !== state.generation) {
         return;
     }
 
+    state.labelIndex = labelIndex;
     if (state.loadMetrics) globalThis.mapProbe = options => runProbe(state, options);
     const [x, y, width, height] = viewBox.split(" ").map(Number);
     const home = { x, y, width, height };
@@ -315,9 +405,13 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
 // Replaces the named layers in place, keeping the view: after an edit, for layers the patch does not cover.
 async function reloadLayers(state, baseUrl, query, layers) {
     const generation = state.generation;
-    const groups = await fetchGroups(baseUrl, query, layers);
+    const { groups, labelIndex } = await fetchGroups(baseUrl, query, layers);
     if (generation !== state.generation) {
         return;
+    }
+
+    if (labelIndex) {
+        state.labelIndex = labelIndex;
     }
 
     for (const group of groups) {
@@ -330,6 +424,7 @@ async function reloadLayers(state, baseUrl, query, layers) {
 
     applyComparison(state);
     updateLabelDetail(state);
+    updateLabels(state);
 }
 
 // Applies a render patch (section 5.4): per-feature upserts in paint order and removals, by element id.
@@ -367,6 +462,7 @@ function setVisible(state, visible) {
     }
 
     applyComparison(state);
+    updateLabels(state);
 }
 
 function setTool(state, tool) {
@@ -479,6 +575,8 @@ function applyComparison(state) {
         if (state.box) {
             state.side.setAttribute("viewBox", `${state.box.x} ${state.box.y} ${state.box.width} ${state.box.height}`);
         }
+
+        updateLabels(state);
     }
 }
 
@@ -888,6 +986,7 @@ function flushBox(state) {
     state.side?.setAttribute("viewBox", value);
     updateUnitTier(state);
     updateLabelDetail(state);
+    updateLabels(state);
 }
 
 function gestureEnded(state) {

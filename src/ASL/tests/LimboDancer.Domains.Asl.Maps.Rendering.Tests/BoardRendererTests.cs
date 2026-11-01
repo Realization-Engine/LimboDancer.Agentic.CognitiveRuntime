@@ -68,6 +68,22 @@ public sealed class BoardRendererTests
         Assert.Throws<ArgumentOutOfRangeException>(() => BoardRenderer.Fragment(Synthetic.Value, view, "no-such-layer"));
     }
 
+    // Large Campaign Map Plan, task 4: the label index holds every hex's name and text position exactly as the SVG labels layer writes them.
+    [Fact]
+    public void LabelIndexMatchesTheSvgLabels()
+    {
+        var labels = XDocument.Parse(BoardRenderer.Fragment(Synthetic.Value, BoardView.Exact, "labels")).Descendants(Svg + "text").ToArray();
+        using var index = System.Text.Json.JsonDocument.Parse(BoardRenderer.LabelIndex(Synthetic.Value));
+        var root = index.RootElement;
+        var names = root.GetProperty("names").EnumerateArray().Select(name => name.GetString()).ToArray();
+        var xs = root.GetProperty("x").EnumerateArray().Select(x => x.GetDouble()).ToArray();
+        var ys = root.GetProperty("y").EnumerateArray().Select(y => y.GetDouble()).ToArray();
+        Assert.Equal(9, root.GetProperty("fontSize").GetInt32());
+        Assert.Equal(labels.Select(text => text.Value), names);
+        Assert.Equal(labels.Select(text => double.Parse((string)text.Attribute("x")!, CultureInfo.InvariantCulture)), xs);
+        Assert.Equal(labels.Select(text => double.Parse((string)text.Attribute("y")!, CultureInfo.InvariantCulture)), ys);
+    }
+
     [Fact]
     public void ViewNamesRoundTrip()
     {

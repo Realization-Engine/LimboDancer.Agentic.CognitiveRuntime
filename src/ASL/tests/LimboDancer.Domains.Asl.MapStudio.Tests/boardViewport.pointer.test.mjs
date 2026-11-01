@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
-const { create, unitTier, summarizeFrames } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+const { create, unitTier, summarizeFrames, labelsInView } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -153,6 +153,14 @@ test("a burst of wheel events compounds its zoom and draws once a frame", async 
     } finally {
         globalThis.requestAnimationFrame = previousFrame;
     }
+});
+
+test("only the labels in view and its margin are drawn", () => {
+    const index = { names: ["A1", "A2", "B1", "Z9"], x: [5, 5, 25, 500], y: [5, 40, 5, 500] };
+    // A 20 by 20 box widened by a tenth on each side: x and y from -2 to 22.
+    assert.deepEqual(labelsInView(index, { x: 0, y: 0, width: 20, height: 20 }), [0]);
+    assert.deepEqual(labelsInView(index, { x: 0, y: 0, width: 30, height: 40 }), [0, 1, 2]);
+    assert.deepEqual(labelsInView(index, { x: 1000, y: 1000, width: 10, height: 10 }), []);
 });
 
 test("zooming switches the tier the units layer shows", async () => {

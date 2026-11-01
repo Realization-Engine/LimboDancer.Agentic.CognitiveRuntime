@@ -22,6 +22,9 @@ public sealed class RenderCache(ILogger<RenderCache>? logger = null)
     private readonly ConcurrentDictionary<(string Board, string Version, BoardView View, string Layer, bool Trace), RenderedSvg> cache = new();
     private readonly ConcurrentDictionary<string, string> versions = new(StringComparer.Ordinal);
 
+    /// <summary>The hex labels as data (Large Campaign Map Plan, task 4), cached under its own name, apart from the SVG labels layer.</summary>
+    public const string LabelIndexFile = "labels.json";
+
     /// <summary>The number of rendered layers and documents held.</summary>
     public int Count => cache.Count;
 
@@ -46,9 +49,12 @@ public sealed class RenderCache(ILogger<RenderCache>? logger = null)
         return cache.GetOrAdd((board.Ref.Value, board.Version, view, layer, trace), key =>
         {
             var timer = Stopwatch.StartNew();
-            var svg = key.Layer == "document"
-                ? BoardRenderer.Document(input, view, trace)
-                : BoardRenderer.Fragment(input, view, key.Layer, trace);
+            var svg = key.Layer switch
+            {
+                "document" => BoardRenderer.Document(input, view, trace),
+                LabelIndexFile => BoardRenderer.LabelIndex(input),
+                _ => BoardRenderer.Fragment(input, view, key.Layer, trace),
+            };
             LoadMeasurements.Record(logger, board.Ref.Value, layer, timer.Elapsed.TotalMilliseconds);
             var bytes = Encoding.UTF8.GetBytes(svg);
             var hash = Convert.ToHexStringLower(SHA256.HashData(bytes));
@@ -93,17 +99,20 @@ public static class RenderEndpoints
     private static IResult Render(string board, string version, string view, string file, bool? trace,
         HttpContext context, IBoardProvider provider, RenderCache cache)
     {
-        if (!file.EndsWith(".svg", StringComparison.Ordinal) || !BoardRef.TryParse(board, out var boardRef)
+        var labelIndex = file == RenderCache.LabelIndexFile;
+        if ((!labelIndex && !file.EndsWith(".svg", StringComparison.Ordinal)) || !BoardRef.TryParse(board, out var boardRef)
             || !BoardRenderer.TryParseView(view, out var boardView))
         {
             return Results.NotFound();
         }
 
-        var layer = file[..^4];
-        if (layer != "document" && !BoardRenderer.Layers(boardView).Contains(layer))
+        var layer = labelIndex ? file : file[..^4];
+        if (layer != "document" && !labelIndex && !BoardRenderer.Layers(boardView).Contains(layer))
         {
             return Results.NotFound();
         }
+
+        var contentType = labelIndex ? "application/json; charset=utf-8" : "image/svg+xml; charset=utf-8";
 
         if (provider.LoadVersion(boardRef, version) is not { } studioBoard || cache.Get(studioBoard, boardView, layer, trace ?? false) is not { } rendered)
         {
@@ -122,10 +131,10 @@ public static class RenderEndpoints
         if (AcceptsGzip(context.Request))
         {
             context.Response.Headers.ContentEncoding = "gzip";
-            return Results.Bytes(rendered.Gzip, "image/svg+xml; charset=utf-8");
+            return Results.Bytes(rendered.Gzip, contentType);
         }
 
-        return Results.Bytes(rendered.Svg, "image/svg+xml; charset=utf-8");
+        return Results.Bytes(rendered.Svg, contentType);
     }
 
     /// <summary>Whether the request accepts gzip: named, or <c>*</c>, with a quality above zero.</summary>
