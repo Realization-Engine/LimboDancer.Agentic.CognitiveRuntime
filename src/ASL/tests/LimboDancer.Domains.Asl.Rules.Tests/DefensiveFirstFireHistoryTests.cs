@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Xunit;
 using C = LimboDancer.Domains.Asl.Rules.ScenarioA1DefensiveFirstFireHistoryCalculator;
 
@@ -110,17 +111,53 @@ public sealed class DefensiveFirstFireHistoryTests
     [Fact]
     public void ExplicitExclusionsRetainLegacyForWholeTargetSetButUnknownDoesNot()
     {
-        Assert.Equal(1, C.Reading([DefensiveFirstFireRelationship.OrdinaryPersonnel]));
+        var shot = new DefensiveFirstFireReadingFacts(ScenarioA1FireCalculator.FirstFire, false, false);
+        Assert.Equal(DefensiveFirstFireReading.Version1, C.Reading(shot, [DefensiveFirstFireRelationship.OrdinaryPersonnel]));
         foreach (var excluded in new[] { DefensiveFirstFireRelationship.Carried, DefensiveFirstFireRelationship.AdditionalCreatedUnit, DefensiveFirstFireRelationship.ComplexLineage })
         {
-            Assert.Equal(0, C.Reading([DefensiveFirstFireRelationship.OrdinaryPersonnel, excluded]));
+            Assert.Equal(DefensiveFirstFireReading.Legacy, C.Reading(shot, [DefensiveFirstFireRelationship.OrdinaryPersonnel, excluded]));
             var h = C.Classify(C.Classify(Start(), excluded), DefensiveFirstFireRelationship.OrdinaryPersonnel);
             Assert.Equal(excluded, h.Relationship);
             Assert.False(C.Allowance(Read(h)).Evaluated);
+            var unknown = C.Classify(h, DefensiveFirstFireRelationship.Unknown);
+            Assert.Equal(excluded, unknown.Relationship);
+            Assert.False(unknown.Known);
+            Assert.Equal(DefensiveFirstFireReading.Legacy, C.Reading(shot, [unknown.Relationship]));
         }
-        Assert.Null(C.Reading([DefensiveFirstFireRelationship.Carried, DefensiveFirstFireRelationship.Unknown]));
-        Assert.Null(C.Reading([]));
-        Assert.Null(C.Reading([(DefensiveFirstFireRelationship)999]));
+        Assert.Equal(DefensiveFirstFireReading.Unknown, C.Reading(shot, [DefensiveFirstFireRelationship.Carried, DefensiveFirstFireRelationship.Unknown]));
+        Assert.Equal(DefensiveFirstFireReading.Unknown, C.Reading(shot, []));
+        Assert.Equal(DefensiveFirstFireReading.Unknown, C.Reading(shot, [(DefensiveFirstFireRelationship)999]));
+    }
+
+    [Fact]
+    public void ShotKindSelectsLegacyForVehiclesCanisterAndOtherFire()
+    {
+        // C6.17 pp. 173-174; C8.4 p. 178: this single-Location personnel reading does not cover the Canister cluster.
+        var shot = new DefensiveFirstFireReadingFacts(ScenarioA1FireCalculator.FirstFire, false, false);
+        Assert.Equal(DefensiveFirstFireReading.Legacy, C.Reading(shot with
+        {
+            VehicleTarget = true
+        }, []));
+        Assert.Equal(DefensiveFirstFireReading.Legacy, C.Reading(shot with
+        {
+            Canister = true
+        }, []));
+        Assert.Equal(DefensiveFirstFireReading.Legacy, C.Reading(shot with
+        {
+            FireKind = null
+        }, []));
+        Assert.Equal(DefensiveFirstFireReading.Legacy, C.Reading(shot with
+        {
+            FireKind = ScenarioA1FireCalculator.BoundingFirstFire
+        }, []));
+        Assert.Equal(DefensiveFirstFireReading.Unknown, C.Reading(shot with
+        {
+            Canister = null
+        }, [DefensiveFirstFireRelationship.OrdinaryPersonnel]));
+        Assert.Equal(DefensiveFirstFireReading.Unknown, C.Reading(shot with
+        {
+            VehicleTarget = null
+        }, [DefensiveFirstFireRelationship.OrdinaryPersonnel]));
     }
 
     [Fact]
@@ -209,6 +246,103 @@ public sealed class DefensiveFirstFireHistoryTests
         var targets = ScenarioA1OrdnanceCalculator.PersonnelHistoryTargets(shot, Reference);
         Assert.Equal("r1", Assert.Single(targets!).UnitId);
         Assert.Null(C.MovementFactsRefusal(shot, targets));
+    }
+
+    [Fact]
+    public void PublicExpenditurePermitsFirersVerdictWithoutPrivateTargetIdentity()
+    {
+        // A8.11/.12 p. 59: the DEFENDER acts on announced expenditure, without private target identity.
+        var contract = ScenarioA1RuleContracts.Find("c6.17-personnel-history")!;
+        foreach (var name in new[] { "halfMfSpent", "shotsHere" })
+        {
+            var fact = Assert.Single(contract.Facts, x => x.Name == name);
+            Assert.Equal(ContractDisclosure.All, fact.Disclosure);
+            Assert.Null(fact.Concerns);
+        }
+        Assert.Equal(ContractDisclosure.Owner, Assert.Single(contract.Facts, x => x.Name == "targetId").Disclosure);
+        var facts = JsonNode.Parse("""{"phase":"MPh","firerId":"g1","targetId":null,"weaponId":"gun1","location":"bd01:G5:0","halfMfSpent":4,"shotsHere":1,"inCurrentWindow":true}""")!.AsObject();
+        Assert.Equal("allowed", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+        facts["shotsHere"] = 2;
+        Assert.Equal("refused", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+        facts["weaponId"] = null;
+        Assert.Equal(ContractVerdict.NotEvaluated, ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+    }
+
+    [Fact]
+    public void JointShotRequiresEveryTargetsAllowanceAndOrdinalIdentityOrder()
+    {
+        var a = Read(Spend(Start(), 4));
+        var b = Read(Shot(Spend(Start("r2"), 2)));
+        var facts = new DefensiveFirstFirePersonnelFacts(1, [a, b]);
+        Assert.Null(C.FactsRefusal(facts));
+        Assert.NotNull(C.ShotRefusal(facts));
+        Assert.Null(C.ShotRefusal(facts with
+        {
+            Targets = [a, b with { ShotsHere = 0 }]
+        }));
+        Assert.NotNull(C.FactsRefusal(facts with
+        {
+            Targets = [b, a]
+        }));
+        var shot = ShotFacts(facts) with
+        {
+            Hit = ShotFacts(facts).Hit! with
+            {
+                Targets = [Target("r1"), Target("r2")]
+            }
+        };
+        Assert.Contains("asl.a1.ordnance.first-fire-limit", ScenarioA1OrdnanceCalculator.Precheck(shot, Reference));
+    }
+
+    [Fact]
+    public void VersionedBindingRejectsContradictoryShotFactsAndMissingTargets()
+    {
+        var shot = ShotFacts(new(1, [Read(Spend(Start(), 4))]));
+        var targets = new[] { Target("r1") };
+        Assert.Null(C.MovementFactsRefusal(shot, targets));
+        var invalid = new[]
+        {
+            shot with { Phase = "DFPh" },
+            shot with { FireKind = null },
+            shot with { VehicleTarget = new("v1", "tank", "north", "north", true, false, false, false, true) },
+            shot with { Canister = new(1, "north", []) },
+            shot with { TargetLocationId = "bd01:G6:0" },
+            shot with { Gun = shot.Gun! with { GunId = "gun2" } },
+            shot with { Movement = shot.Movement! with { PersonnelHistory = new(1, [Read(Spend(Start(), 4), window: false)]) } },
+        };
+        Assert.All(invalid, x => Assert.NotNull(C.MovementFactsRefusal(x, targets)));
+        Assert.NotNull(C.MovementFactsRefusal(shot, [Target("r1"), Target("r2")]));
+        Assert.Contains("asl.a1.ordnance.fact-missing:movement.personnelHistory", ScenarioA1OrdnanceCalculator.Precheck(invalid[^1], Reference));
+        Assert.DoesNotContain("asl.a1.ordnance.first-fire-limit", ScenarioA1OrdnanceCalculator.Precheck(invalid[^1], Reference));
+    }
+
+    [Fact]
+    public void ObserveRejectsWrongTargetPreviousLocationAndPhase()
+    {
+        var h = Spend(Start(), 2);
+        var next = new DefensiveFirstFireExpenditure(Phase, "r1", At, At, 2, 4);
+        Assert.False(C.Observe(h, next with
+        {
+            TargetId = "r2"
+        }).Known);
+        Assert.False(C.Observe(h, next with
+        {
+            PreviousLocation = "bd01:G6:0"
+        }).Known);
+        Assert.False(C.Observe(h, next with
+        {
+            PhaseId = "turn2-russian-MPh"
+        }).Known);
+    }
+
+    [Fact]
+    public void VersionedPayloadRoundTripsItsOrderedFactsAndVerdict()
+    {
+        var facts = new DefensiveFirstFirePersonnelFacts(1, [Read(Spend(Start(), 4)), Read(Spend(Start("r2"), 2))]);
+        var restored = JsonSerializer.Deserialize<OrdnanceMovement>(JsonSerializer.Serialize(ShotFacts(facts).Movement))!;
+        Assert.Equal(1, restored.PersonnelHistory!.Version);
+        Assert.Equal(facts.Targets, restored.PersonnelHistory.Targets);
+        Assert.Null(C.ShotRefusal(restored.PersonnelHistory));
     }
 
     private static FireTarget Target(string id) => new(id, "defender-squad", At, false, false, false, false, false, false, false) { KnownEnemyInLos = true, Captors = [] };

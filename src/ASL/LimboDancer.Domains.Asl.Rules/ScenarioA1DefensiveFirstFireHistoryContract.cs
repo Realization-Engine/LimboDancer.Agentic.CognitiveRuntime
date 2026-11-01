@@ -11,8 +11,8 @@ internal static class ScenarioA1DefensiveFirstFireHistoryContract
             new("targetId", ContractFactType.Unit, true, ContractDisclosure.Owner, "The moving target") { Concerns = "targetId" },
             new("weaponId", ContractFactType.Text, true, ContractDisclosure.Owner, "The exact weapon identity") { Concerns = "firerId" },
             new("location", ContractFactType.Hex, false, ContractDisclosure.All, "The target's complete Location"),
-            new("halfMfSpent", ContractFactType.Number, true, ContractDisclosure.Owner, "This target's accumulated half-MF in this Location") { Concerns = "targetId" },
-            new("shotsHere", ContractFactType.Number, true, ContractDisclosure.Owner, "This weapon's shots at this target here") { Concerns = "firerId" },
+            new("halfMfSpent", ContractFactType.Number, true, ContractDisclosure.All, "This target's announced accumulated half-MF in this Location"),
+            new("shotsHere", ContractFactType.Number, true, ContractDisclosure.All, "This weapon's resolved shots at this target here"),
             new("inCurrentWindow", ContractFactType.Flag, false, ContractDisclosure.All, "The target belongs to the current fire window"),
         ],
         ["allowed", "refused", ContractVerdict.NotEvaluated],
@@ -27,12 +27,12 @@ internal static class ScenarioA1DefensiveFirstFireHistoryContract
         {
             return new("refused", [new("Defensive First Fire uses the MPh window.", "A8.1", 59)], []);
         }
-        if (facts.Text("firerId") is null || facts.Text("targetId") is not { } target || facts.Text("weaponId") is not { } weapon)
+        if (facts.Text("firerId") is null || facts.Text("weaponId") is null)
         {
-            return new(ContractVerdict.NotEvaluated, [new("The firing unit, weapon or target is not known to this viewer.", "C6.17", 173)], []);
+            return new(ContractVerdict.NotEvaluated, [new("The firing unit or weapon is not known to this viewer.", "C6.17", 173)], []);
         }
-        var result = ScenarioA1DefensiveFirstFireHistoryCalculator.Allowance(new("workbench", target, facts.Text("location") ?? "", weapon,
-            Whole(facts.Number("halfMfSpent")), Whole(facts.Number("shotsHere")), facts.Flag("inCurrentWindow")));
+        var result = ScenarioA1DefensiveFirstFireHistoryCalculator.Allowance(
+            Whole(facts.Number("halfMfSpent")), Whole(facts.Number("shotsHere")), facts.Flag("inCurrentWindow"));
         return new(!result.Evaluated ? ContractVerdict.NotEvaluated : result.Refusal is null ? "allowed" : "refused",
             [new(result.Refusal ?? $"{result.Remaining} of {result.Ceiling} shots remain for this weapon against this target here.", "C6.17", 173)], []);
     }

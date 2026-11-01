@@ -12,15 +12,24 @@ public static class ScenarioA1DefensiveFirstFireHistoryCalculator
     public static bool LegacyLimit(int shots, int spent, bool vehicle, int? mpClaimed) =>
         shots >= Math.Max(spent, 1) || (shots > 0 && vehicle && (mpClaimed ?? 0) >= spent);
 
-    /// <summary>Null means unknown; zero explicitly preserves the approved excluded reading, one selects the supported reading.</summary>
-    public static int? Reading(IReadOnlyList<DefensiveFirstFireRelationship> relationships)
+    /// <summary>C6.17 and C8.4 (pp. 173, 178): only ordinary personnel First Fire uses the new single-Location reading.</summary>
+    public static DefensiveFirstFireReading Reading(DefensiveFirstFireReadingFacts shot, IReadOnlyList<DefensiveFirstFireRelationship> relationships)
     {
+        ArgumentNullException.ThrowIfNull(shot);
         ArgumentNullException.ThrowIfNull(relationships);
+        if (shot.FireKind != ScenarioA1FireCalculator.FirstFire || shot.VehicleTarget == true || shot.Canister == true)
+        {
+            return DefensiveFirstFireReading.Legacy;
+        }
+        if (shot.VehicleTarget is null || shot.Canister is null)
+        {
+            return DefensiveFirstFireReading.Unknown;
+        }
         if (relationships.Count == 0 || relationships.Any(x => !Enum.IsDefined(x) || x == DefensiveFirstFireRelationship.Unknown))
         {
-            return null;
+            return DefensiveFirstFireReading.Unknown;
         }
-        return relationships.Any(x => x != DefensiveFirstFireRelationship.OrdinaryPersonnel) ? 0 : 1;
+        return relationships.Any(x => x != DefensiveFirstFireRelationship.OrdinaryPersonnel) ? DefensiveFirstFireReading.Legacy : DefensiveFirstFireReading.Version1;
     }
 
     /// <summary>Initialize only from a known MPh-start position/counter, never from an arbitrary mid-phase snapshot.</summary>
@@ -93,14 +102,23 @@ public static class ScenarioA1DefensiveFirstFireHistoryCalculator
     public static DefensiveFirstFireAllowance Allowance(DefensiveFirstFireTarget target)
     {
         ArgumentNullException.ThrowIfNull(target);
-        if (!Text(target.PhaseId) || !Text(target.TargetId) || !Text(target.Location) || !Text(target.WeaponId)
-            || target.HalfMfSpent is not >= 0 || target.ShotsHere is not >= 0 || target.InCurrentWindow is null)
+        if (!Text(target.PhaseId) || !Text(target.TargetId) || !Text(target.Location) || !Text(target.WeaponId))
         {
             return new(false, null, null, Unknown);
         }
-        var ceiling = Math.Max(1, target.HalfMfSpent.Value / 2);
-        var remaining = Math.Max(0, ceiling - target.ShotsHere.Value);
-        return new(true, ceiling, remaining, target.InCurrentWindow != true
+        return Allowance(target.HalfMfSpent, target.ShotsHere, target.InCurrentWindow);
+    }
+
+    /// <summary>A8.11/.12 (p. 59): announced expenditure and resolved shots permit an allowance verdict without revealing target identity.</summary>
+    public static DefensiveFirstFireAllowance Allowance(int? halfMfSpent, int? shotsHere, bool? inCurrentWindow)
+    {
+        if (halfMfSpent is not >= 0 || shotsHere is not >= 0 || inCurrentWindow is null)
+        {
+            return new(false, null, null, Unknown);
+        }
+        var ceiling = Math.Max(1, halfMfSpent.Value / 2);
+        var remaining = Math.Max(0, ceiling - shotsHere.Value);
+        return new(true, ceiling, remaining, inCurrentWindow != true
             ? "The target is outside the current Defensive First Fire window (A8.1, p. 59)."
             : remaining == 0 ? "This weapon has used the target's MF allowance in this Location (C6.17, pp. 173-174)." : null);
     }
@@ -114,14 +132,15 @@ public static class ScenarioA1DefensiveFirstFireHistoryCalculator
             return Unknown;
         }
         var first = facts.Targets[0];
-        var ids = new HashSet<string>(StringComparer.Ordinal);
+        string? previousId = null;
         foreach (var target in facts.Targets)
         {
-            if (target is null || !Allowance(target).Evaluated || !ids.Add(target.TargetId)
+            if (target is null || !Allowance(target).Evaluated || (previousId is not null && StringComparer.Ordinal.Compare(previousId, target.TargetId) >= 0)
                 || first is null || target.PhaseId != first.PhaseId || target.Location != first.Location || target.WeaponId != first.WeaponId)
             {
                 return Unknown;
             }
+            previousId = target.TargetId;
         }
         return null;
     }
@@ -151,7 +170,9 @@ public static class ScenarioA1DefensiveFirstFireHistoryCalculator
             return null;
         }
         if (FactsRefusal(facts) is not null || shot.Phase != "MPh" || shot.FireKind != ScenarioA1FireCalculator.FirstFire
-            || shot.VehicleTarget is not null || shot.Movement.SpentHere is not null || shot.Movement.ShotsHere is not null
+            || Reading(new(shot.FireKind, shot.VehicleTarget is not null, shot.Canister is not null || ScenarioA1OrdnanceCalculator.IsCanister(shot)),
+                [DefensiveFirstFireRelationship.OrdinaryPersonnel]) != DefensiveFirstFireReading.Version1
+            || shot.Movement.SpentHere is not null || shot.Movement.ShotsHere is not null
             || shot.Movement.MpClaimed is not null || attackedTargets is not { Count: > 0 } targets)
         {
             return Unknown;
@@ -159,7 +180,7 @@ public static class ScenarioA1DefensiveFirstFireHistoryCalculator
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var target in facts.Targets)
         {
-            if (target.Location != shot.TargetLocationId || target.WeaponId != shot.Gun?.GunId)
+            if (target.InCurrentWindow != true || target.Location != shot.TargetLocationId || target.WeaponId != shot.Gun?.GunId)
             {
                 return Unknown;
             }
@@ -229,7 +250,8 @@ public static class ScenarioA1DefensiveFirstFireHistoryCalculator
             return history with
             {
                 Known = false,
-                Relationship = DefensiveFirstFireRelationship.Unknown
+                Relationship = history.Relationship is DefensiveFirstFireRelationship.Carried or DefensiveFirstFireRelationship.AdditionalCreatedUnit or DefensiveFirstFireRelationship.ComplexLineage
+                    ? history.Relationship : DefensiveFirstFireRelationship.Unknown
             };
         }
         return history.Relationship == DefensiveFirstFireRelationship.OrdinaryPersonnel

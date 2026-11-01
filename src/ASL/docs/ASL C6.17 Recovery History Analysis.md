@@ -1,6 +1,6 @@
 # C6.17 recovery history analysis
 
-Status: approved 2026-11-01. The Rules-only stage is implemented and independently reviewed on `codex/c617-recovery-history`. Play and Units wiring remains pending the Rules PR's separately approved merge. The diagnosis below describes the pre-wiring application behavior.
+Status: approved 2026-11-01. The Rules-only stage is implemented on `codex/c617-recovery-history`; corrections from Claude's PR 98 review await re-review. Play and Units wiring remains pending the Rules PR's separately approved merge. The diagnosis below describes the pre-wiring application behavior.
 
 Base: main `6cbf7df027e26dbb4696a14b080f109a26852521`, fetched before creating `codex/c617-recovery-history`. Worktree: `C:/Users/dland/.codex/worktrees/c617-recovery-history/LimboDancer.MCP`. Tool work folder: `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex`.
 
@@ -72,4 +72,4 @@ Maintain a phase-scoped history per personnel target and full Location, with a s
 
 Supported successor targets inherit and rebase the predecessor's history before its id is retired. Broken/pinned targets retain it through the open window. Known excluded relationships explicitly retain the old reading for the target set; incomplete ordinary history must instead report not-evaluated. These are separate cases, not permission to fall back when the new calculation fails.
 
-The [implementation design](<Designs/ASL C6.17 Recovery History Design.md>) specifies the boundary, compatibility contract, checks and delivery sequence. C6.17's inventory row is currently open for claim despite its existing scalar calculator being marked built. No claim has been reserved during this analysis, and SW-01 is not reused for this new work.
+The [implementation design](<Designs/ASL C6.17 Recovery History Design.md>) specifies the boundary, compatibility contract, checks and delivery sequence. C6.17 is claimed by Codex and built in the Rules-only PR; W-C6.17 is open. SW-01 is not reused. Design section 11 records RC617.1 (known exclusions survive a later unknown classification) and RC617.2 (the per-Location minimum is a bounded simplification of the printed once-per-hex minimum). Canister's multi-Location cluster (C8.4, p. 178) remains on the legacy reading through the Rules selector. Announced MF and resolved shot counts are public for the DEFENDER's decision under A8.11/.12 p. 59; private target identity is not needed for the allowance arithmetic.

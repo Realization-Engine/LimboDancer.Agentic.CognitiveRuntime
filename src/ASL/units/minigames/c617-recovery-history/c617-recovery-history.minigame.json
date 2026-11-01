@@ -76,22 +76,22 @@
       }
     },
     {
-      "name": "A shot does not charge B: joint shot already counted",
+      "name": "Firing side sees an exhausted allowance without target identity",
       "position": "setup",
-      "viewer": "adjudicator",
+      "viewer": "german",
       "contract": "c6.17-personnel-history",
       "facts": {
         "phase": "MPh",
         "firerId": "g1",
-        "targetId": "r2",
+        "targetId": null,
         "weaponId": "gun1",
         "location": "bd01:G5:0",
         "halfMfSpent": 4,
-        "shotsHere": 1,
+        "shotsHere": 2,
         "inCurrentWindow": true
       },
       "expect": {
-        "outcome": "allowed"
+        "outcome": "refused"
       }
     },
     {
@@ -190,7 +190,7 @@
       }
     },
     {
-      "name": "Target history hidden from firing side",
+      "name": "Firing side evaluates announced history without target identity",
       "position": "setup",
       "viewer": "german",
       "contract": "c6.17-personnel-history",
@@ -200,16 +200,16 @@
         "targetId": null,
         "weaponId": "gun1",
         "location": "bd01:G5:0",
-        "halfMfSpent": null,
+        "halfMfSpent": 4,
         "shotsHere": 0,
         "inCurrentWindow": true
       },
       "expect": {
-        "outcome": "not-evaluated"
+        "outcome": "allowed"
       }
     },
     {
-      "name": "Weapon history hidden from target side",
+      "name": "Weapon identity hidden from target side",
       "position": "setup",
       "viewer": "russian",
       "contract": "c6.17-personnel-history",
@@ -220,7 +220,7 @@
         "weaponId": null,
         "location": "bd01:G5:0",
         "halfMfSpent": 4,
-        "shotsHere": null,
+        "shotsHere": 0,
         "inCurrentWindow": true
       },
       "expect": {

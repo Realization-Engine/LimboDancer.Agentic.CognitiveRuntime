@@ -2,6 +2,15 @@ using System.Collections.Immutable;
 
 namespace LimboDancer.Domains.Asl.Rules;
 
+/// <summary>A Rules decision, not an event version: Legacy is serialized by omitting the version.</summary>
+public enum DefensiveFirstFireReading
+{
+    Unknown, Legacy, Version1
+}
+
+/// <summary>Shot-kind facts for selecting the supported personnel reading.</summary>
+public sealed record DefensiveFirstFireReadingFacts(string? FireKind, bool? VehicleTarget, bool? Canister);
+
 /// <summary>The supported C6.17 reading (pp. 173-174). Unknown is never a request to use the legacy reading.</summary>
 public enum DefensiveFirstFireRelationship
 {
