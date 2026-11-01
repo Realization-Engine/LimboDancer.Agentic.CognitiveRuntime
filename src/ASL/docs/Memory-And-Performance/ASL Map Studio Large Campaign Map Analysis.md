@@ -223,6 +223,67 @@ Answers to the [guidelines'](<ASL Memory and Performance Guidelines.md>) checkli
 - **Benefit and noise:** each option has a stop threshold in section 6; figures from the automated pane are confirmed in an ordinary browser first (M1).
 - **Records:** results, limits, and backlog rows go with each task.
 
+## 10. Results of the first wave
+
+Built on branch `claude/large-map-pan-zoom` (2026-11-01) by the [plan](<ASL Map Studio Large Campaign Map Plan.md>). Measured in the Claude browser pane (Chromium 152) with the pane in front; the ordinary-browser measurement (M1) waits for the user's browser.
+
+### 10.1 Goodwood, head against the baseline
+
+The baseline is `main` at 20d17317 (the gate's base build); the head is the branch. Both opened identical copies of the Goodwood reference (decision P4) at Turn 1 setup, the Allied view, at Fit, the map 1,660 pixels wide (932 high for the baseline, 756 for the head).
+
+| Measure | Baseline | Head |
+|---|---|---|
+| Elements in the map | 45,076 | 4,848 |
+| Characters in the map | 11,476,906 | 4,904,874 |
+| Scene load, warm | 2,420 ms | 773 ms |
+| Drag: frames per second | 1.8 | 8.4 to 9.8 |
+| Drag: median frame | 1,047 ms | 129 to 141 ms |
+| Drag: longest frame | 1,047 ms | 165 to 329 ms |
+| A burst of 20 wheel events, to settled | 13,273 ms | 61 to 179 ms |
+| Label layer switch | 826 to 943 ms (section 3, a smaller pane) | 174 ms |
+| Forced style and layout in event handlers (Long Animation Frames) | 628 to 1,185 ms a step (section 3.3) | 0 |
+
+### 10.2 What each task did
+
+| Task | Measured effect |
+|---|---|
+| A3 alone (write the label attribute only on change) | None: the label cost is the elements' number, not the attribute |
+| A1, A2, A4 (one drawing per frame, no layout read in events, the view saved at rest) | A 20-event wheel burst from 22 s to 2.1 s (544 by 240 pane); a drag still one frame a second, as the plan said, until B1 |
+| B1 (labels on demand, the Exact view) | Elements 45,077 to 4,635; scene load 9.3 s to 1.4 s; a drag from 1 to 8.9 frames per second (544 by 240 pane) |
+| B2 (the grid as one repeated column pair) | The grid layer from 4,944,347 to 75,148 characters; the map from 12.2 M to 4.9 M characters |
+| B3 (pan by a compositor transform) | Built, measured worse, and removed: a drag's median frame 200 to 224 ms with it, 71 ms without (1,660 by 932). The pane's Chromium appears to rasterize the transformed SVG layer again each frame. Registering `--gesture` as not inherited and keeping the layer for the whole gesture did not change that |
+
+### 10.3 The small map
+
+`dl-tractor-works-02`, the German view, at Fit, the map 1,485 (baseline) and 1,680 (head) by 671:
+
+| Measure | Baseline | Head |
+|---|---|---|
+| Drag: frames per second | 37.5 | 37.8 |
+| A burst of 20 wheel events, to settled | 294 ms | 51 ms |
+| Scene load | 257 ms | 255 ms |
+| Elements in the map | 2,291 | 2,328 (the labels in view, at a readable zoom) |
+
+No rule, planner, projector, or record changed, so the gate's replay proofs were not run (the user's standing rule of 2026-11-01: never run tests the change cannot affect).
+
+### 10.4 Against the plan's thresholds
+
+| Threshold | Result |
+|---|---|
+| No synchronous layout read in any event handler | Met |
+| One pan step under 300 ms | Met: 129 to 141 ms median |
+| 50 frames per second during a drag | Not met: about 9 |
+| Turning the labels on or off under 100 ms | Not met: 174 ms |
+
+By decision P3, the next step is B4: raster tiles for the static layers (terrain, elevation, grid), since what remains of a frame is the painting of 3.4 M characters of terrain and 1 M of elevation paths. It waits for the user's word, as does M1, the measurement in an ordinary browser.
+
+### 10.5 Deviations from the plan
+
+- `RenderedSvg` keeps its name; the endpoint chooses the content type per file instead.
+- The labels in view are found by a scan of the hex list (40,442 comparisons, under a millisecond), not a spatial index.
+- B3 is not in the branch (10.2).
+- A drag converts pixels to board units by the pane's width, not by the viewBox's fit, so a letterboxed map pans slower than the pointer. This predates the branch and is left as it is (backlog section 96).
+
 ## Related documents
 
 - [ASL Memory and Performance Guidelines](<ASL Memory and Performance Guidelines.md>)

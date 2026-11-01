@@ -3,7 +3,7 @@
 **Written:** 2026-11-01, at the user's word: "All proposals accepted", then "If so, write it" (a design for the work the analysis orders).
 **Source:** `src/ASL/docs/Memory-And-Performance/ASL Map Studio Large Campaign Map Analysis.md` (the analysis): its measurements (section 3), the code (section 4), the options (section 6), the order (section 7), and the decisions P1 to P4 (section 8), all accepted on 2026-11-01.
 **Scope:** the first wave of the analysis's order: M2 and M1 (measure), A1 to A4 (the event path), B1 (labels on demand), B2 (the grid drawn once and repeated), and B3 (pan by transform), in one branch and one pull request. Not in scope: M3 and C1 to C4 (the setup panel and page renders), B4 (raster tiles), B5, B6, D1, and D2. Each of those follows its own measurement, after this wave, as the analysis's order says.
-**Status:** proposed. Nothing is built. Implementation starts at the user's word.
+**Status:** built on branch `claude/large-map-pan-zoom` (2026-11-01) at the user's word to carry it without intervention: tasks 0 to 5 and 7; task 6 (B3) built, measured worse, and removed; task 2's ordinary-browser measurement waits for the user's browser. The results are in the analysis, section 10. The merge waits for a green CI run and the user's word.
 
 ## 1. Goal and expected gains
 
@@ -112,7 +112,7 @@ Run the probe (task 1) on the reference in both browsers after each of tasks 3 t
 
 ### Task 8: gate and pull request
 
-The merge gate's remaining stages (its `strict` stage before the documents commit), the Node viewport test by hand, the pull request with a green CI run, the outside outputs cleaned. The merge waits for the user's word.
+The gate's `strict` stage before the documents commit, the Node viewport test by hand, the pull request with a green CI run, the outside outputs cleaned. The gate's `baseline`, `build`, and `proofs` stages are not run: they check what games decide, which this plan does not touch (the user's standing rule of 2026-11-01: never run tests the change cannot affect). The merge waits for the user's word.
 
 ## 4. Risks
 
