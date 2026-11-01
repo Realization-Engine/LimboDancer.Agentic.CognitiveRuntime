@@ -2600,6 +2600,13 @@ li.card-outcome {
     border-radius: var(--radius);
 }
 
+/* A turned map takes its size from its box (pass 29), but the card map's box takes its height from the drawing: once turned, it gives the
+   box a height of its own, or the map draws nothing. */
+.card-map .board-host.rotated {
+    height: min(70vh, 40rem);
+    min-height: 14rem;
+}
+
 .card-map-dock > summary {
     font-size: 0.85rem;
     color: var(--muted);
@@ -2635,7 +2642,9 @@ li.card-outcome {
 }
 
 @media (max-width: 767.98px) {
+    /* On a phone the bar scrolls away with the page, so it does not hold a fifth of the screen. */
     .card-editor-bar {
+        position: static;
         margin: 0 -1.25rem 0.5rem;
     }
 
