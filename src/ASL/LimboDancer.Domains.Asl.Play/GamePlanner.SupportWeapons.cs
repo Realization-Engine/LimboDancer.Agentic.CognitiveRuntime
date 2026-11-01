@@ -56,9 +56,9 @@ public sealed partial class GamePlanner
             {
                 var phasing = holder.Side == state.PhasingSide;
                 transfer |= ScenarioA1SupportWeaponRules.TransferPhase(state.Phase, phasing);
-                // At the start of the CCPh a drop matters only to a holder in a Location with an enemy unit, where the Close Combat is.
-                drop |= ScenarioA1SupportWeaponRules.DropPhase(state.Phase, phasing) && (state.Phase != "ccph" || (state.Location(holder.Id)?.Location is { } held
-                    && SidesAt(held).Any(other => other != holder.Side)));
+                recover |= ScenarioA1SupportWeaponRules.RecoverPhase(state.Phase, phasing)
+                    && ScenarioA1SupportWeaponPossessionRules.RecoveryWeaponApplicable(true, Is(holder, Conditions.Broken));
+                drop |= SupportWeaponDropRefusal(state, weapon.Id) is null;
                 dismantle |= Dismantlable(weapon) && ScenarioA1SupportWeaponRules.DismantlePhase(state.Phase, phasing);
             }
             else if (weapon.Holding is null && !recover && state.Location(weapon.Id)?.Location is { } at)
@@ -466,64 +466,30 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a transfer names the possessing unit, the SW, and the unit that receives it");
         }
 
-        if (state.Phase is not ("rph" or "aph"))
+        if (SupportWeaponTransferRefusal(state, fromId, equipmentId, toId) is { } transferBar)
         {
-            return Refused(scope, label, expected, "play.transfer-phase: a SW is transferred in the RPh or at the start of the APh (A4.431)");
+            return Refused(scope, label, expected, transferBar);
         }
 
-        if (state.Unit(fromId) is not { } giver || state.Unit(toId) is not { } taker || giver.Id == taker.Id || !FreeToAct(giver) || !FreeToAct(taker)
-            || Is(giver, Conditions.Pinned) || Is(taker, Conditions.Pinned) || giver.Side != taker.Side || state.Location(giver.Id)?.Location is not { } at
-            || state.Location(taker.Id)?.Location != at || LiveFire.IsVehicle(giver) || LiveFire.IsVehicle(taker))
-        {
-            return Refused(scope, label, expected, "play.transfer-unit: a SW passes between Good Order unpinned Infantry of one side in one Location (A4.431)");
-        }
-
-        // D6.31 (pass 65, ruling R65.10): a PRC passes a SW to Infantry in its Location or to a PRC of its own vehicle; Rules decides.
-        if (ScenarioA1PassengerActionRules.TransferBar(giver.Id, VehicleOf(state, giver.Id), taker.Id, VehicleOf(state, taker.Id)) is { } aboardBar)
-        {
-            return Refused(scope, label, expected, aboardBar);
-        }
-
-        // A20.5 (ruling R14.5; table player, pass 14): an Unarmed unit uses no SW, so it receives none.
-        if (Is(taker, Conditions.Unarmed))
-        {
-            return Refused(scope, label, expected, $"play.transfer-unarmed: {taker.Id} is Unarmed and uses no SW (A20.5)");
-        }
-
-        if (Held(state, giver.Id).FirstOrDefault(item => item.Id == equipmentId) is not { } weapon)
-        {
-            return Refused(scope, label, expected, $"play.transfer-weapon: {giver.Id} does not possess '{equipmentId}'");
-        }
-
-        if (state.RecoveredThisPhase.Contains(weapon.Id))
-        {
-            return Refused(scope, label, expected, $"play.transfer-weapon: {weapon.Id} was Recovered this phase and is not transferred in it (A4.44)");
-        }
-
-        if (state.Phase == "rph" && new[] { giver.Id, taker.Id }.FirstOrDefault(state.RallyPhaseActions.Contains) is { } acted)
-        {
-            return Refused(scope, label, expected, $"play.rph-action: {acted} has Deployed, Recombined, or Recovered a SW this RPh, its sole RPh action (A1.31, A4.44; ruling R13.4)");
-        }
-
-        if (state.Phase == "aph" && (giver.Side != state.PhasingSide || state.Advances.Any(item => item.Unit == giver.Id || item.Unit == taker.Id)))
-        {
-            return Refused(scope, label, expected, "play.transfer-phase: in the APh the ATTACKER's units transfer a SW before either advances (A4.431)");
-        }
+        var giver = state.Unit(fromId)!;
+        var taker = state.Unit(toId)!;
+        var weapon = (EquipmentInstance)state.Find(equipmentId)!;
 
         var package = ScenarioA1FirePackage.Identity.ToString();
         var events = new List<GameEvent>();
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred",
-            new EquipmentTransferred(weapon.Id, new Holding(taker.Id, HoldingRole.Possessed), null), package, null));
+            new EquipmentTransferred(weapon.Id, new Holding(taker.Id, HoldingRole.Possessed), null) { TransferredBy = giver.Id }, package, null));
 
         // A12.141 (p. 78; ruling R70.17): a transfer is an activity of both units, and costs a "?" in the LOS of a Good Order enemy within 16 hexes.
         var lost = AddActionConcealmentLoss(scope, attemptId, expected, events, state, giver, taker);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [$"play.transfer: {giver.Id} passes {weapon.Id} to {taker.Id} (A4.431)", .. ConcealmentLossNote(lost)]);
     }
 
-    /// <summary>
-    /// A SW dropped in its Location (A4.43; ruling R13.5): by an unbroken unit in its MPh before it moves, its APh before it advances, or at the start
-    /// of the CCPh; by a broken unit in the RtPh before it routs.
-    /// </summary>
+    /// <summary>The selected transfer's Rules verdict, shared by the command and the controls.</summary>
+    public string? SupportWeaponTransferRefusal(GameState state, string fromId, string weaponId, string toId) =>
+        SupportWeaponTransferRead.Refusal(state, fromId, weaponId, toId, vocabulary);
+
+    /// <summary>Drop in the holder's Location; rout and withdrawal equipment choices use their enclosing action.</summary>
     private GamePlan PlanDrop(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
     {
         if (Replay(existing).Current is not { } state)
@@ -542,18 +508,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.drop-weapon: '{unitId}' does not possess '{equipmentId}' on the map");
         }
 
-        var broken = Is(unit, Conditions.Broken);
-        var when = state.Phase switch
-        {
-            "mph" when !broken && unit.Side == state.PhasingSide && !unit.MovementEnded => null,
-            "aph" when !broken && unit.Side == state.PhasingSide && state.Advances.All(item => item.Unit != unit.Id) => null,
-            "ccph" when !broken && state.CloseCombats.Count == 0 => null,
-            "rtph" when broken && !state.RoutedThisPhase.Contains(unit.Id) && RoutLoadOf(state, unit) is { Laden: true } load =>
-                load.BestLoads.Any(best => !best.Contains(weapon.Id, StringComparer.Ordinal)) ? null
-                    : $"play.drop-phase: {unit.Id} may not leave {weapon.Id} ({load.Pp(weapon.Id)} PP): it carries {load.Total} PP, routs with at most {load.Ipc} PP, and keeps the most it can, "
-                        + $"of which {weapon.Id} is a part whatever else it leaves (A10.4; ruling R13.5)",
-            _ => "play.drop-phase: an unbroken unit drops a SW in its MPh during its move, its APh before it advances, or at the start of the CCPh; a broken unit, before it routs, the SW beyond its IPC (A4.43, A10.4; ruling R13.5)",
-        };
+        var when = SupportWeaponDropRefusal(state, weapon.Id);
         if (when is not null)
         {
             return Refused(scope, label, expected, when);
@@ -564,6 +519,19 @@ public sealed partial class GamePlanner
             Event(scope, attemptId, 1, expected, "equipment-transferred", new EquipmentTransferred(weapon.Id, null, new MapPosition(at)), ScenarioA1FirePackage.Identity.ToString(), null),
         };
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [$"play.drop: {unit.Id} drops {weapon.Id} in {at} (A4.43)"]);
+    }
+
+    /// <summary>The selected standalone drop's Rules verdict, shared by the command and its controls.</summary>
+    public static string? SupportWeaponDropRefusal(GameState state, string weaponId)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var weapon = state.Find(weaponId) as EquipmentInstance;
+        var holder = weapon?.Holding is { Role: HoldingRole.Possessed } holding ? state.Unit(holding.Holder) : null;
+        return ScenarioA1SupportWeaponPossessionRules.DropRefusal(state.Phase, holder?.Side == state.PhasingSide,
+            holder?.Status == InstanceStatus.Active && weapon?.Status == InstanceStatus.Active, holder is not null,
+            holder is not null && state.Location(holder.Id) is not null,
+            holder is not null && Is(holder, Conditions.Broken), holder?.MovementEnded == true,
+            holder is not null && state.Advances.Any(item => item.Unit == holder.Id));
     }
 
     /// <summary>
@@ -619,6 +587,28 @@ public sealed partial class GamePlanner
     /// (+1 CX), as its sole RPh action or in its MPh for one extra MF before it moves, with no armed Known enemy unit in the Location; a SMC Recovers a
     /// SW its friendly broken unit there possesses the same way, with no MF.
     /// </summary>
+    public string? SupportWeaponRecoveryRefusal(GameState state, string unitId, string equipmentId)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return ScenarioA1SupportWeaponPossessionRules.RecoveryRefusal(SupportWeaponRecoveryRead.Facts(state, unitId, equipmentId,
+            catalogs, vocabulary, RecoveryTerrain(state, unitId))).Reason;
+    }
+
+    private string? RecoveryTerrain(GameState state, string unitId) => state.Location(unitId)?.Location is { } at && ReadLocation(state, at) is { } read
+        ? TerrainKey(read) : null;
+
+    public static bool MayOfferRecovery(GameState state, string weaponId)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (state.Find(weaponId) is not EquipmentInstance { Status: InstanceStatus.Active } weapon)
+        {
+            return false;
+        }
+
+        var holder = weapon.Holding is { } holding ? state.Unit(holding.Holder) : null;
+        return ScenarioA1SupportWeaponPossessionRules.RecoveryWeaponApplicable(weapon.Holding is not null, holder is not null && Is(holder, Conditions.Broken));
+    }
+
     private GamePlan PlanRecover(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
     {
         if (Replay(existing).Current is not { } state)
@@ -631,52 +621,16 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a Recovery names the unit and the SW");
         }
 
-        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit, spendsMf: state.Phase == "mph") || Is(unit, Conditions.Pinned) || LiveFire.IsVehicle(unit)
-            || state.Location(unit.Id)?.Location is not { } at)
+        if (SupportWeaponRecoveryRefusal(state, unitId, equipmentId) is { } recoveryBar)
         {
-            return Refused(scope, label, expected, state.Unit(unitId) is { } tied && Is(tied, "asl:ti") && GoodOrder(tied)
-                ? $"play.recover-unit: '{unitId}' is TI and may not Recover a SW in the MPh, which costs a MF (A4.8)"
-                : $"play.recover-unit: '{unitId}' is not unpinned Good Order Infantry on the map (A4.44)");
+            return Refused(scope, label, expected, recoveryBar);
         }
 
-        // A4.44 (pass 40): never by a Bypassing unit.
-        if (ScenarioA1SupportWeaponRules.RecoveryBypassBar(unit.Id, state.Movement is { Bypass.Count: > 0 } lane && lane.Members.Contains(unit.Id, StringComparer.Ordinal)) is { } bypassBar)
-        {
-            return Refused(scope, label, expected, bypassBar);
-        }
-
-        // A20.5 (ruling R14.5; table player, pass 14): an Unarmed unit uses no SW, so it Recovers none.
-        if (Is(unit, Conditions.Unarmed))
-        {
-            return Refused(scope, label, expected, $"play.recover-unarmed: {unit.Id} is Unarmed and uses no SW (A20.5)");
-        }
-
-        if (RecoverPhaseBar(state, unit) is { } phaseBar)
-        {
-            return Refused(scope, label, expected, phaseBar);
-        }
-
-        if (state.Find(equipmentId) is not EquipmentInstance { Status: InstanceStatus.Active } weapon || state.Location(weapon.Id)?.Location != at)
-        {
-            return Refused(scope, label, expected, $"play.recover-weapon: '{equipmentId}' is not a SW in {unit.Id}'s Location");
-        }
-
-        var fromBroken = weapon.Holding is { Role: HoldingRole.Possessed } holding && state.Unit(holding.Holder) is { } holder && holder.Side == unit.Side
-            && Is(holder, Conditions.Broken) && vocabulary.IsA(unit.Kind, "asl:smc");
-        if (weapon.Holding is not null && !fromBroken)
-        {
-            return Refused(scope, label, expected, $"play.recover-weapon: {weapon.Id} is possessed; only a SMC Recovers a SW from its friendly broken unit (A4.44)");
-        }
-
-        if (KnownEnemies(state, unit.Side).Any(item => item.At == at && Armed(item.Unit)))
-        {
-            return Refused(scope, label, expected, "play.recover-weapon: no SW is Recovered in a Location holding an armed Known enemy unit (A4.44)");
-        }
-
-        if (state.RecoveryAttempts.Contains(unit.Id + "|" + weapon.Id))
-        {
-            return Refused(scope, label, expected, $"play.recover-weapon: {unit.Id} has tried to Recover {weapon.Id} this phase (A4.44)");
-        }
+        var unit = state.Unit(unitId)!;
+        var weapon = (EquipmentInstance)state.Find(equipmentId)!;
+        var holder = weapon.Holding is { Role: HoldingRole.Possessed } holding ? state.Unit(holding.Holder) : null;
+        var fromBroken = ScenarioA1SupportWeaponPossessionRules.FromBrokenHolder(weapon.Holding is not null,
+            holder?.Side == unit.Side, holder is not null && Is(holder, Conditions.Broken), vocabulary.IsA(unit.Kind, "asl:smc"));
 
         // E1.56 (backlog pass 16, ruling R16.7): +1 at night.
         var drm = ScenarioA1SupportWeaponRules.RecoveryDrm(Is(unit, Conditions.Cx), state.Night);
@@ -692,7 +646,11 @@ public sealed partial class GamePlanner
             var events = new List<GameEvent>
             {
                 Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "recovery", 1, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null),
-                Event(scope, attemptId, 2, expected, "recovery-attempted", new RecoveryAttempted(unit.Id, weapon.Id, rollId, drm, recovered), package, null),
+                Event(scope, attemptId, 2, expected, "recovery-attempted", new RecoveryAttempted(unit.Id, weapon.Id, rollId, drm, recovered)
+                {
+                    RecoveryVersion = 1,
+                    Terrain = RecoveryTerrain(state, unit.Id),
+                }, package, null),
             };
             if (recovered)
             {
@@ -704,7 +662,7 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        var cost = state.Phase == "mph" && !fromBroken ? " for one MF" : "";
+        var cost = ScenarioA1SupportWeaponPossessionRules.RecoveryMf(state.Phase, fromBroken) > 0 ? " for one MF" : "";
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
             [$"play.recover: {unit.Id} tries to Recover {weapon.Id}{cost}: a Final dr below 6 (DRM {drm:+0;-0;0}) Recovers it (A4.44)", .. ConcealmentLossNote(lost)])
         {
@@ -720,6 +678,37 @@ public sealed partial class GamePlanner
         var printed = weapon.Definition is { } named ? catalogs.FirstOrDefault(item => item.Identity == named.Catalog)?.Definition(named.Definition) : null;
         return ScenarioA1FireEligibility.Dismantlable(weapon.Kind, definition?.Nationality ?? printed?.Nationality, definition?.Size,
             (int?)printed?.Printed("front", "asl:portage")?.Value?.Number);
+    }
+
+    public SupportWeaponReadiness SupportWeaponConfigurationReadiness(GameState state, string unitId, string weaponId)
+    {
+        var reference = (state.Find(weaponId) as EquipmentInstance)?.Definition;
+        return SupportWeaponConfigurationRead.Evaluate(state, unitId, weaponId,
+            reference is null ? null : catalogs.FirstOrDefault(item => item.Identity == reference.Catalog));
+    }
+
+    public string? SupportWeaponRecoveryDetails(GameState state, string unitId, string weaponId)
+    {
+        if (state.Unit(unitId) is not { } unit)
+        {
+            return null;
+        }
+        var facts = SupportWeaponRecoveryRead.Facts(state, unitId, weaponId, catalogs, vocabulary, RecoveryTerrain(state, unitId));
+        var cost = ScenarioA1SupportWeaponPossessionRules.RecoveryMf(state.Phase,
+            ScenarioA1SupportWeaponPossessionRules.FromBrokenHolder(facts.Held, facts.FriendlyHolder, facts.BrokenHolder, facts.RecoveringSmc));
+        var drm = ScenarioA1SupportWeaponRules.RecoveryDrm(Is(unit, Conditions.Cx), state.Night);
+        return $"{cost} MF. Final dr below 6 recovers it (DRM {drm:+0;-0;0}).";
+    }
+
+    public string? SupportWeaponConfigurationDetails(GameState state, string weaponId)
+    {
+        if (state.Find(weaponId) is not EquipmentInstance weapon || weapon.Definition is not { } reference
+            || catalogs.FirstOrDefault(item => item.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number is not { } printed)
+        {
+            return null;
+        }
+        var dismantled = Is(weapon, Conditions.Dismantled);
+        return $"{ScenarioA1SupportWeaponConfigurationRules.Portage(printed, dismantled)} → {ScenarioA1SupportWeaponConfigurationRules.Portage(printed, !dismantled)} PP. Uses this weapon's full fire allowance.";
     }
 
     /// <summary>
@@ -738,42 +727,27 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: dismantling names the possessing unit and the SW");
         }
 
-        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit, spendsMf: true) || Held(state, unit.Id).FirstOrDefault(item => item.Id == equipmentId) is not { } weapon)
+        if (SupportWeaponConfigurationReadiness(state, unitId, equipmentId).Reason is { } refusal)
         {
-            return Refused(scope, label, expected, state.Unit(unitId) is { } tied && Is(tied, "asl:ti") && GoodOrder(tied)
-                ? $"play.dismantle-weapon: '{unitId}' is TI and may not dismantle or assemble a SW, which counts as its use (A4.8, A9.8)"
-                : $"play.dismantle-weapon: '{unitId}' is not a Good Order unit possessing '{equipmentId}' (A9.8)");
+            return Refused(scope, label, expected, refusal);
         }
 
-        if (!Dismantlable(weapon))
-        {
-            return Refused(scope, label, expected, $"play.dismantle-weapon: {weapon.Id} is not a weapon that is dismantled or assembled: only a light mortar of four PP or more and a non-Russian MMG or HMG are (A9.8)");
-        }
-
-        var marker = state.Phase switch
-        {
-            "pfph" when unit.Side == state.PhasingSide => Conditions.PrepFire,
-            "dfph" when unit.Side != state.PhasingSide => Conditions.FinalFire,
-            _ => null,
-        };
-        if (marker is null)
-        {
-            return Refused(scope, label, expected, "play.dismantle-phase: a MG is dismantled or assembled in its side's PFPh or DFPh (A9.8)");
-        }
-
-        if (Is(weapon, marker) || state.SupportWeaponUses.Any(item => item.Weapon == weapon.Id))
-        {
-            return Refused(scope, label, expected, $"play.dismantle-weapon: {weapon.Id} has fired this phase (A9.8)");
-        }
-
+        var unit = state.Unit(unitId)!;
+        var weapon = (EquipmentInstance)state.Find(equipmentId)!;
         var dismantled = !Is(weapon, Conditions.Dismantled);
+        var changes = new Dictionary<string, ConditionState>
+        {
+            [Conditions.Dismantled] = dismantled ? ConditionState.True : ConditionState.False,
+        };
+        if (ScenarioA1GunflashCalculator.PlacesFireCounter(GunflashCause.DismantleOrAssemble, state.Night))
+        {
+            changes[ScenarioA1SupportWeaponConfigurationRules.FireCounter(state.Phase)] = ConditionState.True;
+        }
+
         var events = new List<GameEvent>
         {
-            Event(scope, attemptId, 1, expected, "conditions-changed", new ConditionsChanged(weapon.Id, new Dictionary<string, ConditionState>
-            {
-                [Conditions.Dismantled] = dismantled ? ConditionState.True : ConditionState.False,
-                [marker] = ConditionState.True,
-            }), ScenarioA1FirePackage.Identity.ToString(), null),
+            Event(scope, attemptId, 1, expected, "conditions-changed", new ConditionsChanged(weapon.Id, changes) { ConfiguredBy = unit.Id },
+                ScenarioA1FirePackage.Identity.ToString(), null),
         };
 
         // A12.141 (p. 78; ruling R70.17): dismantling or assembling is an activity, and costs a "?" in the LOS of a Good Order enemy within 16 hexes.

@@ -1830,7 +1830,7 @@ Moved in, with no estimate: a berserk charge into a Location holding an enemy ve
 
 **Pass 73: Infantry VI: the movement and fire leftovers** (18 rows of the inventory; new tasks). Counters: none. Needs first: 40, 45; 72, since a malfunctioned weapon's Residual FP (A8.221) reads Ammunition Shortage.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 20 rows: 18 partly, 2 not built. Claims: 19 open, 1 built (owners: A4.43 (Codex)). A rule decided outside Rules on 1 row. Wiring: 0 of 20. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 20 rows: 18 partly, 2 not built. Claims: 19 open, 1 wired (owners: A4.43 (Codex)). Wiring: 1 of 20. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2026,7 +2026,7 @@ Turns tasks that reach this pass from another: D4.3 (pass 175) takes D3.71's cir
 
 **Pass 110: Guns and anti-tank weapons II** (new; 77 rows of the inventory). Counters: R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3). Needs first: 35; 60 (HE Equivalency for C13.4x).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 3 built with a deviation, 72 partly, 2 refused, 46 not built. Claims: 112 open, 5 built, 6 wired (owners: A21.13 (Claude), A9.72 (Codex), A9.8 (Codex), C10.3 (Claude), C9 (Claude), C9.2 (Codex), C9.3 (Claude), D5.34 (Claude)). A rule decided outside Rules on 4 rows. Wiring: 6 of 123. Minigames: 5.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 3 built with a deviation, 72 partly, 2 refused, 46 not built. Claims: 112 open, 3 built, 8 wired (owners: A21.13 (Claude), A9.72 (Codex), A9.8 (Codex), C10.3 (Claude), C9 (Claude), C9.2 (Codex), C9.3 (Claude), D5.34 (Claude)). A rule decided outside Rules on 4 rows. Wiring: 8 of 123. Minigames: 6.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2114,7 +2114,7 @@ Moved here by pass 72 (2026-10-27), with no task renumbered: Wire as 1 MF in a b
 
 **Pass 125: Terrain I: Depressions and water** (planned at 5:30 of build; 57 rows of the inventory). Counters: Crest, ford, and Current markers as states; a depth setting on a card. Needs first: 35, 40.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 60 rows: 11 partly, 15 refused, 34 not built. Claims: 59 open, 1 built (owners: A4.43 (Codex)). A rule decided outside Rules on 1 row. Wiring: 0 of 60. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 60 rows: 11 partly, 15 refused, 34 not built. Claims: 59 open, 1 wired (owners: A4.43 (Codex)). Wiring: 1 of 60. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2157,7 +2157,7 @@ Moved here by passes 35, 40, and 45, with no task renumbered (their leading rule
 
 **Pass 135: Terrain III: buildings and rubble** (planned at 3:05 of build; 43 rows of the inventory; pass 140 until 2026-10-16). Counters: Breach and rubble as states. Needs first: 45 (levels); 100 (vertex LOS for Rowhouses); 115 (Clearance); 125 (rubble in a gully, B24.2); 130 (Scaling, a way down from an upper level, A7.72).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 51 rows: 22 partly, 7 refused, 22 not built. Claims: 45 open, 6 built (owners: A11.21 (Codex), B23.74 (Claude), D5.34 (Claude)). Wiring: 0 of 51. Minigames: 2.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 51 rows: 22 partly, 7 refused, 22 not built. Claims: 45 open, 5 built, 1 wired (owners: A11.21 (Codex), B23.74 (Claude), D5.34 (Claude)). Wiring: 1 of 51. Minigames: 3.
 
 | Task | Rules | Estimate |
 |---|---|---|

@@ -55,7 +55,7 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, ScenarioA1PrisonerCalculator.AmbushWithdrawerText(id, location.ToString()));
             }
 
-            if (ScenarioA1CloseCombatRules.WithdrawalPortageBar(id, Laden(state, unit, DropsOf(id))) is { } portageBar)
+            if (WithdrawalEquipmentLoad(state, unit, DropsOf(id)).Readiness.Reason is { } portageBar)
             {
                 return Refused(scope, label, expected, portageBar);
             }

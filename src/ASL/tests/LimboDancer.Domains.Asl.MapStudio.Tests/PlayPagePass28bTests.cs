@@ -157,8 +157,8 @@ public sealed class PlayPagePass28bTests : IDisposable
         Place(page, "r1", "defender-squad", hexes.Two);
         Commit(page, "#propose-setup");
 
-        page.Find("#sw-weapon").Change("gm");
-        page.Find("#sw-unit").Change("g2");
+        page.Find("#transfer-weapon").Change("gm");
+        page.Find("#transfer-participant").Change("g2");
         Commit(page, "#propose-transfer");
         // Pass 31c: a record names each unit and says its hex; the SW reads by its counter.
         var transfer = page.OutcomeRecord(".transfer-record").RecordText();
@@ -236,13 +236,13 @@ public sealed class PlayPagePass28bTests : IDisposable
         Place(page, "r1", "defender-squad", hexes.Two);
         Commit(page, "#propose-setup");
 
-        page.Find("#sw-weapon").Change("gm");
-        page.Find("#sw-unit").Change("g2");
+        page.Find("#transfer-weapon").Change("gm");
+        page.Find("#transfer-participant").Change("g2");
         page.Find("#deploy-squad").Change("g1");
         page.ViewAs("russian");
         // Pass 31 (ruling R31.6): the Russian view lists the Russian side's SW only, and it has none here, so the panel may be gone.
-        Assert.All(page.FindAll("#sw-weapon"), select => Assert.Equal(string.Empty, select.GetAttribute("value")));
-        Assert.All(page.FindAll("#sw-unit"), select => Assert.Equal(string.Empty, select.GetAttribute("value")));
+        Assert.All(page.FindAll("#transfer-weapon"), select => Assert.Equal(string.Empty, select.GetAttribute("value")));
+        Assert.Empty(page.FindAll("#transfer-participant"));
         // The Play streamlining plan, S7: Russian squads may not Deploy (A25.2), so the Russian view may show no Deploy form.
         Assert.All(page.FindAll("#deploy-squad"), select => Assert.Equal(string.Empty, select.GetAttribute("value")));
     }

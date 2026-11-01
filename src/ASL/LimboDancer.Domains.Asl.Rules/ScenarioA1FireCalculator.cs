@@ -838,7 +838,7 @@ public static class ScenarioA1FireCalculator
             var weapons = firer.Weapons ?? [];
             // A15.23 (ruling R15.11): a hero fires one MG or FT; C13.24, C13.25 (p. 183; pass 72, ruling R72.8): or an ATR as Small Arms, "as if he were a
             // leader", with A15.24's heroic DRM and no hero-mg DRM (it is no MG).
-            if (definition is not null && (weapons.Count > (definition.Kind == "asl:squad" ? 2 : 1)
+            if (definition is not null && (weapons.Count > ScenarioA1SupportWeaponUseRules.Capacity(definition.Kind)
                 || weapons.Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is not { Firepower: not null, Range: not null } mg || !(mg.IsMg || mg.IsAtr || mg.IsFt)
                     || (mg.Nationality != definition.Nationality) != (weapon.Captured == true) || weapon.Malfunctioned == true || !WeaponMayFire(attack, weapon))))
             {
@@ -4272,8 +4272,7 @@ public static class ScenarioA1FireCalculator
         private static bool UsesInherent(FireFirer firer, FireDefinition definition)
         {
             var weapons = firer.Weapons ?? [];
-            return firer.UsesInherentFp != false && !(definition.Kind == "asl:squad" && weapons.Count >= 2)
-                && !((definition.Kind == "asl:half-squad" || definition.IsHero) && weapons.Count >= 1);
+            return ScenarioA1SupportWeaponUseRules.UsesInherentFp(firer.UsesInherentFp, definition.Kind, definition.IsHero, weapons.Count);
         }
 
         private IEnumerable<FirerFirepower> Firepower(bool vsConcealed)

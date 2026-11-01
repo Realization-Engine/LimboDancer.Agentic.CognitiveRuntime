@@ -310,6 +310,10 @@ public static class GameEventWriter
 
                 break;
             case EquipmentTransferred transferred:
+                if (transferred.TransferredBy is { } giver)
+                {
+                    writer.WriteString("transferredBy", giver);
+                }
                 writer.WriteString("id", transferred.Id);
                 WriteHolding(writer, transferred.Holding);
                 if (transferred.Position is { } left)
@@ -321,6 +325,10 @@ public static class GameEventWriter
             case ConditionsChanged changed:
                 writer.WriteString("id", changed.Id);
                 WriteConditions(writer, changed.Conditions);
+                if (changed.ConfiguredBy is { } configuredBy)
+                {
+                    writer.WriteString("configuredBy", configuredBy);
+                }
                 break;
             case SetupConcealed concealed:
                 writer.WriteString("id", concealed.Id);
@@ -404,6 +412,10 @@ public static class GameEventWriter
                 break;
             case FireResolved fire:
                 ArmamentEvidence(writer, fire.VehicleArmamentEvidence);
+                if (fire.ConfigurationUseVersion is { } configurationUseVersion)
+                {
+                    writer.WriteNumber("configurationUseVersion", configurationUseVersion);
+                }
                 if (fire.SmokeWiringVersion is { } fireSmokeVersion)
                 {
                     writer.WriteNumber("smokeWiringVersion", fireSmokeVersion);
@@ -476,6 +488,10 @@ public static class GameEventWriter
                 if (repair.VehicleRepairVersion is { } repairVersion)
                 {
                     writer.WriteNumber("vehicleRepairVersion", repairVersion);
+                }
+                if (repair.SupportWeaponRepairVersion is { } swRepairVersion)
+                {
+                    writer.WriteNumber("supportWeaponRepairVersion", swRepairVersion);
                 }
                 if (repair.Hero is { } repairHero)
                 {
@@ -1049,6 +1065,14 @@ public static class GameEventWriter
                 writer.WriteString("action", rphAction.Action);
                 break;
             case RecoveryAttempted recovery:
+                if (recovery.RecoveryVersion is { } recoveryVersion)
+                {
+                    writer.WriteNumber("recoveryVersion", recoveryVersion);
+                    if (recovery.Terrain is { } recoveryTerrain)
+                    {
+                        writer.WriteString("terrain", recoveryTerrain);
+                    }
+                }
                 writer.WriteString("unit", recovery.Unit);
                 writer.WriteString("weapon", recovery.Weapon);
                 writer.WriteString("roll", recovery.Roll);
@@ -1179,6 +1203,10 @@ public static class GameEventWriter
                 break;
             case OrdnanceFired ordnance:
                 ArmamentEvidence(writer, ordnance.VehicleArmamentEvidence);
+                if (ordnance.ConfigurationUseVersion is { } ordnanceConfigurationVersion)
+                {
+                    writer.WriteNumber("configurationUseVersion", ordnanceConfigurationVersion);
+                }
                 if (ordnance.SmokeWiringVersion is { } ordnanceSmokeVersion)
                 {
                     writer.WriteNumber("smokeWiringVersion", ordnanceSmokeVersion);

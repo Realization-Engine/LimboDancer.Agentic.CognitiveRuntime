@@ -124,7 +124,7 @@ public static class LiveOrdnance
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
         string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false, bool legacySpotterUse = false,
         bool currentSpotterAssignment = true, bool legacyNonQualifiedUse = false, bool legacyVehicleBreakdown = false,
-        string? secondFirer = null, bool legacyParticipation = false, bool legacyParticipationUseHistory = false)
+        string? secondFirer = null, bool legacyParticipation = false, bool legacyParticipationUseHistory = false, bool legacyConfiguration = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
@@ -226,6 +226,11 @@ public static class LiveOrdnance
         else
         {
             return (null, ScenarioA1OrdnanceEligibility.GunRefusal(gunId));
+        }
+
+        if (!legacyConfiguration && SupportWeaponConfigurationRead.FireRefusal(state, crew.Id, [gun.Id], false) is { } configurationBar)
+        {
+            return (null, configurationBar);
         }
 
         if (ScenarioA1OrdnanceEligibility.HaltedRefusal(gun.Id, crew.Id, Is(gun, "asl:ti"), Is(crew, "asl:ti"), () => state.GunsTurnedThisPhase.Contains(gun.Id, StringComparer.Ordinal),
@@ -1067,7 +1072,7 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true, recorded.SpotterUseVersion is null,
             fired.SpotterWiringVersion == 1, legacyNonQualifiedUse: recorded.UseMultiple is null, legacyVehicleBreakdown: recorded.VehicleBreakdown is null,
             secondFirer: recorded.Participation?.Second?.Crew?.UnitId, legacyParticipation: recorded.Participation is null,
-            legacyParticipationUseHistory: recorded.Participation?.UseHistory is null);
+            legacyParticipationUseHistory: recorded.Participation?.UseHistory is null, legacyConfiguration: fired.ConfigurationUseVersion is null);
         if (expected is null)
         {
             return reason;

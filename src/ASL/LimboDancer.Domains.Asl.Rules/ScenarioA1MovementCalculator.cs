@@ -44,9 +44,11 @@ public static class ScenarioA1MovementCalculator
     /// <summary>Whether a unit carries more PP than its IPC (A4.42): MMC three, SMC one, wounded SMC none, one less while CX. <paramref name="carried"/> is the PP of each SW it possesses, null when one is not recorded.</summary>
     public static bool Laden(bool smc, bool wounded, bool cx, IReadOnlyList<int>? carried)
     {
-        var ipc = (smc ? (wounded ? 0 : 1) : 3) - (cx ? 1 : 0);
-        return carried is not null && carried.Sum() > Math.Max(ipc, 0);
+        return carried is not null && carried.Sum() > PortageCapacity(smc, wounded, cx);
     }
+
+    /// <summary>A4.42, A4.52: the same IPC used by movement and withdrawal load checks.</summary>
+    public static int PortageCapacity(bool smc, bool wounded, bool cx) => Math.Max(ScenarioA1SupportWeaponRules.RoutIpc(smc, wounded) - (cx ? 1 : 0), 0);
 
     /// <summary>
     /// Whether a Good Order MMC moving with a Good Order leader of its nationality, who began the MPh with it and has moved with it at every step, has

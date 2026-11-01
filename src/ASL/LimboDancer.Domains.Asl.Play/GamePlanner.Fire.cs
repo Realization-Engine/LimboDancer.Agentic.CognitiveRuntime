@@ -1027,6 +1027,7 @@ public sealed partial class GamePlanner
                 JsonSerializer.SerializeToElement(ScenarioA1ArmorLeaders.Recorded(facts, resolution), LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
             {
                 MovementStep = step,
+                ConfigurationUseVersion = 1,
                 VehicleArmamentEvidence = facts.VehicleBreakdown is not null
                     && state.Unit(facts.VehicleFire?.VehicleId ?? facts.Overrun?.VehicleId ?? "") is { } firingVehicle
                     ? VehicleArmamentFacts.Evidence(state, firingVehicle) : null,

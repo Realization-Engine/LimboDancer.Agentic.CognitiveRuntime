@@ -122,10 +122,7 @@ public sealed partial class GamePlanner
 
     /// <summary>The PP of one SW (A4.4), from the catalog; a dismantled weapon's are halved, FRU (A9.8; ruling R13.6). Null when none is recorded.</summary>
     public int? PortageOf(EquipmentInstance item) =>
-        item is null ? throw new ArgumentNullException(nameof(item)) : item.Definition is { } reference
-            && catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number is { } value
-            ? Is(item, Conditions.Dismantled) ? (value + 1) / 2 : value
-            : null;
+        item is null ? throw new ArgumentNullException(nameof(item)) : SupportWeaponRecoveryRead.PortageOf(item, catalogs);
 
     /// <summary>
     /// The half MF Infantry spend to enter a terrain (B15.4, B15.6; ruling R5.19): grain costs 1½ MF from April to September and is Open Ground

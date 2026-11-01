@@ -5,9 +5,19 @@
     <p class="toolbar-note">Destinations used only if infiltration is triggered (A11.22).</p>
     @foreach (var unit in Units)
     {
-        <div class="cc-infiltration-unit">
-        <label>
-            @Say(unit.Id)
+        <ActionFormGroup @key="unit.Id" Legend="@Say(unit.Id)">
+        @if (unit.Drops.Count > 0)
+        {
+            <p class="toolbar-note">@unit.Load</p>
+            <details open>
+                <summary>Equipment to leave if infiltration occurs</summary>
+                @foreach (var weapon in unit.Drops)
+                {
+                    <label><input class="cc-infiltration-drop" type="checkbox" data-unit="@unit.Id" data-weapon="@weapon.Id" checked="@Dropped.Contains(weapon.Id)" @onchange="@(args => OnDrop.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Say(weapon.Label)</label>
+                }
+            </details>
+        }
+        <label>Destination
             <select class="cc-infiltrate" data-unit="@unit.Id" value="@(Infiltrations.GetValueOrDefault(unit.Id) ?? string.Empty)" @onchange="@(args => OnInfiltration.InvokeAsync(new Choice(unit.Id, args.Value as string)))">
                 <option value="">stays</option>
                 @foreach (var to in unit.Destinations)
@@ -16,15 +26,7 @@
                 }
             </select>
         </label>
-        @if (unit.Drops.Count > 0)
-        {
-            <span class="toolbar action-fields-note">@(unit.Destinations.Count == 0 ? "above its IPC, it infiltrates once it drops enough (A11.21):" : "above its IPC, it drops (A11.21):")</span>
-            @foreach (var weapon in unit.Drops)
-            {
-                <label><input class="cc-infiltration-drop" type="checkbox" data-unit="@unit.Id" data-weapon="@weapon.Id" checked="@Dropped.Contains(weapon.Id)" @onchange="@(args => OnDrop.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Say(weapon.Label)</label>
-            }
-        }
-        </div>
+        </ActionFormGroup>
     }
 </div>
 
@@ -42,6 +44,7 @@
     public sealed record Infiltrator(string Id, IReadOnlyList<string> Destinations)
     {
         public IReadOnlyList<PlayChoice> Drops { get; init; } = [];
+        public string Load { get; init; } = string.Empty;
     }
 
     /// <summary>A unit's declaration: where it infiltrates to, or none when it stays.</summary>

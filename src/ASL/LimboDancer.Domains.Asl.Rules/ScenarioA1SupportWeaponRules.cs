@@ -15,6 +15,7 @@ public static class ScenarioA1SupportWeaponRules
     /// <summary>
     /// A4.43 (ruling R13.5): an unbroken unit drops a SW in its own MPh during its move, its own APh before it advances, or at the start of the CCPh.
     /// A broken unit's drop before it routs (A10.4) is the rout's own choice of what it keeps.
+    /// This preserves the recorded reading; <see cref="ScenarioA1SupportWeaponPossessionRules.DropRefusal"/> supplies the current RSW.1 reading.
     /// </summary>
     public static bool DropPhase(string? phase, bool phasing) => phase == "ccph" || (phase is "mph" or "aph" && phasing);
 

@@ -303,7 +303,8 @@ public sealed class PlayPageCloseCombatTests : IDisposable
 
         Assert.Contains("Close Combat", page.Find("#play-context").TextContent, StringComparison.Ordinal);
         page.Find("#cc-location").Change(hexes.Two);
-        Assert.Equal(2, page.FindAll(".cc-withdraw").Count);
+        // Each side declares only its own withdrawal choices.
+        Assert.Single(page.FindAll(".cc-withdraw"));
 
         // The Russian side, the ATTACKER now, declares r1's withdrawal and no attack, and hands over; the German side declares g1's attack (A11.11).
         page.ViewAs("russian");

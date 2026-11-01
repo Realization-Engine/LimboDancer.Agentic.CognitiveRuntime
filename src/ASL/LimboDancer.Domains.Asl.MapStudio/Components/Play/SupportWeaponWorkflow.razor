@@ -1,0 +1,138 @@
+@if (!HideWhenScopeEmpty || ShownWeapons.Count > 0)
+{
+<ActionSection Title="@Title" Key="@($"weapon-{Operation}")">
+    @if (scope is { } selectedScope)
+    {
+        <div class="toolbar">
+            <strong>Weapons in @Say(selectedScope)</strong>
+            <button type="button" class="link" @onclick="ReleaseScope">Show all locations</button>
+        </div>
+    }
+    <div class="action-form">
+        <ActionFormGroup Legend="Weapon">
+            <label>
+                Choose weapon
+                <select id="@($"{Operation}-weapon")" value="@weapon" @onchange="ChooseWeapon">
+                    <option value="">choose</option>
+                    <UnitOptions Units="@ShownWeapons" Text="@Say" />
+                </select>
+            </label>
+            @if (weapon.Length > 0 && RequiresParticipant)
+            {
+                <label>
+                    @ParticipantLabel
+                    <select id="@($"{Operation}-participant")" value="@participant" @onchange="ChooseParticipant">
+                        <option value="">choose</option>
+                        <UnitOptions Units="@participants" Text="@Say" />
+                    </select>
+                </label>
+            }
+        </ActionFormGroup>
+        @if (weapon.Length > 0 && detailText is { Length: > 0 } details)
+        {
+            <p class="toolbar-note">@details</p>
+        }
+        <ActionProposalArea Feedback="@feedback">
+            <button id="@($"propose-{Operation}")" disabled="@(feedback is not null || weapon.Length == 0)" @onclick="Propose">
+                Propose: @Verb(weapon)
+            </button>
+        </ActionProposalArea>
+    </div>
+</ActionSection>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Operation { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public IReadOnlyList<PlayChoice> Weapons { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<string, string?> Locations { get; set; } = new Dictionary<string, string?>();
+    [Parameter] public bool RequiresParticipant { get; set; }
+    [Parameter] public string ParticipantLabel { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public Func<string, IReadOnlyList<PlayChoice>> Participants { get; set; } = _ => [];
+    [Parameter, EditorRequired] public Func<string, string, string?> Refusal { get; set; } = (_, _) => "Choose a weapon.";
+    [Parameter, EditorRequired] public Func<string, string> Verb { get; set; } = _ => string.Empty;
+    [Parameter] public EventCallback<Choice> OnPropose { get; set; }
+    [Parameter, EditorRequired] public string ContextKey { get; set; } = string.Empty;
+    [Parameter] public object? Snapshot { get; set; }
+    [Parameter] public EventCallback OnDraftChanged { get; set; }
+    [Parameter] public bool ScopeOwnedByParent { get; set; }
+    [Parameter] public bool HideWhenScopeEmpty { get; set; }
+    [Parameter] public Func<string, string, string?> Details { get; set; } = (_, _) => null;
+    [CascadingParameter(Name = "Say")] public Func<string, string>? Words { get; set; }
+    [CascadingParameter(Name = "PickedLocation")] public string? Picked { get; set; }
+    [CascadingParameter(Name = "Picking")] public LocationPicking? Picking { get; set; }
+
+    public sealed record Choice(string Operation, string Weapon, string Participant);
+    private string weapon = string.Empty;
+    private string participant = string.Empty;
+    private string? scope;
+    private string? lastPicked;
+    private string? previousContext;
+    private long seenPick = -1;
+    private string? feedback = "Choose a weapon.";
+    private string? detailText;
+    private object? lastSnapshot;
+    private IReadOnlyList<PlayChoice> participants = [];
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+    private IReadOnlyList<PlayChoice> ShownWeapons => scope is null ? Weapons : [.. Weapons.Where(item => InHex(item.Id, scope))];
+    private bool InHex(string id, string hex) => BoardLocation.TryParse(hex, out var picked)
+        && BoardLocation.TryParse(Locations.GetValueOrDefault(id), out var at) && at.Board == picked.Board && at.Hex == picked.Hex;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var refresh = Snapshot is null || !ReferenceEquals(lastSnapshot, Snapshot) || previousContext != ContextKey;
+        lastSnapshot = Snapshot;
+        var before = (weapon, participant, scope);
+        if (previousContext != ContextKey)
+        {
+            previousContext = ContextKey;
+            weapon = participant = string.Empty;
+            scope = lastPicked = null;
+            seenPick = -1;
+        }
+        var serial = Picking?.Serial ?? 0;
+        var fresh = serial != seenPick || Picked != lastPicked;
+        (seenPick, lastPicked) = (serial, Picked);
+        if (ScopeOwnedByParent) scope = null;
+        else if (fresh && Picking?.Armed is null && Picking?.PickedBy is null)
+            scope = Picked is { } picked && (HideWhenScopeEmpty || Weapons.Any(item => InHex(item.Id, picked))) ? picked : null;
+        else if (!HideWhenScopeEmpty && scope is { } current && !Weapons.Any(item => InHex(item.Id, current))) scope = null;
+        if (!ShownWeapons.Any(item => item.Id == weapon)) weapon = participant = string.Empty;
+        if (refresh || before != (weapon, participant, scope)) Refresh();
+        if (before != (weapon, participant, scope)) await OnDraftChanged.InvokeAsync();
+    }
+
+    private async Task ChooseWeapon(ChangeEventArgs args)
+    {
+        weapon = args.Value as string ?? string.Empty;
+        participant = string.Empty;
+        Refresh();
+        await OnDraftChanged.InvokeAsync();
+    }
+
+    private async Task ChooseParticipant(ChangeEventArgs args)
+    {
+        participant = args.Value as string ?? string.Empty;
+        Refresh();
+        await OnDraftChanged.InvokeAsync();
+    }
+
+    private void Refresh()
+    {
+        participants = weapon.Length > 0 && RequiresParticipant ? Participants(weapon) : [];
+        if (!participants.Any(item => item.Id == participant)) participant = string.Empty;
+        feedback = weapon.Length == 0 ? "Choose a weapon."
+            : RequiresParticipant && participant.Length == 0 ? $"{ParticipantLabel}: choose a unit."
+            : Refusal(weapon, participant);
+        detailText = weapon.Length == 0 ? null : Details(weapon, participant);
+    }
+
+    private async Task ReleaseScope()
+    {
+        scope = null;
+        Refresh();
+        await OnDraftChanged.InvokeAsync();
+    }
+    private Task Propose() => feedback is null && weapon.Length > 0
+        ? OnPropose.InvokeAsync(new Choice(Operation, weapon, participant)) : Task.CompletedTask;
+}

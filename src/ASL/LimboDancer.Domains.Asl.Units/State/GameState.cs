@@ -52,6 +52,18 @@ public sealed record GameState(
     /// <summary>Player Turn ordinal since this journal began, independent of its initial Game Turn number.</summary>
     public int PlayerTurnOrdinal { get; init; } = 1;
 
+    /// <summary>Derived repair history for the current or most recently repaired Player Turn, excluded from saved snapshots.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IReadOnlyList<SupportWeaponRepairUse> SupportWeaponRepairs { get; init; } = [];
+
+    /// <summary>Derived distinct weapon and inherent-FP uses by phase in this Player Turn; never a saved snapshot.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IReadOnlyList<SupportWeaponPhaseUse> SupportWeaponPhaseUses { get; init; } = [];
+
+    /// <summary>Participants in recorded voluntary transfers in this phase, not automatic changes of possession.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IReadOnlyList<string> SupportWeaponTransferParticipants { get; init; } = [];
+
     public Rules.TurnPhaseOccurrence? TurnPhaseOccurrence
     {
         get; init;

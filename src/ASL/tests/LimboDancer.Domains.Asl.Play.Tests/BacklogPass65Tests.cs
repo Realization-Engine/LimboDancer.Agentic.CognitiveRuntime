@@ -72,6 +72,65 @@ public sealed class BacklogPass65Tests : IDisposable
 
     private static DiceRoller NoRoll() => new(_ => throw new InvalidOperationException("No roll."));
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task APassengerTransfersItsWeaponToItsVehiclePassengerOrInfantry(bool recipientAboard)
+    {
+        // D6.31 (PDF p. 205), A4.431 (p. 50): a Passenger may pass its SW to its vehicle's PRC or Infantry in its Location.
+        await StartTransferPosition(true, recipientAboard);
+        Committed(await Do(GameActions.Transfer, NoRoll(), new
+        {
+            unitId = "de-giver",
+            equipmentId = "de-lmg",
+            toUnitId = "de-taker",
+        }));
+        Assert.Equal("de-taker", ((EquipmentInstance)Current.Find("de-lmg")!).Holding!.Holder);
+        Assert.Equal(recipientAboard ? "de-truck" : null, Current.Aboard("de-lmg"));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task InfantryCannotPassItsWeaponToAPassengerOutsideLoading()
+    {
+        // D6.31 (PDF p. 205): Infantry loads its SW with itself; ordinary transfer cannot bypass loading.
+        await StartTransferPosition(false, true);
+        var before = Revision;
+        var result = await Do(GameActions.Transfer, NoRoll(), new
+        {
+            unitId = "de-giver",
+            equipmentId = "de-lmg",
+            toUnitId = "de-taker",
+        });
+        Assert.Equal(PlayOutcome.Denied, result.Outcome);
+        Assert.Contains(result.Reasons, reason => reason.StartsWith("play.transfer-prc:", StringComparison.Ordinal) && reason.Contains("D6.31", StringComparison.Ordinal));
+        Assert.Equal(before, Revision);
+        Assert.Equal("de-giver", ((EquipmentInstance)Current.Find("de-lmg")!).Holding!.Holder);
+        NoReplayErrors();
+    }
+
+    private Task StartTransferPosition(bool giverAboard, bool recipientAboard) =>
+        Start("german", "russian", 1943, 7, "asl-scenario-a1@1.18.0",
+        [
+            Vehicle("de-truck", "attacker-truck", Target, "german", "east"),
+            giverAboard ? Aboard("de-giver", "asl:squad", "attacker-squad", "de-truck", "german") : Unit("de-giver", "asl:squad", "attacker-squad", Target, "german"),
+            recipientAboard ? Aboard("de-taker", "asl:squad", "attacker-squad", "de-truck", "german") : Unit("de-taker", "asl:squad", "attacker-squad", Target, "german"),
+            new()
+            {
+                ["id"] = "de-lmg",
+                ["kind"] = "asl:mg",
+                ["definition"] = "attacker-lmg",
+                ["side"] = "german",
+                ["holding"] = new
+                {
+                    holder = "de-giver",
+                    role = "possessed",
+                },
+                ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+            },
+            Unit("ru-s", "asl:squad", "defender-squad", "bd01:J2:0", "russian"),
+        ]);
+
     private GamePlay Play(DiceRoller? roller = null) => new(Planner(), store, new NullAudit(), roller: roller ?? NoRoll());
 
     private long Revision => store.Read(Scope)?.Events.Count ?? 0;

@@ -19,6 +19,7 @@ else
         </ActionFormGroup>
     }
 }
+@WeaponHandling?.Invoke(shownOrigin)
 @* Route plotting and the single-step destination stay visible; less frequent movement choices are disclosed separately. *@
 @Route
 @if (Movers.Count > 0)
@@ -85,6 +86,7 @@ else
     [CascadingParameter(Name = "Say")] public Func<string, string>? Words { get; set; }
     [Parameter] public IReadOnlyDictionary<string, string?> Locations { get; set; } = new Dictionary<string, string?>();
     private string? shownOrigin;
+    [Parameter] public RenderFragment<string?>? WeaponHandling { get; set; }
     private string Say(string location) => Words?.Invoke(location) ?? DisplayText.Location(location);
     private IReadOnlyList<UnitSelectionList.Row> MoversAt(string location) =>
         [.. Movers.Where(row => Locations.TryGetValue(row.Id, out var at) && at == location)];

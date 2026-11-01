@@ -413,7 +413,8 @@ public sealed class PlayPagePass70Tests : IDisposable
         // (4 PP of 5) brings it within its IPC of 3, and the destinations follow.
         string?[] none = [.. page.FindAll(".cc-withdraw[data-unit='de-1'] option").Select(option => option.GetAttribute("value"))];
         Assert.Equal(string.Empty, Assert.Single(none));
-        Assert.Contains("once it drops enough", page.Find("#cc-withdrawals").TextContent, StringComparison.Ordinal);
+        // A11.21 (PDF p. 73), A4.43 (p. 50): the UI presents the command's unit-specific Rules verdict.
+        Assert.Contains("de-1 carries more than its IPC, so it withdraws only by dropping SW", page.Find("#cc-withdrawals").TextContent, StringComparison.Ordinal);
         var target = page.Find(".cc-defender[data-unit='ru-gc']");
         Assert.StartsWith(DisplayText.Place(1, WideBoards.At(5)) + ": ", target.ParentElement!.TextContent.Trim(), StringComparison.Ordinal);
         page.Find(".cc-drop[data-weapon='de-mmg']").Change(true);

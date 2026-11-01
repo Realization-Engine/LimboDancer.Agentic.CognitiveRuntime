@@ -469,7 +469,8 @@ public sealed class BacklogPass13Tests : IDisposable
     {
         await SetupAt(0, "german", Unit("g1", "attacker-squad", "C3", "german"), Unit("g2", "attacker-squad", "C3", "german"), Mg("gm", "attacker-lmg", "g1", "german"));
 
-        // In the RPh stacks are freely rearranged: a transfer is no unit's sole RPh action (A4.431; referee, pass 13).
+        // A3.1 (PDF p. 47): each participant takes only one type of RPh action. A4.431 (p. 50) supplies transfer eligibility.
+        // Versioned transfers record that action type; legacy transfers retain R13.5's earlier accounting.
         Committed(await Do(GameActions.Transfer, NoRoll(), new
         {
             unitId = "g1",
@@ -477,7 +478,8 @@ public sealed class BacklogPass13Tests : IDisposable
             toUnitId = "g2"
         }));
         Assert.Equal("g2", ((EquipmentInstance)Current.Find("gm")!).Holding!.Holder);
-        Assert.Empty(Current.RallyPhaseActions);
+        Assert.Contains("g1", Current.RallyPhaseActions);
+        Assert.Contains("g2", Current.RallyPhaseActions);
 
         // In the MPh g2 drops it before moving, and g1 Recovers it for one MF on a dr below 6 (A4.43, A4.44).
         await Advance(2);
@@ -600,6 +602,51 @@ public sealed class BacklogPass13Tests : IDisposable
     }
 
     [Fact]
+    public async Task ConfigurationAfterFirstFireRetainsOnlyAdjacentFinalFire()
+    {
+        // A7.353 (PDF p. 56), A8.4 (p. 61), A9.8 (p. 65): the earlier LMG use does not consume restored inherent FP after configuring the MMG.
+        await SetupAt(2, "russian", Unit("g1", "attacker-squad", "C3", "german"), Mg("gl", "attacker-lmg", "g1", "german"),
+            Mg("gm", "attacker-mmg", "g1", "german"), Unit("r1", "defender-squad", "C5", "russian"));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = R1,
+            to = L("C4")
+        }));
+        Committed(await Do(GameActions.Fire, Once(6, 4, 3, 3), new
+        {
+            firers = G1,
+            weapons = new Dictionary<string, string[]> { ["g1"] = ["gl"] },
+            withoutInherent = G1,
+            target = L("C4"),
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        await Advance();
+        Committed(await Do(GameActions.Dismantle, NoRoll(), new
+        {
+            unitId = "g1",
+            equipmentId = "gm"
+        }));
+        Refused(await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = G1,
+            target = L("C6")
+        }), "final-fire-outside");
+        Committed(await Do(GameActions.Fire, Once(6, 4, 3, 3), new
+        {
+            firers = G1,
+            target = L("C4")
+        }));
+        Assert.True(store.Read(Scope)!.Events.Select(item => item.Payload).OfType<FireResolved>().Last()
+            .Facts.GetProperty("firers")[0].GetProperty("firstFireMarked").GetBoolean());
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task ARussianSquadFiresACapturedGermanLmgWithItsPenalties()
     {
         await SetupAt(1, "russian", Unit("r1", "defender-squad", "E5", "russian"), Mg("gm", "attacker-lmg", "r1", "russian"), Unit("g1", "attacker-squad", "E6", "german"));
@@ -642,6 +689,7 @@ public sealed class BacklogPass13Tests : IDisposable
     [Fact]
     public async Task AUnitDropsAndRecoversASwDuringItsMove()
     {
+        // A4.44 (PDF p. 50), A8.1 (p. 59): finish g1's movement/fire window before g2 spends MF recovering.
         await SetupAt(2, "german", Unit("g1", "attacker-squad", "C3", "german"), Mg("gm", "attacker-lmg", "g1", "german"), Unit("g2", "attacker-squad", "C4", "german"));
 
         // A4.4, A4.44 (table player, pass 13): g1 moves, drops its LMG, and g2, having moved in, Recovers it for one more MF.
@@ -654,6 +702,12 @@ public sealed class BacklogPass13Tests : IDisposable
         {
             unitId = "g1",
             equipmentId = "gm"
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
         }));
         Committed(await Do(GameActions.Recover, Once(2), new
         {
@@ -711,6 +765,10 @@ public sealed class BacklogPass13Tests : IDisposable
         {
             unitId = "g2",
             equipmentId = "gm"
+        }));
+        // A4.44 (PDF p. 50), A8.1 (p. 59): paid recovery permits Defensive First Fire before movement resumes.
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
         }));
         Refused(await Do(GameActions.Move, NoRoll(), new
         {
@@ -776,6 +834,7 @@ public sealed class BacklogPass13Tests : IDisposable
     [Fact]
     public async Task ABrokenUnitsLoadReadsEachWeaponWithItsOwnPpWhateverTheirOrder()
     {
+        // A10.4 (PDF p. 66), A4.42 (p. 50): resolve the retained load with the rout, then verify the actual equipment holdings.
         // The play test's case: a FT (5 PP) created before a DC (2 PP) whose id sorts first. Before pass 31d the PP were listed in the order of
         // creation and the SW in the order of their ids, so the DC was taken for 5 PP, and the squad was made to leave the DC and then the FT.
         // A10.4: with an IPC of 3 it keeps the DC, the most it can carry, and leaves the FT.
@@ -790,20 +849,23 @@ public sealed class BacklogPass13Tests : IDisposable
             unitId = "g1",
             equipmentId = "gd"
         });
-        Refused(kept, "play.drop-phase");
-        Assert.Contains(kept.Reasons, reason => reason.Contains("g1 may not leave gd (2 PP)", StringComparison.Ordinal) && reason.Contains("carries 7 PP, routs with at most 3 PP", StringComparison.Ordinal));
-        Committed(await Do(GameActions.Drop, NoRoll(), new
+        Refused(kept, "Choose the equipment to carry in the rout workflow");
+        Refused(await Do(GameActions.Drop, NoRoll(), new
         {
             unitId = "g1",
             equipmentId = "gf"
-        }));
+        }), "Choose the equipment to carry in the rout workflow");
 
-        // Carrying the DC alone it is laden no longer, and drops nothing more before it routs.
+        Committed(await Rout("g1", ["E6", "E7"], Once(3, 3)));
+        Assert.Null(((EquipmentInstance)Current.Find("gf")!).Holding);
+        Assert.Equal("g1", ((EquipmentInstance)Current.Find("gd")!).Holding!.Holder);
+
+        // The completed rout retained the DC. A standalone RtPh drop still cannot discard it.
         Refused(await Do(GameActions.Drop, NoRoll(), new
         {
             unitId = "g1",
             equipmentId = "gd"
-        }), "play.drop-phase");
+        }), "Choose the equipment to carry in the rout workflow");
     }
 
     [Fact]
@@ -912,18 +974,23 @@ public sealed class BacklogPass13Tests : IDisposable
     [Fact]
     public async Task ABrokenUnitDropsOnlyWhatItCannotCarry()
     {
-        // A10.4 (table player, pass 13): r1 carries a LMG (1 PP) and a MMG (4 PP) with IPC 3; it keeps the LMG, so only the MMG is dropped.
+        // A10.4 (PDF p. 66), A4.42 (p. 50): r1 carries a LMG (1 PP) and a MMG (4 PP) with IPC 3.
+        // The rout commits the required MMG drop and retains the LMG; neither standalone drop is offered.
+        terrain["E7"] = "Woods";
         await SetupAt(5, "german", Unit("g1", "attacker-squad", "E2", "german"), Unit("r1", "defender-squad", "E5", "russian", "asl:broken"),
             Mg("rl", "defender-lmg", "r1", "russian"), Mg("rm", "defender-mmg", "r1", "russian"));
         Refused(await Do(GameActions.Drop, NoRoll(), new
         {
             unitId = "r1",
             equipmentId = "rl"
-        }), "play.drop-phase");
-        Committed(await Do(GameActions.Drop, NoRoll(), new
+        }), "Choose the equipment to carry in the rout workflow");
+        Refused(await Do(GameActions.Drop, NoRoll(), new
         {
             unitId = "r1",
             equipmentId = "rm"
-        }));
+        }), "Choose the equipment to carry in the rout workflow");
+        Committed(await Rout("r1", ["E6", "E7"], Once(3, 3)));
+        Assert.Null(((EquipmentInstance)Current.Find("rm")!).Holding);
+        Assert.Equal("r1", ((EquipmentInstance)Current.Find("rl")!).Holding!.Holder);
     }
 }

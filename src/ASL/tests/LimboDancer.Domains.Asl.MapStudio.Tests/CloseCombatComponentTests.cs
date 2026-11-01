@@ -320,8 +320,8 @@ public sealed class CloseCombatComponentTests : IDisposable
             .Add(item => item.Units, [new CloseCombatWithdrawals.Withdrawer("r1", "r1 (4-4-7, broken, melee)", true, ["bd04:E6:0"]),
                 new CloseCombatWithdrawals.Withdrawer("r2", "r2 (4-4-7, melee)", false, ["bd04:E6:0"])])
             .Add(item => item.OnWithdrawal, value => withdrawn = value));
-        Assert.Contains("(broken: must try to withdraw)", withdrawals.FindAll("#cc-withdrawals label")[0].TextContent, StringComparison.Ordinal);
-        Assert.DoesNotContain("must try", withdrawals.FindAll("#cc-withdrawals label")[1].TextContent, StringComparison.Ordinal);
+        Assert.Contains("Broken: must try to withdraw.", withdrawals.FindAll("#cc-withdrawals fieldset")[0].TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("must try", withdrawals.FindAll("#cc-withdrawals fieldset")[1].TextContent, StringComparison.Ordinal);
         withdrawals.Find(".cc-withdraw[data-unit='r2']").Change("bd04:E6:0");
         Assert.Equal(new CloseCombatWithdrawals.Choice("r2", "bd04:E6:0"), withdrawn);
     }

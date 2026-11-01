@@ -13,6 +13,12 @@ namespace LimboDancer.Domains.Asl.Units.State;
 public sealed record OrdnanceFired(string Gun, string Crew, BoardLocation Target, UnitFacing? Facing, bool RateOfFireKept, int Acquisition,
     BoardLocation? Acquired, IReadOnlyDictionary<string, string> Rolls, JsonElement Facts, JsonElement Resolution) : EventPayload
 {
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? ConfigurationUseVersion
+    {
+        get; init;
+    }
+
     /// <summary>Versioned breakdown source values. Null preserves the earlier catalog read.</summary>
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public VehicleArmamentEvidence? VehicleArmamentEvidence

@@ -610,10 +610,49 @@ else if (state is not null)
                    the Rout form chooses what a broken unit keeps. *@
                 @if (state.Phase != "rtph" && !MoverWaits && SupportWeaponsNow is ({ Count: > 0 } swShown, { Any: true } swOffers))
                 {
-                    <SupportWeaponActionPanel Weapons="@([.. swShown.Select(weapon => new PlayChoice(weapon.Id, SupportWeaponText(weapon)))])" Offers="@swOffers"
-                        Units="@([.. SupportWeaponUnits.Select(Labelled)])" Weapon="@swWeapon" Unit="@swUnit" Held="@(SupportWeaponHolder is not null)" Dismantles="@(swWeapon.Length > 0 && Live.Planner.MayDismantle(state, swWeapon))"
-                        RecoverBar="@(state.Unit(swUnit) is { } recovering && Live.Planner.RecoverPhaseBar(state, recovering) is { } recoverBar ? PlainReason(recoverBar) : null)"
-                        OnWeapon="@(id => { swWeapon = id; swUnit = string.Empty; })" OnUnit="@(id => swUnit = id)" OnPropose="@ProposeSupportWeaponKind" />
+                    @if (swOffers.Dismantle)
+                    {
+                        @if (configurationScope is { } configuredHex)
+                        {
+                            <div class="action-scope">Weapons in @Words(configuredHex)
+                                <button class="link-button" @onclick="ReleaseConfigurationScope">Show all locations</button>
+                            </div>
+                        }
+                        @foreach (var owner in swShown.Where(item => Live.Planner.MayDismantle(state, item.Id) && WeaponInOrigin(item, configurationScope)).GroupBy(item => item.Holding!.Holder))
+                        {
+                        <ActionFormGroup Legend="@WordsAt(owner.Key)" @key="owner.Key">
+                        <SupportWeaponWorkflow Snapshot="@state" Operation="@($"configure-{owner.Key}")" Title="Configure a weapon"
+                            ContextKey="@($"{gameId}:{Viewer.Name}:{state.Turn}:{state.Phase}:{state.PhasingSide}:{configurationScope}")" ScopeOwnedByParent="true"
+                            Weapons="@([.. owner.Select(item => new PlayChoice(item.Id, SupportWeaponText(item)))])"
+                            Locations="@WeaponLocations"
+                            Participants="@(_ => [])" Refusal="@((weapon, _) => Live.Planner.SupportWeaponConfigurationReadiness(state, WeaponHolder(weapon), weapon).Reason)"
+                            Details="@((weapon, _) => Live.Planner.SupportWeaponConfigurationDetails(state, weapon))"
+                            Verb="@(weapon => state.Find(weapon) is { } item && GameState.Condition(item, Conditions.Dismantled) == ConditionState.True ? "assemble" : "dismantle")"
+                            OnDraftChanged="@(() => ClearWeaponProposal(GameActions.Dismantle))" OnPropose="@ProposeWeaponConfiguration" />
+                        </ActionFormGroup>
+                        }
+                    }
+                    @if (swOffers.Recover && state.Phase == "rph")
+                    {
+                        <SupportWeaponWorkflow Snapshot="@state" Operation="recover" Title="Recover a weapon"
+                            ContextKey="@($"{gameId}:{Viewer.Name}:{state.Turn}:{state.Phase}:{state.PhasingSide}")"
+                            Weapons="@([.. swShown.Where(item => GamePlanner.MayOfferRecovery(state, item.Id)).Select(item => new PlayChoice(item.Id, SupportWeaponText(item)))])"
+                            Locations="@WeaponLocations"
+                            RequiresParticipant="true" ParticipantLabel="Recover with" Participants="@WeaponParticipants"
+                            Refusal="@((weapon, participant) => Live.Planner.SupportWeaponRecoveryRefusal(state, participant, weapon))"
+                            Details="@((weapon, participant) => Live.Planner.SupportWeaponRecoveryDetails(state, participant, weapon))"
+                            Verb="@(_ => "recover")" OnDraftChanged="@(() => ClearWeaponProposal(GameActions.Recover))" OnPropose="@ProposeWeaponRecovery" />
+                    }
+                    @if (swOffers.Transfer && state.Phase == "rph")
+                    {
+                        <SupportWeaponWorkflow Snapshot="@state" Operation="transfer" Title="Transfer a weapon"
+                            ContextKey="@($"{gameId}:{Viewer.Name}:{state.Turn}:{state.Phase}:{state.PhasingSide}")"
+                            Weapons="@([.. swShown.Where(item => item.Holding is { Role: HoldingRole.Possessed }).Select(item => new PlayChoice(item.Id, SupportWeaponText(item)))])"
+                            Locations="@WeaponLocations"
+                            RequiresParticipant="true" ParticipantLabel="Give to" Participants="@WeaponParticipants"
+                            Refusal="@((weapon, recipient) => Live.Planner.SupportWeaponTransferRefusal(state, WeaponHolder(weapon), weapon, recipient) is { } reason ? PlainReason(reason) : null)"
+                            Verb="@(_ => "transfer")" OnDraftChanged="@(() => ClearWeaponProposal(GameActions.Transfer))" OnPropose="@ProposeWeaponTransfer" />
+                    }
                 }
                 @* Pass 40 (A20.5, p. 88): an unbroken Guard squad Deploys at will, in any phase; in the RPh the Deploy panel takes it. *@
                 @if (state.Phase != "rph" && GuardSquads is { Count: > 0 } guardSquads)
@@ -648,10 +687,25 @@ else if (state is not null)
                 }
                 @if (state.Phase == "rph" && RepairChoices is { Count: > 0 } repairShown)
                 {
-                    <ActionSection Title="Repair" Key="repair">
-                <RepairActionPanel Weapons="@repairShown" Weapon="@repairWeapon" OnWeapon="@(id => { repairWeapon = id; repairHero = string.Empty; })"
-                    Heroes="@RepairHeroes" Hero="@repairHero" OnHero="@(id => repairHero = id)" Ready="@RepairReady" OnPropose="@ProposeRepair" />
+                    @if (repairShown.Any(item => !item.Id.Contains('|')))
+                    {
+                        <SupportWeaponWorkflow Snapshot="@state" Operation="repair" Title="Repair a weapon"
+                            HideWhenScopeEmpty="true"
+                            ContextKey="@($"{gameId}:{Viewer.Name}:{state.Turn}:{state.Phase}:{state.PhasingSide}")"
+                            Weapons="@([.. repairShown.Where(item => !item.Id.Contains('|'))])"
+                            Locations="@WeaponLocations"
+                            Participants="@(_ => Array.Empty<PlayChoice>())"
+                            Refusal="@((weapon, _) => GamePlanner.SupportWeaponRepairReadiness(state, WeaponHolder(weapon), weapon).Reason)"
+                            Details="@((weapon, _) => GamePlanner.SupportWeaponRepairDetails(state, WeaponHolder(weapon), weapon))"
+                            Verb="@(_ => "repair")" OnDraftChanged="@(() => ClearWeaponProposal(GameActions.Repair))" OnPropose="@ProposeWeaponRepair" />
+                    }
+                    @if (repairShown.Any(item => item.Id.Contains('|')))
+                    {
+                    <ActionSection Title="Repair vehicle armament" Key="repair-vehicle">
+                    <RepairActionPanel Weapons="@([.. repairShown.Where(item => item.Id.Contains('|'))])" Weapon="@repairWeapon" OnWeapon="@(id => { repairWeapon = id; repairHero = string.Empty; })"
+                        Heroes="@RepairHeroes" Hero="@repairHero" OnHero="@(id => repairHero = id)" Ready="@RepairReady" OnPropose="@ProposeRepair" />
                     </ActionSection>
+                    }
                 }
                 @if (state.Phase == "rph" && DeployChoices is { Count: > 0 } deployShown)
                 {
@@ -779,6 +833,7 @@ else if (state is not null)
                         <div class="toolbar">
                             <InfantryMovementAction Movers="@movementRows" Locations="@(movementRows.ToDictionary(row => row.Id, row => state.Location(row.Id)?.Location.ToString(), StringComparer.Ordinal))" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id" CarryMen="@CarryMen" Carriers="@Carriers"
                                 OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" OnOverrunNtc="@ProposeOverrunNtc">
+                                <WeaponHandling Context="origin">@WeaponHandling(origin, moveUnits)</WeaponHandling>
                                 <Route>
                                     @* The Play streamlining plan, S3 and S6: the route plotted on the map and made step by step; a plan that waits for the
                                        DEFENDER leaves nothing to do here but hand the screen over. *@
@@ -918,7 +973,9 @@ else if (state is not null)
                     <AdvanceActionPanel @key="(gameId, Viewer.Name, state.Turn, state.Phase)" Side="@(state.PhasingSide ?? string.Empty)" Units="@advanceRows" Selected="@advanceUnits" Destinations="@AdvanceDestinations" Waiting="@AdvanceWaiting"
                         Locations="@(advanceRows.ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)?.Location.ToString()))" OnClear="@ClearAdvanceDraft"
                         Edges="@ExitEdges" To="@advanceTo" Edge="@advanceExit" OnToggle="@ToggleAdvancer"
-                        OnTo="@(to => advanceTo = to)" OnEdge="@(edge => advanceExit = edge)" OnPropose="@ProposeAdvanceUnits" OnExit="@ProposeAdvanceExit" />
+                        OnTo="@(to => advanceTo = to)" OnEdge="@(edge => advanceExit = edge)" OnPropose="@ProposeAdvanceUnits" OnExit="@ProposeAdvanceExit">
+                        <WeaponHandling Context="origin">@WeaponHandling(origin, advanceUnits)</WeaponHandling>
+                    </AdvanceActionPanel>
                 }
                 @if (state.Phase == "ccph" && VehicleCcRows is { Count: > 0 } vehicleCc)
                 {
@@ -963,10 +1020,31 @@ else if (state is not null)
                         Infiltrators="@Infiltrators" Infiltrations="@ccInfiltrations" Attacks="@ccAttacks" OnLocation="@ChooseCloseCombatLocation" OnRound="@ChooseRound"
                         OnHandToHand="@(on => ccHandToHand = on)" OnProposeAmbush="@ProposeAmbush" OnAmbushWithdraw="@(item => ProposeAmbushWithdrawal(item.Units, item.To))"
                         OnStacking="@(pick => SetStacking(pick.Unit, pick.Value))" OnWithdrawal="@(pick => SetWithdrawal(pick.Unit, pick.To))"
-                        Dropped="@ccDrops" OnDrop="@(pick => Toggle(ccDrops, pick.Id, pick.On))"
+                        Dropped="@ccDrops" OnDrop="@SetCcDrop"
                         OnAttacker="@(pick => ToggleAttacker(pick.Id, pick.On))" OnDefender="@(pick => ToggleDefender(pick.Id, pick.On))" MayRemove="@MayRemoveAttack" OnDirector="@(id => ccDirector = id)"
                         OnCapture="@(on => ccCapture = on)" OnGuard="@(id => ccGuard = id)" OnYield="@(text => ccYield = text)" OnAddAttack="@AddAttack"
-                        OnInfiltration="@(pick => SetInfiltration(pick.Unit, pick.To))" OnRemoveAttack="@(attack => ccAttacks.Remove(attack))" OnPropose="@ProposeCloseCombat" />
+                        OnInfiltration="@(pick => SetInfiltration(pick.Unit, pick.To))" OnRemoveAttack="@(attack => ccAttacks.Remove(attack))" OnPropose="@ProposeCloseCombat">
+                        <AmbushEquipment>
+                            @foreach (var unit in AmbushEquipmentUnits)
+                            {
+                                var equipment = DropChoices(unit);
+                                @if (equipment.Count > 0)
+                                {
+                                    <ActionFormGroup Legend="@Words(unit.Id)">
+                                        <p class="toolbar-note">@WithdrawalLoadText(unit)</p>
+                                        <details>
+                                            <summary>Equipment to leave on Ambush withdrawal</summary>
+                                            @foreach (var weapon in equipment)
+                                            {
+                                                <label><input type="checkbox" class="ambush-drop" data-weapon="@weapon.Id" checked="@ccDrops.Contains(weapon.Id)"
+                                                    @onchange="@(args => SetCcDrop(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Words(weapon.Label)</label>
+                                            }
+                                        </details>
+                                    </ActionFormGroup>
+                                }
+                            }
+                        </AmbushEquipment>
+                    </CloseCombatPanel>
                 }
                 @if (state.Phase is "rph" or "aph" && MayAnswer(state.PhasingSide) && Guards is { Count: > 0 } guards)
                 {
@@ -2887,8 +2965,24 @@ else if (state is not null)
     /// <summary>The reasons the review lists: for a setup, the gate's count of events is left out and a refusal's reasons are shown as links instead.</summary>
     private IReadOnlyList<string> ReviewReasons(Proposal proposal) => PendingDcConsequences(proposal)
         ? ["The attack is committed, with a required decision still pending. Finish its consequences before the DC is removed and the phase can close."]
-        : !PlacesCounters(proposal) || setupReview is null ? Reasons(proposal)
+        : !PlacesCounters(proposal) || setupReview is null ? WeaponReviewReasons(proposal)
         : SetupProblems is not null ? [] : [.. Reasons(proposal).Where(reason => !reason.StartsWith("play.setup:", StringComparison.Ordinal))];
+
+    private IReadOnlyList<string> WeaponReviewReasons(Proposal proposal)
+    {
+        var reasons = Reasons(proposal);
+        if (proposal.Action != GameActions.Dismantle
+            || !proposal.Arguments.TryGetProperty("equipmentId", out var equipment)
+            || SupportWeaponsNow.Weapons.FirstOrDefault(item => item.Id == equipment.GetString()) is not { } weapon
+            || WeaponOrdinal(weapon) is not { Length: > 0 } ordinal)
+        {
+            return reasons;
+        }
+
+        // Keep the choice's identifier in disclosed proposal text, before names replace IDs.
+        var token = $@"(?<![\w:.-]){System.Text.RegularExpressions.Regex.Escape(weapon.Id)}(?![\w:.-])";
+        return [.. reasons.Select(reason => System.Text.RegularExpressions.Regex.Replace(reason, token, _ => weapon.Id + ordinal))];
+    }
 
     // A committed attack may have paused for an existing target-side choice. Do not present its planned removal as complete.
     private bool PendingDcConsequences(Proposal proposal) => proposal.Action == GameActions.DetonateDc
@@ -3056,6 +3150,12 @@ else if (state is not null)
     {
         highlight = facts is null ? null : GameMaps.LocationOf(board, facts.Index);
         (Picking.Picked, Picking.PickedBy, Picking.Serial) = (highlight?.ToString(), Picking.Armed, Picking.Serial + 1);
+        if (!plotOn && Picking.Armed is null && state is not null)
+        {
+            configurationScope = highlight is { } pickedWeaponHex && SupportWeaponsNow.Weapons.Any(item =>
+                Live.Planner.MayDismantle(state, item.Id) && WeaponInOrigin(item, pickedWeaponHex.ToString())) ? pickedWeaponHex.ToString() : null;
+            ClearWeaponProposal(GameActions.Dismantle);
+        }
 
         // The Play streamlining plan, S3: while a route is plotted, a click adds the hex to it.
         if (plotOn && highlight is { } plotted && state is not null && handOver is null && !SetupOpen)
@@ -4089,6 +4189,12 @@ else if (state is not null)
     // Pass 31d (design D2): the load a laden unit keeps as it routs, as its SW ids joined by commas; empty for the first of its best loads.
     private string routKeep = string.Empty;
     private string swWeapon = string.Empty;
+    private string? configurationScope;
+    private void ReleaseConfigurationScope()
+    {
+        configurationScope = null;
+        ClearWeaponProposal(GameActions.Dismantle);
+    }
     private string swUnit = string.Empty;
     private string deploySquad = string.Empty;
     private string deployLeader = string.Empty;
@@ -4636,8 +4742,7 @@ else if (state is not null)
     private IEnumerable<(UnitInstance Unit, IReadOnlyList<BoardLocation> Destinations)> WithdrawalUnits => state is null || ccLocation.Length == 0
         || !BoardLocation.TryParse(ccLocation, out var at) || CloseCombatEntry is not null
         ? []
-        : CloseCombatUnits.Where(unit => GameState.Condition(unit, Conditions.Melee) == ConditionState.True
-                && !new[] { Conditions.Pinned, Conditions.Berserk, Conditions.Disrupted, Conditions.Captured }.Any(name => GameState.Condition(unit, name) == ConditionState.True))
+        : CloseCombatUnits.Where(unit => Mine(unit) && GamePlanner.MeleeWithdrawalEligible(state, unit, at))
             .Select(unit => (unit, Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)))).Where(item => item.Item2.Count > 0 || MayWithdrawByDropping(item.unit, at));
 
     /// <summary>
@@ -4658,8 +4763,40 @@ else if (state is not null)
     /// The SW a unit above its IPC may drop to withdraw or infiltrate (A11.21; pass 70, ruling R70.26), each named with its hex first; none for a unit
     /// within its IPC.
     /// </summary>
-    private IReadOnlyList<PlayChoice> DropChoices(UnitInstance unit) => state is null || !Live.Planner.Laden(state, unit, []) ? []
-        : [.. GamePlanner.PossessedSw(state, unit).Select(id => new PlayChoice(id, $"{PlaceOf(ccLocation)}: {id}"))];
+    private (GameState? State, string? View, Dictionary<string, IReadOnlyList<PlayChoice>>? Choices,
+        Dictionary<string, (string Drops, string Text)>? Loads) withdrawalEquipmentMemo;
+
+    private void RefreshWithdrawalEquipmentMemo()
+    {
+        if (!ReferenceEquals(withdrawalEquipmentMemo.State, state) || withdrawalEquipmentMemo.View != WeaponViewKey
+            || withdrawalEquipmentMemo.Choices is null)
+            withdrawalEquipmentMemo = (state, WeaponViewKey, new(StringComparer.Ordinal), new(StringComparer.Ordinal));
+    }
+
+    private IReadOnlyList<PlayChoice> DropChoices(UnitInstance unit)
+    {
+        if (state is null) return [];
+        RefreshWithdrawalEquipmentMemo();
+        if (!withdrawalEquipmentMemo.Choices!.TryGetValue(unit.Id, out var choices))
+        {
+            choices = [.. GamePlanner.WithdrawalEquipmentChoices(state, unit).Select(id => new PlayChoice(id,
+                state.Find(id) is EquipmentInstance weapon ? $"{UnitPlaceOf(id)?.Where}: {SupportWeaponText(weapon)}" : UnitAt(id)))];
+            withdrawalEquipmentMemo.Choices[unit.Id] = choices;
+        }
+        return choices;
+    }
+
+    private string WithdrawalLoadText(UnitInstance unit)
+    {
+        RefreshWithdrawalEquipmentMemo();
+        var drops = DropsTicked(unit);
+        var key = string.Join('|', drops.Order(StringComparer.Ordinal));
+        if (withdrawalEquipmentMemo.Loads!.TryGetValue(unit.Id, out var cached) && cached.Drops == key) return cached.Text;
+        var load = Live.Planner.WithdrawalEquipmentLoad(state!, unit, drops);
+        var text = $"Carrying {load.Carried?.ToString(CultureInfo.InvariantCulture) ?? "?"} / {load.Capacity} PP. {Plain(load.Readiness.Reason)}".Trim();
+        withdrawalEquipmentMemo.Loads[unit.Id] = (key, text);
+        return text;
+    }
 
     /// <summary>The leaders who may direct the attack being declared: attackers, Good Order, not pinned or berserk (A11.141, A7.831).</summary>
     private IEnumerable<UnitInstance> CloseCombatDirectors => CloseCombatUnits.Where(unit => unit.Kind == "asl:leader" && ccAttackers.Contains(unit.Id)
@@ -4722,6 +4859,21 @@ else if (state is not null)
         }
     }
 
+    private void SetCcDrop(UnitSelectionList.Toggle choice)
+    {
+        Toggle(ccDrops, choice.Id, choice.On);
+        if (state?.Find(choice.Id) is EquipmentInstance { Holding: { } holding } && state.Unit(holding.Holder) is { } unit
+            && BoardLocation.TryParse(ccLocation, out var at))
+        {
+            var destinations = Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit));
+            if (ccWithdrawals.TryGetValue(unit.Id, out var withdrawal) && !destinations.Any(to => to.ToString() == withdrawal)) ccWithdrawals.Remove(unit.Id);
+            if (ccInfiltrations.TryGetValue(unit.Id, out var infiltration) && !destinations.Any(to => to.ToString() == infiltration)) ccInfiltrations.Remove(unit.Id);
+        }
+
+        ClearWeaponProposal(GameActions.CloseCombat);
+        ClearWeaponProposal(GameActions.AmbushWithdraw);
+    }
+
     private void SetInfiltration(string unit, string? to)
     {
         if (string.IsNullOrEmpty(to))
@@ -4748,6 +4900,7 @@ else if (state is not null)
     private Task ProposeAmbushWithdrawal(IReadOnlyList<string> units, string to) => Propose(GameActions.AmbushWithdraw, JsonSerializer.SerializeToElement(new
     {
         gameId, attemptId = Attempt("awd"), expectedRevision = (long)history!.Events.Count, location = ccLocation, unitIds = units.Order(StringComparer.Ordinal).ToArray(), to,
+        drops = ccDrops.Where(id => state?.Find(id) is EquipmentInstance { Holding: { } holder } && units.Contains(holder.Holder)).ToArray(),
     }));
 
     private Task ProposeGuardPrisoners(string guard, string? to) => Propose(GameActions.GuardPrisoners, to is null
@@ -4836,9 +4989,12 @@ else if (state is not null)
     private IReadOnlyList<AmbushWithdrawalActions.Withdrawal>? AmbushWithdrawals => state is not null && CloseCombatEntry is { Ambusher: { } ambushing } withdrawing
         && (withdrawing.Rounds.Count == 0 || withdrawing.Closed) && (Viewer.IsAdjudicator || viewAs == ambushing) && BoardLocation.TryParse(ccLocation, out var ambushAt)
         ? [.. CloseCombatUnits.Where(unit => unit.Side == ambushing && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)
-            // Pass 70 (ruling R70.26): with no SW dropped, as this list offers none to drop; a unit above its IPC withdraws in a CC round instead.
-            .SelectMany(unit => Live.Planner.WithdrawalDestinations(state, unit, ambushAt, []).Select(to => new AmbushWithdrawalActions.Withdrawal(unit.Id, to.ToString())))]
+            .Where(unit => GamePlanner.AmbushWithdrawalEligible(state, unit, ambushAt))
+            .SelectMany(unit => Live.Planner.WithdrawalDestinations(state, unit, ambushAt, DropsTicked(unit)).Select(to => new AmbushWithdrawalActions.Withdrawal(unit.Id, to.ToString())))]
         : null;
+
+    private IEnumerable<UnitInstance> AmbushEquipmentUnits => state is not null && BoardLocation.TryParse(ccLocation, out var at)
+        ? CloseCombatUnits.Where(unit => (Viewer.IsAdjudicator || unit.Side == viewAs) && GamePlanner.AmbushWithdrawalEligible(state, unit, at)) : [];
 
     /// <summary>The SMC the view may declare stacking for (plan C04; ruling R23.1), each with the MMC of its side in the Location.</summary>
     private IReadOnlyList<CloseCombatStacking.Smc> StackingChoices => [.. CloseCombatUnits
@@ -4897,6 +5053,7 @@ else if (state is not null)
                 Live.Planner.MustWithdraw(state!, item.Unit), [.. item.Destinations.Select(to => to.ToString())])
             {
                 Drops = DropChoices(item.Unit),
+                Load = WithdrawalLoadText(item.Unit),
             })];
             withdrawersCache = (state, Viewer.Name, viewAs, ccLocation, drops, rows);
             return rows;
@@ -4940,6 +5097,7 @@ else if (state is not null)
                     .Select(unit => (unit, Choice: new CloseCombatInfiltrationChoices.Infiltrator(unit.Id, [.. Live.Planner.WithdrawalDestinations(state, unit, at, DropsTicked(unit)).Select(to => to.ToString())])
                     {
                         Drops = DropChoices(unit),
+                        Load = WithdrawalLoadText(unit),
                     }))
                     .Where(item => item.Choice.Destinations.Count > 0 || MayWithdrawByDropping(item.unit, at)).Select(item => item.Choice)]
                 : null;
@@ -7483,6 +7641,7 @@ else if (state is not null)
         voluntaryBreak.Clear();
         removeConcealment.Clear();
         swWeapon = swUnit = string.Empty;
+        configurationScope = null;
         deploySquad = deployLeader = deploySpotterHalf = string.Empty;
         deployWeapons.Clear();
         recombineOne = recombineTwo = recombineLeader = string.Empty;
@@ -8082,7 +8241,14 @@ else if (state is not null)
 
     // The Memory and Performance Guidelines (page projections by state and viewer): the SW panel's weapons and the actions the phase allows them,
     // read once a state and view, not at each render.
-    private (GameState? State, string View, IReadOnlyList<EquipmentInstance> Weapons, SupportWeaponOffers Offers) supportWeaponsMemo;
+    private string WeaponViewKey => $"{Viewer.Name}:{viewAs}";
+    private (GameState? State, string View, IReadOnlyList<EquipmentInstance> Weapons, SupportWeaponOffers Offers,
+        IReadOnlyDictionary<string, string?> Locations, IReadOnlyDictionary<string, string> Ordinals) supportWeaponsMemo;
+
+    private IReadOnlyDictionary<string, string?> WeaponLocations
+    {
+        get { _ = SupportWeaponsNow; return supportWeaponsMemo.Locations; }
+    }
 
     private (IReadOnlyList<EquipmentInstance> Weapons, SupportWeaponOffers Offers) SupportWeaponsNow
     {
@@ -8093,10 +8259,19 @@ else if (state is not null)
                 return ([], default);
             }
 
-            if (!ReferenceEquals(supportWeaponsMemo.State, state) || supportWeaponsMemo.View != Viewer.Name)
+            if (!ReferenceEquals(supportWeaponsMemo.State, state) || supportWeaponsMemo.View != WeaponViewKey)
             {
                 IReadOnlyList<EquipmentInstance> weapons = [.. SupportWeapons];
-                supportWeaponsMemo = (state, Viewer.Name, weapons, weapons.Count == 0 ? default : Live.Planner.SupportWeaponActions(state, weapons, Viewer.IsAdjudicator ? null : viewAs));
+                var locations = VisibleEquipment.ToDictionary(item => item.Id, item => state.Location(item.Id)?.Location.ToString(), StringComparer.Ordinal);
+                var ordinals = new Dictionary<string, string>(StringComparer.Ordinal);
+                foreach (var group in weapons.GroupBy(item => (item.Definition, item.Holding, Location: locations.GetValueOrDefault(item.Id))))
+                {
+                    if (group.Count() < 2) continue;
+                    var ordinal = 0;
+                    foreach (var weapon in group.OrderBy(item => item.Id, StringComparer.Ordinal)) ordinals[weapon.Id] = $" #{++ordinal}";
+                }
+                supportWeaponsMemo = (state, WeaponViewKey, weapons,
+                    weapons.Count == 0 ? default : Live.Planner.SupportWeaponActions(state, weapons, Viewer.IsAdjudicator ? null : viewAs), locations, ordinals);
             }
 
             return (supportWeaponsMemo.Weapons, supportWeaponsMemo.Offers);
@@ -8109,9 +8284,16 @@ else if (state is not null)
         .OrderBy(item => item.Id, StringComparer.Ordinal);
 
     private string SupportWeaponText(EquipmentInstance weapon) =>
-        $"{weapon.Id} ({(weapon.Holding is { } holding ? $"held by {holding.Holder}" : $"left in {state!.Location(weapon.Id)!.Location}")}"
+        $"{weapon.Id}{WeaponOrdinal(weapon)} ({(weapon.Holding is { } holding ? $"held by {holding.Holder}" : $"left in {UnitPlaceOf(weapon.Id)?.Where}")}"
+        + $"{(GameState.Condition(weapon, Conditions.Malfunctioned) == ConditionState.True ? ", malfunctioned" : "")}"
         + $"{(GameState.Condition(weapon, Conditions.Dismantled) == ConditionState.True ? ", dismantled" : "")}"
         + $"{(Live.Planner.PortageOf(weapon) is { } pp ? $", {pp} PP" : "")})";
+
+    private string WeaponOrdinal(EquipmentInstance weapon)
+    {
+        _ = SupportWeaponsNow;
+        return supportWeaponsMemo.Ordinals.GetValueOrDefault(weapon.Id) ?? string.Empty;
+    }
 
     // Pass 31c (design D11): the label is the unit's id, which every panel reads as its name; the name's tag says the side.
     private static PlayChoice Labelled(UnitInstance unit) => new(unit.Id, unit.Id);
@@ -8211,7 +8393,7 @@ else if (state is not null)
     [
         .. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && Mine(item) && item.Holding is { Role: HoldingRole.Possessed }
                 && GameState.Condition(item, Conditions.Malfunctioned) == ConditionState.True)
-            .Select(weapon => new PlayChoice(weapon.Id, $"{weapon.Id} (held by {weapon.Holding!.Holder})")),
+            .Select(weapon => new PlayChoice(weapon.Id, SupportWeaponText(weapon))),
         .. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && LiveFire.IsVehicle(unit))
             .SelectMany(vehicle => GamePlanner.VehicleRepairWeapons(state!, vehicle)
                 .Select(weapon => new PlayChoice(vehicle.Id + "|" + weapon, $"{vehicle.Id}'s {weapon.ToUpperInvariant()}"))),
@@ -8453,6 +8635,108 @@ else if (state is not null)
         }
 
         return Propose(action, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    private void ClearWeaponDropProposal()
+        => ClearWeaponProposal(GameActions.Drop);
+
+    private void ClearWeaponProposal(ActionDescriptor action)
+    {
+        if (pending?.Action == action && pending.Result.Outcome is not (PlayOutcome.Committed or PlayOutcome.Replay))
+        {
+            pending = null;
+            status = string.Empty;
+        }
+    }
+
+    private string WeaponHolder(string id) => state?.Find(id) is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding }
+        ? holding.Holder : string.Empty;
+
+    private IReadOnlyList<PlayChoice> WeaponParticipants(string id) => state?.Location(id)?.Location is { } at
+        ? [.. ActingUnits.Where(unit => Mine(unit) && unit.Id != WeaponHolder(id) && state.Location(unit.Id)?.Location == at).Select(Labelled)] : [];
+
+    private bool WeaponInOrigin(EquipmentInstance weapon, string? origin) => origin is null
+        || BoardLocation.TryParse(origin, out var selected) && state?.Location(weapon.Id)?.Location is { } at
+            && at.Board == selected.Board && at.Hex == selected.Hex;
+
+    private RenderFragment WeaponHandling(string? origin, IReadOnlySet<string> actors) => @<div class="weapon-handling">
+        @if (state is not null && !MoverWaits)
+        {
+            var (weapons, offers) = SupportWeaponsNow;
+            var context = $"{gameId}:{Viewer.Name}:{state.Turn}:{state.Phase}:{origin}:{string.Join('|', actors.Order(StringComparer.Ordinal))}";
+            var held = weapons.Where(item => item.Holding is { Role: HoldingRole.Possessed } holder
+                && (actors.Count == 0 || actors.Contains(holder.Holder)) && WeaponInOrigin(item, origin));
+            @foreach (var group in held.Where(_ => offers.Drop || offers.Transfer).GroupBy(item => item.Holding!.Holder))
+            {
+                <ActionFormGroup Legend="@Words(group.Key)">
+                    @if (offers.Drop)
+                    {
+                        <SupportWeaponWorkflow Snapshot="@state" @key="@($"drop:{group.Key}")" Operation="@($"drop-{group.Key}")" Title="Leave a weapon here"
+                            ContextKey="@context" ScopeOwnedByParent="true" Weapons="@([.. group.Select(item => new PlayChoice(item.Id, SupportWeaponText(item)))])"
+                            Participants="@(_ => [])" Refusal="@((weapon, _) => GamePlanner.SupportWeaponDropRefusal(state, weapon))"
+                            Verb="@(_ => "drop")" OnDraftChanged="@ClearWeaponDropProposal" OnPropose="@ProposeWeaponDrop" />
+                    }
+                    @if (offers.Transfer)
+                    {
+                        <SupportWeaponWorkflow Snapshot="@state" @key="@($"transfer:{group.Key}")" Operation="@($"transfer-{group.Key}")" Title="Transfer a weapon"
+                            ContextKey="@context" ScopeOwnedByParent="true" Weapons="@([.. group.Select(item => new PlayChoice(item.Id, SupportWeaponText(item)))])"
+                            RequiresParticipant="true" ParticipantLabel="Give to" Participants="@WeaponParticipants"
+                            Refusal="@((weapon, recipient) => Live.Planner.SupportWeaponTransferRefusal(state, WeaponHolder(weapon), weapon, recipient) is { } reason ? PlainReason(reason) : null)"
+                            Verb="@(_ => "transfer")" OnDraftChanged="@(() => ClearWeaponProposal(GameActions.Transfer))" OnPropose="@ProposeWeaponTransfer" />
+                    }
+                </ActionFormGroup>
+            }
+            @if (offers.Recover)
+            {
+                var recoverable = weapons.Where(item => GamePlanner.MayOfferRecovery(state, item.Id) && WeaponInOrigin(item, origin)
+                    && (actors.Count == 0 || WeaponParticipants(item.Id).Any(unit => actors.Contains(unit.Id)))).ToArray();
+                @if (recoverable.Length > 0)
+                {
+                    <SupportWeaponWorkflow Snapshot="@state" Operation="recover" Title="Recover a weapon" ContextKey="@context" ScopeOwnedByParent="true"
+                        Weapons="@([.. recoverable.Select(item => new PlayChoice(item.Id, SupportWeaponText(item)))])"
+                        RequiresParticipant="true" ParticipantLabel="Recover with"
+                        Participants="@(weapon => [.. WeaponParticipants(weapon).Where(unit => actors.Count == 0 || actors.Contains(unit.Id))])"
+                        Refusal="@((weapon, participant) => Live.Planner.SupportWeaponRecoveryRefusal(state, participant, weapon))"
+                        Details="@((weapon, participant) => Live.Planner.SupportWeaponRecoveryDetails(state, participant, weapon))"
+                        Verb="@(_ => "recover")" OnDraftChanged="@(() => ClearWeaponProposal(GameActions.Recover))" OnPropose="@ProposeWeaponRecovery" />
+                }
+            }
+        }
+    </div>;
+
+    private Task ProposeWeaponTransfer(SupportWeaponWorkflow.Choice choice)
+    {
+        swWeapon = choice.Weapon;
+        swUnit = choice.Participant;
+        return ProposeSupportWeapon(GameActions.Transfer);
+    }
+
+    private Task ProposeWeaponRepair(SupportWeaponWorkflow.Choice choice)
+    {
+        repairWeapon = choice.Weapon;
+        repairHero = string.Empty;
+        return ProposeRepair();
+    }
+
+    private Task ProposeWeaponRecovery(SupportWeaponWorkflow.Choice choice)
+    {
+        swWeapon = choice.Weapon;
+        swUnit = choice.Participant;
+        return ProposeSupportWeapon(GameActions.Recover);
+    }
+
+    private Task ProposeWeaponConfiguration(SupportWeaponWorkflow.Choice choice)
+    {
+        swWeapon = choice.Weapon;
+        swUnit = WeaponHolder(choice.Weapon);
+        return ProposeSupportWeapon(GameActions.Dismantle);
+    }
+
+    private Task ProposeWeaponDrop(SupportWeaponWorkflow.Choice choice)
+    {
+        swWeapon = choice.Weapon;
+        swUnit = choice.Participant;
+        return ProposeSupportWeapon(GameActions.Drop);
     }
 
     /// <summary>The Good Order leaders in a unit's Location who could direct its Deployment or Recombination (A1.31, A1.32).</summary>

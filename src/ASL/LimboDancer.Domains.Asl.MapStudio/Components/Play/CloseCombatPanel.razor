@@ -73,6 +73,7 @@ else
             }
             @if (AmbushWithdrawals is { } withdrawals)
             {
+                @AmbushEquipment
                 <AmbushWithdrawalActions Withdrawals="@withdrawals" OnPropose="@OnAmbushWithdraw" />
             }
             @if (Step == WaitStep)
@@ -295,6 +296,8 @@ else
     /// <summary>The ambusher's withdrawals the view may propose now, or none to hide them.</summary>
     [Parameter]
     public IReadOnlyList<AmbushWithdrawalActions.Withdrawal>? AmbushWithdrawals { get; set; }
+
+    [Parameter] public RenderFragment? AmbushEquipment { get; set; }
 
     [Parameter]
     public IReadOnlyList<CloseCombatStacking.Smc> Smcs { get; set; } = [];

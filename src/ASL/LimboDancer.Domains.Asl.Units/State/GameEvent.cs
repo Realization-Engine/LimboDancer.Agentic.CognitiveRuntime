@@ -183,10 +183,26 @@ public sealed record InstanceMoved(string Id, Position Position, int? Mf = null)
 }
 
 /// <summary><c>equipment-transferred</c>: equipment changes holder, or is left at a map position with none.</summary>
-public sealed record EquipmentTransferred(string Id, Holding? Holding, Position? Position) : EventPayload;
+public sealed record EquipmentTransferred(string Id, Holding? Holding, Position? Position) : EventPayload
+{
+    /// <summary>The voluntary giver for current transfer actions; absent on legacy and automatic transfers.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? TransferredBy
+    {
+        get; init;
+    }
+}
 
 /// <summary><c>conditions-changed</c>: one or more condition dimensions take new values.</summary>
-public sealed record ConditionsChanged(string Id, IReadOnlyDictionary<string, ConditionState> Conditions) : EventPayload;
+public sealed record ConditionsChanged(string Id, IReadOnlyDictionary<string, ConditionState> Conditions) : EventPayload
+{
+    /// <summary>Possessor performing a current configuration action; absent on other and legacy condition changes.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? ConfiguredBy
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>setup-concealed</c>: a non-OB "?" placed on a unit after both sides have set up and before play starts (A12.12; pass 23, ruling R23.6). A setup

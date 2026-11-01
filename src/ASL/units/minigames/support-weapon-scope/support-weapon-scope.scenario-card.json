@@ -1,0 +1,69 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "support-weapon-scope",
+  "title": "Support Weapons phase scope",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Manufactured under R0.3 to prove the Support Weapons phase-scope calculators using supplied facts.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "The Rule Workbench checks phase opportunities, unknown information, use budgets, and retained equipment load."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 0
+  },
+  "introduction": "Manufactured fact positions for recovery, transfer, repair, configuration, and withdrawal equipment.",
+  "boards": [
+    {
+      "board": "bd01",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "",
+        "basis": "none",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "support-weapon-scope"
+}

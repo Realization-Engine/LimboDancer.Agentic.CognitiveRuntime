@@ -250,8 +250,8 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         Place(page, "r1", "defender-squad", hexes.Two);
         Commit(page, "#propose-setup");
         Assert.Equal("rph", live.History("village")!.Current!.Phase);
-        page.Find("#sw-weapon").Change("gm");
-        page.Find("#sw-unit").Change("g2");
+        page.Find("#transfer-weapon").Change("gm");
+        page.Find("#transfer-participant").Change("g2");
         Commit(page, "#propose-transfer");
         Assert.Equal("g2", ((Units.State.EquipmentInstance)live.History("village")!.Current!.Find("gm")!).Holding!.Holder);
 
