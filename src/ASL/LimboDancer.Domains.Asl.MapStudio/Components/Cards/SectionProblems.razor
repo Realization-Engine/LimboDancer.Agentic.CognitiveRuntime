@@ -1,0 +1,19 @@
+@* The Card editor redesign (2026-10-31): the problems of one section or one OB group, beside its fields, without their field keys. *@
+@if (Items.Count > 0)
+{
+    <ul id="@($"edit-problems-{Key}")" class="card-section-problems" role="status">
+        @foreach (var problem in Items)
+        {
+            <li title="@problem">@CardSections.Message(problem)</li>
+        }
+    </ul>
+}
+
+@code {
+    /// <summary>The section's key, or a group's id, which names the list.</summary>
+    [Parameter, EditorRequired]
+    public string Key { get; set; } = string.Empty;
+
+    [Parameter]
+    public IReadOnlyList<string> Items { get; set; } = [];
+}

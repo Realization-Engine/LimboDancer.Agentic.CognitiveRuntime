@@ -1,33 +1,109 @@
 @using LimboDancer.Domains.Asl.Units.Catalog
 @* K13 (plan section 16.16; rulings R28.1 and R28.2): the editor's form root. It lays out the card's fields as forms, and owns which area or exit
    condition is being picked on the map; the page keeps the library, the checks, save, rename, and delete. The card is shown as read-only JSON. *@
-<div class="card-editor-form">
-    <CardIdentityFields Draft="@Draft" Changed="@Changed" />
-    <CardMapFields Draft="@Draft" Changed="@Changed" BoardNames="@BoardNames" SavedMaps="@SavedMaps" Map="@Map" MapProblems="@MapProblems"
-                   Target="@Target" Marked="@Marked" OnHex="@PickHex" Done="@(() => picking = null)" />
-    @if (pickNote is { } note)
-    {
-        <p id="edit-pick-note" class="diagnostic warning" role="status">@note</p>
-    }
-    <CardTurnRecordFields Draft="@Draft" Changed="@Changed" />
-    @for (var index = 0; index < Draft.Sides.Length; index++)
-    {
-        var at = index;
-        <CardSideFields Draft="@Draft" Index="@at" Sides="@Sides" Catalog="@Catalog" Definitions="@Definitions(Draft.Sides[at].Side)" Boards="@CardBoards"
-                        Picking="@picking" OnPick="@Pick" Changed="@Changed" RenameArea="@RenameArea" />
-    }
-    <CardRulesFields Draft="@Draft" Changed="@Changed" />
-    <CardVictoryFields Draft="@Draft" Picking="@picking" OnPick="@Pick" Changed="@Changed" />
-    @if (Json is { } json)
-    {
-        <JsonDisclosure Id="edit-json" Summary="The card as JSON (read only)" Json="@json" />
-    }
+@* The Card editor redesign (2026-10-31): a list of the card's sections, each with its problem count; one section shown at a time; and the map beside
+   the sections that pick hexes. Every section stays rendered and the others are hidden, so a field's value and a pick in progress survive a switch. *@
+<div class="card-editor-form@(CardSections.UsesMap(Section) ? " with-map" : string.Empty)">
+    <nav class="card-sections" aria-label="The card's sections">
+        <ul>
+            @foreach (var key in CardSections.Keys(Draft))
+            {
+                var count = Count(key);
+                <li>
+                    <button id="@($"edit-nav-{key}")" type="button" aria-current="@(key == Section ? "true" : null)" @onclick="@(() => SectionChanged.InvokeAsync(key))">
+                        <span class="card-section-name">@CardSections.Label(key, Draft)</span>
+                        @if (key != CardSections.Json)
+                        {
+                            @if (count > 0)
+                            {
+                                <span class="card-section-count" title="@($"{count} problem(s)")">@count</span>
+                            }
+                            else
+                            {
+                                <span class="card-section-ok" aria-label="no problems">&#10003;</span>
+                            }
+                        }
+                    </button>
+                </li>
+            }
+        </ul>
+    </nav>
+    <div class="card-section-body">
+        <section id="edit-section-card" class="card-section" hidden="@(Section != CardSections.Card)">
+            <SectionProblems Key="@CardSections.Card" Items="@Of(CardSections.Card)" />
+            <CardIdentityFields Draft="@Draft" Changed="@Changed" IdFollowsTitle="@IdFollowsTitle" />
+        </section>
+        <section id="edit-section-map" class="card-section" hidden="@(Section != CardSections.Map)">
+            <SectionProblems Key="@CardSections.Map" Items="@Of(CardSections.Map)" />
+            <CardMapFields Draft="@Draft" Changed="@Changed" BoardNames="@BoardNames" SavedMaps="@SavedMaps" />
+        </section>
+        <section id="edit-section-turns" class="card-section" hidden="@(Section != CardSections.Turns)">
+            <SectionProblems Key="@CardSections.Turns" Items="@Of(CardSections.Turns)" />
+            <CardTurnRecordFields Draft="@Draft" Changed="@Changed" />
+        </section>
+        @for (var index = 0; index < Draft.Sides.Length; index++)
+        {
+            var at = index;
+            var key = CardSections.Side(at);
+            <section id="@($"edit-section-{key}")" class="card-section" hidden="@(Section != key)">
+                <CardSideFields Draft="@Draft" Index="@at" Sides="@Sides" Catalog="@Catalog" Definitions="@Definitions(Draft.Sides[at].Side)" Boards="@CardBoards"
+                                Picking="@picking" OnPick="@Pick" Changed="@Changed" RenameArea="@RenameArea" Problems="@Of(key)" />
+            </section>
+        }
+        <section id="edit-section-rules" class="card-section" hidden="@(Section != CardSections.Rules)">
+            <SectionProblems Key="@CardSections.Rules" Items="@Of(CardSections.Rules)" />
+            <CardRulesFields Draft="@Draft" Changed="@Changed" />
+        </section>
+        <section id="edit-section-victory" class="card-section" hidden="@(Section != CardSections.Victory)">
+            <SectionProblems Key="@CardSections.Victory" Items="@Of(CardSections.Victory)" />
+            <CardVictoryFields Draft="@Draft" Picking="@picking" OnPick="@Pick" Changed="@Changed" />
+        </section>
+        <section id="edit-section-json" class="card-section" hidden="@(Section != CardSections.Json)">
+            @if (Json is { } json)
+            {
+                <JsonDisclosure Id="edit-json" Summary="The card as JSON (read only)" Json="@json" />
+            }
+            else
+            {
+                <p id="edit-json-missing" class="muted">The card has problems, so it cannot be written as JSON yet.</p>
+            }
+        </section>
+    </div>
+    <details class="card-map-dock" id="edit-map-dock" open hidden="@(!CardSections.UsesMap(Section))">
+        <summary>Map: @(CardBoards.Count > 0 ? string.Join(", ", CardBoards) : "no boards")</summary>
+        @if (pickNote is { } note)
+        {
+            <p id="edit-pick-note" class="diagnostic warning" role="status">@note</p>
+        }
+        <CardMapPicker Map="@Map" Problems="@MapProblems" Target="@Target" Marked="@Marked" OnHex="@PickHex" Done="@(() => picking = null)" />
+    </details>
 </div>
 
 @code {
     private object? picking;
     private string? pickNote;
     private CardDraft? shown;
+    private string? shownSection;
+    private Dictionary<string, List<string>> routed = [];
+
+    /// <summary>The section shown (CardSections' keys).</summary>
+    [Parameter]
+    public string Section { get; set; } = CardSections.Card;
+
+    [Parameter]
+    public EventCallback<string> SectionChanged { get; set; }
+
+    /// <summary>The card's problems, which each section shows its own of.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Problems { get; set; } = [];
+
+    /// <summary>Whether the id follows the title: a new card or a copy, never a saved card, whose rename the games from it feel.</summary>
+    [Parameter]
+    public bool IdFollowsTitle { get; set; }
+
+    private IReadOnlyList<string> Of(string key) => routed.TryGetValue(key, out var list) ? list : [];
+
+    private int Count(string key) => routed.TryGetValue(key, out var list) ? list.Count : 0;
 
     [Parameter, EditorRequired]
     public CardDraft Draft { get; set; } = default!;
@@ -67,10 +143,14 @@
         }
 
         // Table player and UI review, pass 28: picking ends when its area or condition is removed, hidden, or no longer takes hexes from the map.
-        if (picking is not null && !Draft.Shows(picking))
+        // The redesign: it ends too when another section is shown.
+        if (picking is not null && (!Draft.Shows(picking) || (shownSection is not null && shownSection != Section)))
         {
-            picking = null;
+            (picking, pickNote) = (null, null);
         }
+
+        shownSection = Section;
+        routed = CardSections.Route(Problems, Draft);
     }
 
     private IReadOnlyList<string> CardBoards => [.. Draft.Boards.Select(board => board.Board.Trim()).Where(board => board.Length > 0).Distinct(StringComparer.Ordinal)];

@@ -1717,3 +1717,13 @@ Written on 2026-10-31 during the user's review of `codex/action-form-design`.
 | Review the remaining phase action workflows | The phase-by-phase demo review | No rule changes authorized by this UI review | User feedback on Rally | Close Combat declaration/review and Rally map scoping, Rules-backed assistance choices, specific refusals and separate Deploy/Recombine workflows implemented. Studio verified both Rally sides and the three proposal paths. DM retention, Shock recovery and exceptional cases still need representative UI checks before claiming full phase coverage. Do not merge without approval. |
 | Evaluate Support Weapons in every phase and scope its workflow | User explicitly deferred this to a separate task on 2026-10-31 | All applicable SW rules; CC finding: A4.43, PDF p. 50; A11.21, p. 73 | Separate analysis/design, Rules eligibility and caller wiring | Evaluate transfer, recovery, dropping, repair, dismantling and assembly by phase before designing the contextual UI. In CC, the existing generic offer checks phase and enemy presence; PlanDrop checks that no CC has yet resolved, but neither requires withdrawal. Keep legitimate drop choices with withdrawal, using Rules verdicts. Generic receiving-unit inputs and cross-phase help need contextual presentation. Do not implement this during the remaining Rally workflow review. |
 | Remove repeated hex wording in selected-unit summaries | Advance visual review | Presentation only | Shared unit-label review | Advance still uses the established shared unit labels, which can repeat a hex in the selected summary. Preserve the required location context while removing duplication in a later shared-label refinement. |
+
+## 93. Card editor redesign follow-ups
+
+Written on 2026-10-31. What the [Card editor redesign](<Designs/ASL Card Editor Redesign Design.md>) leaves out.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A problem under the very field it names | The Card editor redesign | Presentation only | The checks naming a field more finely than their key (`card.san`, `card.ob: 'definition'`) | Each section lists its problems at its top, and a group's under the group; the field itself is not marked. |
+| Reorder special rules by dragging | The Card editor redesign | Presentation only | None | Each SSR has Up and Remove, as before. |
+| The full walk at five widths by keyboard and mouse | The Card editor redesign | Presentation only | The user's demo | Checked by script at 1920, 1366, 1024, 683, and 320 pixels: no page overflow in any section, the map beside or above the form, picking ends on a section switch. Screenshots and the keyboard walk wait for the demo, since the Studio's window was hidden during the build. |

@@ -1,38 +1,81 @@
 @* K14 (plan section 16.16): the card's id, title, place, date, introduction, source, adaptation notes, and aftermath. The Source label names the
-   basis input (task 28.5). *@
+   basis input (task 28.5). The Card editor redesign (2026-10-31): the title first, labels above their fields, and the provenance folded away. *@
 <fieldset class="card-fields" id="edit-identity">
-    <legend>The card</legend>
-    <FieldGroup Label="Id" For="edit-id">
-        <ChildContent><input id="edit-id" value="@Draft.Id" @onchange="@(args => Set(() => Draft.Id = Text(args)))" size="32" aria-describedby="edit-id-help" /></ChildContent>
-        <Help>Lower-case letters, digits, and hyphens; a built-in card's name is refused.</Help>
-    </FieldGroup>
-    <FieldGroup Label="Title" For="edit-title"><input id="edit-title" value="@Draft.Title" @onchange="@(args => Set(() => Draft.Title = Text(args)))" size="48" /></FieldGroup>
-    <FieldGroup Label="Place" For="edit-place"><input id="edit-place" value="@Draft.Place" @onchange="@(args => Set(() => Draft.Place = Text(args)))" size="48" /></FieldGroup>
-    <FieldGroup Label="Date" For="edit-day">
-        <ChildContent>
-            day <input id="edit-day" aria-describedby="edit-day-help" value="@Draft.Day" @onchange="@(args => Set(() => Draft.Day = Text(args)))" size="2" aria-label="Day" />
-            month <input id="edit-month" value="@Draft.Month" @onchange="@(args => Set(() => Draft.Month = Text(args)))" size="2" aria-label="Month" />
-            year <input id="edit-year" value="@Draft.Year" @onchange="@(args => Set(() => Draft.Year = Text(args)))" size="4" aria-label="Year" />
-        </ChildContent>
-        <Help>A minimal card may leave the day, month, and year 0 (not recorded).</Help>
-    </FieldGroup>
-    <FieldGroup Label="Introduction" For="edit-introduction">
-        <textarea id="edit-introduction" rows="2" cols="80" @onchange="@(args => Set(() => Draft.Introduction = Text(args)))" value="@Draft.Introduction"></textarea>
-    </FieldGroup>
-    <FieldGroup Label="Source" For="edit-source-basis">
-        <ChildContent>
-            <input id="edit-source-basis" aria-describedby="edit-source-basis-help" value="@Draft.SourceBasis" @onchange="@(args => Set(() => Draft.SourceBasis = Text(args)))" size="40" />
-            legacy card <input id="edit-source-legacy" value="@Draft.SourceLegacy" @onchange="@(args => Set(() => Draft.SourceLegacy = Text(args)))" size="30" aria-label="Legacy card" />
-        </ChildContent>
-        <Help>What the card rests on, and the legacy card it adapts, or "none" (ruling R17.2).</Help>
-    </FieldGroup>
-    <FieldGroup Label="Adaptation notes" For="edit-adaptation">
-        <ChildContent><textarea id="edit-adaptation" aria-describedby="edit-adaptation-help" rows="2" cols="80" @onchange="@(args => Set(() => Draft.Adaptation = Text(args)))" value="@Draft.Adaptation"></textarea></ChildContent>
-        <Help>One note per line.</Help>
-    </FieldGroup>
-    <FieldGroup Label="Aftermath" For="edit-aftermath">
-        <textarea id="edit-aftermath" rows="2" cols="80" @onchange="@(args => Set(() => Draft.Aftermath = Text(args)))" value="@Draft.Aftermath"></textarea>
-    </FieldGroup>
+    <legend>Card</legend>
+    <div class="card-field-row">
+        <div class="card-field card-field-wide">
+            <label for="edit-title">Title</label>
+            <input id="edit-title" value="@Draft.Title" @onchange="@(args => Set(() => ChangeTitle(Text(args))))" />
+        </div>
+    </div>
+    <div class="card-field-row">
+        <div class="card-field card-field-wide">
+            <label for="edit-id">Id</label>
+            <input id="edit-id" value="@Draft.Id" @onchange="@(args => Set(() => Draft.Id = Text(args)))" aria-describedby="edit-id-help" />
+            <p class="field-help" id="edit-id-help">
+                Lower-case letters, digits, and hyphens; a built-in card's name is refused.@(IdFollowsTitle ? " It follows the title until you change it." : string.Empty)
+            </p>
+        </div>
+    </div>
+    <div class="card-field-row">
+        <div class="card-field card-field-wide">
+            <label for="edit-place">Place</label>
+            <input id="edit-place" value="@Draft.Place" @onchange="@(args => Set(() => Draft.Place = Text(args)))" />
+        </div>
+    </div>
+    <fieldset class="card-subfields" id="edit-date">
+        <legend>Date</legend>
+        <div class="card-field-row">
+            <div class="card-field card-field-short">
+                <label for="edit-day">Day</label>
+                <input id="edit-day" aria-describedby="edit-day-help" value="@Draft.Day" @onchange="@(args => Set(() => Draft.Day = Text(args)))" inputmode="numeric" />
+            </div>
+            <div class="card-field card-field-short">
+                <label for="edit-month">Month</label>
+                <input id="edit-month" value="@Draft.Month" @onchange="@(args => Set(() => Draft.Month = Text(args)))" inputmode="numeric" />
+            </div>
+            <div class="card-field card-field-short">
+                <label for="edit-year">Year</label>
+                <input id="edit-year" value="@Draft.Year" @onchange="@(args => Set(() => Draft.Year = Text(args)))" inputmode="numeric" />
+            </div>
+        </div>
+        <p class="field-help" id="edit-day-help">A minimal card may leave the day, month, and year 0 (not recorded).</p>
+    </fieldset>
+    <div class="card-field-row">
+        <div class="card-field card-field-wide">
+            <label for="edit-introduction">Introduction</label>
+            <textarea id="edit-introduction" rows="3" @onchange="@(args => Set(() => Draft.Introduction = Text(args)))" value="@Draft.Introduction"></textarea>
+        </div>
+    </div>
+    <div class="card-field-row">
+        <div class="card-field card-field-wide">
+            <label for="edit-aftermath">Aftermath</label>
+            <textarea id="edit-aftermath" rows="2" @onchange="@(args => Set(() => Draft.Aftermath = Text(args)))" value="@Draft.Aftermath"></textarea>
+        </div>
+    </div>
+    <details class="card-fold" id="edit-provenance">
+        <summary>Provenance: @(Draft.SourceLegacy.Trim() is { Length: > 0 } legacy && legacy != "none" ? $"adapts {legacy}" : "no legacy card")</summary>
+        <div class="card-field-row">
+            <div class="card-field card-field-wide">
+                <label for="edit-source-basis">Source</label>
+                <input id="edit-source-basis" aria-describedby="edit-source-basis-help" value="@Draft.SourceBasis" @onchange="@(args => Set(() => Draft.SourceBasis = Text(args)))" />
+                <p class="field-help" id="edit-source-basis-help">What the card rests on, and the legacy card it adapts, or "none" (ruling R17.2).</p>
+            </div>
+        </div>
+        <div class="card-field-row">
+            <div class="card-field">
+                <label for="edit-source-legacy">Legacy card</label>
+                <input id="edit-source-legacy" value="@Draft.SourceLegacy" @onchange="@(args => Set(() => Draft.SourceLegacy = Text(args)))" placeholder="none" />
+            </div>
+        </div>
+        <div class="card-field-row">
+            <div class="card-field card-field-wide">
+                <label for="edit-adaptation">Adaptation notes</label>
+                <textarea id="edit-adaptation" aria-describedby="edit-adaptation-help" rows="2" @onchange="@(args => Set(() => Draft.Adaptation = Text(args)))" value="@Draft.Adaptation"></textarea>
+                <p class="field-help" id="edit-adaptation-help">One note per line.</p>
+            </div>
+        </div>
+    </details>
 </fieldset>
 
 @code {
@@ -42,11 +85,26 @@
     [Parameter]
     public EventCallback Changed { get; set; }
 
+    /// <summary>Whether the id follows the title (a new card or a copy); a saved card's id changes only by a rename.</summary>
+    [Parameter]
+    public bool IdFollowsTitle { get; set; }
+
     private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
 
     private Task Set(Action change)
     {
         change();
         return Changed.InvokeAsync();
+    }
+
+    // The Card editor redesign: the id follows the title while it is still the title's own id, so an id typed by hand is never overwritten.
+    private void ChangeTitle(string title)
+    {
+        if (IdFollowsTitle && Draft.Id.Trim() == CardSections.Slug(Draft.Title) && CardSections.Slug(title) is { Length: > 0 } slug)
+        {
+            Draft.Id = slug;
+        }
+
+        Draft.Title = title;
     }
 }

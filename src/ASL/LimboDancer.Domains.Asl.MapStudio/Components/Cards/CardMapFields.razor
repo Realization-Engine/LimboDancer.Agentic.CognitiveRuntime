@@ -1,8 +1,8 @@
 @using LimboDancer.Domains.Asl.Units.State
-@* K15 (plan section 16.16; ruling R28.2): the card's boards, composed slot by slot or copied from a saved map, North, and the playable area; and the
-   map they make, where areas and exit hexes are picked. *@
+@* K15 (plan section 16.16; ruling R28.2): the card's boards, composed slot by slot or copied from a saved map, North, and the playable area. The map
+   they make is drawn beside the sections that pick hexes (the Card editor redesign, 2026-10-31). *@
 <fieldset class="card-fields" id="edit-map-fields">
-    <legend>Boards (A2.1)</legend>
+    <legend>Map and boards (A2.1)</legend>
     <datalist id="edit-board-names">
         @foreach (var name in BoardNames)
         {
@@ -47,25 +47,47 @@
     {
         <p id="edit-saved-map-note" class="muted">@note</p>
     }
-    <FieldGroup Label="North" For="edit-north">
-        <select id="edit-north" value="@Draft.North" @onchange="@(args => Set(() => Draft.North = Text(args)))">
+    <div class="card-field-row">
+        <fieldset class="card-segmented" id="edit-north">
+            <legend>North is the map's</legend>
             @foreach (var edge in SideState.Edges)
             {
-                <option value="@edge">the map's @edge</option>
+                <label>
+                    <input type="radio" name="edit-north" id="@($"edit-north-{edge}")" value="@edge" checked="@(Draft.North == edge)"
+                           @onchange="@(() => Set(() => Draft.North = edge))" />
+                    <span>@edge</span>
+                </label>
             }
-        </select>
-    </FieldGroup>
-    <FieldGroup Label="Playable area" For="edit-playable">
-        <ChildContent>
-            <input id="edit-playable" aria-describedby="edit-playable-help" value="@Draft.PlayableText" @onchange="@(args => Set(() => Draft.PlayableText = Text(args)))" size="40" placeholder="none" />
-            hexrows <input id="edit-playable-from" value="@Draft.PlayableFrom" @onchange="@(args => Set(() => Draft.PlayableFrom = Text(args)))" size="3" aria-label="Playable hexrows from" /> to
-            <input id="edit-playable-to" value="@Draft.PlayableTo" @onchange="@(args => Set(() => Draft.PlayableTo = Text(args)))" size="3" aria-label="Playable hexrows to" />
-            <label><input id="edit-playable-enforced" type="checkbox" checked="@Draft.PlayableEnforced" @onchange="@(args => Set(() => Draft.PlayableEnforced = args.Value is true))" /> enforced</label>
-            on board <input id="edit-playable-board" value="@Draft.PlayableBoard" @onchange="@(args => Set(() => Draft.PlayableBoard = Text(args)))" size="6" placeholder="every" aria-label="Playable hexrows board" />
-        </ChildContent>
-        <Help>Enforced when hexrows are given (ruling R20.6).</Help>
-    </FieldGroup>
-    <CardMapPicker Map="@Map" Problems="@MapProblems" Target="@Target" Marked="@Marked" OnHex="@OnHex" Done="@Done" />
+        </fieldset>
+    </div>
+    <fieldset class="card-subfields" id="edit-playable-fields">
+        <legend>Playable area (ruling R20.6)</legend>
+        <div class="card-field-row">
+            <label class="card-field card-field-wide">
+                <span>As the card says</span>
+                <input id="edit-playable" value="@Draft.PlayableText" @onchange="@(args => Set(() => Draft.PlayableText = Text(args)))" placeholder="the whole map" />
+            </label>
+        </div>
+        <div class="card-field-row">
+            <label class="card-field card-field-short">
+                <span>Hexrows from</span>
+                <input id="edit-playable-from" value="@Draft.PlayableFrom" @onchange="@(args => Set(() => Draft.PlayableFrom = Text(args)))" />
+            </label>
+            <label class="card-field card-field-short">
+                <span>to</span>
+                <input id="edit-playable-to" value="@Draft.PlayableTo" @onchange="@(args => Set(() => Draft.PlayableTo = Text(args)))" />
+            </label>
+            <label class="card-field card-field-short">
+                <span>On board</span>
+                <input id="edit-playable-board" value="@Draft.PlayableBoard" @onchange="@(args => Set(() => Draft.PlayableBoard = Text(args)))" placeholder="every" />
+            </label>
+            <label class="card-check">
+                <input id="edit-playable-enforced" type="checkbox" checked="@Draft.PlayableEnforced" @onchange="@(args => Set(() => Draft.PlayableEnforced = args.Value is true))" />
+                enforced
+            </label>
+        </div>
+        <p class="field-help">Hexrows are enforced only when given.</p>
+    </fieldset>
 </fieldset>
 
 @code {
@@ -85,24 +107,6 @@
     /// <summary>The maps saved on the Maps page, whose placements a card may copy.</summary>
     [Parameter]
     public IReadOnlyList<MapDefinition> SavedMaps { get; set; } = [];
-
-    [Parameter]
-    public StudioBoard? Map { get; set; }
-
-    [Parameter]
-    public IReadOnlyList<string> MapProblems { get; set; } = [];
-
-    [Parameter]
-    public string? Target { get; set; }
-
-    [Parameter]
-    public IReadOnlyList<CardHex> Marked { get; set; } = [];
-
-    [Parameter]
-    public EventCallback<CardHex> OnHex { get; set; }
-
-    [Parameter]
-    public EventCallback Done { get; set; }
 
     private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
 
