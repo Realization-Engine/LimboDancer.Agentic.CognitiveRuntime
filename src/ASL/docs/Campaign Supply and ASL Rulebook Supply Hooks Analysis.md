@@ -2,7 +2,7 @@
 
 Date: 31 October 2026
 
-Status: analysis and proposal. Nothing here is built by this document, and no ruling is made. The proposed mapping in section 6 needs the user's approval before any design or code follows.
+Status: analysis and proposal. Nothing here is built by this document, and no ruling is made. The proposed mapping in section 6 needs the user's approval before any code follows. Section 8 (2026-11-01) gives the findings that the [Campaign Supply to ASL Glue Design](<Designs/Campaign Supply to ASL Glue Design.md>) rests on, in place of the module Campaign Game rules we do not have.
 
 ## 1. Question and conclusion
 
@@ -142,6 +142,34 @@ This follows the Rules boundary in AGENTS.md:
 3. Whether and how a fuel shortage reaches the order of battle, and whether SSR KGP13's Out-of-Gas DR is read as its model.
 4. The order of work: W-E10's wiring and the OBA pass (150) both come before the full mapping works in play.
 
+## 8. Findings for the glue between the two games
+
+Added 2026-11-01. Without the module Campaign Game texts, the glue is designed from the ASL hooks above, the module rules' structure as the index shows it, and the code as it stands. The user said on 2026-10-31 that the Campaign's supply mechanics may be redesigned, so these findings also say what the Campaign's model must provide.
+
+### 8.1 From the rulebook
+
+1. **Every hook acts at scenario start.** A19.131, E10.1, E10.6, and C1.211 are all set by SSR or purchase before play. No ASL rule traces supply during a scenario. The glue therefore works at the Situation boundary, which is also where the module Campaign Games decide isolation (their Refit Phase rules, section 5.1).
+2. **A19.131 is side-wide.** It applies to "a side's on board OB". A Campaign shortage in one formation of several cannot become an A19.131 SSR without either a side-level rule (most of the side is short) or a deviation (a partial OB).
+3. **On-map resupply is for vehicles only.** E10's benefit applies to a vehicle with a circled B# (D3.71). Our catalog prints none; A19.131 creates them. An Ammo Dump has no effect on infantry. Infantry ammunition reaches ASL only through A19.131.
+4. **ASL switches, it does not count.** A side has Ammunition Shortages or not; a battery is Plentiful, normal, or Scarce; a vehicle has its Ammo Vehicle or not. A Campaign quantity must be cut into such steps at the boundary.
+5. **Fuel has no ASL hook** in Chapters A to H (section 5.2). A Campaign fuel state can act only on the order of battle until SSR KGP13 is read.
+
+### 8.2 From the code
+
+1. **The handoff bypasses the Scenario Card.** `SituationHandoffs.Prepare` (`src/Campaign/LimboDancer.Campaign.PilotHost/SituationHandoff.cs`) starts the ASL game with raw start arguments and no SSRs. On that path `GamePlanner.Start` copies `start.specialRules` unchecked; only the card path runs the card checks (`ScenarioA1SetupCalculator.RuleDiagnostics`). Under the ruling that every game is a card (2026-09-29), supply terms should reach ASL on a card.
+2. **The tokens and state already exist in part.** `ammo-shortage:<side>` is a built card token (pass 72). The game state already holds `TurnAmmoSupplies` (each Ammo Vehicle or Dump, its owner, its availability, its dump Location) and `LowAmmoVehicles`. W-E10's wiring row lists "a card's Ammo Vehicle and Ammo Dump SSR" as a site, so the setup tokens for E10 are expected but not yet defined.
+3. **The Campaign has no per-force supply level.** The prototype's packages move between custody states (rear, transit, depot, receiving point, issued) and enable authored rosters (`campaign/supply-state.js`); its own note says "Issued allowances are not per-shot consumption" and, for basic supply, "Resupply and combat expenditure are not simulated." There is nothing per formation for the glue to read.
+4. **No return path exists.** The Campaign README says returning ASL battle outcomes to Campaign adjudication is outside the transition. The facts a return path needs are already in the replayed ASL state (8.2.2, plus losses, Replacements, and captured equipment).
+
+### 8.3 What follows for the design
+
+- The Campaign keeps a per-formation supply step for ammunition and fuel (`Full`, `Low`, `Exhausted`) and a trace result (`Supplied`, `Isolated`, with a pocket), decided by a Campaign Supply Determination at every Situation boundary. This is our counterpart of the Refit Phase isolation steps, written as a Campaign rule.
+- At commitment the steps become card terms: `ammo-shortage:<side>` by a majority rule; an Ammo Dump or Ammo Vehicle only where E10 gives it an effect; fuel only through which vehicles are committed.
+- At the result, the replayed game's ammunition facts become Campaign spending by one boundary rule, applied once.
+- The Campaign decides the terms; the Rules calculators decide their effects; Play decides neither.
+
+The [Campaign Supply to ASL Glue Design](<Designs/Campaign Supply to ASL Glue Design.md>) works these out, with the rulings they need (its section 10).
+
 ## Related documents
 
 - [Campaign Atlas Supply and Shared Map Integration Analysis](<Campaign Atlas Supply and Shared Map Integration Analysis.md>)
@@ -149,3 +177,4 @@ This follows the Rules boundary in AGENTS.md:
 - [LimboDancer.Campaign Implementation Plan](<LimboDancer.Campaign Implementation Plan.md>)
 - [ASL Rule Inventory A to E](<ASL Rule Inventory A to E.md>)
 - [ASL E10 Ammo Vehicles Claim Design](<Designs/ASL E10 Ammo Vehicles Claim Design.md>)
+- [Campaign Supply to ASL Glue Design](<Designs/Campaign Supply to ASL Glue Design.md>)
