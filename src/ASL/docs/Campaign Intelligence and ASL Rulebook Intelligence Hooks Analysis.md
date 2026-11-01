@@ -368,7 +368,7 @@ Approved: the user approved every proposal of this section on 2026-11-01. Each r
 
 ## 10. Next steps
 
-If the rulings are given, the next document is a **Campaign Intelligence to ASL Glue Design**, with the shape of the Supply glue design: the model (section 6), the Intelligence Determination, the `IntelligenceTerms` record carried in `SituationHandoff.CampaignContext` and in the handoff hash, the card terms, the briefing, the Knowledge Report, ownership, disclosure, and tasks. The rule claims of I7 can be taken from the board independently of the Campaign work.
+If the rulings are given, the next document is a **Campaign Intelligence to ASL Glue Design**, with the shape of the Supply glue design: the model (section 6), the Intelligence Determination, the `IntelligenceTerms` record carried in `SituationHandoff` beside `CampaignContext` and in the handoff hash, the card terms, the briefing, the Knowledge Report, ownership, disclosure, and tasks. The rule claims of I7 can be taken from the board independently of the Campaign work.
 
 Items this analysis leaves out, and which need the backlog when a design is approved: the module Campaign Games' Recon rules (P8.622, O11.622) and civilian SSRs (KGP18, PB21), whose texts we do not have; per-headquarters knowledge; signals and deception beyond a posture switch; air reconnaissance tied to Campaign weather; radio reports during play; and an orders rule for the Scenario Defender.
 
