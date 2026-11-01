@@ -2045,6 +2045,651 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     margin: 0.25rem 0 0;
 }
 
+/* ---- The Card editor (the redesign of 2026-10-31) ---------------------------
+   A bar that stays on screen (the card, its state, its problems, its actions); a list of sections; one section at a time; the map beside the
+   sections that pick hexes. Fields carry their labels above them. */
+
+.card-editor-bar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0 -1.25rem 0.75rem;
+    padding: 0.6rem 1.25rem;
+    background: var(--ground);
+    border-bottom: 1px solid var(--line);
+}
+
+.card-editor-name {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1 1 14rem;
+}
+
+.card-editor-name strong {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.card-editor-state {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.card-editor-state code {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 0 0.3rem;
+    border-radius: 4px;
+    background: var(--panel);
+    color: var(--ink);
+}
+
+.card-problem-count {
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.card-problem-count.valid {
+    color: var(--pass);
+    background: var(--pass-bg);
+    border-color: var(--pass);
+}
+
+.card-problem-count.invalid {
+    color: var(--warn);
+    background: var(--warn-bg);
+    border-color: var(--warn);
+}
+
+.card-open {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.card-open select {
+    max-width: 16rem;
+}
+
+.card-save-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-more {
+    position: relative;
+}
+
+.card-more > summary {
+    list-style: none;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--control-line);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.card-more > summary::-webkit-details-marker {
+    display: none;
+}
+
+.card-more-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.25rem);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+    width: max-content;
+    max-width: min(22rem, 90vw);
+    padding: 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.12);
+}
+
+.card-more-menu p {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+/* The bar's confirmation and its note take their own line. */
+.card-editor-bar > .diagnostic,
+.card-editor-bar > .operation-feedback-region,
+.card-editor-bar > #edit-confirm {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+.card-problems {
+    max-width: 60rem;
+    margin: 0 0 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.card-problems[hidden] {
+    display: none;
+}
+
+.card-problem-sections {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.5rem;
+}
+
+.card-editor-form {
+    --card-bar: 4.5rem;
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr);
+    gap: 1rem 1.25rem;
+    align-items: start;
+}
+
+.card-editor-form.with-map {
+    grid-template-columns: 11rem minmax(0, 1fr) minmax(18rem, 38%);
+}
+
+.card-sections {
+    position: sticky;
+    top: var(--card-bar);
+}
+
+.card-sections ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.card-sections button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    font-weight: 500;
+}
+
+.card-sections button:hover:not(:disabled) {
+    background: var(--panel);
+}
+
+.card-sections button[aria-current="true"] {
+    background: var(--accent-tint);
+    color: var(--accent-ink);
+    font-weight: 600;
+}
+
+.card-section-count {
+    display: inline-block;
+    min-width: 1.4rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: var(--warn-bg);
+    color: var(--warn);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.card-section-ok {
+    color: var(--pass);
+}
+
+.card-section[hidden],
+.card-map-dock[hidden] {
+    display: none;
+}
+
+.card-section > .card-fields,
+.card-section .card-fields {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+}
+
+.card-section .card-fields > legend {
+    padding: 0;
+    margin-bottom: 0.75rem;
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+}
+
+.card-section-problems {
+    margin: 0 0 0.75rem;
+    padding: 0.4rem 0.75rem 0.4rem 1.75rem;
+    background: var(--warn-bg);
+    color: var(--warn);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+}
+
+.card-field-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.6rem 0.9rem;
+    margin: 0 0 0.75rem;
+}
+
+.card-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.card-field > label,
+.card-field > span:first-child {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.card-field-wide {
+    flex: 1 1 100%;
+    max-width: 44rem;
+}
+
+.card-field-grow {
+    flex: 1 1 12rem;
+}
+
+.card-field-short input {
+    width: 4.5rem;
+}
+
+.card-field-wide input,
+.card-field-wide textarea,
+.card-field-grow input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.card-field .field-help {
+    margin: 0;
+}
+
+.card-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2.1rem;
+}
+
+.card-subfields {
+    margin: 0 0 0.75rem;
+    padding: 0;
+    border: 0;
+}
+
+.card-subfields > legend {
+    padding: 0;
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+}
+
+.card-segmented {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.card-segmented > legend {
+    padding: 0;
+    margin-bottom: 0.2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.card-segmented label {
+    position: relative;
+}
+
+.card-segmented input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    margin: 0;
+}
+
+.card-segmented span {
+    display: inline-block;
+    padding: 0.35rem 0.8rem;
+    border: 1px solid var(--control-line);
+    margin-left: -1px;
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.card-segmented label:first-of-type span {
+    border-radius: var(--radius) 0 0 var(--radius);
+    margin-left: 0;
+}
+
+.card-segmented label:last-of-type span {
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.card-segmented input:checked + span {
+    background: var(--accent-tint);
+    color: var(--accent-ink);
+    font-weight: 600;
+}
+
+.card-segmented input:focus-visible + span {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.card-fold {
+    margin: 0 0 0.75rem;
+}
+
+.card-fold > summary {
+    margin-bottom: 0.5rem;
+    color: var(--accent-ink);
+}
+
+.card-section h4.card-subhead {
+    margin: 1rem 0 0.5rem;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-chip {
+    display: inline-block;
+    padding: 0 0.45rem;
+    border-radius: 4px;
+    background: var(--panel);
+    color: var(--ink);
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.card-chip-on {
+    background: var(--accent-tint);
+    color: var(--accent-ink);
+}
+
+details.card-group-fields {
+    margin: 0 0 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+details.card-group-fields > summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+    margin: -0.5rem -0.75rem 0;
+    padding: 0.5rem 0.75rem;
+}
+
+details.card-group-fields[open] > summary {
+    margin-bottom: 0.6rem;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.card-group-name {
+    flex: 1 1 auto;
+    font-weight: 600;
+}
+
+.card-group-actions {
+    margin: 0.75rem 0 0;
+    text-align: right;
+}
+
+ul.card-areas {
+    list-style: none;
+    margin: 0 0 0.5rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+li.card-area {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+}
+
+li.card-area.picking {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.card-area-chip {
+    padding: 0.3rem 0.6rem;
+    font-weight: 400;
+}
+
+.card-area-id {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    margin-right: 0.4rem;
+}
+
+.card-area-chip .card-chip {
+    margin-left: 0.5rem;
+}
+
+li.card-area details[open] > .card-area-chip {
+    border-bottom: 1px solid var(--line-soft);
+}
+
+li.card-area .card-area-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+    padding: 0.4rem 0.6rem;
+}
+
+.card-section .card-area-line label,
+.card-section .card-area-line input,
+.card-section .card-area-line select {
+    max-width: 100%;
+}
+
+/* A group's counter lines scroll on their own on a phone, rather than run off the page. */
+details.card-group-fields table.card-rows {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.card-rules-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+li.card-rule {
+    padding: 0.5rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.card-rule-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+    margin-bottom: 0.4rem;
+}
+
+.card-rule-number {
+    flex: 1 1 auto;
+    font-weight: 600;
+}
+
+li.card-rule textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 0.4rem;
+}
+
+.card-outcomes {
+    padding-left: 1.25rem;
+}
+
+li.card-outcome {
+    margin-bottom: 0.75rem;
+}
+
+.card-outcome-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+}
+
+.card-outcome-remove {
+    margin-left: auto;
+}
+
+.card-map-dock {
+    position: sticky;
+    top: var(--card-bar);
+    max-height: calc(100vh - var(--card-bar) - 1rem);
+    overflow: auto;
+    padding: 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.card-map-dock > summary {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.card-map-dock #edit-map-target {
+    margin: 0.4rem 0;
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    font-size: 0.85rem;
+}
+
+@media (max-width: 1279.98px) {
+    .card-editor-form.with-map {
+        grid-template-columns: 10rem minmax(0, 1fr);
+    }
+
+    .card-editor-form.with-map .card-map-dock {
+        grid-column: 2;
+        grid-row: 1;
+        position: static;
+        max-height: none;
+    }
+
+    .card-editor-form.with-map .card-section-body {
+        grid-column: 2;
+    }
+
+    .card-editor-form.with-map .card-sections {
+        grid-row: 1 / span 2;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .card-editor-bar {
+        margin: 0 -1.25rem 0.5rem;
+    }
+
+    .card-editor-form,
+    .card-editor-form.with-map {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .card-sections,
+    .card-editor-form.with-map .card-sections {
+        position: static;
+        grid-row: auto;
+    }
+
+    .card-sections ul {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+    }
+
+    .card-sections button {
+        width: auto;
+        white-space: nowrap;
+    }
+
+    .card-editor-form.with-map .card-map-dock,
+    .card-editor-form.with-map .card-section-body {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    /* On a phone the map comes before the long form, so a pick needs no scrolling past it; its summary folds it away. */
+    .card-editor-form .card-sections {
+        order: 0;
+    }
+
+    .card-editor-form .card-map-dock {
+        order: 1;
+    }
+
+    .card-editor-form .card-section-body {
+        order: 2;
+    }
+
+    .card-open {
+        flex: 1 1 100%;
+    }
+
+    .card-open select {
+        flex: 1;
+        max-width: none;
+    }
+}
+
 /* A scenario card's facts read as prose, not as technical provenance. */
 .scenario-card dl.report dd {
     font-family: var(--font-sans);

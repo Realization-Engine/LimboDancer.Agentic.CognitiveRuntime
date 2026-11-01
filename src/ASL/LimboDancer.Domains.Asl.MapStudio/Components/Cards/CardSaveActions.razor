@@ -1,23 +1,30 @@
 @* K20 (plan section 16.16; ruling R28.4): Save, Rename, and Delete. Save stays enabled and says why a card is not saved, so a click that arrives with
    a field's last change is not lost. Renaming and deleting one of your cards ask first, naming the games that started from it: those games then
    show their card as missing (ruling R22.2). *@
-<div class="toolbar card-save-actions">
+@* The Card editor redesign (2026-10-31): Save is the bar's one main action; renaming, deleting, the games note, and the JSON are under More. *@
+<div class="card-save-actions">
+    <details class="card-more" id="edit-more">
+        <summary>More</summary>
+        <div class="card-more-menu">
+            @if (Source is { Length: > 0 } source)
+            {
+                @if (RenameTo is { Length: > 0 } target && target != source)
+                {
+                    <button id="edit-rename" type="button" @onclick="@(() => Open(Confirming.Rename))">Rename '@source' to '@target'</button>
+                }
+                <button id="edit-delete" class="danger" type="button" @onclick="@(() => Open(Confirming.Delete))">Delete this card</button>
+                @if (Games.Count > 0)
+                {
+                    <p id="edit-games-note" class="muted">@Games.Count game(s) started from this card (@string.Join(", ", Games)); saving a change to it leaves them refused, as a changed card (ruling R22.2).</p>
+                }
+            }
+            <button id="edit-show-json" type="button" @onclick="@(() => OnJson.InvokeAsync())">View the card as JSON</button>
+        </div>
+    </details>
     <button id="edit-save" class="primary" type="button" @onclick="@(() => OnSave.InvokeAsync())">
         @(Source is { Length: > 0 } kept && RenameTo is { Length: > 0 } other && other != kept ? $"Save as a new card (keeps '{kept}')" : "Save the card")
     </button>
-    @if (Source is { Length: > 0 } source)
-    {
-        @if (RenameTo is { Length: > 0 } target && target != source)
-        {
-            <button id="edit-rename" type="button" @onclick="@(() => Open(Confirming.Rename))">Rename '@source' to '@target'</button>
-        }
-        <button id="edit-delete" class="danger" type="button" @onclick="@(() => Open(Confirming.Delete))">Delete this card</button>
-    }
 </div>
-@if (Source is { Length: > 0 } && Games.Count > 0 && confirming is Confirming.None)
-{
-    <p id="edit-games-note" class="muted">@Games.Count game(s) started from this card (@string.Join(", ", Games)); saving a change to it leaves them refused, as a changed card (ruling R22.2).</p>
-}
 @if (confirming is not Confirming.None && Source is { Length: > 0 } named)
 {
     <div id="edit-confirm" class="diagnostic warning" role="alertdialog" aria-labelledby="edit-confirm-text">
@@ -84,6 +91,10 @@
 
     [Parameter]
     public EventCallback OnDelete { get; set; }
+
+    /// <summary>Shows the card as JSON.</summary>
+    [Parameter]
+    public EventCallback OnJson { get; set; }
 
     // A confirmation belongs to the card it was asked about; choosing another card closes it (section 15.3).
     protected override void OnParametersSet()

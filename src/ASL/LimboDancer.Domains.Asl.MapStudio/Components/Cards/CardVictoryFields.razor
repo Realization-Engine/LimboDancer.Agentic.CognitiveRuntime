@@ -5,25 +5,32 @@
    be picked on the map (ruling R28.2). *@
 <fieldset class="card-fields" id="edit-victory">
     <legend>Victory Conditions (A26)</legend>
-    <FieldGroup Label="Kind" For="edit-victory-kind">
-        <select id="edit-victory-kind" value="@Victory.Kind" @onchange="@(args => Set(() => Victory.Kind = Text(args)))">
-            @foreach (var kind in ScenarioCards.VictoryKinds)
-            {
-                <option value="@kind">@kind</option>
-            }
-        </select>
-    </FieldGroup>
-    <FieldGroup Label="Text" For="edit-victory-text">
-        <textarea id="edit-victory-text" rows="3" cols="80" @onchange="@(args => Set(() => Victory.Text = Text(args)))" value="@Victory.Text"></textarea>
-    </FieldGroup>
-    <FieldGroup Label="Rules" For="edit-victory-rules">
-        <ChildContent><input id="edit-victory-rules" aria-describedby="edit-victory-rules-help" value="@Victory.Rules" @onchange="@(args => Set(() => Victory.Rules = Text(args)))" size="30" placeholder="A26.1 A26.3" /></ChildContent>
-        <Help>The A26 fragments or rulings they rest on, separated by spaces (ruling R17.11).</Help>
-    </FieldGroup>
-    <FieldGroup Label="Evaluated by the game" For="edit-victory-evaluated">
-        <ChildContent><input id="edit-victory-evaluated" aria-describedby="edit-victory-evaluated-help" type="checkbox" checked="@Victory.Evaluated" @onchange="@(args => Set(() => Victory.Evaluated = args.Value is true))" /></ChildContent>
-        <Help>A minimal card's are not: the players judge the result (ruling R22.3).</Help>
-    </FieldGroup>
+    <div class="card-field-row">
+        <div class="card-field">
+            <label for="edit-victory-kind">Kind</label>
+            <select id="edit-victory-kind" value="@Victory.Kind" @onchange="@(args => Set(() => Victory.Kind = Text(args)))">
+                @foreach (var kind in ScenarioCards.VictoryKinds)
+                {
+                    <option value="@kind">@kind</option>
+                }
+            </select>
+        </div>
+        <div class="card-field card-field-grow">
+            <label for="edit-victory-rules" title="The A26 fragments or rulings they rest on, separated by spaces (ruling R17.11).">Rules cited</label>
+            <input id="edit-victory-rules" value="@Victory.Rules" @onchange="@(args => Set(() => Victory.Rules = Text(args)))" placeholder="A26.1 A26.3" />
+        </div>
+    </div>
+    <div class="card-field-row">
+        <div class="card-field card-field-wide">
+            <label for="edit-victory-text">As the card says</label>
+            <textarea id="edit-victory-text" rows="3" @onchange="@(args => Set(() => Victory.Text = Text(args)))" value="@Victory.Text"></textarea>
+        </div>
+    </div>
+    <label class="card-check">
+        <input id="edit-victory-evaluated" aria-describedby="edit-victory-evaluated-help" type="checkbox" checked="@Victory.Evaluated" @onchange="@(args => Set(() => Victory.Evaluated = args.Value is true))" />
+        The game judges the result
+    </label>
+    <p class="field-help" id="edit-victory-evaluated-help">A minimal card's are not: the players judge the result (ruling R22.3).</p>
     @if (Victory.Evaluated)
     {
         <ol class="card-outcomes">
@@ -31,19 +38,17 @@
             {
                 var at = index;
                 var outcome = Victory.Outcomes[at];
-                <li @key="outcome" id="@($"edit-outcome-{at}")">
-                    <span class="card-area-line">
-                        <label>
-                            winner
-                            <select id="@($"edit-outcome-{at}-winner")" value="@outcome.Winner" @onchange="@(args => Set(() => outcome.Winner = Text(args)))">
-                                <option value="">choose</option>
-                                @WinnerOptions
-                            </select>
-                        </label>
-                        <label><input id="@($"edit-outcome-{at}-immediate")" type="checkbox" checked="@outcome.Immediate" @onchange="@(args => Set(() => outcome.Immediate = args.Value is true))" /> at once, after any action</label>
-                        <button id="@($"edit-outcome-{at}-remove")" type="button" @onclick="@(() => Set(() => Victory.Outcomes.Remove(outcome)))">Remove the outcome</button>
+                <li @key="outcome" id="@($"edit-outcome-{at}")" class="card-outcome">
+                    <span class="card-area-line card-outcome-head">
+                        <select id="@($"edit-outcome-{at}-winner")" value="@outcome.Winner" @onchange="@(args => Set(() => outcome.Winner = Text(args)))" aria-label="@($"Outcome {at + 1} winner")">
+                            <option value="">choose who</option>
+                            @WinnerOptions
+                        </select>
+                        <span>@(outcome.Winner == "draw" ? "is the result" : "wins")</span>
+                        <label class="card-check"><input id="@($"edit-outcome-{at}-immediate")" type="checkbox" checked="@outcome.Immediate" @onchange="@(args => Set(() => outcome.Immediate = args.Value is true))" /> at once, after any action,</label>
+                        <span>if any of these holds:</span>
+                        <button id="@($"edit-outcome-{at}-remove")" type="button" class="card-outcome-remove" @onclick="@(() => Set(() => Victory.Outcomes.Remove(outcome)))">Remove the outcome</button>
                     </span>
-                    <p class="card-subhead">when any of these holds:</p>
                     <ul>
                         @for (var number = 0; number < outcome.Conditions.Count; number++)
                         {
@@ -161,7 +166,7 @@
         {
             builder.OpenElement(0, "option");
             builder.AddAttribute(1, "value", side);
-            builder.AddContent(2, side);
+            builder.AddContent(2, CardText.Side(side));
             builder.CloseElement();
         }
     };

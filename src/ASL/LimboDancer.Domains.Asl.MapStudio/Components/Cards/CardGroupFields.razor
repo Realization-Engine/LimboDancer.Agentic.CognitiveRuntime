@@ -2,15 +2,43 @@
 @using LimboDancer.Domains.Asl.Units.Catalog
 @* Pass 28 (ruling R28.1): one OB group (A19.1; rulings R17.5, R17.8, R17.12): its name, ELR, place in a sequential setup, "?", areas, and counter
    lines, with K18 ObCounterPicker adding a line. *@
-<fieldset class="card-group-fields" id="@Id">
-    <legend>Group @(Index + 1): @Group.Name</legend>
-    <span class="card-area-line">
-        <label>name <input id="@($"{Id}-name")" value="@Group.Name" @onchange="@(args => Set(() => Group.Name = Text(args)))" size="40" /></label>
-        <label title="A19.1">ELR <input id="@($"{Id}-elr")" value="@Group.Elr" @onchange="@(args => Set(() => Group.Elr = Text(args)))" size="2" /></label>
-        <label title="A12.12; ruling R17.12: once one group is numbered, every group is, entering groups too">setup order <input id="@($"{Id}-order")" value="@Group.SetupOrder" @onchange="@(args => Set(() => Group.SetupOrder = Text(args)))" size="2" placeholder="none" /></label>
-        <label title="A12.11; ruling R17.12">"?" <input id="@($"{Id}-dummies")" value="@Group.Dummies" @onchange="@(args => Set(() => Group.Dummies = Text(args)))" size="2" placeholder="0" /></label>
-        <button id="@($"{Id}-remove")" type="button" @onclick="@(() => RemoveGroup.InvokeAsync())">Remove the group</button>
-    </span>
+<details class="card-group-fields" id="@Id" open>
+    <summary>
+        <span class="card-group-name">Group @(Index + 1): @Group.Name</span>
+        <span class="card-chip">ELR @(Group.Elr.Trim().Length > 0 ? Group.Elr.Trim() : "?")</span>
+        @if (Group.SetupOrder.Trim().Length > 0)
+        {
+            <span class="card-chip">sets up @Group.SetupOrder.Trim()</span>
+        }
+        @if (Group.Dummies.Trim() is { Length: > 0 } dummies && dummies != "0")
+        {
+            <span class="card-chip">"?" @dummies</span>
+        }
+        <span class="card-chip">@Group.Units.Count line(s)</span>
+        @if (Problems.Count > 0)
+        {
+            <span class="card-section-count" title="@($"{Problems.Count} problem(s)")">@Problems.Count</span>
+        }
+    </summary>
+    <SectionProblems Key="@Id" Items="@Problems" />
+    <div class="card-field-row">
+        <div class="card-field card-field-grow">
+            <label for="@($"{Id}-name")">Name</label>
+            <input id="@($"{Id}-name")" value="@Group.Name" @onchange="@(args => Set(() => Group.Name = Text(args)))" />
+        </div>
+        <div class="card-field card-field-short">
+            <label for="@($"{Id}-elr")" title="A19.1">ELR</label>
+            <input id="@($"{Id}-elr")" value="@Group.Elr" @onchange="@(args => Set(() => Group.Elr = Text(args)))" inputmode="numeric" />
+        </div>
+        <div class="card-field card-field-short">
+            <label for="@($"{Id}-order")" title="A12.12; ruling R17.12: once one group is numbered, every group is, entering groups too">Setup order</label>
+            <input id="@($"{Id}-order")" value="@Group.SetupOrder" @onchange="@(args => Set(() => Group.SetupOrder = Text(args)))" placeholder="none" inputmode="numeric" />
+        </div>
+        <div class="card-field card-field-short">
+            <label for="@($"{Id}-dummies")" title="A12.11; ruling R17.12">"?" counters</label>
+            <input id="@($"{Id}-dummies")" value="@Group.Dummies" @onchange="@(args => Set(() => Group.Dummies = Text(args)))" placeholder="0" inputmode="numeric" />
+        </div>
+    </div>
     <p class="card-subhead">Setup or entry areas</p>
     <ul class="card-areas">
         @for (var index = 0; index < Group.Areas.Count; index++)
@@ -53,7 +81,8 @@
         </tbody>
     </table>
     <span class="card-area-line">Add a counter line: <ObCounterPicker Id="@($"{Id}-pick")" Label="@($"group {Index + 1}")" Side="@Side" Definitions="@Definitions" Areas="@AreaIds" AddRequested="@AddUnit" /></span>
-</fieldset>
+    <p class="card-group-actions"><button id="@($"{Id}-remove")" type="button" class="danger" @onclick="@(() => RemoveGroup.InvokeAsync())">Remove the group</button></p>
+</details>
 
 @code {
     [Parameter, EditorRequired]
@@ -96,6 +125,10 @@
 
     [Parameter]
     public EventCallback Changed { get; set; }
+
+    /// <summary>The problems that name this group or its counters.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Problems { get; set; } = [];
 
     private IReadOnlyList<string> AreaIds => [.. Group.Areas.Select(area => area.Id).Where(id => id.Length > 0).Distinct(StringComparer.Ordinal)];
 
