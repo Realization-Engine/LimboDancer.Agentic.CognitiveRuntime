@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
-const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -196,6 +196,14 @@ test("a pane wider than the box shows strips beside it, and labels and tiles are
     const index = { names: ["A1"], x: [-60], y: [50] };
     assert.deepEqual(labelsInView(index, { x: 0, y: 0, width: 100, height: 100 }), []);
     assert.deepEqual(labelsInView(index, visibleBox({ x: 0, y: 0, width: 100, height: 100 }, { width: 300, height: 100 })), [0]);
+});
+
+test("?tiles=0 turns tiles off from the address or the address the page was opened with", () => {
+    assert.equal(tilesOffInAddress(["http://localhost/games/play?game=x&tiles=0", undefined]), true);
+    // Replay rewrote its address; the navigation entry still has the switch.
+    assert.equal(tilesOffInAddress(["http://localhost/games/replay?game=x&step=4", "http://localhost/games/replay?game=x&tiles=0"]), true);
+    assert.equal(tilesOffInAddress(["http://localhost/games/replay?game=x&tiles=1", "http://localhost/"]), false);
+    assert.equal(tilesOffInAddress([undefined, "not an address"]), false);
 });
 
 test("the two terrain switches choose the tile variant", () => {

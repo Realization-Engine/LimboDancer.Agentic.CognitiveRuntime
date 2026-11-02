@@ -180,6 +180,7 @@ Answers to the [guidelines'](<ASL Memory and Performance Guidelines.md>) checkli
 | D2 | The painter looks each (code, level) colour up in a table made once per tile, and adds integers | The first painter's floating-point blend per cell made a level-4 tile take 1 to 4 s |
 | D3 | While a zoom is moving, the viewport keeps the level it draws (150 ms of rest before a change), and keeps the old tiles under the new until those have decoded | A zoom asked for every level it passed through: tiles nobody saw, painted ahead of the ones wanted |
 | D4 | Labels and tiles are chosen from the part of the board on screen (`visibleBox`), not the view box | The user's screenshot: in a pane wider than the box, the strips beside it had no labels. The labels' fault came with the first wave's labels on demand (PR 102); the tiles had it too, hidden by their margin |
+| D6 | `?tiles=0` is also read from the address the page was opened with (`tilesOffInAddress`) | Replay rewrites its address to its own parameters before the map loads, which dropped the switch; found by the check of non-campaign maps |
 | D5 | The pane cannot judge the thresholds: with every layer hidden, an empty map, it drags at about 11 frames per second with frames of 100 to 280 ms, none in script and little in style and layout | Task 1's split and task 4's stop thresholds are judged in the user's Chrome instead |
 
 ## Related documents

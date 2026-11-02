@@ -314,7 +314,19 @@ const tilePoolBound = 200;
 // Whether a load draws tiles: an Exact view, in a viewport that has not turned them off (the map author page), and not ?tiles=0.
 function tilesWanted(state, baseUrl, layers) {
     return typeof globalThis.Image === "function" && state.host.dataset?.tiles !== "off" && baseUrl.endsWith("/exact")
-        && layers.includes(tileLayers[0]) && new URLSearchParams(globalThis.location?.search ?? "").get("tiles") !== "0";
+        && layers.includes(tileLayers[0]) && !tilesOffInAddress();
+}
+
+// ?tiles=0 in the address, or in the address the page was opened with: Replay rewrites its address to its own parameters before the map
+// loads, which dropped the switch; the browser's navigation entry keeps the address as typed.
+export function tilesOffInAddress(addresses = [globalThis.location?.href, globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.name]) {
+    return addresses.some(address => {
+        try {
+            return address ? new URL(address).searchParams.get("tiles") === "0" : false;
+        } catch {
+            return false;
+        }
+    });
 }
 
 function tileGroup() {

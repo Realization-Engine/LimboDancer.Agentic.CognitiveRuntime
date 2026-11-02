@@ -317,7 +317,9 @@ Against the plan's thresholds: the longest frame is under 100 ms in two runs of 
 
 Hiding the grid gains about 4 frames per second (23 to 27), so a grid drawn for free would still not reach 30. By decision T3 the grid stays a vector layer and goes to the backlog. What remains of a frame is mostly neither terrain nor grid; the counter layer (548 stacks) is the likeliest part, which is B6 (counters by view).
 
-The Claude pane could not judge this (plan, deviation D5): with every layer hidden it still drags at about 11 frames per second. Most drag frames take 12 ms, but a few take most of a second (9 frames in 1.7 s), so a drag stutters rather than crawls: the browser paints quickly while it can reuse what it drew, and stalls when the moved view needs the terrain painted again. That is the cost B4 removes. The 50 frames per second and 100 ms label thresholds are still not met. M1 is done; B4 waits for its plan and the user's word.
+The Claude pane could not judge this (plan, deviation D5): with every layer hidden it still drags at about 11 frames per second.
+
+**Non-campaign maps.** Every Exact view now draws tiles, small maps included. Checked on 2026-11-02 by drawing the vector terrain and elevation layers and the level-0 tiles onto canvases and comparing every pixel: VASL board bd01 (`dl-tractor-works-02` in Replay, four tiles, 628,000 pixels) and the Gambit card's joined map (bd01 above a reversed bd02, all twelve tiles, 2.3 million pixels, across the seam): no pixel differs. A single board at Fit uses level 0, so it looks as before; only far zoom on a large map shows the averaged look. Most drag frames take 12 ms, but a few take most of a second (9 frames in 1.7 s), so a drag stutters rather than crawls: the browser paints quickly while it can reuse what it drew, and stalls when the moved view needs the terrain painted again. That is the cost B4 removes. The 50 frames per second and 100 ms label thresholds are still not met. M1 is done; B4 waits for its plan and the user's word.
 
 ## Related documents
 
