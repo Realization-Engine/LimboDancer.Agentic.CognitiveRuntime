@@ -7,6 +7,15 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "https://localhost:52539;http://localhost:52540"
+    },
+    "Campaign": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "http://127.0.0.1:5178",
+      "commandLineArgs": "--Kestrel:Endpoints:Http:Url=http://127.0.0.1:5178 --Campaign:AtlasOrigin=http://127.0.0.1:8093 --AslMaps:AuthoredCatalogPath=../../Campaign/LimboDancer.Campaign.Refinement/Fixtures/SharedBoardMetadata.xml --AslMaps:BoardsRoot=../../../artifacts/campaign-asl-studio/boards --AslMaps:CacheRoot=../../../artifacts/campaign-asl-studio/cache",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
     }
   }
 }

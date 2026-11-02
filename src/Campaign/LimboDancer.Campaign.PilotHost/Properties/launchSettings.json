@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Campaign Atlas": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "index.html?exercise=source&source=5",
+      "applicationUrl": "http://127.0.0.1:8093",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

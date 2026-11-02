@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "Campaign Atlas + ASL Studio",
+    "Projects": [
+      {
+        "Path": "LimboDancer.Campaign.PilotHost\\LimboDancer.Campaign.PilotHost.csproj",
+        "Action": "Start",
+        "DebugTarget": "Campaign Atlas"
+      },
+      {
+        "Path": "..\\ASL\\LimboDancer.Domains.Asl.MapStudio\\LimboDancer.Domains.Asl.MapStudio.csproj",
+        "Action": "Start",
+        "DebugTarget": "Campaign"
+      }
+    ]
+  }
+]
