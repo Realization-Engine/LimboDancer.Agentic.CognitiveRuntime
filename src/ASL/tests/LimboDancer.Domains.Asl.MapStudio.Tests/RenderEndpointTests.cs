@@ -181,6 +181,29 @@ public sealed class RenderEndpointTests(StudioFactory factory) : IClassFixture<S
         Assert.Equal(BoardRenderer.Fragment(FakeBoardProvider.Board.Render, BoardView.Exact, "labels"), svg);
     }
 
+    // Raster Tiles Plan, task 3: the Exact view's tiles as immutable PNG, and the pyramid's shape as JSON.
+    [Fact]
+    public async Task TilesAreServedAsImmutablePng()
+    {
+        using var client = factory.CreateClient();
+        var uri = new Uri($"{Base}/exact/tile-te-0-0-0.png", UriKind.Relative);
+        using var response = await client.GetAsync(uri);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("image/png", response.Content.Headers.ContentType!.MediaType);
+        Assert.Contains("immutable", response.Headers.CacheControl!.ToString(), StringComparison.Ordinal);
+        var render = FakeBoardProvider.Board.Render;
+        Assert.Equal(TilePainter.Png(render.Grid, render.Catalog, TileVariant.TerrainAndElevation, 0, 0, 0), await response.Content.ReadAsByteArrayAsync());
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.IfNoneMatch.Add(response.Headers.ETag!);
+        using var again = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.NotModified, again.StatusCode);
+
+        using var index = await client.GetAsync(new Uri($"{Base}/exact/tiles.json", UriKind.Relative));
+        Assert.Equal("application/json", index.Content.Headers.ContentType!.MediaType);
+        Assert.Equal("{\"width\":113,\"height\":129,\"tileSize\":512,\"levels\":1}", await index.Content.ReadAsStringAsync());
+    }
+
     [Fact]
     public async Task DocumentIsServedWhole()
     {
@@ -254,6 +277,11 @@ public sealed class RenderEndpointTests(StudioFactory factory) : IClassFixture<S
     [InlineData(Base + "/styled/grid.svg")]
     [InlineData(Base + "/exact/hexfacts.svg")]
     [InlineData(Base + "/exact/grid.png")]
+    [InlineData(Base + "/exact/tile-te-0-1-0.png")]
+    [InlineData(Base + "/exact/tile-te-1-0-0.png")]
+    [InlineData(Base + "/exact/tile-x-0-0-0.png")]
+    [InlineData(Base + "/styled/tile-te-0-0-0.png")]
+    [InlineData("/render/ab-synthetic/stale/exact/tile-te-0-0-0.png")]
     public async Task UnknownRequestsAreNotFound(string path)
     {
         using var client = factory.CreateClient();

@@ -97,8 +97,14 @@ public static class RenderEndpoints
     }
 
     private static IResult Render(string board, string version, string view, string file, bool? trace,
-        HttpContext context, IBoardProvider provider, RenderCache cache)
+        HttpContext context, IBoardProvider provider, RenderCache cache, TileCache tiles)
     {
+        // Raster Tiles Plan, task 3: the Exact view's tiles and the pyramid's shape.
+        if (view == "exact" && (file == TileCache.IndexFile || file.StartsWith("tile-", StringComparison.Ordinal)))
+        {
+            return Tile(board, version, file, context, provider, tiles);
+        }
+
         var labelIndex = file == RenderCache.LabelIndexFile;
         if ((!labelIndex && !file.EndsWith(".svg", StringComparison.Ordinal)) || !BoardRef.TryParse(board, out var boardRef)
             || !BoardRenderer.TryParseView(view, out var boardView))
@@ -135,6 +141,46 @@ public static class RenderEndpoints
         }
 
         return Results.Bytes(rendered.Svg, contentType);
+    }
+
+    private static IResult Tile(string board, string version, string file, HttpContext context, IBoardProvider provider, TileCache tiles)
+    {
+        if (!BoardRef.TryParse(board, out var boardRef) || provider.LoadVersion(boardRef, version) is not { } studioBoard)
+        {
+            return Results.NotFound();
+        }
+
+        byte[] body;
+        string contentType;
+        string etag;
+        if (file == TileCache.IndexFile)
+        {
+            if (TileCache.Index(studioBoard) is not { } index)
+            {
+                return Results.NotFound();
+            }
+
+            body = Encoding.UTF8.GetBytes(index);
+            contentType = "application/json; charset=utf-8";
+            etag = "\"" + Convert.ToHexStringLower(SHA256.HashData(body)) + "\"";
+        }
+        else if (TileCache.TryReadFileName(file, out var variant, out var level, out var column, out var row)
+            && tiles.Get(studioBoard, variant, level, column, row) is { } tile)
+        {
+            body = tile.Png;
+            contentType = "image/png";
+            etag = tile.ETag;
+        }
+        else
+        {
+            return Results.NotFound();
+        }
+
+        context.Response.Headers.ETag = etag;
+        context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+        return context.Request.Headers.IfNoneMatch.ToString() == etag
+            ? Results.StatusCode(StatusCodes.Status304NotModified)
+            : Results.Bytes(body, contentType);
     }
 
     /// <summary>Whether the request accepts gzip: named, or <c>*</c>, with a quality above zero.</summary>

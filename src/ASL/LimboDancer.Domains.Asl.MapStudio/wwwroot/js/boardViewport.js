@@ -59,6 +59,7 @@ export function create(host, dotnet) {
         } else {
             updateUnitTier(state);
             updateLabelDetail(state);
+            updateTiles(state);
         }
     });
     shapeWatcher?.observe(host);
@@ -269,9 +270,22 @@ function labelsAsData(baseUrl, layer) {
     return layer === "labels" && baseUrl.endsWith("/exact");
 }
 
-async function fetchGroups(baseUrl, query, layers) {
+async function fetchGroups(baseUrl, query, layers, tiled = false) {
     let labelIndex = null;
-    const texts = await Promise.all(layers.map(async layer => {
+    let tileIndex = null;
+    // Raster Tiles Plan, section 2.5: with tiles, one group stands where the two Exact terrain layers stood, and neither is fetched.
+    const wanted = tiled ? layers.filter(layer => !tileLayers.includes(layer) || layer === tileLayers[0]) : layers;
+    const texts = await Promise.all(wanted.map(async layer => {
+        if (tiled && layer === tileLayers[0]) {
+            const response = await fetch(`${baseUrl}/tiles.json${query}`);
+            if (!response.ok) {
+                throw new Error(`Tile index failed: ${response.status}`);
+            }
+
+            tileIndex = await response.json();
+            return undefined;
+        }
+
         const asData = labelsAsData(baseUrl, layer);
         const response = await fetch(asData ? `${baseUrl}/labels.json${query}` : `${baseUrl}/${layer}.svg${query}`);
         if (!response.ok) {
@@ -286,10 +300,177 @@ async function fetchGroups(baseUrl, query, layers) {
         return response.text();
     }));
     const parser = new DOMParser();
-    const groups = texts.map((text, index) => text === null
-        ? labelGroup(labelIndex)
-        : document.importNode(parser.parseFromString(text, "image/svg+xml").documentElement.firstElementChild, true));
-    return { groups, labelIndex };
+    const groups = texts.map(text => text === undefined ? tileGroup()
+        : text === null ? labelGroup(labelIndex)
+            : document.importNode(parser.parseFromString(text, "image/svg+xml").documentElement.firstElementChild, true));
+    return { groups, labelIndex, tileIndex };
+}
+
+// Raster Tiles Plan: the Exact view's terrain and elevation layers, drawn as raster tiles from the grid.
+const tileLayers = ["exact-terrain", "exact-elevation"];
+const tileSettleMs = 150;
+const tilePoolBound = 200;
+
+// Whether a load draws tiles: an Exact view, in a viewport that has not turned them off (the map author page), and not ?tiles=0.
+function tilesWanted(state, baseUrl, layers) {
+    return typeof globalThis.Image === "function" && state.host.dataset?.tiles !== "off" && baseUrl.endsWith("/exact")
+        && layers.includes(tileLayers[0]) && !tilesOffInAddress();
+}
+
+// ?tiles=0 in the address, or in the address the page was opened with: Replay rewrites its address to its own parameters before the map
+// loads, which dropped the switch; the browser's navigation entry keeps the address as typed.
+export function tilesOffInAddress(addresses = [globalThis.location?.href, globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.name]) {
+    return addresses.some(address => {
+        try {
+            return address ? new URL(address).searchParams.get("tiles") === "0" : false;
+        } catch {
+            return false;
+        }
+    });
+}
+
+function tileGroup() {
+    const layer = document.createElementNS(svgNamespace, "g");
+    layer.setAttribute("id", "layer-exact-tiles");
+    layer.setAttribute("pointer-events", "none");
+    return layer;
+}
+
+// The tile level for a drawing scale (screen pixels per cell, times the device pixel ratio): the coarsest whose tile pixel is no larger
+// than a device pixel. Then the tiles meeting the box widened by one tile, each with its place and size in cells.
+export function tilesInView(index, box, devicePixelsPerCell) {
+    const top = index.levels - 1;
+    const level = Math.max(0, Math.min(top, Math.floor(Math.log2(1 / devicePixelsPerCell))));
+    const span = index.tileSize * 2 ** level;
+    const columns = Math.ceil(index.width / span);
+    const rows = Math.ceil(index.height / span);
+    const first = value => Math.max(0, Math.floor(value / span));
+    const tiles = [];
+    for (let column = first(box.x - span); column <= Math.min(columns - 1, Math.floor((box.x + box.width + span) / span)); column++) {
+        for (let row = first(box.y - span); row <= Math.min(rows - 1, Math.floor((box.y + box.height + span) / span)); row++) {
+            tiles.push({
+                level, column, row, x: column * span, y: row * span,
+                width: Math.min(span, index.width - column * span), height: Math.min(span, index.height - row * span),
+            });
+        }
+    }
+
+    return { level, tiles };
+}
+
+// The variant the two layer switches ask for: both, terrain alone, or elevation alone; null when both are hidden.
+export function tileVariant(visible) {
+    const terrain = visible.includes(tileLayers[0]);
+    const elevation = visible.includes(tileLayers[1]);
+    return terrain && elevation ? "te" : terrain ? "t" : elevation ? "e" : null;
+}
+
+function updateTiles(state) {
+    const tiles = state.tiles;
+    if (!tiles || !state.box || !tiles.variant || !tiles.group.isConnected || tiles.group.getAttribute("data-layer-hidden") === "true") {
+        return;
+    }
+
+    const size = paneSize(state);
+    if (!size.width || !size.height) {
+        return;
+    }
+
+    const scale = Math.min(size.width / state.box.width, size.height / state.box.height);
+    const ratio = globalThis.devicePixelRatio || 1;
+    const view = tilesInView(tiles.index, visibleBox(state.box, size), scale * ratio);
+    // While a zoom is still moving, keep the level drawn: asking for every level the zoom passes through paints tiles nobody sees.
+    const sinceZoom = performance.now() - (state.lastZoom ?? -Infinity);
+    if (tiles.level !== null && view.level !== tiles.level && sinceZoom < tileSettleMs) {
+        clearTimeout(tiles.settle);
+        tiles.settle = setTimeout(() => updateTiles(state), tileSettleMs - sinceZoom + 10);
+        return;
+    }
+
+    const top = tiles.index.levels - 1;
+    // The coarsest level's single tile stays under the rest for the whole visit, so a tile still loading shows softly, never blank.
+    const wanted = [{ level: top, column: 0, row: 0, x: 0, y: 0, width: tiles.index.width, height: tiles.index.height },
+        ...view.tiles.filter(tile => tile.level !== top)];
+    const keep = new Set();
+    let loading = false;
+    for (const tile of wanted) {
+        const key = `${tiles.variant}-${tile.level}-${tile.column}-${tile.row}`;
+        keep.add(key);
+        if (!tiles.pool.has(key)) {
+            tiles.pool.set(key, tileImage(state, tiles, tile, key));
+        }
+
+        loading ||= !tiles.pool.get(key).hasAttribute("href");
+    }
+
+    // Tiles no longer wanted stay under the new ones until those have decoded, so a level change never flashes the coarse tile; the pool's
+    // bound drops them regardless.
+    for (const [key, image] of tiles.pool) {
+        if (!keep.has(key) && (!loading || tiles.pool.size > tilePoolBound)) {
+            image.remove();
+            tiles.pool.delete(key);
+        }
+    }
+
+    // Sharp cells only when a cell is larger than a device pixel; shrunk tiles keep the browser's smoothing, so they do not shimmer.
+    const sharp = view.level === 0 && scale * ratio > 1;
+    if (tiles.sharp !== sharp) {
+        tiles.sharp = sharp;
+        tiles.group.style.imageRendering = sharp ? "pixelated" : "";
+    }
+
+    tiles.level = view.level;
+}
+
+// An image for one tile, placed in cells. Its file is fetched and decoded off-screen first, so a frame never waits on a decode.
+function tileImage(state, tiles, tile, key) {
+    const image = document.createElementNS(svgNamespace, "image");
+    for (const [name, value] of [["x", tile.x], ["y", tile.y], ["width", tile.width], ["height", tile.height], ["preserveAspectRatio", "none"]]) {
+        image.setAttribute(name, String(value));
+    }
+
+    const url = `${tiles.baseUrl}/tile-${tiles.variant}-${tile.level}-${tile.column}-${tile.row}.png${tiles.query}`;
+    const show = () => {
+        if (tiles.pool.get(key) === image) {
+            image.setAttribute("href", url);
+            // Once the last new tile shows, the next pass drops the old ones kept under it.
+            if (!tiles.sweep) {
+                tiles.sweep = true;
+                requestAnimationFrame(() => {
+                    tiles.sweep = false;
+                    updateTiles(state);
+                });
+            }
+        }
+    };
+    const loader = new Image();
+    loader.src = url;
+    loader.decode().then(show, show);
+    // The coarse tile first, then finer levels above it.
+    if (tile.level === tiles.index.levels - 1) {
+        tiles.group.insertBefore(image, tiles.group.firstChild);
+    } else {
+        tiles.group.appendChild(image);
+    }
+
+    return image;
+}
+
+function setTileVariant(state, visible) {
+    const tiles = state.tiles;
+    if (!tiles) {
+        return;
+    }
+
+    const variant = tileVariant(visible) ?? (visible.includes("exact-tiles") ? tiles.variant ?? "te" : null);
+    tiles.group.setAttribute("data-layer-hidden", String(variant === null));
+    if (variant && variant !== tiles.variant) {
+        tiles.pool.forEach(image => image.remove());
+        tiles.pool.clear();
+    }
+
+    tiles.variant = variant ?? tiles.variant;
+    updateTiles(state);
 }
 
 // The same group the SVG labels layer has (BoardRenderer.WriteLabels), empty: its texts are the labels in view, filled each frame.
@@ -332,13 +513,26 @@ function updateLabels(state) {
     }
 
     const shown = state.box && layer.getAttribute("data-detail-visible") === "true" && layer.getAttribute("data-layer-hidden") !== "true";
-    const wanted = shown ? labelsInView(index, state.box) : [];
+    const wanted = shown ? labelsInView(index, visibleBox(state.box, paneSize(state))) : [];
     for (const svg of [state.svg, state.side]) {
         const texts = svg?.querySelector("#layer-labels")?.firstElementChild;
         if (texts) {
             fillLabels(texts, index, wanted);
         }
     }
+}
+
+// The part of the board on screen. The drawing fits the view box with xMidYMid meet, so a pane of another shape shows more than the box,
+// centred, on its long side: labels and tiles chosen from the box alone left those strips bare (the user's screenshot, 2026-11-02).
+export function visibleBox(box, size) {
+    if (!size?.width || !size?.height) {
+        return box;
+    }
+
+    const scale = Math.min(size.width / box.width, size.height / box.height);
+    const width = size.width / scale;
+    const height = size.height / scale;
+    return { x: box.x - (width - box.width) / 2, y: box.y - (height - box.height) / 2, width, height };
 }
 
 // Reuses the group's text elements: each keeps the index it shows, and is changed only when that index changes.
@@ -370,12 +564,17 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
     state.loadMetrics = new URLSearchParams(globalThis.location?.search ?? "").get("mapMetrics") === "1"
         ? { generation, started: performance.now(), reported: false } : null;
     if (state.loadMetrics) state.host.dataset.mapMetricStatus = "loading";
-    const { groups, labelIndex } = await fetchGroups(baseUrl, query, layers);
+    const tiled = tilesWanted(state, baseUrl, layers);
+    const { groups, labelIndex, tileIndex } = await fetchGroups(baseUrl, query, layers, tiled);
     if (generation !== state.generation) {
         return;
     }
 
     state.labelIndex = labelIndex;
+    const tileLayer = groups.find(group => group.id === "layer-exact-tiles");
+    state.tiles = tileLayer && tileIndex
+        ? { index: tileIndex, baseUrl, query, group: tileLayer, pool: new Map(), variant: null, level: null, sharp: false }
+        : null;
     if (state.loadMetrics) {
         probeStates.add(state);
         globalThis.mapProbe = options => runProbe(probeTarget(), options);
@@ -408,7 +607,8 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
 // Replaces the named layers in place, keeping the view: after an edit, for layers the patch does not cover.
 async function reloadLayers(state, baseUrl, query, layers) {
     const generation = state.generation;
-    const { groups, labelIndex } = await fetchGroups(baseUrl, query, layers);
+    // The tiles follow the board version in their URL; a reload of the vector terrain layers they replace has nothing to replace.
+    const { groups, labelIndex } = await fetchGroups(baseUrl, query, state.tiles ? layers.filter(layer => !tileLayers.includes(layer)) : layers);
     if (generation !== state.generation) {
         return;
     }
@@ -464,6 +664,7 @@ function setVisible(state, visible) {
         }
     }
 
+    setTileVariant(state, visible);
     applyComparison(state);
     updateLabels(state);
 }
@@ -596,6 +797,7 @@ function focusPoint(state, x, y) {
 function zoomAt(state, point, factor, gesture = false) {
     const width = clamp(state.box.width * factor, state.home.width / 40, state.home.width * 2);
     const scale = width / state.box.width;
+    state.lastZoom = performance.now();
     setBox(state, {
         x: point.x - (point.x - state.box.x) * scale,
         y: point.y - (point.y - state.box.y) * scale,
@@ -852,9 +1054,27 @@ export function summarizeFrames(times) {
     };
 }
 
+// The layers left shown when a probe hides some (Raster Tiles Plan, task 1: how much of a frame each layer takes).
+export function layersAfterHide(shown, hide) {
+    return shown.filter(layer => !hide.includes(layer));
+}
+
+function shownLayers(state) {
+    return [...state.svg.children].filter(group => group.id.startsWith("layer-") && group.getAttribute("data-layer-hidden") === "false")
+        .map(group => group.id.substring(6));
+}
+
 async function runProbe(state, options = {}) {
     if (!state.box || !state.home) throw new Error("No board is loaded.");
     const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
+    const shownBefore = shownLayers(state);
+    const hide = options.hide ?? [];
+    if (hide.length) {
+        setVisible(state, layersAfterHide(shownBefore, hide));
+        await frame();
+        await frame();
+    }
+
     const rect = state.svg.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
@@ -906,8 +1126,7 @@ async function runProbe(state, options = {}) {
 
     // The label layer switch: off and on again, as the page's layer choice does it.
     setBox(state, saved.box, saved.fitted);
-    const shown = [...state.svg.children].filter(group => group.id.startsWith("layer-") && group.getAttribute("data-layer-hidden") === "false")
-        .map(group => group.id.substring(6));
+    const shown = shownLayers(state);
     let labelSwitchMs = null;
     if (shown.includes("labels")) {
         await frame();
@@ -921,8 +1140,13 @@ async function runProbe(state, options = {}) {
 
     observer?.disconnect();
     setBox(state, saved.box, saved.fitted);
+    if (hide.length) {
+        setVisible(state, shownBefore);
+    }
+
     const record = {
-        when: new Date().toISOString(), board: state.baseUrl, elements: state.svg.getElementsByTagName("*").length,
+        when: new Date().toISOString(), board: state.baseUrl, hidden: hide, elements: state.svg.getElementsByTagName("*").length,
+        tiles: state.tiles ? { level: state.tiles.level, shown: state.tiles.pool.size } : null,
         counters: state.svg.querySelectorAll("#layer-units [data-unit-id]").length, viewport: [Math.round(rect.width), Math.round(rect.height)],
         boxWidth: Math.round(saved.box.width), drag, wheel, labelSwitchMs, userAgent: globalThis.navigator?.userAgent,
     };
@@ -1014,6 +1238,7 @@ function flushBox(state) {
     updateUnitTier(state);
     updateLabelDetail(state);
     updateLabels(state);
+    updateTiles(state);
 }
 
 function gestureEnded(state) {

@@ -3,7 +3,7 @@
 
 @* B06 (plan sections 15.5 and 16.6): the board's drawing surface. It owns the host element, the JavaScript module and viewport, the .NET
    reference the script calls back, and their disposal, so no page installs listeners of its own; pages draw through its commands. *@
-<div class="board-host" @ref="host" role="@(Label is null ? null : "group")" aria-roledescription="@(Label is null ? null : "map")" aria-label="@Label" data-view-key="@ViewKey"></div>
+<div class="board-host" @ref="host" role="@(Label is null ? null : "group")" aria-roledescription="@(Label is null ? null : "map")" aria-label="@Label" data-view-key="@ViewKey" data-tiles="@(Tiles ? null : "off")"></div>
 
 @code {
     private ElementReference host;
@@ -23,6 +23,13 @@
     /// <summary>What the map's view is kept for while the page is open, such as a game and a view (pass 31c, design D16); null to keep none.</summary>
     [Parameter]
     public string? ViewKey { get; set; }
+
+    /// <summary>
+    /// Whether the Exact view's terrain and elevation are drawn as raster tiles (Raster Tiles Plan, section 2.7). On by default; the map author
+    /// page turns it off, since its edits patch the vector layers.
+    /// </summary>
+    [Parameter]
+    public bool Tiles { get; set; } = true;
 
     /// <summary>Raised once the script's viewport exists, so the page can load the board into it.</summary>
     [Parameter]
