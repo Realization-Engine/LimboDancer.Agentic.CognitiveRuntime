@@ -160,7 +160,10 @@ export function create(host, dotnet) {
 
         gestureStarted(state);
         // Turned a quarter clockwise (pass 29), the map's x runs down the screen and its y runs to the left.
-        const unitsPerPixel = drag.box.width / paneSize(state).width;
+        // Board units per screen pixel from the part of the board on screen, not the view box: a letterboxed map shows more than its box,
+        // so the box's width over the pane's moved the map at half the pointer's speed on a 2:1 letterbox (backlog section 96).
+        const size = paneSize(state);
+        const unitsPerPixel = visibleBox(drag.box, size).width / size.width;
         const [mx, my] = state.rotated ? [dy, -dx] : [dx, dy];
         setBox(state, { ...drag.box, x: drag.box.x - mx * unitsPerPixel, y: drag.box.y - my * unitsPerPixel }, false, true);
     });
