@@ -1140,6 +1140,37 @@ function probeTarget() {
     return best;
 }
 
+// The time from `since` until every tile the map keeps in view shows its own image, checked each frame; null when the map draws no tiles,
+// -1 when it is not sharp within the wait (ten seconds by default).
+async function untilSharp(state, since, waitMs = 10000) {
+    if (!state.tiles) {
+        return null;
+    }
+
+    const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
+    for (;;) {
+        const now = await frame();
+        if (tilesSharp(state.tiles)) {
+            return Math.round(now - since);
+        }
+
+        if (now - since > waitMs) {
+            return -1;
+        }
+    }
+}
+
+// Whether every tile image in the pool has its file: a tile still loading has no href (tileImage).
+export function tilesSharp(tiles) {
+    for (const image of tiles.pool.values()) {
+        if (!image.hasAttribute("href")) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 export function summarizeFrames(times) {
     const gaps = times.slice(1).map((time, index) => time - times[index]);
     const span = times.length > 1 ? times[times.length - 1] - times[0] : 0;
@@ -1206,12 +1237,15 @@ async function runProbe(state, options = {}) {
             forcedStyleAndLayoutMs: Math.round(forced) };
     };
 
-    // A drag of a fixed screen distance over about a second: one move per animation frame.
-    const dragMs = options.dragMs ?? 1000;
-    const distance = Math.min(rect.width, rect.height) / 4;
+    // A drag of a fixed screen distance: by default a quarter of the pane's short side over a second, inside the painted margin; with
+    // `dragPanes` that many pane widths (negative to the left), so the drag commits on the way, as a user's long pan does (Screen-Bounded
+    // Map Analysis, section 5). A long drag needs a zoom at which the map is wider than the pane, or it drags past the map's edge.
+    const dragMs = options.dragMs ?? (options.dragPanes ? 1000 * Math.max(1, Math.abs(options.dragPanes)) : 1000);
+    const distance = options.dragPanes ? rect.width * options.dragPanes : Math.min(rect.width, rect.height) / 4;
     await frame();
     const dragStart = performance.now();
     const dragTimes = [dragStart];
+    const commitsBeforeDrag = state.commits ?? 0;
     pointer("pointerdown", cx, cy);
     for (let elapsed = 0; elapsed < dragMs; elapsed = performance.now() - dragStart) {
         pointer("pointermove", cx + distance * elapsed / dragMs, cy);
@@ -1222,21 +1256,31 @@ async function runProbe(state, options = {}) {
     const upAt = performance.now();
     dragTimes.push(await frame());
     const settledAt = await frame();
+    const dragCommits = (state.commits ?? 0) - commitsBeforeDrag;
+    const dragSharpMs = await untilSharp(state, upAt, options.sharpWaitMs);
     await new Promise(resolve => setTimeout(resolve, 50));
-    const drag = { ...summarizeFrames(dragTimes), settleMs: Math.round(settledAt - upAt), ...loafSince(dragStart) };
+    const drag = { ...summarizeFrames(dragTimes), settleMs: Math.round(settledAt - upAt), commits: dragCommits, sharpMs: dragSharpMs, ...loafSince(dragStart) };
 
-    // A burst of wheel events in one task, as a trackpad sends them, then the frames until the map settles.
+    // A burst of wheel events in one task, as a trackpad sends them, then the frames until the map settles. By default it alternates in
+    // and out; `wheel: "in"` or `"out"` zooms one way, so it passes the painted scale and commits as a real zoom does.
     setBox(state, saved.box, saved.fitted);
     await frame();
     const wheelStart = performance.now();
+    const commitsBeforeWheel = state.commits ?? 0;
     for (let index = 0; index < (options.wheelEvents ?? 20); index++) {
-        state.svg.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: index % 2 ? 100 : -100, clientX: cx, clientY: cy }));
+        const deltaY = options.wheel === "in" ? -100 : options.wheel === "out" ? 100 : index % 2 ? 100 : -100;
+        state.svg.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY, clientX: cx, clientY: cy }));
     }
     const wheelTimes = [wheelStart, await frame(), await frame()];
+    // The burst rests after `gestureRest`; the commit and the tiles follow it.
+    await new Promise(resolve => setTimeout(resolve, gestureRest + 20));
+    await frame();
+    const wheelSharpMs = await untilSharp(state, wheelStart, options.sharpWaitMs);
     // Long Animation Frame entries are delivered after their frame: one more frame and a short wait before they are read.
     await frame();
     await new Promise(resolve => setTimeout(resolve, 50));
-    const wheel = { settleMs: Math.round(wheelTimes[2] - wheelStart), ...loafSince(wheelStart) };
+    const wheel = { settleMs: Math.round(wheelTimes[2] - wheelStart), commits: (state.commits ?? 0) - commitsBeforeWheel, sharpMs: wheelSharpMs,
+        ...loafSince(wheelStart) };
 
     // The label layer switch: off and on again, as the page's layer choice does it.
     setBox(state, saved.box, saved.fitted);
@@ -1370,6 +1414,9 @@ function flushBox(state) {
     } else {
         state.committed = null;
     }
+
+    // The probe counts the repaints a gesture causes (Screen-Bounded Map Analysis, section 5, step 1).
+    state.commits = (state.commits ?? 0) + 1;
 
     // The one exception to site.css's rule of no style attributes (as the first trial's, Large Campaign Map Plan task 6): the gesture's
     // transform, cleared at every commit, which hands the drawing back to site.css's rule.

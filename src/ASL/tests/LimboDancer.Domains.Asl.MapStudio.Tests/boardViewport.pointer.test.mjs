@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
 const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
-    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -98,6 +98,16 @@ test("the pan probe summarizes frames from their times", () => {
     assert.deepEqual(summarizeFrames([0, 16, 32, 132, 148]),
         { frames: 4, spanMs: 148, framesPerSecond: 27, longestFrameMs: 100, medianFrameMs: 16 });
     assert.deepEqual(summarizeFrames([5]), { frames: 0, spanMs: 0, framesPerSecond: 0, longestFrameMs: 0, medianFrameMs: 0 });
+});
+
+// Screen-Bounded Map Analysis, section 5, step 1: the probe waits until every tile kept in view shows its own image.
+test("the map is sharp when every pooled tile has its file", () => {
+    const tile = href => ({ hasAttribute: name => name === "href" && href !== null });
+    const loaded = tile("tile-te-0-0-0.png");
+    const loading = tile(null);
+    assert.equal(tilesSharp({ pool: new Map([["a", loaded]]) }), true);
+    assert.equal(tilesSharp({ pool: new Map([["a", loaded], ["b", loading]]) }), false);
+    assert.equal(tilesSharp({ pool: new Map() }), true);
 });
 
 // Large Campaign Map Plan, A2: a pointer is read from the drawing's rectangle and observed size, not the screen matrix. A 200 by 100 drawing
