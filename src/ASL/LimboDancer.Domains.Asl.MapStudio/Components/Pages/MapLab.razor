@@ -1,6 +1,297 @@
 @page "/lab/maps"
+@using System.Globalization
+@using System.Text.Json
+@using LimboDancer.Domains.Asl.MapStudio.Services.MapLab
+@implements IDisposable
+@inject LabMapCache Maps
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
 
+@* Map Lab Plan (2026-11-02): a bench for large hexagonal maps. It builds a map from the form, draws it by one technique through the Studio's
+   own viewport, and measures pan and zoom. Nothing here is saved, and no other map uses what it finds. *@
 <PageTitle>Map Lab - ASL Map Studio</PageTitle>
 <PageHeader Title="Map Lab">
-    <p>A workspace for developing map assets. Nothing is here yet.</p>
+    <p>Build a hexagonal map of any size up to 1,000,000 hexes, draw it by one technique, and measure how it pans and zooms. Maps are generated from the form and never saved.</p>
 </PageHeader>
+
+<form id="map-lab-form" class="toolbar map-lab-form" @onsubmit="Build" @onsubmit:preventDefault>
+    <label>Hexes <input id="map-lab-hexes" type="number" min="@LabMapSpec.MinHexes" max="@LabMapSpec.MaxHexes" step="1" @bind="formHexes" /></label>
+    <label>
+        Formation size
+        <select id="map-lab-group" @bind="formGroup">
+            <option value="1">Single hexes</option>
+            <option value="16">16 hexes</option>
+            <option value="36">36 hexes (Goodwood)</option>
+            <option value="100">100 hexes</option>
+        </select>
+    </label>
+    <label>Seed <input id="map-lab-seed" type="number" min="0" step="1" @bind="formSeed" /></label>
+    <label>
+        Technique
+        <select id="map-lab-technique" @bind="formTechnique">
+            <option value="@LabTechnique.Elements">Elements: one per hex</option>
+            <option value="@LabTechnique.Paths">Paths: one per colour</option>
+            <option value="@LabTechnique.Tiles">Tiles: raster terrain</option>
+            <option value="@LabTechnique.TilesLines">Tiles and lines: terrain, grid, boundaries in tiles</option>
+        </select>
+    </label>
+    <button type="submit" class="primary">Build</button>
+    <span class="toolbar-note">Sizes to try: 1,038 (Goodwood's formations), 10,000, 100,000, 1,000,000.</span>
+</form>
+
+<section class="map-lab-figures" aria-label="The map">
+    @if (map is null)
+    {
+        <p id="map-lab-status">@(building ? "Building the map..." : "No map yet.")</p>
+    }
+    else
+    {
+        <p id="map-lab-status">
+            @Count(map.HexCount) hexes, @map.Geometry.WidthInHexes columns by @map.Geometry.HeightInHexes rows,
+            @(map.Spec.Group > 1 ? $"{Count(map.Formations)} formations, " : string.Empty)drawn by @map.Spec.Technique.ToString().ToLowerInvariant().
+        </p>
+        <fieldset class="toolbar map-lab-layers">
+            <legend>Layers</legend>
+            @foreach (var layer in LabMapRenderer.Layers(map.Spec))
+            {
+                <label><input type="checkbox" checked="@visible.Contains(layer)" @onchange="@(() => Toggle(layer))" /> @LayerName(layer)</label>
+            }
+        </fieldset>
+    }
+</section>
+
+<div class="map-lab-map">
+    <BoardViewport @ref="viewport" Label="The Map Lab's map" Tiles="@spec.Tiled" OnReady="Ready" />
+</div>
+
+<section class="map-lab-figures" aria-labelledby="map-lab-measure-heading">
+    <h2 id="map-lab-measure-heading">Measure</h2>
+    <div class="toolbar">
+        <button type="button" id="map-lab-measure" disabled="@(map is null || measuring)" @onclick="Measure">@(measuring ? "Measuring..." : "Measure at Fit and zoomed in")</button>
+        <span class="toolbar-note">Each measure drags the map for a second and sends 20 wheel events, at Fit and five zoom steps in. Judge speed in an ordinary Chrome window; the figures below are for this browser.</span>
+    </div>
+    @if (timings.Count > 0)
+    {
+        <table id="map-lab-server">
+            <caption>Server: building the map and its files</caption>
+            <thead><tr><th scope="col">Part</th><th scope="col">Milliseconds</th><th scope="col">Size</th></tr></thead>
+            <tbody>
+                @foreach (var (part, figure) in timings.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+                {
+                    <tr><td>@part</td><td>@figure.Milliseconds.ToString("0", CultureInfo.InvariantCulture)</td><td>@(part == "map" ? Count(figure.Bytes) + " hexes" : Megabytes(figure.Bytes))</td></tr>
+                }
+            </tbody>
+        </table>
+    }
+    @if (Maps.Runs is { Count: > 0 } runs)
+    {
+        <table id="map-lab-runs">
+            <caption>Browser: pan and zoom, newest first, every map measured since the Studio started</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Map</th><th scope="col">Zoom</th><th scope="col">Elements</th><th scope="col">Drag fps</th><th scope="col">Median frame</th>
+                    <th scope="col">Longest frame</th><th scope="col">Settle after drag</th><th scope="col">20 wheel events</th><th scope="col">Pane</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var run in runs)
+                {
+                    <tr>
+                        <td>@run.Map</td><td>@run.Zoom</td><td>@run.Elements</td><td>@run.FramesPerSecond</td><td>@run.MedianMs ms</td>
+                        <td>@run.LongestMs ms</td><td>@run.SettleMs ms</td><td>@run.WheelMs ms</td><td>@run.Pane</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    @if (error is not null)
+    {
+        <p class="field-error" role="alert">@error</p>
+    }
+</section>
+
+@code {
+    private BoardViewport? viewport;
+    private LabMapSpec spec = LabMapSpec.Clamped(10_000, 36, 7, LabTechnique.Paths);
+    private LabMap? map;
+    private string? shown;
+    private bool building;
+    private bool measuring;
+    private string? error;
+    private List<string> visible = [];
+    private IReadOnlyDictionary<string, (double Milliseconds, int Bytes)> timings = new Dictionary<string, (double, int)>();
+    private readonly CancellationTokenSource closing = new();
+
+    private int formHexes;
+    private int formGroup;
+    private int formSeed;
+    private LabTechnique formTechnique;
+
+    [SupplyParameterFromQuery(Name = "n")]
+    public int? Hexes { get; set; }
+
+    [SupplyParameterFromQuery(Name = "g")]
+    public int? Group { get; set; }
+
+    [SupplyParameterFromQuery(Name = "s")]
+    public int? Seed { get; set; }
+
+    [SupplyParameterFromQuery(Name = "tech")]
+    public string? Technique { get; set; }
+
+    [SupplyParameterFromQuery(Name = "mapMetrics")]
+    public string? Metrics { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        var technique = Enum.TryParse<LabTechnique>(Technique, ignoreCase: true, out var named) ? named : spec.Technique;
+        spec = LabMapSpec.Clamped(Hexes ?? spec.Hexes, Group ?? spec.Group, Seed ?? spec.Seed, technique);
+        (formHexes, formGroup, formSeed, formTechnique) = (spec.Hexes, spec.Group, spec.Seed, spec.Technique);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // The probe needs ?mapMetrics=1, and the baseline pan by transform off (?transform=0), when the page loads: an address without them is
+        // loaded again with them.
+        if (firstRender && !Complete())
+        {
+            Navigation.NavigateTo(Address(spec), forceLoad: true, replace: true);
+        }
+    }
+
+    private bool Complete() => Metrics == "1" && (spec.Technique == LabTechnique.Elements) == TransformOff();
+
+    // One map a page load: a new map loads the page again, so every measure starts from a fresh page, with nothing of the last map held.
+    private async Task Ready()
+    {
+        if (viewport is not { IsReady: true } || shown is not null || building || !Complete())
+        {
+            return;
+        }
+
+        var drawing = spec;
+        building = true;
+        error = null;
+        StateHasChanged();
+        try
+        {
+            // Built off the circuit's thread: a million hexes takes a few seconds.
+            var built = await Task.Run(() => Maps.Map(drawing), closing.Token);
+            if (viewport is not { IsReady: true })
+            {
+                return;
+            }
+
+            map = built;
+            visible = [.. LabMapRenderer.Layers(drawing)];
+            await viewport.Load(LabMapEndpoints.BaseUrl(drawing), string.Empty, LabMapRenderer.ViewBox(built), LabMapRenderer.Layers(drawing), visible);
+            shown = drawing.Key;
+            timings = Maps.Timings(drawing);
+        }
+        catch (Exception exception) when (exception is JSException or TaskCanceledException or OperationCanceledException)
+        {
+            error = "The map could not be drawn: " + exception.Message;
+        }
+        catch (JSDisconnectedException)
+        {
+            return;
+        }
+        finally
+        {
+            building = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private void Build() => Navigation.NavigateTo(Address(LabMapSpec.Clamped(formHexes, formGroup, formSeed, formTechnique)), forceLoad: true);
+
+    private async Task Toggle(string layer)
+    {
+        if (!visible.Remove(layer))
+        {
+            visible.Add(layer);
+        }
+
+        if (viewport is { IsReady: true })
+        {
+            await viewport.SetVisible(visible);
+        }
+    }
+
+    private async Task Measure()
+    {
+        if (map is null)
+        {
+            return;
+        }
+
+        measuring = true;
+        error = null;
+        try
+        {
+            foreach (var zoom in new[] { 0, 5 })
+            {
+                var record = await JS.InvokeAsync<JsonElement>("mapProbe", closing.Token, new { zoom });
+                Maps.Record(Read(record, zoom));
+                StateHasChanged();
+            }
+
+            timings = Maps.Timings(spec);
+        }
+        catch (Exception exception) when (exception is JSException or TaskCanceledException)
+        {
+            error = "The measure failed: " + exception.Message;
+        }
+        catch (JSDisconnectedException)
+        {
+            return;
+        }
+        finally
+        {
+            measuring = false;
+        }
+    }
+
+    private LabRun Read(JsonElement record, int zoom)
+    {
+        var drag = record.GetProperty("drag");
+        var wheel = record.GetProperty("wheel");
+        var pane = record.GetProperty("viewport");
+        string Of(JsonElement element, string name) => element.TryGetProperty(name, out var value) ? value.ToString() : "-";
+        return new LabRun($"{Count(map!.HexCount)} {map.Spec.Technique.ToString().ToLowerInvariant()}", zoom == 0 ? "Fit" : $"{zoom} in",
+            Count(record.GetProperty("elements").GetInt32()), Of(drag, "framesPerSecond"), Of(drag, "medianFrameMs"), Of(drag, "longestFrameMs"),
+            Of(drag, "settleMs"), Of(wheel, "settleMs"), $"{pane[0]} by {pane[1]}");
+    }
+
+    private string Address(LabMapSpec next) => Navigation.GetUriWithQueryParameters("lab/maps", new Dictionary<string, object?>
+    {
+        ["n"] = next.Hexes,
+        ["g"] = next.Group,
+        ["s"] = next.Seed,
+        ["tech"] = next.Technique.ToString().ToLowerInvariant(),
+        ["mapMetrics"] = "1",
+        ["transform"] = next.Technique == LabTechnique.Elements ? "0" : null,
+    });
+
+    private bool TransformOff() =>
+        Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query).TryGetValue("transform", out var value) && value == "0";
+
+    private string LayerName(string layer) => layer switch
+    {
+        LabMapRenderer.TerrainLayer => spec.Technique == LabTechnique.TilesLines ? "Terrain, grid, and boundaries" : "Terrain",
+        LabMapRenderer.GridLayer => "Grid",
+        LabMapRenderer.BoundariesLayer => "Formation boundaries",
+        _ => "Labels",
+    };
+
+    private static string Count(int value) => value.ToString("N0", CultureInfo.InvariantCulture);
+
+    private static string Megabytes(int bytes) => (bytes / 1_048_576.0).ToString("0.0", CultureInfo.InvariantCulture) + " MB";
+
+    public void Dispose()
+    {
+        closing.Cancel();
+        closing.Dispose();
+    }
+}

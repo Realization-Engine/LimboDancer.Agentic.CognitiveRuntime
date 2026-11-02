@@ -1370,6 +1370,31 @@
       ]
     },
     {
+      "name": "MapLab",
+      "path": "Components/Pages/MapLab.razor",
+      "pages": [
+        "/lab/maps"
+      ],
+      "usedBy": [],
+      "controls": [
+        {
+          "kind": "button",
+          "label": "Build",
+          "dynamic": false,
+          "status": "needed",
+          "strip": "MapLab"
+        },
+        {
+          "kind": "button",
+          "label": "@(measuring ? \u0022Measuring...\u0022 : \u0022Measure at Fit and zoomed in\u0022)",
+          "dynamic": true,
+          "id": "map-lab-measure",
+          "status": "needed",
+          "strip": "MapLab toolbar"
+        }
+      ]
+    },
+    {
       "name": "MinigameList",
       "path": "Components/Pages/MinigameList.razor",
       "pages": [

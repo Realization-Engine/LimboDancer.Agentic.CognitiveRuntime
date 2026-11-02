@@ -22,6 +22,7 @@ public static class Program
         builder.Services.AddSingleton<IBoardProvider, StudioBoardProvider>();
         builder.Services.AddSingleton<RenderCache>();
         builder.Services.AddSingleton(services => new TileCache(services.GetService<ILogger<TileCache>>()));
+        builder.Services.AddSingleton<Services.MapLab.LabMapCache>();
         builder.Services.AddSingleton<FidelityReportStore>();
         builder.Services.AddSingleton<MapHexIndexStore>();
         builder.Services.AddSingleton<IFidelityBatch, VaslFidelityBatch>();
@@ -52,6 +53,7 @@ public static class Program
         app.UseAntiforgery();
         app.MapStaticAssets();
         app.MapRenderEndpoints();
+        Services.MapLab.LabMapEndpoints.MapLabMapEndpoints(app);
         app.MapPost("/api/campaign/import", (HttpContext context, CampaignImportRequest request, CampaignImport service) =>
         {
             // Local server-to-server import only; browser-origin writes are refused.
