@@ -298,7 +298,7 @@ The user ran `mapProbe()` in an ordinary Chrome 156 window, without automation, 
 | Label layer switch | 174 ms | 129 ms |
 | Long Animation Frames during the wheel burst | 0 | 0 |
 
-The ordinary browser does not change the finding; it sharpens it.
+The ordinary browser does not change the finding; it sharpens it. Most drag frames take 12 ms, but a few take most of a second (9 frames in 1.7 s), so a drag stutters rather than crawls: the browser paints quickly while it can reuse what it drew, and stalls when the moved view needs the terrain painted again. That is the cost B4 removes. The 50 frames per second and 100 ms label thresholds are still not met. M1 is done; B4 waits for its plan and the user's word.
 
 ## 11. Results of B4, raster tiles (2026-11-02)
 
@@ -319,7 +319,22 @@ Hiding the grid gains about 4 frames per second (23 to 27), so a grid drawn for 
 
 The Claude pane could not judge this (plan, deviation D5): with every layer hidden it still drags at about 11 frames per second.
 
-**Non-campaign maps.** Every Exact view now draws tiles, small maps included. Checked on 2026-11-02 by drawing the vector terrain and elevation layers and the level-0 tiles onto canvases and comparing every pixel: VASL board bd01 (`dl-tractor-works-02` in Replay, four tiles, 628,000 pixels) and the Gambit card's joined map (bd01 above a reversed bd02, all twelve tiles, 2.3 million pixels, across the seam): no pixel differs. A single board at Fit uses level 0, so it looks as before; only far zoom on a large map shows the averaged look. Most drag frames take 12 ms, but a few take most of a second (9 frames in 1.7 s), so a drag stutters rather than crawls: the browser paints quickly while it can reuse what it drew, and stalls when the moved view needs the terrain painted again. That is the cost B4 removes. The 50 frames per second and 100 ms label thresholds are still not met. M1 is done; B4 waits for its plan and the user's word.
+**Non-campaign maps.** Every Exact view now draws tiles, small maps included. Checked on 2026-11-02 by drawing the vector terrain and elevation layers and the level-0 tiles onto canvases and comparing every pixel: VASL board bd01 (`dl-tractor-works-02` in Replay, four tiles, 628,000 pixels) and the Gambit card's joined map (bd01 above a reversed bd02, all twelve tiles, 2.3 million pixels, across the seam): no pixel differs. A single board at Fit uses level 0, so it looks as before; only far zoom on a large map shows the averaged look.
+
+## 12. What a drag frame costs with tiles (2026-11-02)
+
+Measured by the user in Chrome 156 at 2,033 by 803, Goodwood, tiles on (PR 104 merged), with the counter layer hidden by a console line and other layers by the probe's `hide` option; three runs each, the first of each set dropped as warm-up.
+
+| Case | At Fit: frames per second, median frame | At playing zoom (labels shown) |
+|---|---|---|
+| Every layer | 24 to 25, 35 ms | 13.4 to 13.6, 71 ms (longest 235 to 271 ms) |
+| Counters hidden | 40, 24 ms | 13.7 to 14.4, 47 ms (longest about 420 ms) |
+| Counters and grid hidden | 52 to 53, 12 ms | 13 to 19, 47 to 59 ms |
+| Empty map (every layer hidden) | 58 to 64, 12 ms | 21 to 24, 35 ms (longest 130 to 377 ms) |
+
+At Fit the counters and the grid each take about a third of a frame. At playing zoom neither does: an empty map is three times slower than at Fit. The long-frame breakdown (Long Animation Frames, every layer and empty map) puts 45 to 107 ms of each long frame in style, layout, and paint and 0 to 13 ms in script. Paint flashing in the user's Chrome shows the whole map area repainted on every drag frame, and the side panels not.
+
+So at playing zoom the cost is repainting the map at all, not what it holds: B6 and the grid in tiles would gain little there. Pan by transform (B3), which moves the painted map without painting it, is planned next (the Pan by Transform Plan, awaiting the user's approval); its first trial (10.2) was measured only in the pane, which cannot judge speed. Why an empty map is slower at playing zoom than at Fit is not yet known.
 
 ## Related documents
 
