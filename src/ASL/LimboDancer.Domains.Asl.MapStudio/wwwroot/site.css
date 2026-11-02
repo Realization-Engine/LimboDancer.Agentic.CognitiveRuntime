@@ -4963,3 +4963,59 @@ button[data-working]::after {
         max-width: 100%;
     }
 }
+
+/* Map Lab Plan: the form, the map at most of the window's height, and the measures below it. */
+.map-lab-form {
+    margin-bottom: 0.75rem;
+}
+
+.map-lab-form input[type="number"] {
+    width: 8rem;
+}
+
+.map-lab-layers {
+    margin: 0.5rem 0;
+    border: 0;
+    padding: 0;
+}
+
+.map-lab-layers legend {
+    float: left;
+    margin-right: 0.5rem;
+    color: var(--muted);
+}
+
+.map-lab-map {
+    display: flex;
+    height: 70vh;
+    min-height: 16rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.map-lab-figures table {
+    margin-top: 0.75rem;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.map-lab-figures caption {
+    text-align: left;
+    font-weight: 600;
+    padding-bottom: 0.25rem;
+}
+
+.map-lab-figures th,
+.map-lab-figures td {
+    padding: 0.2rem 0.6rem;
+    border-bottom: 1px solid var(--line-soft);
+    text-align: left;
+    white-space: nowrap;
+}
+
+@media (max-width: 1023.98px) {
+    .map-lab-figures {
+        overflow-x: auto;
+    }
+}

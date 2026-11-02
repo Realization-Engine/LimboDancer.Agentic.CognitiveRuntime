@@ -116,8 +116,23 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
             return null;
         }
 
-        DropOtherVersions(board);
-        var key = new TileKey(board.Ref.Value, board.Version, variant, level, column, row);
+        return Get(board.Ref.Value, board.Version, variant, level, column, row, key => Paint(input, key));
+    }
+
+    /// <summary>
+    /// The tile of any source that names itself and its version (the Map Lab's generated maps): held and bounded as a board's tiles are, and
+    /// painted by <paramref name="paint"/> when not held. The caller checks the tile lies in its pyramid.
+    /// </summary>
+    public RenderedTile Get(string source, string version, TileVariant variant, int level, int column, int row, Func<byte[]> paint)
+    {
+        ArgumentNullException.ThrowIfNull(paint);
+        return Get(source, version, variant, level, column, row, key => PaintWith(key, paint));
+    }
+
+    private RenderedTile Get(string source, string version, TileVariant variant, int level, int column, int row, Func<TileKey, RenderedTile> paint)
+    {
+        DropOtherVersions(source, version);
+        var key = new TileKey(source, version, variant, level, column, row);
         lock (gate)
         {
             if (entries.TryGetValue(key, out var node))
@@ -129,7 +144,7 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
         }
 
         // One fill per key: requests that arrive while it is painted wait for the same painting.
-        var fill = filling.GetOrAdd(key, _ => new Lazy<RenderedTile>(() => Paint(input, key), LazyThreadSafetyMode.ExecutionAndPublication));
+        var fill = filling.GetOrAdd(key, _ => new Lazy<RenderedTile>(() => paint(key), LazyThreadSafetyMode.ExecutionAndPublication));
         try
         {
             var tile = fill.Value;
@@ -142,10 +157,13 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
         }
     }
 
-    private RenderedTile Paint(BoardRenderInput input, TileKey key)
+    private RenderedTile Paint(BoardRenderInput input, TileKey key) =>
+        PaintWith(key, () => TilePainter.Png(input.Grid, input.Catalog, key.Variant, key.Level, key.Column, key.Row));
+
+    private RenderedTile PaintWith(TileKey key, Func<byte[]> paint)
     {
         var timer = Stopwatch.StartNew();
-        var png = TilePainter.Png(input.Grid, input.Catalog, key.Variant, key.Level, key.Column, key.Row);
+        var png = paint();
         Interlocked.Increment(ref painted);
         LoadMeasurements.Record(logger, key.Board, FileName(key.Variant, key.Level, key.Column, key.Row), timer.Elapsed.TotalMilliseconds);
         return new RenderedTile(png, "\"" + Convert.ToHexStringLower(SHA256.HashData(png)) + "\"");
@@ -169,17 +187,17 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
         }
     }
 
-    private void DropOtherVersions(StudioBoard board)
+    private void DropOtherVersions(string source, string version)
     {
-        if (versions.TryGetValue(board.Ref.Value, out var held) && held == board.Version)
+        if (versions.TryGetValue(source, out var held) && held == version)
         {
             return;
         }
 
         lock (gate)
         {
-            versions[board.Ref.Value] = board.Version;
-            foreach (var node in entries.Values.Where(node => node.Value.Key.Board == board.Ref.Value && node.Value.Key.Version != board.Version).ToList())
+            versions[source] = version;
+            foreach (var node in entries.Values.Where(node => node.Value.Key.Board == source && node.Value.Key.Version != version).ToList())
             {
                 Remove(node);
             }

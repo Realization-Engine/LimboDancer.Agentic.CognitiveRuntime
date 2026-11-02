@@ -1775,3 +1775,16 @@ Written on 2026-11-01 for the [Large Campaign Map Analysis](<Memory-And-Performa
 | The Campaign host's memory after a hand-off (D1) and the Studio's import peak (D2) | The analysis, section 3.4 | None | Their own measurement | PilotHost holds about 2.2 GB after the Goodwood hand-off; the Studio peaked at about 4 GB during it |
 | A drag pans by the pane's width, not by the viewBox's fit | Found by the plan's task 6 test | None | Fixed 2026-11-02 at the user's word (branch `claude/letterbox-drag-speed`) | A drag moves the map by the board on screen (`visibleBox`) over the pane: on Goodwood, letterboxed 2.49 to 1, 200 by 80 pixels of pointer move the map 200 by 80 at Fit, at playing zoom, and turned (before: 94 for 200). Node tests for the panned and the plain path |
 | Pan by a compositor transform (B3) | Measured worse in the pane's Chromium (analysis, 10.2) | None | Built by the [Pan by Transform Plan](<Memory-And-Performance/ASL Map Studio Pan by Transform Plan.md>) on branch `claude/pan-by-transform` | Goodwood drags at 77 to 85 frames per second in the user's Chrome (analysis, section 13) |
+
+## 97. Deferred by the Map Lab Plan
+
+Written on 2026-11-02 for the [Map Lab Plan](<Memory-And-Performance/ASL Map Studio Map Lab Plan.md>). The Map Lab is a bench: nothing here is applied to another map until the user has reason to. Rendering and measurement only: no rule is involved.
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The `canvas` technique (task 4) | The plan: only if `tiles` falls below 60 frames per second at 100,000 hexes | None | A case `tileslines` does not cover | `tiles` fell to 15 there, but `tileslines` runs at about 85 frames per second up to 1,000,000 hexes (plan, section 8.1) |
+| Labels' data that does not grow with the map | Plan, section 8.1, finding F7 | None | A map whose label data is slow to load | At 1,000,000 hexes the labels are 24.5 MB of JSON, sent whole |
+| The grid and the Formation boundaries drawn as vectors for the hexes in view only | `tileslines` was built instead (plan, section 8.1) | None | The user's Chrome figures for `tileslines` | Measured 2026-11-02: at 100,000 hexes the two whole-map paths are the whole cost of a zoomed drag (15 frames per second, longest frame 365 ms); at 1,000,000 Chrome paints neither (93.8 million characters), silently |
+| Faster tile painting with lines | Plan, section 8.1, finding F5 | None | A zoom that feels slow to fill in | A tile with lines takes about 0.75 s; each pixel looks up its hex about five times |
+| Roads and streams in the generator | Decision L3: only if the paths look too light against Goodwood | None | A look at the Lab's maps beside the Goodwood map | Terrain is area terrain alone |
+| A component test of the Lab's form | The plan's section 4 named one; the page was checked in the Studio instead | None | A change to the form's logic | The generator, key, drawing, and tiles have unit tests (`MapLabTests`) |
