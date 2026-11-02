@@ -38,7 +38,14 @@ export function create(host, dotnet) {
     const state = {
         host, svg, dotnet, side: null, box: null, home: null, drag: null, generation: 0, highlight: null,
         tool: "select", points: [], overlay: null, lastHover: 0, comparison: { mode: "none", value: 0.5 }, rotated: false, shape: null,
+        // Pan by Transform Plan: a gesture moves the painted drawing; the view box is committed when it rests. Off with ?transform=0.
+        pan: typeof host.classList?.add === "function" && typeof host.getBoundingClientRect === "function" && !transformOffInAddress(),
+        committed: null, gesturing: false,
     };
+    state.panShown = state.pan;
+    if (state.pan) {
+        host.classList.toggle("pan", true);
+    }
 
     // Pass 29: the turn is remembered for each shape of the map's pane, so turning a tall pane never turns a wide one. A pane resized into the
     // other shape takes that shape's choice.
@@ -50,12 +57,25 @@ export function create(host, dotnet) {
             if (entry.target === svg) {
                 state.size = { width: entry.contentRect.width, height: entry.contentRect.height };
                 state.rect = null;
+            } else if (entry.target === host) {
+                state.hostSize = { width: entry.contentRect.width, height: entry.contentRect.height };
+                state.rect = null;
+                // A host whose height comes from its drawing (the card editor's map) collapses once the drawing is placed absolutely: that
+                // viewport keeps the drawing in the flow and pans as before (Pan by Transform Plan, deviation E6).
+                if (state.pan && entry.contentRect.width > 0 && entry.contentRect.height === 0) {
+                    state.pan = false;
+                    state.panShown = false;
+                    host.classList.toggle("pan", false);
+                }
             }
         }
 
         applyShape(state);
         if (state.fitted) {
             reset(state);
+        } else if (panOn(state) && state.box) {
+            // A new pane size paints a new margin.
+            setBox(state, state.box, false);
         } else {
             updateUnitTier(state);
             updateLabelDetail(state);
@@ -85,6 +105,7 @@ export function create(host, dotnet) {
         }
 
         event.preventDefault();
+        gestureStarted(state);
         zoomAt(state, toBoard(state, event.clientX, event.clientY), event.deltaY < 0 ? 0.8 : 1.25, true);
         clearTimeout(state.wheelRest);
         state.wheelRest = setTimeout(() => gestureEnded(state), gestureRest);
@@ -137,6 +158,7 @@ export function create(host, dotnet) {
             return;
         }
 
+        gestureStarted(state);
         // Turned a quarter clockwise (pass 29), the map's x runs down the screen and its y runs to the left.
         const unitsPerPixel = drag.box.width / paneSize(state).width;
         const [mx, my] = state.rotated ? [dy, -dx] : [dx, dy];
@@ -378,7 +400,7 @@ function updateTiles(state) {
 
     const scale = Math.min(size.width / state.box.width, size.height / state.box.height);
     const ratio = globalThis.devicePixelRatio || 1;
-    const view = tilesInView(tiles.index, visibleBox(state.box, size), scale * ratio);
+    const view = tilesInView(tiles.index, drawnBox(state), scale * ratio);
     // While a zoom is still moving, keep the level drawn: asking for every level the zoom passes through paints tiles nobody sees.
     const sinceZoom = performance.now() - (state.lastZoom ?? -Infinity);
     if (tiles.level !== null && view.level !== tiles.level && sinceZoom < tileSettleMs) {
@@ -413,10 +435,11 @@ function updateTiles(state) {
     }
 
     // Sharp cells only when a cell is larger than a device pixel; shrunk tiles keep the browser's smoothing, so they do not shimmer.
+    // A data attribute and a site.css rule, not a style attribute (site.css: viewport state without style attributes).
     const sharp = view.level === 0 && scale * ratio > 1;
     if (tiles.sharp !== sharp) {
         tiles.sharp = sharp;
-        tiles.group.style.imageRendering = sharp ? "pixelated" : "";
+        tiles.group.setAttribute("data-sharp", String(sharp));
     }
 
     tiles.level = view.level;
@@ -513,7 +536,7 @@ function updateLabels(state) {
     }
 
     const shown = state.box && layer.getAttribute("data-detail-visible") === "true" && layer.getAttribute("data-layer-hidden") !== "true";
-    const wanted = shown ? labelsInView(index, visibleBox(state.box, paneSize(state))) : [];
+    const wanted = shown ? labelsInView(index, drawnBox(state)) : [];
     for (const svg of [state.svg, state.side]) {
         const texts = svg?.querySelector("#layer-labels")?.firstElementChild;
         if (texts) {
@@ -533,6 +556,69 @@ export function visibleBox(box, size) {
     const width = size.width / scale;
     const height = size.height / scale;
     return { x: box.x - (width - box.width) / 2, y: box.y - (height - box.height) / 2, width, height };
+}
+
+// Pan by Transform Plan: the drawing is painted larger than the pane by this share of the pane on every side (decision P1), so a gesture
+// moves painted map; site.css sizes .board-host.pan > .board-svg to match (1 + 2 x 0.5 = twice the pane).
+const panMargin = 0.5;
+
+// The box a commit paints: the part of the board on screen, widened by the margin on every side.
+export function committedBox(visible, margin = panMargin) {
+    return {
+        x: visible.x - visible.width * margin, y: visible.y - visible.height * margin,
+        width: visible.width * (1 + 2 * margin), height: visible.height * (1 + 2 * margin),
+    };
+}
+
+// The CSS transform that shows the committed drawing as the board now on screen: the drawing's own pixels (origin 0 0) scaled by k and
+// moved by (x, y), in a drawing that sits the margin's share of the pane up and left of the pane's corner.
+export function gestureTransform(committed, visible, size, margin = panMargin) {
+    const painted = committed.width / (1 + 2 * margin);
+    const scaleAtCommit = size.width / painted;
+    const scaleNow = size.width / visible.width;
+    return {
+        k: scaleNow / scaleAtCommit,
+        x: margin * size.width + (committed.x - visible.x) * scaleNow,
+        y: margin * size.height + (committed.y - visible.y) * scaleNow,
+    };
+}
+
+// Whether a gesture must repaint: the board on screen within a tenth of the pane of the painted edge, or zoomed in past twice the painted
+// scale, where the drawing would blur (decision P3).
+export function needsCommit(committed, visible, margin = panMargin) {
+    const edgeX = visible.width * 0.1;
+    const edgeY = visible.height * 0.1;
+    const painted = committed.width / (1 + 2 * margin);
+    return visible.x - edgeX < committed.x || visible.y - edgeY < committed.y
+        || visible.x + visible.width + edgeX > committed.x + committed.width
+        || visible.y + visible.height + edgeY > committed.y + committed.height
+        || painted / visible.width > 2;
+}
+
+// The drawing's transform during a gesture: site.css's at-rest transform (the turn and the margin, for a turned map), then the move.
+export function gestureCss(rotated, move) {
+    const gesture = `translate(${move.x}px, ${move.y}px) scale(${move.k})`;
+    return rotated ? `translateX(100cqw) rotate(90deg) translate(-50cqh, -50cqw) ${gesture}` : gesture;
+}
+
+// ?transform=0 in the address or in the address the page was opened with, as ?tiles=0.
+export function transformOffInAddress(addresses = [globalThis.location?.href, globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.name]) {
+    return addresses.some(address => {
+        try {
+            return address ? new URL(address).searchParams.get("transform") === "0" : false;
+        } catch {
+            return false;
+        }
+    });
+}
+
+function panOn(state) {
+    return state.pan && state.comparison.mode !== "side";
+}
+
+// The part of the board drawn now: with pan by transform the committed box (the margin included), otherwise the part on screen.
+function drawnBox(state) {
+    return panOn(state) && state.committed ? state.committed : visibleBox(state.box, paneSize(state));
 }
 
 // Reuses the group's text elements: each keeps the index it shows, and is changed only when that index changes.
@@ -748,6 +834,15 @@ function applyComparison(state) {
     }
 
     state.host.classList.toggle("side-by-side", mode === "side");
+    // Side by side lays two drawings in a row, so pan by transform rests while it shows (Pan by Transform Plan, deviation E2).
+    if (state.pan && state.panShown !== panOn(state)) {
+        state.panShown = panOn(state);
+        state.host.classList.toggle("pan", state.panShown);
+        if (state.box) {
+            setBox(state, state.box, state.fitted);
+        }
+    }
+
     if (mode !== "side" && state.side) {
         state.side.remove();
         state.side = null;
@@ -1075,7 +1170,20 @@ async function runProbe(state, options = {}) {
         await frame();
     }
 
-    const rect = state.svg.getBoundingClientRect();
+    // Pan by Transform Plan, task 1: a run at a set zoom (steps of the + key from Fit), so runs at Fit and at playing zoom repeat exactly.
+    const viewBefore = { box: { ...state.box }, fitted: state.fitted };
+    if (options.zoom !== undefined) {
+        reset(state);
+        for (let step = 0; step < options.zoom; step++) {
+            zoomCenter(state, 0.8);
+        }
+
+        await frame();
+        await new Promise(resolve => setTimeout(resolve, options.settleWaitMs ?? 1500));
+    }
+
+    // The map's container, not the drawing: with pan by transform the drawing is larger than the pane.
+    const rect = state.host.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     const saved = { box: { ...state.box }, fitted: state.fitted };
@@ -1107,9 +1215,12 @@ async function runProbe(state, options = {}) {
         dragTimes.push(await frame());
     }
     pointer("pointerup", cx + distance, cy);
+    // The settling after the drag: from pointer up to the second frame after it, the first painted after any repaint the drag left.
+    const upAt = performance.now();
     dragTimes.push(await frame());
+    const settledAt = await frame();
     await new Promise(resolve => setTimeout(resolve, 50));
-    const drag = { ...summarizeFrames(dragTimes), ...loafSince(dragStart) };
+    const drag = { ...summarizeFrames(dragTimes), settleMs: Math.round(settledAt - upAt), ...loafSince(dragStart) };
 
     // A burst of wheel events in one task, as a trackpad sends them, then the frames until the map settles.
     setBox(state, saved.box, saved.fitted);
@@ -1144,8 +1255,12 @@ async function runProbe(state, options = {}) {
         setVisible(state, shownBefore);
     }
 
+    if (options.zoom !== undefined) {
+        setBox(state, viewBefore.box, viewBefore.fitted);
+    }
+
     const record = {
-        when: new Date().toISOString(), board: state.baseUrl, hidden: hide, elements: state.svg.getElementsByTagName("*").length,
+        when: new Date().toISOString(), board: state.baseUrl, zoom: options.zoom ?? null, hidden: hide, elements: state.svg.getElementsByTagName("*").length,
         tiles: state.tiles ? { level: state.tiles.level, shown: state.tiles.pool.size } : null,
         counters: state.svg.querySelectorAll("#layer-units [data-unit-id]").length, viewport: [Math.round(rect.width), Math.round(rect.height)],
         boxWidth: Math.round(saved.box.width), drag, wheel, labelSwitchMs, userAgent: globalThis.navigator?.userAgent,
@@ -1230,29 +1345,76 @@ function flushBox(state) {
 
     // Taken before any write, while the layout of the last frame still holds, so reading it costs nothing (A2).
     takeRect(state);
-    const value = `${state.box.x} ${state.box.y} ${state.box.width} ${state.box.height}`;
+    let shown = state.box;
+    if (panOn(state)) {
+        const size = paneSize(state);
+        if (!size.width || !size.height) {
+            return;
+        }
+
+        const visible = visibleBox(state.box, size);
+        // During a gesture the painted drawing is moved, not painted again, until the board on screen nears its painted edge.
+        if (state.gesturing && state.committed && !needsCommit(state.committed, visible)) {
+            const move = gestureTransform(state.committed, visible, size);
+            // The transform itself, not an inherited custom property: a custom property restyles every element of the map each frame, and
+            // Chrome repainted the map (Pan by Transform Plan, deviation E3); a change of transform alone only moves the painted layer.
+            state.svg.style?.setProperty?.("transform", gestureCss(state.rotated, move));
+            return;
+        }
+
+        state.committed = committedBox(visible);
+        shown = state.committed;
+    } else {
+        state.committed = null;
+    }
+
+    // The one exception to site.css's rule of no style attributes (as the first trial's, Large Campaign Map Plan task 6): the gesture's
+    // transform, cleared at every commit, which hands the drawing back to site.css's rule.
+    state.svg.style?.removeProperty?.("transform");
+    const value = `${shown.x} ${shown.y} ${shown.width} ${shown.height}`;
     if (state.svg.getAttribute?.("viewBox") !== value) {
         state.svg.setAttribute("viewBox", value);
     }
-    state.side?.setAttribute("viewBox", value);
+    state.side?.setAttribute("viewBox", `${state.box.x} ${state.box.y} ${state.box.width} ${state.box.height}`);
     updateUnitTier(state);
     updateLabelDetail(state);
     updateLabels(state);
     updateTiles(state);
 }
 
+// A gesture starts: the drawing gets its own compositor layer for the gesture's length (site.css, .board-host.gesturing).
+function gestureStarted(state) {
+    if (panOn(state) && !state.gesturing) {
+        state.gesturing = true;
+        state.host.classList.add("gesturing");
+    }
+}
+
 function gestureEnded(state) {
     clearTimeout(state.wheelRest);
     rememberView(state);
+    if (state.gesturing) {
+        state.gesturing = false;
+        state.host.classList?.remove("gesturing");
+        // The rest: one commit paints the view and its margin.
+        setBox(state, state.box, state.fitted);
+    }
 }
 
 // The drawing's size in CSS pixels, before any turn: from the size observer (A2), or read once where there is none.
 function paneSize(state) {
+    if (panOn(state)) {
+        // With pan by transform the drawing is larger than the pane: the pane is the host, before any turn.
+        const host = state.hostSize ?? { width: state.host.clientWidth, height: state.host.clientHeight };
+        return state.rotated ? { width: host.height, height: host.width } : host;
+    }
+
     return state.size ?? { width: state.svg.clientWidth, height: state.svg.clientHeight };
 }
 
 function takeRect(state) {
-    state.rect = typeof state.svg.getBoundingClientRect === "function" ? state.svg.getBoundingClientRect() : null;
+    const target = panOn(state) ? state.host : state.svg;
+    state.rect = typeof target.getBoundingClientRect === "function" ? target.getBoundingClientRect() : null;
 }
 
 // From a pointer to board coordinates without the screen matrix, which would lay out the map (A2): the drawing's rectangle on screen, the
@@ -1260,7 +1422,8 @@ function takeRect(state) {
 // default fit (xMidYMid meet). The screen matrix stays the answer when no rectangle or size is known yet.
 function toBoard(state, clientX, clientY) {
     const rect = state.rect;
-    const size = state.size;
+    // With pan by transform the pane is the host, and the view box, never the moved drawing, says what is under the pointer.
+    const size = panOn(state) && state.hostSize ? paneSize(state) : state.size;
     const box = state.box;
     if (rect && size && box && size.width > 0 && size.height > 0) {
         const [lx, ly] = state.rotated ? [clientY - rect.top, rect.right - clientX] : [clientX - rect.left, clientY - rect.top];

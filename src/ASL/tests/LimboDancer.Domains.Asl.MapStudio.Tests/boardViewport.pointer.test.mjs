@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
-const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
+    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -204,6 +205,166 @@ test("?tiles=0 turns tiles off from the address or the address the page was open
     assert.equal(tilesOffInAddress(["http://localhost/games/replay?game=x&step=4", "http://localhost/games/replay?game=x&tiles=0"]), true);
     assert.equal(tilesOffInAddress(["http://localhost/games/replay?game=x&tiles=1", "http://localhost/"]), false);
     assert.equal(tilesOffInAddress([undefined, "not an address"]), false);
+});
+
+// Pan by Transform Plan, task 2. A 200 by 100 pane showing board 0..200 by 0..100 at one pixel a unit, painted half a pane beyond it.
+const pane = { width: 200, height: 100 };
+const onScreen = { x: 0, y: 0, width: 200, height: 100 };
+const painted = committedBox(onScreen);
+
+test("a commit paints the board on screen and half a pane on every side", () => {
+    assert.deepEqual(painted, { x: -100, y: -50, width: 400, height: 200 });
+});
+
+test("the gesture transform shows the painted drawing as the board now on screen", () => {
+    // Unmoved: nothing to do, since the drawing already sits half a pane up and left.
+    assert.deepEqual(gestureTransform(painted, onScreen, pane), { k: 1, x: 0, y: 0 });
+    // Dragged 20 units right on the board: the drawing moves 20 pixels left.
+    assert.deepEqual(gestureTransform(painted, { ...onScreen, x: 20 }, pane), { k: 1, x: -20, y: 0 });
+    // Zoomed in twice about board point (100, 50), the pane's centre: that point stays at the centre, pixel (100, 50).
+    const zoomed = gestureTransform(painted, { x: 50, y: 25, width: 100, height: 50 }, pane);
+    assert.deepEqual(zoomed, { k: 2, x: -200, y: -100 });
+    // Board (100, 50) is drawing pixel (200, 100) at the commit; moved, -100 + 200 x 2 - 200 = 100 and -50 + 100 x 2 - 100 = 50.
+    assert.deepEqual([-100 + 200 * zoomed.k + zoomed.x, -50 + 100 * zoomed.k + zoomed.y], [100, 50]);
+});
+
+test("a gesture repaints near the painted edge, on a zoom out about any point, and past twice the scale", () => {
+    assert.equal(needsCommit(painted, onScreen), false);
+    // A tenth of the pane is 20 units: a drag of 75 left keeps 25 of margin, one of 85 keeps 15.
+    assert.equal(needsCommit(painted, { ...onScreen, x: -75 }), false);
+    assert.equal(needsCommit(painted, { ...onScreen, x: -85 }), true);
+    // Two wheel steps out (1.5625) about the left edge reach the right edge; the same zoom about the centre stays inside.
+    assert.equal(needsCommit(painted, { x: 0, y: -28.125, width: 312.5, height: 156.25 }), true);
+    assert.equal(needsCommit(painted, { x: -56.25, y: -28.125, width: 312.5, height: 156.25 }), false);
+    assert.equal(needsCommit(painted, { x: 50, y: 25, width: 100, height: 50 }), false);
+    assert.equal(needsCommit(painted, { x: 60, y: 30, width: 80, height: 40 }), true);
+});
+
+test("the gesture's transform repeats the turned map's own before the move", () => {
+    const move = { k: 1.25, x: -50, y: -25 };
+    assert.equal(gestureCss(false, move), "translate(-50px, -25px) scale(1.25)");
+    assert.equal(gestureCss(true, move), "translateX(100cqw) rotate(90deg) translate(-50cqh, -50cqw) translate(-50px, -25px) scale(1.25)");
+});
+
+test("?transform=0 turns pan by transform off from the address or the address the page was opened with", () => {
+    assert.equal(transformOffInAddress(["http://localhost/games/play?transform=0", undefined]), true);
+    assert.equal(transformOffInAddress(["http://localhost/games/replay?step=3", "http://localhost/games/replay?transform=0"]), true);
+    assert.equal(transformOffInAddress(["http://localhost/games/play?tiles=0", "http://localhost/"]), false);
+});
+
+// A viewport whose host can pan by transform: a full class list and its own rectangle, sized by the observer.
+async function panFixture(rect, hostSize, rotated) {
+    const previous = globalThis.ResizeObserver;
+    let watch = null;
+    globalThis.ResizeObserver = class { constructor(callback) { watch = callback; } observe() {} disconnect() {} };
+    try {
+        const fixture = viewportFixture();
+        const classes = new Set();
+        Object.assign(fixture.host, {
+            classList: { toggle: (name, on) => (on ?? !classes.has(name)) ? classes.add(name) : classes.delete(name), add: name => classes.add(name),
+                remove: name => classes.delete(name), contains: name => classes.has(name) },
+            getBoundingClientRect: () => rect,
+        });
+        // The viewport reads the host when it is made, so it is made again on the full host.
+        const viewport = create(fixture.host, { invokeMethodAsync(...args) { fixture.calls.push(args); } });
+        const style = new Map();
+        fixture.svg.style = { setProperty: (name, value) => style.set(name, value), removeProperty: name => style.delete(name) };
+        await viewport.load("render/board/version/exact", "", "0 0 1000 1000", ["grid"], ["grid"]);
+        if (rotated) viewport.setRotation(true);
+        watch([{ target: fixture.host, contentRect: hostSize }]);
+        return { ...fixture, viewport, classes, style };
+    } finally {
+        globalThis.ResizeObserver = previous;
+    }
+}
+
+test("panned, a click is read from the host's rectangle and the view, and the drawing paints the margin", async () => {
+    const { svg, handlers, calls, classes } = await panFixture({ left: 10, top: 20, right: 210, bottom: 120 }, { width: 200, height: 100 }, false);
+    svg.getScreenCTM = () => { throw new Error("the screen matrix lays out the map"); };
+    assert.ok(classes.has("pan"));
+    // The 1000 by 1000 box in a 200 by 100 pane: 2000 by 1000 on screen, letterboxed, and half a pane more on each side.
+    assert.equal(svg.attributes.viewBox, "-1500 -500 4000 2000");
+    handlers.get("pointerdown")({ pointerId: 1, button: 0, clientX: 85, clientY: 50, target: svg });
+    handlers.get("pointerup")({ pointerId: 1, clientX: 85, clientY: 50, target: svg });
+    assert.deepEqual(calls.at(-1), ["OnBoardClick", 250, 300]);
+});
+
+test("panned and turned, a click is read through the quarter turn", async () => {
+    const { svg, handlers, calls } = await panFixture({ left: 10, top: 20, right: 110, bottom: 220 }, { width: 100, height: 200 }, true);
+    svg.getScreenCTM = () => { throw new Error("the screen matrix lays out the map"); };
+    handlers.get("pointerdown")({ pointerId: 1, button: 0, clientX: 80, clientY: 95, target: svg });
+    handlers.get("pointerup")({ pointerId: 1, clientX: 80, clientY: 95, target: svg });
+    assert.deepEqual(calls.at(-1), ["OnBoardClick", 250, 300]);
+});
+
+test("a drag moves the painted drawing without a new view box, and its end commits once", async () => {
+    const previousFrame = globalThis.requestAnimationFrame;
+    const frames = [];
+    try {
+        const { svg, handlers, classes, style } = await panFixture({ left: 0, top: 0, right: 200, bottom: 100 }, { width: 200, height: 100 }, false);
+        globalThis.requestAnimationFrame = callback => frames.push(callback);
+        const before = svg.attributes.viewBox;
+        handlers.get("pointerdown")({ pointerId: 1, button: 0, clientX: 100, clientY: 50, target: svg });
+        handlers.get("pointermove")({ pointerId: 1, clientX: 110, clientY: 50, target: svg });
+        frames.shift()();
+        assert.equal(svg.attributes.viewBox, before);
+        assert.ok(classes.has("gesturing"));
+        // Ten pixels of pointer move the drawing five: a drag pans by the box's width over the pane's, half speed on this 2:1 letterbox (backlog
+        // section 96, unchanged by this plan).
+        assert.equal(style.get("transform"), "translate(5px, 0px) scale(1)");
+        handlers.get("pointerup")({ pointerId: 1, clientX: 110, clientY: 50, target: svg });
+        frames.shift()();
+        assert.notEqual(svg.attributes.viewBox, before);
+        assert.equal(style.has("transform"), false);
+        assert.equal(classes.has("gesturing"), false);
+    } finally {
+        globalThis.requestAnimationFrame = previousFrame;
+    }
+});
+
+test("a wheel step scales the painted drawing, and a zoom past twice its scale commits", async () => {
+    const previousFrame = globalThis.requestAnimationFrame;
+    const frames = [];
+    try {
+        const { svg, handlers, style } = await panFixture({ left: 0, top: 0, right: 200, bottom: 100 }, { width: 200, height: 100 }, false);
+        globalThis.requestAnimationFrame = callback => frames.push(callback);
+        const before = svg.attributes.viewBox;
+        // About the pane's centre, board (500, 500): one step in is a scale of 1.25 with the centre held.
+        handlers.get("wheel")({ deltaY: -100, clientX: 100, clientY: 50, preventDefault() {} });
+        frames.shift()();
+        assert.equal(svg.attributes.viewBox, before);
+        // Board (500, 500) is drawing pixel (200, 100) at the commit; 200 x 1.25 - 50 and 100 x 1.25 - 25 put it back at (200, 100), the
+        // pane's centre once the drawing's half-pane offset is taken off.
+        assert.equal(style.get("transform"), "translate(-50px, -25px) scale(1.25)");
+        // Three more steps: 1.25 ^ 4 = 2.44, past twice the painted scale, so the drawing is painted again.
+        for (let step = 0; step < 3; step++) {
+            handlers.get("wheel")({ deltaY: -100, clientX: 100, clientY: 50, preventDefault() {} });
+            frames.shift()?.();
+        }
+        assert.notEqual(svg.attributes.viewBox, before);
+        assert.equal(style.has("transform"), false);
+    } finally {
+        globalThis.requestAnimationFrame = previousFrame;
+    }
+});
+
+test("side by side, pan by transform rests: the drawing is the pane's and the view box is the view", async () => {
+    const { svg, viewport, classes } = await panFixture({ left: 0, top: 0, right: 200, bottom: 100 }, { width: 200, height: 100 }, false);
+    assert.equal(svg.attributes.viewBox, "-1500 -500 4000 2000");
+    // The fixture's styled-less map has no second drawing to make; the switch alone is under test.
+    viewport.setComparison("side", 0.5);
+    assert.equal(classes.has("pan"), false);
+    assert.equal(svg.attributes.viewBox, "0 0 1000 1000");
+    viewport.setComparison("none", 0.5);
+    assert.equal(classes.has("pan"), true);
+    assert.equal(svg.attributes.viewBox, "-1500 -500 4000 2000");
+});
+
+test("a host whose height comes from its drawing keeps the drawing in the flow", async () => {
+    // The card editor's map: once the drawing is placed absolutely, the host has width and no height.
+    const { svg, classes } = await panFixture({ left: 0, top: 0, right: 600, bottom: 0 }, { width: 600, height: 0 }, false);
+    assert.equal(classes.has("pan"), false);
+    assert.equal(svg.attributes.viewBox, "0 0 1000 1000");
 });
 
 test("the two terrain switches choose the tile variant", () => {

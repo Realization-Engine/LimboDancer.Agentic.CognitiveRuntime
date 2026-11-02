@@ -1840,6 +1840,43 @@ textarea.placements-text {
     display: none;
 }
 
+/* Pan by Transform Plan: the drawing is painted half a pane beyond the pane on every side (panMargin in boardViewport.js). During a gesture
+   the script writes the drawing's transform, the one style property it writes, and clears it at every commit, which hands the drawing back
+   to these rules; gestureCss in boardViewport.js repeats the turned rule's transform before the move. */
+.board-host.pan {
+    position: relative;
+    overflow: hidden;
+}
+
+.board-host.pan > .board-svg {
+    position: absolute;
+    left: -50%;
+    top: -50%;
+    width: 200%;
+    height: 200%;
+    transform-origin: 0 0;
+    transform: none;
+}
+
+/* Turned (pass 29): the drawing's own frame is the pane turned, so the margin applies before the turn. */
+.board-host.pan.rotated > .board-svg {
+    left: 0;
+    top: 0;
+    width: calc(100cqh * 2);
+    height: calc(100cqw * 2);
+    transform: translateX(100cqw) rotate(90deg) translate(-50cqh, -50cqw);
+}
+
+/* A compositor layer of its own only while a gesture lasts. */
+.board-host.pan.gesturing > .board-svg {
+    will-change: transform;
+}
+
+/* Raster Tiles Plan: cells stay sharp when a level-0 tile is magnified. */
+#layer-exact-tiles[data-sharp="true"] {
+    image-rendering: pixelated;
+}
+
 .board-svg[data-comparison-mode="side"] > [id^="layer-styled-"] {
     visibility: hidden;
 }

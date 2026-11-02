@@ -334,7 +334,24 @@ Measured by the user in Chrome 156 at 2,033 by 803, Goodwood, tiles on (PR 104 m
 
 At Fit the counters and the grid each take about a third of a frame. At playing zoom neither does: an empty map is three times slower than at Fit. The long-frame breakdown (Long Animation Frames, every layer and empty map) puts 45 to 107 ms of each long frame in style, layout, and paint and 0 to 13 ms in script. Paint flashing in the user's Chrome shows the whole map area repainted on every drag frame, and the side panels not.
 
-So at playing zoom the cost is repainting the map at all, not what it holds: B6 and the grid in tiles would gain little there. Pan by transform (B3), which moves the painted map without painting it, is planned next (the Pan by Transform Plan, awaiting the user's approval); its first trial (10.2) was measured only in the pane, which cannot judge speed. Why an empty map is slower at playing zoom than at Fit is not yet known.
+So at playing zoom the cost is repainting the map at all, not what it holds: B6 and the grid in tiles would gain little there. Pan by transform (B3), which moves the painted map without painting it, is planned next in the [Pan by Transform Plan](<ASL Map Studio Pan by Transform Plan.md>) (results in section 13); its first trial (10.2) was measured only in the pane, which cannot judge speed. Why an empty map is slower at playing zoom than at Fit is not yet known.
+
+## 13. Results of B3, pan by transform (2026-11-02)
+
+Built on branch `claude/pan-by-transform` by the Pan by Transform Plan. Measured by the user in Chrome 156 at 2,034 by 804, Goodwood, tiles on, with the probe's `zoom` option (0 for Fit, 5 steps in for playing zoom), three runs each. The first build moved the drawing through an inherited custom property, `--gesture`; the second writes the drawing's `transform` itself (plan, deviation E3).
+
+| Measure | Tiles only (section 12) | B3 through `--gesture` | B3 writing `transform` |
+|---|---|---|---|
+| Fit: frames per second | 24 to 25 | 18.8 to 23.7 | 83.3 to 84.7 |
+| Fit: median and longest frame | 35 ms; 71 to 82 ms | 35 ms; 165 to 188 ms | 12 ms; 24 to 35 ms |
+| Playing zoom: frames per second | 13.4 to 13.6 | 12.9 to 16 | 77.2 to 79.8 |
+| Playing zoom: median and longest frame | 71 ms; 235 to 271 ms | 47 to 59 ms; 165 to 282 ms | 12 ms; 59 to 71 ms |
+| Settling after a drag (pointer up to the repainted frame) | not measured | 112 to 271 ms | 46 to 81 ms |
+| A burst of 20 wheel events, to settled | 58 to 75 ms | 97 to 268 ms | 41 to 117 ms |
+
+Every threshold of the plan is met but one: the longest frame at playing zoom, 59 to 71 ms against 50 (its stop line is 150). With `--gesture` the frames still spent 41 to 130 ms in style, layout, and paint (long-frame breakdown, the user's Chrome): a custom property inherits, so changing it restyled every element of the map and Chrome painted it again. Writing `transform` alone lets Chrome move the painted layer. The first trial of B3 (10.2) failed the same way in the pane, through the same kind of property.
+
+A drag at playing zoom went from about 13 frames per second to about 78. B6 (counters by view) and the grid in tiles are no longer needed for drag speed at this map size; they stay in the backlog for larger maps.
 
 ## Related documents
 
