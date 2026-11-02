@@ -275,7 +275,7 @@ No rule, planner, projector, or record changed, so the gate's replay proofs were
 | 50 frames per second during a drag | Not met: about 9 |
 | Turning the labels on or off under 100 ms | Not met: 174 ms |
 
-By decision P3, the next step is B4: raster tiles for the static layers (terrain, elevation, grid), since what remains of a frame is the painting of 3.4 M characters of terrain and 1 M of elevation paths. It waits for the user's word, as does M1, the measurement in an ordinary browser.
+By decision P3, the next step is B4: raster tiles for the static layers (terrain, elevation, grid), since what remains of a frame is the painting of 3.4 M characters of terrain and 1 M of elevation paths. It waits for the user's word. M1, the measurement in an ordinary browser, was made on 2026-11-02 (10.6).
 
 ### 10.5 Deviations from the plan
 
@@ -283,6 +283,41 @@ By decision P3, the next step is B4: raster tiles for the static layers (terrain
 - The labels in view are found by a scan of the hex list (40,442 comparisons, under a millisecond), not a spatial index.
 - B3 is not in the branch (10.2).
 - A drag converts pixels to board units by the pane's width, not by the viewBox's fit, so a letterboxed map pans slower than the pointer. This predates the branch and is left as it is (backlog section 96).
+
+### 10.6 M1: the user's own browser (2026-11-02)
+
+The user ran `mapProbe()` in an ordinary Chrome 156 window, without automation, on main at 579ec15e (the first wave merged), Goodwood reference copy `ref-run-head`, Turn 1 setup, at Fit. One run at a small map size (598 by 240) was discarded; the run below is at 2,033 by 803, about 1.3 times the area of the pane's head run in 10.1.
+
+| Measure | Claude pane, head (1,660 by 756) | User's Chrome (2,033 by 803) |
+|---|---|---|
+| Elements in the map | 4,848 | 4,848 |
+| Drag: frames per second | 8.4 to 9.8 | 5.3 |
+| Drag: median frame | 129 to 141 ms | 12 ms |
+| Drag: longest frame | 165 to 329 ms | 777 ms |
+| A burst of 20 wheel events, to settled | 61 to 179 ms | 116 ms |
+| Label layer switch | 174 ms | 129 ms |
+| Long Animation Frames during the wheel burst | 0 | 0 |
+
+The ordinary browser does not change the finding; it sharpens it.
+
+## 11. Results of B4, raster tiles (2026-11-02)
+
+Built on branch `claude/raster-tiles` by the [Raster Tiles Plan](<ASL Map Studio Raster Tiles Plan.md>). Measured by the user in Chrome 156, at the same 2,033 by 803 window as 10.6, Goodwood at Fit (tile level 3), three runs each.
+
+| Measure | Vectors (10.6) | Tiles, every layer | Tiles, grid hidden |
+|---|---|---|---|
+| Drag: frames per second | 5.3 | 14.3, 23.4, 22.6 | 26.7, 26.7, 18.4 |
+| Drag: median frame | 12 ms | 47, 47, 47 ms | 35, 35, 59 ms |
+| Drag: longest frame | 777 ms | 153, 82, 82 ms | 94, 94, 141 ms |
+| A burst of 20 wheel events, to settled | 116 ms | 70, 58, 75 ms | 98, 47, 82 ms |
+| Label layer switch | 129 ms | 79, 49, 36 ms | 32, 63, 59 ms |
+| Characters in the map | 4.9 million | about 0.5 million | |
+
+Against the plan's thresholds: the longest frame is under 100 ms in two runs of three (the first run's 153 ms most likely includes tiles still decoding); the label switch is under 100 ms for the first time; the wheel burst is under 150 ms. A drag runs at about 23 frames per second, short of the expected 30: it no longer stalls, but each frame costs about 47 ms.
+
+Hiding the grid gains about 4 frames per second (23 to 27), so a grid drawn for free would still not reach 30. By decision T3 the grid stays a vector layer and goes to the backlog. What remains of a frame is mostly neither terrain nor grid; the counter layer (548 stacks) is the likeliest part, which is B6 (counters by view).
+
+The Claude pane could not judge this (plan, deviation D5): with every layer hidden it still drags at about 11 frames per second. Most drag frames take 12 ms, but a few take most of a second (9 frames in 1.7 s), so a drag stutters rather than crawls: the browser paints quickly while it can reuse what it drew, and stalls when the moved view needs the terrain painted again. That is the cost B4 removes. The 50 frames per second and 100 ms label thresholds are still not met. M1 is done; B4 waits for its plan and the user's word.
 
 ## Related documents
 

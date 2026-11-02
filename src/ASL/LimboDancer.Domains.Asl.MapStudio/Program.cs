@@ -21,6 +21,7 @@ public static class Program
         builder.Services.AddSingleton<MapService>();
         builder.Services.AddSingleton<IBoardProvider, StudioBoardProvider>();
         builder.Services.AddSingleton<RenderCache>();
+        builder.Services.AddSingleton(services => new TileCache(services.GetService<ILogger<TileCache>>()));
         builder.Services.AddSingleton<FidelityReportStore>();
         builder.Services.AddSingleton<MapHexIndexStore>();
         builder.Services.AddSingleton<IFidelityBatch, VaslFidelityBatch>();

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
-const { create, unitTier, summarizeFrames, labelsInView } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -161,6 +161,53 @@ test("only the labels in view and its margin are drawn", () => {
     assert.deepEqual(labelsInView(index, { x: 0, y: 0, width: 20, height: 20 }), [0]);
     assert.deepEqual(labelsInView(index, { x: 0, y: 0, width: 30, height: 40 }), [0, 1, 2]);
     assert.deepEqual(labelsInView(index, { x: 1000, y: 1000, width: 10, height: 10 }), []);
+});
+
+// Raster Tiles Plan, task 4. Goodwood's grid: 11,700 by 12,449 cells, tiles of 512, six levels.
+const goodwood = { width: 11700, height: 12449, tileSize: 512, levels: 6 };
+
+test("the tile level is the coarsest whose pixel is no larger than a device pixel", () => {
+    // Fit in a 2,033 by 803 pane: 0.064 pixels a cell, so 15.6 cells a pixel, and level 3 (8 cells a tile pixel).
+    assert.equal(tilesInView(goodwood, { x: -16, y: -16, width: 11732, height: 12481 }, 0.064).level, 3);
+    // Twice the device pixels: one level finer.
+    assert.equal(tilesInView(goodwood, { x: -16, y: -16, width: 11732, height: 12481 }, 0.128).level, 2);
+    // Zoomed past a pixel a cell: level 0; zoomed far out: never beyond the top level.
+    assert.equal(tilesInView(goodwood, { x: 0, y: 0, width: 500, height: 300 }, 3).level, 0);
+    assert.equal(tilesInView(goodwood, { x: 0, y: 0, width: 11700, height: 12449 }, 0.001).level, 5);
+});
+
+test("only the tiles meeting the box and a tile's margin are drawn, cut to the grid", () => {
+    // Fit at level 3: tiles of 4,096 cells, 3 columns by 4 rows, all in view.
+    const fit = tilesInView(goodwood, { x: -16, y: -16, width: 11732, height: 12481 }, 0.064);
+    assert.equal(fit.tiles.length, 12);
+    const corner = fit.tiles.find(tile => tile.column === 2 && tile.row === 3);
+    assert.deepEqual(corner, { level: 3, column: 2, row: 3, x: 8192, y: 12288, width: 3508, height: 161 });
+    // A small box at level 0 (512 cells a tile): the tile it is in and its neighbours, none off the grid.
+    const near = tilesInView(goodwood, { x: 100, y: 100, width: 200, height: 100 }, 2);
+    assert.deepEqual(near.tiles.map(tile => `${tile.column},${tile.row}`), ["0,0", "0,1", "1,0", "1,1"]);
+});
+
+test("a pane wider than the box shows strips beside it, and labels and tiles are chosen from all of it", () => {
+    // A 100 by 100 box in a 300 by 100 pane: one board unit a pixel, so 100 units more on each side.
+    assert.deepEqual(visibleBox({ x: 0, y: 0, width: 100, height: 100 }, { width: 300, height: 100 }), { x: -100, y: 0, width: 300, height: 100 });
+    // A taller pane: the strips are above and below.
+    assert.deepEqual(visibleBox({ x: 10, y: 10, width: 100, height: 50 }, { width: 200, height: 200 }), { x: 10, y: -15, width: 100, height: 100 });
+    // A hex beside the box is labelled once the pane's strips count (the user's screenshot of 2026-11-02).
+    const index = { names: ["A1"], x: [-60], y: [50] };
+    assert.deepEqual(labelsInView(index, { x: 0, y: 0, width: 100, height: 100 }), []);
+    assert.deepEqual(labelsInView(index, visibleBox({ x: 0, y: 0, width: 100, height: 100 }, { width: 300, height: 100 })), [0]);
+});
+
+test("the two terrain switches choose the tile variant", () => {
+    assert.equal(tileVariant(["exact-terrain", "exact-elevation", "grid"]), "te");
+    assert.equal(tileVariant(["exact-terrain", "grid"]), "t");
+    assert.equal(tileVariant(["exact-elevation"]), "e");
+    assert.equal(tileVariant(["grid"]), null);
+});
+
+test("the probe hides only the layers it names", () => {
+    assert.deepEqual(layersAfterHide(["exact-tiles", "grid", "labels"], ["grid"]), ["exact-tiles", "labels"]);
+    assert.deepEqual(layersAfterHide(["grid"], []), ["grid"]);
 });
 
 test("zooming switches the tier the units layer shows", async () => {

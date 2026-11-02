@@ -46,7 +46,7 @@ else if (session is null)
         </div>
         <div class="stage">
             <BoardViewport @ref="viewport" OnReady="@(() => viewportPending = session is not null)" OnClick="@OnBoardClick" OnGesture="@OnBoardGesture"
-                           OnDrag="@OnBoardDrag" OnKey="@OnBoardKey" />
+                           OnDrag="@OnBoardDrag" OnKey="@OnBoardKey" Tiles="false" />
             <p class="muted hint">Drag to pan, wheel or + and - to zoom, 0 to fit. Ctrl+Z undoes, Ctrl+Y redoes, Delete removes the selection, Escape cancels.</p>
         </div>
         <aside class="inspector">

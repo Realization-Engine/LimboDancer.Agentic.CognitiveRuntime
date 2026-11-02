@@ -1764,10 +1764,14 @@ Written on 2026-11-01 for the [Large Campaign Map Analysis](<Memory-And-Performa
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Raster tiles for the static layers (B4): terrain, elevation, grid as image tiles per zoom level | Decision P3; the first wave missed the 50 frames per second threshold (about 9 on Goodwood) | None | The user's word on B4 | A drag on Goodwood paints the terrain and elevation paths each frame: 129 to 141 ms frames |
-| The measurement in an ordinary browser (M1) | Plan, task 2 | None | The user's browser, or the user running `mapProbe()` with `?mapMetrics=1` | Every figure is from the Claude browser pane |
+| Raster tiles for the static layers (B4): terrain, elevation, grid as image tiles per zoom level | Decision P3; the first wave missed the 50 frames per second threshold (about 9 on Goodwood) | None | Approved 2026-11-02; the [Raster Tiles Plan](<Memory-And-Performance/ASL Map Studio Raster Tiles Plan.md>) | Terrain and elevation built as tiles on branch `claude/raster-tiles`: a Goodwood drag from 5.3 to about 23 frames per second in the user's Chrome (analysis, section 11) |
+| The grid in raster tiles (the plan's task 5) | Decision T3: hiding the grid gains about 4 frames per second, not enough to reach 30 | None | A measurement after B6 shows the grid is then the larger share | The grid stays one vector layer of about 75,000 characters |
+| The measurement in an ordinary browser (M1) | Plan, task 2 | None | Done 2026-11-02 (analysis, 10.6) | The user's Chrome: 5.3 frames per second, longest frame 777 ms |
+| Raster tiles for the Styled and Hex facts views | Raster Tiles Plan, section 6 | None | A painter for the theme or the facts (the Exact view's tiles are cell colours) | Those views draw vectors |
+| Raster tiles on the map author page | Raster Tiles Plan, section 6 | None | Tiles that follow an edit without a new board version | The author page draws vectors; its edits patch them |
+| A disk cache of tiles across Studio restarts | Raster Tiles Plan, section 6 | None | A measured need: a cold Fit paints its 12 level-3 tiles in about 0.4 s each | Tiles are painted again after a restart; the browser's cache keeps them per version |
 | The setup panel's renders and the setup-closing step (M3, C1 to C4) | The analysis's order | None | Their own measurement | A setup click re-renders the whole Play page and its O(placements squared) counter model |
-| Terrain level of detail (B5) and counters by view (B6) | The analysis's options | None | B4's decision | Not needed at 548 stacks |
+| Terrain level of detail (B5) and counters by view (B6) | The analysis's options | None | B4 is built (analysis, section 11); B6 is the next measure | With tiles a Goodwood drag still costs about 47 ms a frame, mostly neither terrain nor grid: the 548 counter stacks are the likeliest part |
 | The Campaign host's memory after a hand-off (D1) and the Studio's import peak (D2) | The analysis, section 3.4 | None | Their own measurement | PilotHost holds about 2.2 GB after the Goodwood hand-off; the Studio peaked at about 4 GB during it |
 | A drag pans by the pane's width, not by the viewBox's fit | Found by the plan's task 6 test | None | A pointer test of a letterboxed drag | A letterboxed map pans slower than the pointer (half speed at a 2:1 letterbox); unchanged since before the plan |
 | Pan by a compositor transform (B3) | Measured worse in the pane's Chromium (analysis, 10.2) | None | B4, or a browser that keeps the transformed layer's raster | Not built |
