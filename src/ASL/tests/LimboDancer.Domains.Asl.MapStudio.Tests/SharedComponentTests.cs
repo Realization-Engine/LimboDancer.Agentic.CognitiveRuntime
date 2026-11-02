@@ -21,6 +21,8 @@ public sealed class SharedComponentTests : IDisposable
     [InlineData("author/new", "boards")]
     [InlineData("maps", "maps")]
     [InlineData("lab/icons", "lab")]
+    [InlineData("lab/maps", "lab")]
+    [InlineData("lab/hexes", "lab")]
     [InlineData("units/lab?board=bd01", "lab")]
     [InlineData("units/cards/edit?card=gambit", "scenarios")]
     [InlineData("units/scenarios", "scenarios")]
