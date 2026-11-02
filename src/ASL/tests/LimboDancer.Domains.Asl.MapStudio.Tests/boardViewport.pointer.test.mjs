@@ -126,6 +126,14 @@ test("a click is read from the drawing's rectangle, letterboxed, without the scr
     assert.deepEqual(calls.at(-1), ["OnBoardClick", 250, 300]);
 });
 
+test("a drag on a letterboxed map follows the pointer", async () => {
+    // The 1000 by 1000 box in the 200 by 100 drawing shows 2000 by 1000 units, ten units a pixel: ten pixels of drag move the box 100.
+    const { svg, handlers } = await observedFixture({ left: 10, top: 20, right: 210, bottom: 120 }, false);
+    handlers.get("pointerdown")({ pointerId: 1, button: 0, clientX: 100, clientY: 70, target: svg });
+    handlers.get("pointermove")({ pointerId: 1, clientX: 110, clientY: 70, target: svg });
+    assert.equal(svg.attributes.viewBox, "-100 0 1000 1000");
+});
+
 test("a click on a turned map is read through the quarter turn", async () => {
     // Turned, the 200 by 100 drawing covers 100 by 200 pixels of screen; its x runs down the screen and its y to the left.
     const { svg, handlers, calls } = await observedFixture({ left: 10, top: 20, right: 110, bottom: 220 }, true);
@@ -309,9 +317,8 @@ test("a drag moves the painted drawing without a new view box, and its end commi
         frames.shift()();
         assert.equal(svg.attributes.viewBox, before);
         assert.ok(classes.has("gesturing"));
-        // Ten pixels of pointer move the drawing five: a drag pans by the box's width over the pane's, half speed on this 2:1 letterbox (backlog
-        // section 96, unchanged by this plan).
-        assert.equal(style.get("transform"), "translate(5px, 0px) scale(1)");
+        // Ten pixels of pointer move the drawing ten, on this 2:1 letterbox too: the map follows the pointer (backlog section 96, fixed).
+        assert.equal(style.get("transform"), "translate(10px, 0px) scale(1)");
         handlers.get("pointerup")({ pointerId: 1, clientX: 110, clientY: 50, target: svg });
         frames.shift()();
         assert.notEqual(svg.attributes.viewBox, before);
