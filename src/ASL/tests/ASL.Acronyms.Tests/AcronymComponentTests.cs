@@ -4,6 +4,7 @@ using LimboDancer.Domains.Asl.MapStudio.Components.Layout;
 using LimboDancer.Domains.Asl.MapStudio.Components.Pages;
 using LimboDancer.Domains.Asl.MapStudio.Services.Acronyms;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -18,6 +19,7 @@ public sealed class AcronymComponentTests : IDisposable
         var catalog = new AcronymCatalog(NullLogger<AcronymCatalog>.Instance);
         context.Services.AddSingleton(catalog);
         context.Services.AddSingleton(new AcronymSearchService(catalog));
+        context.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
     }
     public void Dispose() => context.Dispose();
 
