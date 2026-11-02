@@ -29,6 +29,8 @@ Start Campaign Atlas in another terminal:
 dotnet run --project src/Campaign/LimboDancer.Campaign.PilotHost -c Release --no-build --no-launch-profile
 ```
 
+Or, in Visual Studio, open `src/Campaign/Campaign.slnx` and choose the launch profile **Campaign Atlas + ASL Studio** (`Campaign.slnLaunch`). It starts the Campaign host on 8093 and the Studio on 5178 with the settings above, and opens both in the browser. The Studio's menu then leads with **Campaign Atlas**, a link back to the Atlas.
+
 Open `http://127.0.0.1:8093/index.html?exercise=source&source=5`. The campaign host's `Campaign:AslStudioUrl` defaults to `http://127.0.0.1:5178`. Studio's `Campaign:AtlasOrigin` defaults to `http://127.0.0.1:8093`. Keep the configured storage folders between runs. Other ports and storage roots can be supplied explicitly for isolated acceptance tests.
 
 ## Use the complete transition

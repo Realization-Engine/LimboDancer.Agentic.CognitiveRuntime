@@ -1,8 +1,19 @@
 @implements IDisposable
 @inject NavigationManager Navigation
+@inject IConfiguration Configuration
 
 @* S01 (plan section 10): the Studio's destinations in groups; the group of the current page is marked, nested routes included. *@
 <nav id="studio-nav" class="studio-nav" aria-label="Studio" hidden="@Hidden">
+    @* The Campaign Atlas is a separate local app: a link out in a new tab, shown only when its address is configured. *@
+    @if (atlas is not null)
+    {
+        <section class="nav-group" data-group="campaign">
+            <span class="nav-group-title" id="nav-campaign">Campaign</span>
+            <ul aria-labelledby="nav-campaign">
+                <li><a href="@atlas" target="_blank" rel="noopener">Campaign Atlas <span aria-hidden="true">↗</span><span class="visually-hidden"> (opens in a new tab)</span></a></li>
+            </ul>
+        </section>
+    }
     @foreach (var group in Groups)
     {
         var current = IsCurrent(group);
@@ -50,7 +61,13 @@
 
     private bool IsCurrent(Group group) => GroupOf(Navigation.ToBaseRelativePath(Navigation.Uri)) == group;
 
-    protected override void OnInitialized() => Navigation.LocationChanged += Changed;
+    private string? atlas;
+
+    protected override void OnInitialized()
+    {
+        atlas = CampaignContextSummary.ReturnUrl(Configuration["Campaign:AtlasOrigin"]);
+        Navigation.LocationChanged += Changed;
+    }
 
     private void Changed(object? sender, LocationChangedEventArgs args) => InvokeAsync(StateHasChanged);
 

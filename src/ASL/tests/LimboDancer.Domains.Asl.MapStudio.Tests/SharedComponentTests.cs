@@ -4,6 +4,7 @@ using LimboDancer.Domains.Asl.MapStudio.Components.Layout;
 using LimboDancer.Domains.Asl.MapStudio.Components.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
@@ -12,6 +13,8 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 public sealed class SharedComponentTests : IDisposable
 {
     private readonly BunitContext context = new();
+
+    public SharedComponentTests() => context.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
 
     public void Dispose() => context.Dispose();
 
@@ -43,6 +46,23 @@ public sealed class SharedComponentTests : IDisposable
 
         nav.Render(parameters => parameters.Add(component => component.Hidden, true));
         Assert.True(nav.Find("#studio-nav").HasAttribute("hidden"));
+    }
+
+    [Fact]
+    public void TheCampaignAtlasLinkLeadsTheMenuOnlyWhenALocalAtlasIsConfigured()
+    {
+        Assert.Empty(context.Render<StudioNavigation>().FindAll("[data-group='campaign']"));
+
+        using var configured = new BunitContext();
+        configured.Services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Campaign:AtlasOrigin"] = "http://127.0.0.1:8093" }).Build());
+        var nav = configured.Render<StudioNavigation>();
+        var first = nav.FindAll(".nav-group")[0];
+        Assert.Equal("campaign", first.GetAttribute("data-group"));
+        var link = first.QuerySelector("a")!;
+        Assert.Equal("http://127.0.0.1:8093/index.html?exercise=source&source=5", link.GetAttribute("href"));
+        Assert.Equal("_blank", link.GetAttribute("target"));
+        Assert.Equal("noopener", link.GetAttribute("rel"));
     }
 
     [Fact]
