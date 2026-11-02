@@ -88,6 +88,24 @@ The viewport (`boardViewport.js`): pan and zoom by transform, the commit rules, 
 
 Steps 2 to 4 are one change to the viewport and the tile service; 5 is the server alone. The Lab keeps its role: a part whose cost at scale is unknown (the commit with counters and marks by view, for example) is tried there on a synthetic map first, if the user wants it measured before Goodwood.
 
+### 5.1 Baseline: today's presentation (step 1, 2026-11-02)
+
+Measured by the user in Chrome 156 with the new probe options, Goodwood reference, Allied view, one run each, at 912 by 558 (smaller than the 2,034 by 804 of the earlier sections).
+
+| Run | Drag fps | Longest frame | Commits | Sharp after | Wheel: commits, sharp after, longest frame |
+|---|---|---|---|---|---|
+| Five steps in, drag one pane right, first run | 41.5 | 200 ms (three long frames) | 3 | 47 ms | 1, 253 ms, none long (alternating burst) |
+| Five steps in, drag one pane left | 79.2 | 35 ms | 3 | 47 ms | 1, 288 ms, none long |
+| Fit, then a one-way wheel zoom in | 83.4 (drag at Fit) | 35 ms | 1 | 58 ms | 2, 653 ms, 116 ms |
+| Five steps in, drag one pane right, Formation boundaries on | 69.5 | 82 ms (two long frames) | 3 | 47 ms | 1, 289 ms, none long |
+
+- A pan of one pane commits three times. The first pan over new ground had frames of about 200 ms; the same pan back over painted ground held 79 frames per second.
+- Ground already seen is sharp within 47 to 58 ms after a drag.
+- A real zoom in is the slowest to sharpen: 653 ms, waiting for the finer level's tiles to be painted.
+- With the Formation boundaries on, the longest frame doubled (35 to 82 ms) at the same commits. The element count did not change (4,873), so whether the switch took effect is not certain from the record; the run is kept as reported.
+
+These are the figures step 2 to 5 are compared against, at the same window size.
+
 ## 6. Risks
 
 | Risk | Answer |
