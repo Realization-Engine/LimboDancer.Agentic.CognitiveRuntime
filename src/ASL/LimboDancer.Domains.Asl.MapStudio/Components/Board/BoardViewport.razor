@@ -3,7 +3,7 @@
 
 @* B06 (plan sections 15.5 and 16.6): the board's drawing surface. It owns the host element, the JavaScript module and viewport, the .NET
    reference the script calls back, and their disposal, so no page installs listeners of its own; pages draw through its commands. *@
-<div class="board-host" @ref="host" role="@(Label is null ? null : "group")" aria-roledescription="@(Label is null ? null : "map")" aria-label="@Label" data-view-key="@ViewKey" data-tiles="@(Tiles ? null : "off")" data-labels="@(CanvasLabels ? "canvas" : null)"></div>
+<div class="board-host" @ref="host" role="@(Label is null ? null : "group")" aria-roledescription="@(Label is null ? null : "map")" aria-label="@Label" data-view-key="@ViewKey" data-tiles="@(Tiles ? null : "off")" data-labels="@(CanvasLabels ? "canvas" : null)" data-present="@(Classic ? "classic" : null)"></div>
 
 @code {
     private ElementReference host;
@@ -33,10 +33,17 @@
 
     /// <summary>
     /// Whether the hex labels are painted into one canvas rather than one SVG text each (Screen-Bounded Map Analysis, section 5.7), whatever
-    /// the address says; the Map Lab turns it on. Off by default: elsewhere only ?present=bounded does.
+    /// the address says; the Map Lab turns it on. Elsewhere the screen-bounded presentation does, the default since decision N6.
     /// </summary>
     [Parameter]
     public bool CanvasLabels { get; set; }
+
+    /// <summary>
+    /// Whether this map keeps the old presentation whatever the address says (Screen-Bounded Map Analysis, decision N6): the Map Lab, whose
+    /// tiles carry the lines its technique chooses and whose tile addresses name no lines. Off by default; ?present=classic does it for a page.
+    /// </summary>
+    [Parameter]
+    public bool Classic { get; set; }
 
     /// <summary>Raised once the script's viewport exists, so the page can load the board into it.</summary>
     [Parameter]
@@ -176,7 +183,7 @@
 
     /// <summary>
     /// The Campaign game whose Formation boundaries the tiles carry, or null for none (Screen-Bounded Map Analysis, section 3.1). The script
-    /// takes it only with ?present=bounded; see <see cref="IsBounded"/>.
+    /// takes it only on the screen-bounded map, the default; see <see cref="IsBounded"/>.
     /// </summary>
     public ValueTask SetBoundaries(string? game) => Send("setBoundaries", game);
 
@@ -186,7 +193,7 @@
     /// </summary>
     public ValueTask SetCulling(bool? on) => Send("setCulling", on);
 
-    /// <summary>Whether the map draws the screen-bounded presentation (?present=bounded); false before the viewport exists.</summary>
+    /// <summary>Whether the map draws the screen-bounded presentation (the default; not with ?present=classic); false before the viewport exists.</summary>
     public async ValueTask<bool> IsBounded() => viewport is not null && await viewport.InvokeAsync<bool>("isBounded");
 
     /// <summary>Outlines picked hexes: an SVG group with the id <c>layer-marks</c>, drawn on top; null clears it (pass 28, the card editor's map).</summary>

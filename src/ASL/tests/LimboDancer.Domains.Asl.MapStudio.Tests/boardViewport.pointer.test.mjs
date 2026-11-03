@@ -119,8 +119,11 @@ test("bounded tiles ask for the grid and the boundaries the view shows", () => {
     assert.equal(tileLines(true, "te", true, true, "campaign-1"), "+b");
     assert.equal(tileLines(true, "t", false, false, null), "");
     assert.equal(tileLines(true, "e", true, false, "campaign-1"), "");
+    // Decision N6 (the user, 2026-11-03): the screen-bounded map is the default; ?present=classic keeps the old presentation.
+    assert.equal(boundedInAddress(["http://localhost/games/play?game=g", undefined]), true);
     assert.equal(boundedInAddress(["http://localhost/games/play?game=g&present=bounded"]), true);
-    assert.equal(boundedInAddress(["http://localhost/games/play?game=g", undefined]), false);
+    assert.equal(boundedInAddress(["http://localhost/games/play?game=g&present=classic"]), false);
+    assert.equal(boundedInAddress(["http://localhost/games/replay?game=g", "http://localhost/games/replay?game=g&present=classic"]), false);
 });
 
 // The Goodwood Lab Techniques Analysis, G1: with ?near=tiles the grid stays in the tiles at near zoom, as the Map Lab draws it.

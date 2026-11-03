@@ -41,8 +41,9 @@ export function create(host, dotnet) {
         // Pan by Transform Plan: a gesture moves the painted drawing; the view box is committed when it rests. Off with ?transform=0.
         pan: typeof host.classList?.add === "function" && typeof host.getBoundingClientRect === "function" && !transformOffInAddress(),
         committed: null, gesturing: false,
-        // Screen-Bounded Map Analysis, decision N6: the new presentation behind ?present=bounded until it is measured the better.
-        bounded: boundedInAddress(), boundaryGame: null, near: false, gridShown: true,
+        // Screen-Bounded Map Analysis, decision N6 (the user, 2026-11-03: "Just do it now"): the screen-bounded presentation is the default;
+        // ?present=classic, or a host marked data-present="classic" (the Map Lab), keeps the old one.
+        bounded: boundedInAddress() && host.dataset?.present !== "classic", boundaryGame: null, near: false, gridShown: true,
         // Goodwood Lab Techniques Analysis, item 3 (G1): ?near=tiles keeps the grid in the tiles at near zoom, as the Map Lab does.
         nearTiles: nearTilesInAddress(),
         // Item 2: whether counters and marks out of view are hidden; null follows ?present=bounded (cullOn), a page or the probe sets it.
@@ -569,9 +570,9 @@ export function tileLines(bounded, variant, gridShown, near, boundaryGame, nearT
     return grid && boundaries ? "+gb" : grid ? "+g" : boundaries ? "+b" : "";
 }
 
-// ?present=bounded in the address, or in the address the page was opened with, as ?tiles=0.
+// The screen-bounded presentation unless ?present=classic is in the address, or in the address the page was opened with, as ?tiles=0 (N6).
 export function boundedInAddress(addresses = [globalThis.location?.href, globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.name]) {
-    return addressSays(addresses, "present", "bounded");
+    return !addressSays(addresses, "present", "classic");
 }
 
 // ?near=tiles in the address, or in the address the page was opened with, as ?tiles=0.
