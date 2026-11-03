@@ -1,7 +1,7 @@
 # ASL Map Studio Screen-Bounded Map Analysis
 
 **Date:** 2026-11-02
-**Status:** approved by the user on 2026-11-02 ("Approve as proposed"), with decisions N1 to N6 as section 7 proposes them. No code is changed yet. It answers the user's request of 2026-11-02: apply what the Map Lab learned to a new way of presenting the Goodwood ASL map, rather than explain again why the present one is slow.
+**Status:** approved by the user on 2026-11-02 ("Approve as proposed"), with decisions N1 to N6 as section 7 proposes them. Steps 1 to 5 built on branch `claude/screen-bounded-map`, all behind `?present=bounded` (N6); the default presentation is unchanged. Merged at the user's word of 2026-11-03 ("commit and merge what improvement we have") with the results of section 5.6; the switch to the default waits. It answers the user's request of 2026-11-02: apply what the Map Lab learned to a new way of presenting the Goodwood ASL map, rather than explain again why the present one is slow.
 **Sources:** the [Map Lab Plan](<ASL Map Studio Map Lab Plan.md>), sections 8 and 8.1 (findings F1 to F7); the [Large Campaign Map Analysis](<ASL Map Studio Large Campaign Map Analysis.md>) and its plans (the [first wave](<ASL Map Studio Large Campaign Map Plan.md>), [Raster Tiles](<ASL Map Studio Raster Tiles Plan.md>), [Pan by Transform](<ASL Map Studio Pan by Transform Plan.md>)), for what is already built.
 
 ## 1. The principle
@@ -162,6 +162,23 @@ Measured by the user in Chrome 156 (2026-11-03) at 912 by 558, twice in one page
 
 - **A change of variant or lines keeps the old tiles** under the new ones until those have decoded, as a level change already did, so a switch to near zoom (or a layer switch) neither empties the map nor waits on every tile at once.
 - **Step 4, the near grid (decision N2).** With `?present=bounded` the whole-map vector grid is always hidden; at near zoom the viewport draws the outlines of the hexes in the drawn box as one path (`#near-grid`, the vector grid's stroke, colour, and opacity), rebuilt only when the box changes. On Goodwood, twelve steps in, it held 284 hexes, aligned with the terrain, the labels, and the counters. It draws no centre dots, which the whole-map grid does.
+
+### 5.6 Where it stands (2026-11-03)
+
+The finished build in the user's Chrome at 912 by 558, one run, against the baseline of 5.1:
+
+| | Baseline (5.1) | Finished build |
+|---|---|---|
+| First pan over new ground | 41.5 fps, longest 200 ms, three long frames | 82.4 fps, 24 ms, none; sharp in 34 ms |
+| A pan with the Formation boundaries on | 69.5 fps, 82 ms, two long frames | 75.8 fps, 71 ms, none (measured after step 2, 5.2) |
+| A pan over painted ground | 79.2 fps, 35 ms | 80.7 fps, 35 ms |
+| A few wheel steps near playing zoom, sharp after | 253 to 288 ms | 356 to 394 ms |
+| A deep wheel zoom from Fit, sharp after, longest frame | 653 ms, 116 ms | 700 ms, two of 143 ms, with 38 ms of forced style and layout |
+
+- **Improved:** a pan over new ground no longer stalls; that came from the lines in the tiles (step 2).
+- **Not improved, possibly worse:** zooms. The fix of 5.5 did not change the deep zoom, so its account in 5.4 was wrong. The 38 ms of forced style and layout appeared with steps 3 and 4 and may come from them. Single runs; not yet diagnosed.
+- **Not measured:** a warm start from the tiles on disk after a restart.
+- Open items are in the backlog's section 96.
 
 ## 6. Risks
 
