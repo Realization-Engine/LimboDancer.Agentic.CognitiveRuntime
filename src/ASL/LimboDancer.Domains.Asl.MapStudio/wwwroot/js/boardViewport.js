@@ -370,6 +370,11 @@ function tileGroup() {
 export function tilesInView(index, box, devicePixelsPerCell) {
     const top = index.levels - 1;
     const level = Math.max(0, Math.min(top, Math.floor(Math.log2(1 / devicePixelsPerCell))));
+    return tilesAtLevel(index, box, level);
+}
+
+// The tiles of one level meeting the box widened by one tile, each with its place and size in cells.
+export function tilesAtLevel(index, box, level) {
     const span = index.tileSize * 2 ** level;
     const columns = Math.ceil(index.width / span);
     const rows = Math.ceil(index.height / span);
@@ -457,6 +462,40 @@ function updateTiles(state) {
     }
 
     tiles.level = view.level;
+    prefetchFiner(state, tiles, view.level, size);
+}
+
+// Screen-Bounded Map Analysis, section 3.5: once the level in view is drawn, the next finer level's tiles for the part of the board on screen
+// are fetched at low priority, so a zoom in finds them in the browser's cache. At most a few dozen a time, each once.
+const prefetchBound = 48;
+
+function prefetchFiner(state, tiles, level, size) {
+    if (!state.bounded || level === 0 || typeof globalThis.Image !== "function"
+        || [...tiles.pool.values()].some(image => !image.hasAttribute("href"))) {
+        return;
+    }
+
+    tiles.prefetched ??= new Set();
+    let started = 0;
+    for (const tile of tilesAtLevel(tiles.index, visibleBox(state.box, size), level - 1).tiles) {
+        const url = tileUrl(state, tiles, tile);
+        if (started >= prefetchBound || tiles.prefetched.has(url)) {
+            continue;
+        }
+
+        tiles.prefetched.add(url);
+        started++;
+        const image = new Image();
+        image.fetchPriority = "low";
+        image.src = url;
+    }
+}
+
+function tileUrl(state, tiles, tile) {
+    const lines = tiles.lines ?? "";
+    const game = lines.includes("b") && state.boundaryGame
+        ? `${tiles.query ? "&" : "?"}game=${encodeURIComponent(state.boundaryGame)}` : "";
+    return `${tiles.baseUrl}/tile-${tiles.variant}${lines}-${tile.level}-${tile.column}-${tile.row}.png${tiles.query}${game}`;
 }
 
 // An image for one tile, placed in cells. Its file is fetched and decoded off-screen first, so a frame never waits on a decode.
@@ -466,10 +505,7 @@ function tileImage(state, tiles, tile, key) {
         image.setAttribute(name, String(value));
     }
 
-    const lines = tiles.lines ?? "";
-    const game = lines.includes("b") && state.boundaryGame
-        ? `${tiles.query ? "&" : "?"}game=${encodeURIComponent(state.boundaryGame)}` : "";
-    const url = `${tiles.baseUrl}/tile-${tiles.variant}${lines}-${tile.level}-${tile.column}-${tile.row}.png${tiles.query}${game}`;
+    const url = tileUrl(state, tiles, tile);
     const show = () => {
         if (tiles.pool.get(key) === image) {
             image.setAttribute("href", url);
@@ -544,18 +580,37 @@ function refreshTileLines(state) {
 
     const lines = tileLines(state.bounded, tiles.variant, state.gridShown, state.near, state.boundaryGame);
     const key = tiles.variant + lines;
+    tiles.lines = lines;
     if (key !== tiles.key) {
         tiles.pool.forEach(image => image.remove());
         tiles.pool.clear();
         tiles.key = key;
+        askAhead(state, tiles);
     }
 
-    tiles.lines = lines;
     const grid = state.svg.querySelector("#layer-grid");
     const tiled = String(lines.includes("g"));
     if (grid && grid.getAttribute("data-tiled") !== tiled) {
         grid.setAttribute("data-tiled", tiled);
     }
+}
+
+// Screen-Bounded Map Analysis, section 3.5: the server paints the shown variant's pyramid ahead, once per variant and visit (bounded only).
+function askAhead(state, tiles) {
+    if (!state.bounded || typeof globalThis.fetch !== "function") {
+        return;
+    }
+
+    tiles.aheadAsked ??= new Set();
+    const name = `${tiles.variant}${tiles.lines ?? ""}`;
+    if (tiles.aheadAsked.has(name)) {
+        return;
+    }
+
+    tiles.aheadAsked.add(name);
+    const game = (tiles.lines ?? "").includes("b") && state.boundaryGame
+        ? `${tiles.query ? "&" : "?"}game=${encodeURIComponent(state.boundaryGame)}` : "";
+    globalThis.fetch(`${tiles.baseUrl}/ahead-${name}.json${tiles.query}${game}`).catch(() => { /* Painting ahead is an aid; a page works without it. */ });
 }
 
 function setBoundaries(state, game) {

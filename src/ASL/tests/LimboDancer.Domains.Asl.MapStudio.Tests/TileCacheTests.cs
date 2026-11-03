@@ -79,6 +79,49 @@ public sealed class TileCacheTests
         Assert.False(TileCache.TryReadFileName("tile-te-0-0.png", out _, out _, out _, out _));
     }
 
+    // Screen-Bounded Map Analysis, section 3.5: a board's tiles are kept on disk, read back by a later cache (a restart) without painting, and
+    // only the board's current version is kept.
+    [Fact]
+    public async Task KeepsTilesOnDiskForTheCurrentVersion()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "tile-cache-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var first = new TileCache(diskRoot: root);
+            var painted = first.Get(Board, TileVariant.TerrainAndElevation, TileLines.Grid, null, 0, 0, 0)!;
+            Assert.Equal(1, first.Painted);
+
+            var restarted = new TileCache(diskRoot: root);
+            var read = restarted.Get(Board, TileVariant.TerrainAndElevation, TileLines.Grid, null, 0, 0, 0)!;
+            Assert.Equal(0, restarted.Painted);
+            Assert.Equal(1, restarted.DiskReads);
+            Assert.Equal(painted.ETag, read.ETag);
+
+            // A new version of the board removes the old one's folder, in the background.
+            var next = Board with
+            {
+                Version = new string('2', 40)
+            };
+            restarted.Get(next, TileVariant.TerrainAndElevation, 0, 0, 0);
+            var boardFolder = Directory.GetDirectories(root).Single();
+            for (var wait = 0; wait < 50 && Directory.GetDirectories(boardFolder).Length > 1; wait++)
+            {
+                await Task.Delay(100);
+            }
+
+            Assert.Equal(next.Version, Path.GetFileName(Assert.Single(Directory.GetDirectories(boardFolder))));
+            // Without a disk, nothing is painted ahead.
+            Assert.Equal(0, new TileCache().PaintAhead(Board, TileVariant.TerrainAndElevation, TileLines.Grid, null));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     // Screen-Bounded Map Analysis, section 3.1: tiles with lines name them, and keep apart from tiles without.
     [Fact]
     public void LinedFileNamesReadBackAndHoldTheirOwnTiles()

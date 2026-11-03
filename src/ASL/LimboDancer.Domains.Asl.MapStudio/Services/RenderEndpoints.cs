@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -99,6 +100,12 @@ public static class RenderEndpoints
     private static IResult Render(string board, string version, string view, string file, bool? trace, string? game,
         HttpContext context, IBoardProvider provider, RenderCache cache, TileCache tiles, BoundaryParentsCache owners)
     {
+        // Screen-Bounded Map Analysis, section 3.5: ahead-{variant}.json starts painting the pyramid of the variant the page shows.
+        if (view == "exact" && file.StartsWith("ahead-", StringComparison.Ordinal) && file.EndsWith(".json", StringComparison.Ordinal))
+        {
+            return Ahead(board, version, file, game, context, provider, tiles, owners);
+        }
+
         // Raster Tiles Plan, task 3: the Exact view's tiles and the pyramid's shape.
         if (view == "exact" && (file == TileCache.IndexFile || file.StartsWith("tile-", StringComparison.Ordinal)))
         {
@@ -141,6 +148,24 @@ public static class RenderEndpoints
         }
 
         return Results.Bytes(rendered.Svg, contentType);
+    }
+
+    // The variant's pyramid painted ahead in the background; the answer says how many tiles that looks at (0 when already under way).
+    private static IResult Ahead(string board, string version, string file, string? game, HttpContext context, IBoardProvider provider,
+        TileCache tiles, BoundaryParentsCache owners)
+    {
+        // "ahead-te+gb.json" reads as the tile "tile-te+gb-0-0-0.png" would: the same variant and lines.
+        var name = "tile-" + file["ahead-".Length..^".json".Length] + "-0-0-0.png";
+        if (!BoardRef.TryParse(board, out var boardRef) || provider.LoadVersion(boardRef, version) is not { } studioBoard
+            || !TileCache.TryReadFileName(name, out var variant, out var lines, out _, out _, out _))
+        {
+            return Results.NotFound();
+        }
+
+        var parents = lines.HasFlag(TileLines.Boundaries) && game is { Length: > 0 } ? owners.For(game, studioBoard) : null;
+        var queued = tiles.PaintAhead(studioBoard, variant, lines, parents);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Text(string.Create(CultureInfo.InvariantCulture, $"{{\"queued\":{queued}}}"), "application/json", Encoding.UTF8);
     }
 
     private static IResult Tile(string board, string version, string file, string? game, HttpContext context, IBoardProvider provider,

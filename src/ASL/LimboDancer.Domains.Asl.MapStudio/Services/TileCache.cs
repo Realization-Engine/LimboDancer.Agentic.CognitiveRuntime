@@ -16,9 +16,15 @@ public sealed record RenderedTile(byte[] Png, string ETag);
 /// use up to a bound in bytes. Like <see cref="RenderCache"/>, it keeps one version of each board, the one last asked for, and a tile asked for
 /// by several requests at once is painted once.
 /// </summary>
-public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bound = TileCache.DefaultBound)
+public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bound = TileCache.DefaultBound, string? diskRoot = null)
 {
     public const long DefaultBound = 64L * 1024 * 1024;
+
+    // Screen-Bounded Map Analysis, section 3.5: boards' tiles are also kept on disk under diskRoot, one version per board, so a restart or a
+    // second game on the board starts with them painted; the in-memory bound stays in front.
+    private readonly ConcurrentDictionary<string, byte> persisted = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, byte> ahead = new(StringComparer.Ordinal);
+    private int diskReads;
 
     /// <summary>The pyramid's shape as JSON: the grid's size, the tile size, and the number of levels.</summary>
     public const string IndexFile = "tiles.json";
@@ -134,7 +140,9 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
             return null;
         }
 
-        return Get(board.Ref.Value, board.Version, variant, level, column, row, key => Paint(input, key));
+        Persisted(board);
+        DropOtherVersions(board.Ref.Value, board.Version);
+        return GetKeyed(new TileKey(board.Ref.Value, board.Version, variant, level, column, row), key => Kept(key, () => Paint(input, key)));
     }
 
     /// <summary>
@@ -165,11 +173,130 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
             lines &= ~TileLines.Boundaries;
         }
 
+        Persisted(board);
         DropOtherVersions(board.Ref.Value, board.Version);
         var key = new TileKey(board.Ref.Value, board.Version, variant, level, column, row, lines, owners?.Token ?? string.Empty);
-        return GetKeyed(key, keyed => PaintWith(keyed, () => TilePainter.Png(input.Grid, input.Catalog, variant, lines,
-            owners is null ? [] : owners.Parents, owners?.HexesPerParent ?? 1, level, column, row)));
+        return GetKeyed(key, keyed => Kept(keyed, () => PaintLined(input, keyed, owners)));
     }
+
+    /// <summary>
+    /// Paints, in the background, every tile of the board's pyramid above level 0 in the given variant and lines that the disk does not hold
+    /// yet, coarsest first (Screen-Bounded Map Analysis, section 3.5), so a zoom finds its tiles painted. The tiles go to the disk only, never
+    /// into the in-memory bound, so the painting does not push out the tiles in view. Once per board version, variant, lines, and ownership;
+    /// nothing without a disk. Returns the number of tiles it will look at, 0 when it has already run or cannot.
+    /// </summary>
+    public int PaintAhead(StudioBoard board, TileVariant variant, TileLines lines, BoundaryParents? owners)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        if (diskRoot is null || board.InputFor(BoardView.Exact) is not { } input)
+        {
+            return 0;
+        }
+
+        if (owners is null)
+        {
+            lines &= ~TileLines.Boundaries;
+        }
+
+        var geometry = input.Grid.Geometry;
+        var levels = TilePyramid.LevelCount(geometry.GridWidth, geometry.GridHeight);
+        var tiles = new List<TileKey>();
+        for (var level = levels - 1; level >= 1; level--)
+        {
+            for (var column = 0; column < TilePyramid.Columns(geometry.GridWidth, level); column++)
+            {
+                for (var row = 0; row < TilePyramid.Rows(geometry.GridHeight, level); row++)
+                {
+                    tiles.Add(new TileKey(board.Ref.Value, board.Version, variant, level, column, row, lines, owners?.Token ?? string.Empty));
+                }
+            }
+        }
+
+        var job = $"{board.Ref.Value}/{board.Version}/{FileName(variant, lines, 0, 0, 0)}/{owners?.Token}";
+        if (!ahead.TryAdd(job, 0))
+        {
+            return 0;
+        }
+
+        Persisted(board);
+        DropOtherVersions(board.Ref.Value, board.Version);
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                Parallel.ForEach(tiles, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2) }, key =>
+                {
+                    if (DiskPath(key) is { } path && !File.Exists(path) && versions.TryGetValue(key.Board, out var held) && held == key.Version)
+                    {
+                        Persist(key, key.Lines == TileLines.None ? Paint(input, key) : PaintLined(input, key, owners));
+                    }
+                });
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException or AggregateException)
+            {
+                Warn(error, "painting ahead", job);
+            }
+        });
+        return tiles.Count;
+    }
+
+    /// <summary>How many tiles were read from the disk instead of painted.</summary>
+    public int DiskReads => Volatile.Read(ref diskReads);
+
+    private RenderedTile PaintLined(BoardRenderInput input, TileKey key, BoundaryParents? owners) =>
+        PaintWith(key, () => TilePainter.Png(input.Grid, input.Catalog, key.Variant, key.Lines, owners is null ? [] : owners.Parents,
+            owners?.HexesPerParent ?? 1, key.Level, key.Column, key.Row));
+
+    // A board's tile from the disk when it is there, else painted and written there (Screen-Bounded Map Analysis, section 3.5).
+    private RenderedTile Kept(TileKey key, Func<RenderedTile> paint)
+    {
+        if (DiskPath(key) is { } path && File.Exists(path))
+        {
+            try
+            {
+                var png = File.ReadAllBytes(path);
+                Interlocked.Increment(ref diskReads);
+                return new RenderedTile(png, "\"" + Convert.ToHexStringLower(SHA256.HashData(png)) + "\"");
+            }
+            catch (IOException)
+            {
+                // A file half written by a stopped Studio: painted again below.
+            }
+        }
+
+        return Persist(key, paint());
+    }
+
+    private RenderedTile Persist(TileKey key, RenderedTile tile)
+    {
+        if (DiskPath(key) is not { } path)
+        {
+            return tile;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            // Written beside and moved, so a reader never sees half a file.
+            var stage = path + ".stage-" + Guid.NewGuid().ToString("N");
+            File.WriteAllBytes(stage, tile.Png);
+            File.Move(stage, path, overwrite: true);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            Warn(error, "keeping a tile", path);
+        }
+
+        return tile;
+    }
+
+    // {disk}/{board}/{version}/{ownership token, or _}/{file}. Only boards' tiles are kept, never the Map Lab's.
+    private string? DiskPath(TileKey key) => diskRoot is null || !persisted.ContainsKey(key.Board) ? null
+        : Path.Combine(diskRoot, Safe(key.Board), Safe(key.Version), key.Owner.Length == 0 ? "_" : Safe(key.Owner),
+            FileName(key.Variant, key.Lines, key.Level, key.Column, key.Row));
+
+    private static string Safe(string name) => string.Concat(name.Select(character => Path.GetInvalidFileNameChars().Contains(character) ? '_' : character));
 
     /// <summary>
     /// The tile of any source that names itself and its version (the Map Lab's generated maps): held and bounded as a board's tiles are, and
@@ -258,7 +385,45 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
                 Remove(node);
             }
         }
+
+        // The disk keeps one version per board too: the others, from this run or an earlier one, are removed in the background.
+        if (diskRoot is not null && persisted.ContainsKey(source))
+        {
+            var folder = Path.Combine(diskRoot, Safe(source));
+            var keep = Safe(version);
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    if (Directory.Exists(folder))
+                    {
+                        foreach (var old in Directory.EnumerateDirectories(folder).Where(path => Path.GetFileName(path) != keep).ToList())
+                        {
+                            Directory.Delete(old, recursive: true);
+                        }
+                    }
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    Warn(error, "removing old tiles", source);
+                }
+            });
+        }
     }
+
+    private void Warn(Exception error, string action, string subject)
+    {
+        if (logger is not null)
+        {
+            DiskProblem(logger, error, action, subject);
+        }
+    }
+
+    [LoggerMessage(EventId = 902, Level = LogLevel.Warning, Message = "ASL tiles on disk: {Action} failed for {Subject}")]
+    private static partial void DiskProblem(ILogger logger, Exception error, string action, string subject);
+
+    // A board's tiles are kept on disk; a source of the Map Lab's is not.
+    private void Persisted(StudioBoard board) => persisted.TryAdd(board.Ref.Value, 0);
 
     private void Remove(LinkedListNode<(TileKey Key, RenderedTile Tile)> node)
     {

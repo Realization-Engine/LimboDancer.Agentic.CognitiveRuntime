@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
 const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
-    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -120,6 +120,21 @@ test("bounded tiles ask for the grid and the boundaries the view shows", () => {
     assert.equal(tileLines(true, "e", true, false, "campaign-1"), "");
     assert.equal(boundedInAddress(["http://localhost/games/play?game=g&present=bounded"]), true);
     assert.equal(boundedInAddress(["http://localhost/games/play?game=g", undefined]), false);
+});
+
+// Screen-Bounded Map Analysis, section 3.5: the next finer level is fetched ahead for the same box, at twice the tiles each way.
+test("the tiles of a set level cover the box widened by a tile", () => {
+    const index = { width: 4096, height: 2048, tileSize: 512, levels: 4 };
+    const box = { x: 1024, y: 0, width: 1024, height: 512 };
+    const coarse = tilesAtLevel(index, box, 1);
+    const fine = tilesAtLevel(index, box, 0);
+    assert.equal(coarse.level, 1);
+    assert.equal(fine.level, 0);
+    // Level 1 tiles are 1,024 cells: the box widened by one, 0 to 3,072 by -1,024 to 1,536, meets columns 0 to 3 and rows 0 to 1; level 0
+    // tiles are 512: 512 to 2,560 by -512 to 1,024 meets columns 1 to 5 and rows 0 to 2.
+    assert.deepEqual(coarse.tiles.map(tile => `${tile.column},${tile.row}`), ["0,0", "0,1", "1,0", "1,1", "2,0", "2,1", "3,0", "3,1"]);
+    assert.equal(fine.tiles.length, 5 * 3);
+    assert.deepEqual(tilesInView(index, box, 0.5), coarse);
 });
 
 // Large Campaign Map Plan, A2: a pointer is read from the drawing's rectangle and observed size, not the screen matrix. A 200 by 100 drawing

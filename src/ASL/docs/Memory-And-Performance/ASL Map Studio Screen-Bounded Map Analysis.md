@@ -122,6 +122,12 @@ Measured by the user in Chrome 156 with `?present=bounded`, the same game (now a
 - **A first pan waits longer to sharpen** (47 to 223 ms): the lined tiles were painted for the first time.
 - **A zoom in is unchanged** (653 to 666 ms to sharpen, one frame of about 118 ms): it waits on tiles painted on request, which step 5 addresses.
 
+### 5.3 Step 5: tiles ahead and on disk (built 2026-11-03, before steps 3 and 4 at the user's word "Step 5 first")
+
+- **On disk.** `TileCache` keeps a board's tiles under `{CacheRoot}/tiles/{board}/{version}/{ownership or _}/`, reads them back after a restart, and removes the board's other versions in the background. The Map Lab's tiles are not kept.
+- **Ahead on the server.** With `?present=bounded`, the page asks `ahead-{variant}.json` once per variant; the Studio paints every level above 0 of that variant to disk in the background, on half the cores, never into the in-memory bound. On Goodwood all 215 tiles above level 0 of `te+g` were on disk within about 20 s of opening the game: 27 MB.
+- **Ahead in the browser.** After each commit whose tiles are drawn, the next finer level's tiles for the part of the board on screen are fetched at low priority, at most 48 a time, each once, so a zoom in finds them in the browser's cache. Level 0 is painted on request by this fetch, since it is not painted ahead.
+
 ## 6. Risks
 
 | Risk | Answer |
