@@ -13,6 +13,19 @@ public static class CampaignMapBoundaries
 
     public static string Draw(BoardGeometry geometry, IReadOnlyDictionary<string, string> ownership)
     {
+        var (parents, _) = Parents(geometry, ownership);
+        var path = new StringBuilder();
+        AppendEdges(path, geometry, parents);
+        return path.Length == 0 ? string.Empty :
+            $"<g id=\"campaign-parent-boundaries\" aria-hidden=\"true\" pointer-events=\"none\"><path d=\"{path}\" fill=\"none\" stroke=\"#9b5f17\" stroke-width=\"1.5\" vector-effect=\"non-scaling-stroke\"/></g>";
+    }
+
+    /// <summary>
+    /// Each hex's parent by ordinal (<see cref="BoardGeometry.HexOrdinal"/>), the parents numbered in the order first met, or
+    /// <see cref="Unowned"/>; and the number of parents.
+    /// </summary>
+    public static (int[] Parents, int Count) Parents(BoardGeometry geometry, IReadOnlyDictionary<string, string> ownership)
+    {
         ArgumentNullException.ThrowIfNull(geometry);
         ArgumentNullException.ThrowIfNull(ownership);
         var parents = new int[geometry.HexCount];
@@ -29,10 +42,7 @@ public static class CampaignMapBoundaries
             parents[geometry.HexOrdinal(geometry.IndexOf(HexName.Parse(pair.Key)))] = number;
         }
 
-        var path = new StringBuilder();
-        AppendEdges(path, geometry, parents);
-        return path.Length == 0 ? string.Empty :
-            $"<g id=\"campaign-parent-boundaries\" aria-hidden=\"true\" pointer-events=\"none\"><path d=\"{path}\" fill=\"none\" stroke=\"#9b5f17\" stroke-width=\"1.5\" vector-effect=\"non-scaling-stroke\"/></g>";
+        return (parents, numbers.Count);
     }
 
     /// <summary>

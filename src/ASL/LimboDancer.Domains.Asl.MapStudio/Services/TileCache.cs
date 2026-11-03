@@ -59,16 +59,27 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
     public int Painted => Volatile.Read(ref painted);
 
     /// <summary>The tile's file name: <c>tile-{variant}-{level}-{column}-{row}.png</c>, the variant being te, t, or e.</summary>
-    public static string FileName(TileVariant variant, int level, int column, int row) =>
-        string.Create(CultureInfo.InvariantCulture, $"tile-{VariantName(variant)}-{level}-{column}-{row}.png");
+    public static string FileName(TileVariant variant, int level, int column, int row) => FileName(variant, TileLines.None, level, column, row);
 
     /// <summary>
-    /// Reads a tile's file name, or false when the name is not a tile's. Not named <c>TryParse</c>: the endpoint takes the cache as a
+    /// The tile's file name with its lines (Screen-Bounded Map Analysis, section 3.1): <c>tile-{variant}+{lines}-{level}-{column}-{row}.png</c>,
+    /// the lines being g (grid), b (Formation boundaries), or gb; without lines, as <see cref="FileName(TileVariant, int, int, int)"/>.
+    /// </summary>
+    public static string FileName(TileVariant variant, TileLines lines, int level, int column, int row) =>
+        string.Create(CultureInfo.InvariantCulture, $"tile-{VariantName(variant)}{LinesName(lines)}-{level}-{column}-{row}.png");
+
+    /// <summary>
+    /// Reads a tile's file name without lines, or false when the name is not one. Not named <c>TryParse</c>: the endpoint takes the cache as a
     /// service, and a static <c>TryParse</c> would make ASP.NET try to bind it from the route.
     /// </summary>
-    public static bool TryReadFileName(string file, out TileVariant variant, out int level, out int column, out int row)
+    public static bool TryReadFileName(string file, out TileVariant variant, out int level, out int column, out int row) =>
+        TryReadFileName(file, out variant, out var lines, out level, out column, out row) && lines == TileLines.None;
+
+    /// <summary>Reads a tile's file name with its lines, or false when the name is not a tile's.</summary>
+    public static bool TryReadFileName(string file, out TileVariant variant, out TileLines lines, out int level, out int column, out int row)
     {
         variant = TileVariant.TerrainAndElevation;
+        lines = TileLines.None;
         level = column = row = 0;
         var match = TileName().Match(file);
         if (!match.Success)
@@ -82,9 +93,16 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
             "e" => TileVariant.Elevation,
             _ => TileVariant.TerrainAndElevation,
         };
-        return int.TryParse(match.Groups[2].Value, CultureInfo.InvariantCulture, out level)
-            && int.TryParse(match.Groups[3].Value, CultureInfo.InvariantCulture, out column)
-            && int.TryParse(match.Groups[4].Value, CultureInfo.InvariantCulture, out row);
+        lines = match.Groups[2].Value switch
+        {
+            "g" => TileLines.Grid,
+            "b" => TileLines.Boundaries,
+            "gb" => TileLines.Grid | TileLines.Boundaries,
+            _ => TileLines.None,
+        };
+        return int.TryParse(match.Groups[3].Value, CultureInfo.InvariantCulture, out level)
+            && int.TryParse(match.Groups[4].Value, CultureInfo.InvariantCulture, out column)
+            && int.TryParse(match.Groups[5].Value, CultureInfo.InvariantCulture, out row);
     }
 
     /// <summary>The pyramid's shape for the board's Exact view, or null when the board has none.</summary>
@@ -120,6 +138,40 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
     }
 
     /// <summary>
+    /// The tile with lines painted over its terrain (Screen-Bounded Map Analysis, section 3.1); the boundaries need <paramref name="owners"/>,
+    /// whose token keys the tile, and are left out without them. Null as <see cref="Get(StudioBoard, TileVariant, int, int, int)"/> is.
+    /// </summary>
+    public RenderedTile? Get(StudioBoard board, TileVariant variant, TileLines lines, BoundaryParents? owners, int level, int column, int row)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        if (lines == TileLines.None)
+        {
+            return Get(board, variant, level, column, row);
+        }
+
+        if (board.InputFor(BoardView.Exact) is not { } input)
+        {
+            return null;
+        }
+
+        var geometry = input.Grid.Geometry;
+        if (!TilePyramid.Contains(geometry.GridWidth, geometry.GridHeight, level, column, row))
+        {
+            return null;
+        }
+
+        if (owners is null)
+        {
+            lines &= ~TileLines.Boundaries;
+        }
+
+        DropOtherVersions(board.Ref.Value, board.Version);
+        var key = new TileKey(board.Ref.Value, board.Version, variant, level, column, row, lines, owners?.Token ?? string.Empty);
+        return GetKeyed(key, keyed => PaintWith(keyed, () => TilePainter.Png(input.Grid, input.Catalog, variant, lines,
+            owners is null ? [] : owners.Parents, owners?.HexesPerParent ?? 1, level, column, row)));
+    }
+
+    /// <summary>
     /// The tile of any source that names itself and its version (the Map Lab's generated maps): held and bounded as a board's tiles are, and
     /// painted by <paramref name="paint"/> when not held. The caller checks the tile lies in its pyramid.
     /// </summary>
@@ -132,7 +184,11 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
     private RenderedTile Get(string source, string version, TileVariant variant, int level, int column, int row, Func<TileKey, RenderedTile> paint)
     {
         DropOtherVersions(source, version);
-        var key = new TileKey(source, version, variant, level, column, row);
+        return GetKeyed(new TileKey(source, version, variant, level, column, row), paint);
+    }
+
+    private RenderedTile GetKeyed(TileKey key, Func<TileKey, RenderedTile> paint)
+    {
         lock (gate)
         {
             if (entries.TryGetValue(key, out var node))
@@ -165,7 +221,7 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
         var timer = Stopwatch.StartNew();
         var png = paint();
         Interlocked.Increment(ref painted);
-        LoadMeasurements.Record(logger, key.Board, FileName(key.Variant, key.Level, key.Column, key.Row), timer.Elapsed.TotalMilliseconds);
+        LoadMeasurements.Record(logger, key.Board, FileName(key.Variant, key.Lines, key.Level, key.Column, key.Row), timer.Elapsed.TotalMilliseconds);
         return new RenderedTile(png, "\"" + Convert.ToHexStringLower(SHA256.HashData(png)) + "\"");
     }
 
@@ -218,8 +274,18 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
         _ => "te",
     };
 
-    [GeneratedRegex(@"^tile-(te|t|e)-(\d{1,2})-(\d{1,5})-(\d{1,5})\.png$", RegexOptions.CultureInvariant)]
+    private static string LinesName(TileLines lines) => lines switch
+    {
+        TileLines.Grid => "+g",
+        TileLines.Boundaries => "+b",
+        TileLines.Grid | TileLines.Boundaries => "+gb",
+        _ => string.Empty,
+    };
+
+    [GeneratedRegex(@"^tile-(te|t|e)(?:\+(gb|g|b))?-(\d{1,2})-(\d{1,5})-(\d{1,5})\.png$", RegexOptions.CultureInvariant)]
     private static partial Regex TileName();
 
-    private readonly record struct TileKey(string Board, string Version, TileVariant Variant, int Level, int Column, int Row);
+    // Lines and Owner are none and empty for tiles without lines; Owner names the ownership a boundary tile was painted from.
+    private readonly record struct TileKey(string Board, string Version, TileVariant Variant, int Level, int Column, int Row,
+        TileLines Lines = TileLines.None, string Owner = "");
 }

@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
 const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
-    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -108,6 +108,18 @@ test("the map is sharp when every pooled tile has its file", () => {
     assert.equal(tilesSharp({ pool: new Map([["a", loaded]]) }), true);
     assert.equal(tilesSharp({ pool: new Map([["a", loaded], ["b", loading]]) }), false);
     assert.equal(tilesSharp({ pool: new Map() }), true);
+});
+
+// Screen-Bounded Map Analysis, section 3: the tiles' lines under ?present=bounded, the grid left to the vectors at near zoom (decision N2).
+test("bounded tiles ask for the grid and the boundaries the view shows", () => {
+    assert.equal(tileLines(false, "te", true, false, "campaign-1"), "");
+    assert.equal(tileLines(true, "te", true, false, null), "+g");
+    assert.equal(tileLines(true, "te", true, false, "campaign-1"), "+gb");
+    assert.equal(tileLines(true, "te", true, true, "campaign-1"), "+b");
+    assert.equal(tileLines(true, "t", false, false, null), "");
+    assert.equal(tileLines(true, "e", true, false, "campaign-1"), "");
+    assert.equal(boundedInAddress(["http://localhost/games/play?game=g&present=bounded"]), true);
+    assert.equal(boundedInAddress(["http://localhost/games/play?game=g", undefined]), false);
 });
 
 // Large Campaign Map Plan, A2: a pointer is read from the drawing's rectangle and observed size, not the screen matrix. A 200 by 100 drawing

@@ -23,6 +23,7 @@ public static class Program
         builder.Services.AddSingleton<RenderCache>();
         builder.Services.AddSingleton(services => new TileCache(services.GetService<ILogger<TileCache>>()));
         builder.Services.AddSingleton<Services.MapLab.LabMapCache>();
+        builder.Services.AddSingleton<BoundaryParentsCache>();
         builder.Services.AddSingleton<FidelityReportStore>();
         builder.Services.AddSingleton<MapHexIndexStore>();
         builder.Services.AddSingleton<IFidelityBatch, VaslFidelityBatch>();

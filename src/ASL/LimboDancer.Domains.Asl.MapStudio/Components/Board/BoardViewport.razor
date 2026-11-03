@@ -165,6 +165,15 @@
 
     public ValueTask SetLos(string? svg) => Send("setLos", svg);
 
+    /// <summary>
+    /// The Campaign game whose Formation boundaries the tiles carry, or null for none (Screen-Bounded Map Analysis, section 3.1). The script
+    /// takes it only with ?present=bounded; see <see cref="IsBounded"/>.
+    /// </summary>
+    public ValueTask SetBoundaries(string? game) => Send("setBoundaries", game);
+
+    /// <summary>Whether the map draws the screen-bounded presentation (?present=bounded); false before the viewport exists.</summary>
+    public async ValueTask<bool> IsBounded() => viewport is not null && await viewport.InvokeAsync<bool>("isBounded");
+
     /// <summary>Outlines picked hexes: an SVG group with the id <c>layer-marks</c>, drawn on top; null clears it (pass 28, the card editor's map).</summary>
     public ValueTask SetMarks(string? svg) => Send("setMarks", svg);
 

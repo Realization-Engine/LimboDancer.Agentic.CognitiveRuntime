@@ -78,4 +78,24 @@ public sealed class TileCacheTests
         Assert.False(TileCache.TryReadFileName("tile-x-0-0-0.png", out _, out _, out _, out _));
         Assert.False(TileCache.TryReadFileName("tile-te-0-0.png", out _, out _, out _, out _));
     }
+
+    // Screen-Bounded Map Analysis, section 3.1: tiles with lines name them, and keep apart from tiles without.
+    [Fact]
+    public void LinedFileNamesReadBackAndHoldTheirOwnTiles()
+    {
+        var name = TileCache.FileName(TileVariant.TerrainAndElevation, TileLines.Grid | TileLines.Boundaries, 2, 1, 0);
+        Assert.Equal("tile-te+gb-2-1-0.png", name);
+        Assert.True(TileCache.TryReadFileName(name, out var variant, out var lines, out var level, out var column, out var row));
+        Assert.Equal((TileVariant.TerrainAndElevation, TileLines.Grid | TileLines.Boundaries, 2, 1, 0), (variant, lines, level, column, row));
+        Assert.False(TileCache.TryReadFileName(name, out _, out _, out _, out _));
+        Assert.Equal("tile-t+g-0-0-0.png", TileCache.FileName(TileVariant.Terrain, TileLines.Grid, 0, 0, 0));
+
+        var cache = new TileCache();
+        var plain = cache.Get(Board, TileVariant.TerrainAndElevation, 0, 0, 0)!;
+        var lined = cache.Get(Board, TileVariant.TerrainAndElevation, TileLines.Grid, null, 0, 0, 0)!;
+        Assert.NotEqual(plain.ETag, lined.ETag);
+        Assert.Equal(2, cache.Count);
+        // Boundaries without parents are left out, so the tile is the grid's.
+        Assert.Same(lined, cache.Get(Board, TileVariant.TerrainAndElevation, TileLines.Grid | TileLines.Boundaries, null, 0, 0, 0));
+    }
 }

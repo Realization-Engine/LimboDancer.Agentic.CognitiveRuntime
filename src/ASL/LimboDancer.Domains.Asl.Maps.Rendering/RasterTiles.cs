@@ -80,7 +80,16 @@ public static class TilePainter
     public static double Opacity(int level) => level == 0 ? 0 : Math.Round(Math.Min(0.5, 0.12 * Math.Abs(level)), 2);
 
     /// <summary>A tile as a PNG.</summary>
-    public static byte[] Png(TerrainGrid grid, TerrainCatalog catalog, TileVariant variant, int level, int column, int row, int tileSize = TilePyramid.TileSize)
+    public static byte[] Png(TerrainGrid grid, TerrainCatalog catalog, TileVariant variant, int level, int column, int row, int tileSize = TilePyramid.TileSize) =>
+        Png(grid, catalog, variant, TileLines.None, [], 1, level, column, row, tileSize);
+
+    /// <summary>
+    /// A tile as a PNG, with lines painted over its terrain (Screen-Bounded Map Analysis, section 3.1): the grid, and the Formation boundaries
+    /// from <paramref name="parents"/> (each hex's parent by ordinal), each where the level shows it (<see cref="TileLinePainter.Shown"/>).
+    /// The elevation variant, drawn over other colours, takes no lines.
+    /// </summary>
+    public static byte[] Png(TerrainGrid grid, TerrainCatalog catalog, TileVariant variant, TileLines lines, ReadOnlySpan<int> parents,
+        double hexesPerParent, int level, int column, int row, int tileSize = TilePyramid.TileSize)
     {
         ArgumentNullException.ThrowIfNull(grid);
         var geometry = grid.Geometry;
@@ -90,6 +99,9 @@ public static class TilePainter
         try
         {
             Paint(grid, catalog, variant, level, column, row, pixels.AsSpan(0, length), tileSize);
+            var shown = variant == TileVariant.Elevation ? TileLines.None : TileLinePainter.Shown(geometry, lines, level, hexesPerParent);
+            var span = TilePyramid.Span(level, tileSize);
+            TileLinePainter.Paint(geometry, shown, parents, column * span, row * span, 1 << level, pixels.AsSpan(0, length), width, height);
             return PngEncoder.Encode(pixels.AsSpan(0, length), width, height, variant == TileVariant.Elevation);
         }
         finally

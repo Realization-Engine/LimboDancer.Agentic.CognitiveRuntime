@@ -1840,6 +1840,12 @@ textarea.placements-text {
     display: none;
 }
 
+/* Screen-Bounded Map Analysis, section 3.1: with ?present=bounded the tiles carry the grid, so its vector layer stands aside except at near
+   zoom; the user's layer switch still governs both. */
+.board-svg > [data-tiled="true"] {
+    display: none;
+}
+
 /* Pan by Transform Plan: the drawing is painted half a pane beyond the pane on every side (panMargin in boardViewport.js). During a gesture
    the script writes the drawing's transform, the one style property it writes, and clears it at every commit, which hands the drawing back
    to these rules; gestureCss in boardViewport.js repeats the turned rule's transform before the move. */

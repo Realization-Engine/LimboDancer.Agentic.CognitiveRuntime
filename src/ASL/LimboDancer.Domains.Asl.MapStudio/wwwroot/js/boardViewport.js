@@ -41,6 +41,8 @@ export function create(host, dotnet) {
         // Pan by Transform Plan: a gesture moves the painted drawing; the view box is committed when it rests. Off with ?transform=0.
         pan: typeof host.classList?.add === "function" && typeof host.getBoundingClientRect === "function" && !transformOffInAddress(),
         committed: null, gesturing: false,
+        // Screen-Bounded Map Analysis, decision N6: the new presentation behind ?present=bounded until it is measured the better.
+        bounded: boundedInAddress(), boundaryGame: null, near: false, gridShown: true,
     };
     state.panShown = state.pan;
     if (state.pan) {
@@ -263,6 +265,8 @@ export function create(host, dotnet) {
         setUnitFigures: markup => setUnitFigures(state, markup),
         setLos: markup => setLos(state, markup),
         setMarks: markup => setMarks(state, markup),
+        setBoundaries: game => setBoundaries(state, game),
+        isBounded: () => state.bounded,
         highlight: points => highlight(state, points),
         setTool: tool => setTool(state, tool),
         applyPatch: patch => applyPatch(state, patch),
@@ -404,6 +408,13 @@ function updateTiles(state) {
     const scale = Math.min(size.width / state.box.width, size.height / state.box.height);
     const ratio = globalThis.devicePixelRatio || 1;
     const view = tilesInView(tiles.index, drawnBox(state), scale * ratio);
+    // Near zoom: level 0 magnified, where tile lines would thicken (decision N2).
+    const near = view.level === 0 && scale * ratio > 1;
+    if (state.near !== near) {
+        state.near = near;
+        refreshTileLines(state);
+    }
+
     // While a zoom is still moving, keep the level drawn: asking for every level the zoom passes through paints tiles nobody sees.
     const sinceZoom = performance.now() - (state.lastZoom ?? -Infinity);
     if (tiles.level !== null && view.level !== tiles.level && sinceZoom < tileSettleMs) {
@@ -419,7 +430,7 @@ function updateTiles(state) {
     const keep = new Set();
     let loading = false;
     for (const tile of wanted) {
-        const key = `${tiles.variant}-${tile.level}-${tile.column}-${tile.row}`;
+        const key = `${tiles.variant}${tiles.lines ?? ""}-${tile.level}-${tile.column}-${tile.row}`;
         keep.add(key);
         if (!tiles.pool.has(key)) {
             tiles.pool.set(key, tileImage(state, tiles, tile, key));
@@ -455,7 +466,10 @@ function tileImage(state, tiles, tile, key) {
         image.setAttribute(name, String(value));
     }
 
-    const url = `${tiles.baseUrl}/tile-${tiles.variant}-${tile.level}-${tile.column}-${tile.row}.png${tiles.query}`;
+    const lines = tiles.lines ?? "";
+    const game = lines.includes("b") && state.boundaryGame
+        ? `${tiles.query ? "&" : "?"}game=${encodeURIComponent(state.boundaryGame)}` : "";
+    const url = `${tiles.baseUrl}/tile-${tiles.variant}${lines}-${tile.level}-${tile.column}-${tile.row}.png${tiles.query}${game}`;
     const show = () => {
         if (tiles.pool.get(key) === image) {
             image.setAttribute("href", url);
@@ -483,6 +497,7 @@ function tileImage(state, tiles, tile, key) {
 }
 
 function setTileVariant(state, visible) {
+    state.gridShown = visible.includes("grid");
     const tiles = state.tiles;
     if (!tiles) {
         return;
@@ -490,12 +505,62 @@ function setTileVariant(state, visible) {
 
     const variant = tileVariant(visible) ?? (visible.includes("exact-tiles") ? tiles.variant ?? "te" : null);
     tiles.group.setAttribute("data-layer-hidden", String(variant === null));
-    if (variant && variant !== tiles.variant) {
-        tiles.pool.forEach(image => image.remove());
-        tiles.pool.clear();
+    tiles.variant = variant ?? tiles.variant;
+    refreshTileLines(state);
+    updateTiles(state);
+}
+
+// Screen-Bounded Map Analysis, section 3: with ?present=bounded the grid and the Formation boundaries are painted into the tiles. The grid
+// goes into them except at near zoom, where a tile line would be magnified and the vector grid of the hexes in view is drawn instead
+// (decision N2); the boundaries go into them once the page names its game (setBoundaries).
+export function tileLines(bounded, variant, gridShown, near, boundaryGame) {
+    if (!bounded || !variant || variant === "e") {
+        return "";
     }
 
-    tiles.variant = variant ?? tiles.variant;
+    const grid = gridShown && !near;
+    const boundaries = Boolean(boundaryGame);
+    return grid && boundaries ? "+gb" : grid ? "+g" : boundaries ? "+b" : "";
+}
+
+// ?present=bounded in the address, or in the address the page was opened with, as ?tiles=0.
+export function boundedInAddress(addresses = [globalThis.location?.href, globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.name]) {
+    return addresses.some(address => {
+        try {
+            return address ? new URL(address).searchParams.get("present") === "bounded" : false;
+        } catch {
+            return false;
+        }
+    });
+}
+
+// The tiles' lines for the present view; a change empties the pool, since every tile place now shows other pixels, and the vector grid is
+// shown only where the tiles leave the grid out.
+function refreshTileLines(state) {
+    const tiles = state.tiles;
+    if (!tiles) {
+        return;
+    }
+
+    const lines = tileLines(state.bounded, tiles.variant, state.gridShown, state.near, state.boundaryGame);
+    const key = tiles.variant + lines;
+    if (key !== tiles.key) {
+        tiles.pool.forEach(image => image.remove());
+        tiles.pool.clear();
+        tiles.key = key;
+    }
+
+    tiles.lines = lines;
+    const grid = state.svg.querySelector("#layer-grid");
+    const tiled = String(lines.includes("g"));
+    if (grid && grid.getAttribute("data-tiled") !== tiled) {
+        grid.setAttribute("data-tiled", tiled);
+    }
+}
+
+function setBoundaries(state, game) {
+    state.boundaryGame = state.bounded && game ? game : null;
+    refreshTileLines(state);
     updateTiles(state);
 }
 
