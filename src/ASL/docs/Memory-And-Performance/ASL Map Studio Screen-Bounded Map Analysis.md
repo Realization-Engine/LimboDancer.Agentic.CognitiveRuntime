@@ -188,6 +188,15 @@ At the user's word ("Build it"), with `?present=bounded` the labels of the drawn
 
 The user's first run (2026-11-03, 912 by 734) measured labels only in the deep zoom: at five steps in a label is about 2 screen pixels, under the readable rule, so no canvas is drawn. In the deep zoom the forced style and layout rose from 38 to 120 ms: setting the font of a canvas in the page makes the browser work out style there and then. The labels are now painted on an `OffscreenCanvas` and handed to the canvas in the page as a bitmap (`bitmaprenderer`), with the canvas in the page as the fallback. At the smallest readable zoom on Goodwood the drawn box holds about 2,600 labels.
 
+Measured by the user in Chrome 156 (2026-11-03, 912 by 734), a one-pane drag at readable zooms, labels shown and hidden by the probe:
+
+| | Labels shown | Labels hidden |
+|---|---|---|
+| Ten steps in | 67.1 fps, longest frame 71 ms, three long frames | 71.9 fps, 71 ms, one long frame (58 ms) |
+| Thirteen steps in | 66.1 fps, 71 ms, two long frames (64 ms) | 73.5 fps, 82 ms, one long frame (58 ms) |
+
+No forced style and layout in either. The labels now cost about 5 to 7 frames per second and one or two frames of 60 to 70 ms; with them hidden, a commit at near zoom (level 0 tiles, the near grid, the counters at their near tier) still makes a frame of about 60 ms. The text labels were not measured at these zooms, so these runs give no before and after.
+
 ## 6. Risks
 
 | Risk | Answer |
