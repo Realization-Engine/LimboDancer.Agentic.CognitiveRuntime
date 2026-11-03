@@ -165,6 +165,16 @@ Measured by the user in Chrome (2026-11-03) on the 10,000-hex `tileslines` map, 
 
 The user's own drags: "good now. No pauses." The one long frame, five steps in, is open.
 
+### 8.3 Counters (built 2026-11-03)
+
+The user asked on 2026-11-03 to test counters on the Lab's map (the [Goodwood Lab Techniques Analysis](<ASL Map Studio Goodwood Lab Techniques Analysis.md>), section 5.2, found that a Lab map has none, so the Lab cannot say what Goodwood's counters cost). The page gains a Units row per side, German and Russian, whose buttons add 10, 50, 100, 200, 300, 400, 500, or 1,000 units, and a Clear button.
+
+- **Nothing new draws them** (the user: reuse the existing parts). The units are the shipped catalog's own German and Russian squads, half-squads, leaders, and machine guns (`UnitLibrary.CatalogChoices`). The layer is built by `UnitOverlayBuilder` with the Studio's renderer and shared fragment cache, and shown by the Lab's `BoardViewport.ShowUnits`, which sends a patch of the hexes that changed. `LabUnits` only places them.
+- **Placement:** German units on the west half of the map, Russian on the east, never on water, at most 10,000 a side. Each unit's hex comes from its own hashed seed, so the same map and clicks give the same hexes. The first build seeded `System.Random` with neighbouring numbers and drew its hexes in bands; a test now checks the spread.
+- **The runs table gains a Counters column**, the counters in the page when the run was made.
+- Checked in my Studio at 6670 on the 10,000-hex `tileslines` map: 1,000 counters in 952 hexes, the layer built in 732 ms and shown in 253 ms; counters drawn as in Play, stacks included. The page then held about 10,200 elements (60 to 139 without counters). A Measure in my pane dragged at 4 to 8 frames per second, a pointer only (section 3.5); speed waits on the user's Chrome.
+- Left out (backlog section 97): the units are not in the address, so a reload or a new map drops them; the Lab draws every counter, since it runs without `?present=bounded`; a click on a counter does nothing.
+
 ## 9. Answers to the guidelines' checklist
 
 - **Work per hex or step:** none in play; the Lab builds a map record once per form change and paints tiles on request.

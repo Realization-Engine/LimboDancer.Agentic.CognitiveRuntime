@@ -1,10 +1,14 @@
 @page "/lab/maps"
+@using System.Diagnostics
 @using System.Globalization
 @using System.Text.Json
 @using LimboDancer.Domains.Asl.MapStudio.Services.MapLab
+@using LimboDancer.Domains.Asl.Units.Documents
+@using LimboDancer.Domains.Asl.Units.Rendering
 @implements IDisposable
 @inject LabMapCache Maps
 @inject TileCache Tiles
+@inject UnitLibrary Library
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
@@ -58,6 +62,25 @@
                 <label><input type="checkbox" checked="@visible.Contains(layer)" @onchange="@(() => Toggle(layer))" /> @LayerName(layer)</label>
             }
         </fieldset>
+        @* The Goodwood Lab Techniques Analysis, section 5.2: counters on the Lab's map, the catalog's own, drawn by the Studio's counter layer. *@
+        <fieldset class="map-lab-layers map-lab-units" id="map-lab-units">
+            <legend>Units</legend>
+            @foreach (var side in LabUnits.Sides)
+            {
+                <div class="toolbar">
+                    <span class="map-lab-side" id="@($"map-lab-units-{side}")">@SideName(side): @Count(CountOf(side))</span>
+                    @foreach (var step in LabUnits.Increments)
+                    {
+                        <button type="button" id="@($"map-lab-add-{side}-{step}")" disabled="@(addingUnits || CountOf(side) >= LabUnits.MaxPerSide)"
+                                @onclick="@(() => AddUnits(side, step))">+@Count(step)</button>
+                    }
+                </div>
+            }
+            <div class="toolbar">
+                <button type="button" id="map-lab-clear-units" disabled="@(addingUnits || units.Count == 0)" @onclick="ClearUnits">Clear units</button>
+                <span class="toolbar-note" id="map-lab-units-note">@(unitNote ?? $"German units go on the west half of the map, Russian on the east; at most {Count(LabUnits.MaxPerSide)} a side.")</span>
+            </div>
+        </fieldset>
     }
 </section>
 
@@ -90,7 +113,7 @@
             <caption>Browser: pan and zoom, newest first, every map measured since the Studio started</caption>
             <thead>
                 <tr>
-                    <th scope="col">Map</th><th scope="col">Zoom</th><th scope="col">Elements</th><th scope="col">Drag fps</th><th scope="col">Median frame</th>
+                    <th scope="col">Map</th><th scope="col">Zoom</th><th scope="col">Elements</th><th scope="col">Counters</th><th scope="col">Drag fps</th><th scope="col">Median frame</th>
                     <th scope="col">Longest frame</th><th scope="col">Settle after drag</th><th scope="col">20 wheel events</th><th scope="col">Pane</th>
                 </tr>
             </thead>
@@ -98,7 +121,7 @@
                 @foreach (var run in runs)
                 {
                     <tr>
-                        <td>@run.Map</td><td>@run.Zoom</td><td>@run.Elements</td><td>@run.FramesPerSecond</td><td>@run.MedianMs ms</td>
+                        <td>@run.Map</td><td>@run.Zoom</td><td>@run.Elements</td><td>@run.Counters</td><td>@run.FramesPerSecond</td><td>@run.MedianMs ms</td>
                         <td>@run.LongestMs ms</td><td>@run.SettleMs ms</td><td>@run.WheelMs ms</td><td>@run.Pane</td>
                     </tr>
                 }
@@ -270,7 +293,7 @@
         var pane = record.GetProperty("viewport");
         string Of(JsonElement element, string name) => element.TryGetProperty(name, out var value) ? value.ToString() : "-";
         return new LabRun($"{Count(map!.HexCount)} {map.Spec.Technique.ToString().ToLowerInvariant()}", zoom,
-            Count(record.GetProperty("elements").GetInt32()), Of(drag, "framesPerSecond"), Of(drag, "medianFrameMs"), Of(drag, "longestFrameMs"),
+            Count(record.GetProperty("elements").GetInt32()), Of(record, "counters"), Of(drag, "framesPerSecond"), Of(drag, "medianFrameMs"), Of(drag, "longestFrameMs"),
             Of(drag, "settleMs"), Of(wheel, "settleMs"), $"{pane[0]} by {pane[1]}");
     }
 
@@ -286,6 +309,80 @@
 
     private bool TransformOff() =>
         Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query).TryGetValue("transform", out var value) && value == "0";
+
+    // The page's units, in the order they were added; each map loads its page again, so a new map starts with none.
+    private readonly List<UnitDocument> units = [];
+    private readonly Dictionary<string, IReadOnlyList<UnitDocument>> pools = new(StringComparer.Ordinal);
+    private bool addingUnits;
+    private string? unitNote;
+
+    private int CountOf(string side) => units.Count(unit => unit.Side == side);
+
+    private async Task AddUnits(string side, int step)
+    {
+        if (map is null)
+        {
+            return;
+        }
+
+        if (!pools.TryGetValue(side, out var pool))
+        {
+            pool = LabUnits.Pool(Library.CatalogChoices, side);
+            pools[side] = pool;
+        }
+
+        units.AddRange(LabUnits.Add(map, pool, side, CountOf(side), step));
+        await ShowUnits();
+    }
+
+    private async Task ClearUnits()
+    {
+        units.Clear();
+        await ShowUnits();
+    }
+
+    // The layer built by the Studio's counter layer builder, with its shared fragment cache, and shown through the viewport, which sends a patch
+    // of the hexes that changed (the Counter Layer Design, section 6). The note says what that cost on the server and the wire.
+    private async Task ShowUnits()
+    {
+        if (map is not { } shownMap || viewport is not { IsReady: true })
+        {
+            return;
+        }
+
+        addingUnits = true;
+        StateHasChanged();
+        try
+        {
+            var timer = Stopwatch.StartNew();
+            UnitDocument[] placed = [.. units];
+            var overlay = placed.Length == 0 || Library.Renderer(UnitLibrary.DefaultSheet) is not { } renderer ? null
+                : await Task.Run(() => UnitOverlayBuilder.Build(UnitMapTarget.ForBoard(LabUnits.Board, shownMap.Geometry), LabUnits.SetId, placed, renderer,
+                    Library.Fragments), closing.Token);
+            var built = timer.Elapsed.TotalMilliseconds;
+            timer.Restart();
+            await viewport.ShowUnits(overlay);
+            var hexes = overlay?.Units.Select(unit => unit.Hex).Distinct().Count() ?? 0;
+            unitNote = string.Create(CultureInfo.InvariantCulture,
+                $"{Count(placed.Length)} counters in {Count(hexes)} hexes: layer built in {built:0} ms, shown in {timer.Elapsed.TotalMilliseconds:0} ms.");
+        }
+        catch (Exception exception) when (exception is JSException or TaskCanceledException or OperationCanceledException)
+        {
+            error = "The units could not be drawn: " + exception.Message;
+        }
+        catch (JSDisconnectedException)
+        {
+            return;
+        }
+        finally
+        {
+            addingUnits = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private static string SideName(string side) => side == LabUnits.German ? "German" : "Russian";
 
     private string LayerName(string layer) => layer switch
     {

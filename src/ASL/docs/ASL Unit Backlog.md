@@ -1793,3 +1793,6 @@ Written on 2026-11-02 for the [Map Lab Plan](<Memory-And-Performance/ASL Map Stu
 | Faster tile painting with lines | Plan, section 8.1, finding F5 | None | A zoom that feels slow to fill in | A tile with lines takes about 0.75 s; each pixel looks up its hex about five times |
 | Roads and streams in the generator | Decision L3: only if the paths look too light against Goodwood | None | A look at the Lab's maps beside the Goodwood map | Terrain is area terrain alone |
 | A component test of the Lab's form | The plan's section 4 named one; the page was checked in the Studio instead | None | A change to the form's logic | The generator, key, drawing, and tiles have unit tests (`MapLabTests`) |
+| The Lab's units in the address | Plan, section 8.3 | None | A measure that must be repeated across reloads | Units are held by the page; a reload or a new map drops them, and the same clicks place them again in the same hexes |
+| Counters hidden out of view on a Lab map | Plan, section 8.3: the Lab runs without `?present=bounded`, and its tile index has no hex lattice for `cullToView` | None | The parity question of the Goodwood Lab Techniques Analysis, section 6 | Every counter of a Lab map stays drawn |
+| A click on a Lab counter | Plan, section 8.3 | None | A Lab measure that needs selection | The viewport reports the click; the Lab page does not handle it |

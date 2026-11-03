@@ -5004,6 +5004,20 @@ button[data-working]::after {
     color: var(--muted);
 }
 
+/* The Lab's units: a row of add buttons per side, under its legend, the buttons of the two rows in line. */
+.map-lab-units legend {
+    float: none;
+    margin-bottom: 0.25rem;
+}
+
+.map-lab-units > .toolbar {
+    margin: 0.2rem 0;
+}
+
+.map-lab-side {
+    min-width: 8rem;
+}
+
 .map-lab-map {
     display: flex;
     height: 70vh;
