@@ -128,6 +128,18 @@ Measured by the user in Chrome 156 with `?present=bounded`, the same game (now a
 - **Ahead on the server.** With `?present=bounded`, the page asks `ahead-{variant}.json` once per variant; the Studio paints every level above 0 of that variant to disk in the background, on half the cores, never into the in-memory bound. On Goodwood all 215 tiles above level 0 of `te+g` were on disk within about 20 s of opening the game: 27 MB.
 - **Ahead in the browser.** After each commit whose tiles are drawn, the next finer level's tiles for the part of the board on screen are fetched at low priority, at most 48 a time, each once, so a zoom in finds them in the browser's cache. Level 0 is painted on request by this fetch, since it is not painted ahead.
 
+Measured by the user in Chrome 156 (2026-11-03), as in 5.2, at 912 by 734, after the tiles above level 0 were on disk:
+
+| Run | Drag fps | Longest frame | Sharp after drag | Wheel: sharp after, longest frame | Step 2 (5.2) |
+|---|---|---|---|---|---|
+| Five steps in, drag one pane right, first run | 80.1 | 35 ms | 46 ms | 331 ms, none long | 73.8 fps, 47 ms; sharp 223 ms; wheel 418 ms |
+| Five steps in, drag one pane left | 81.5 | 35 ms | 46 ms | 266 ms, none long | 81.9 fps, 35 ms; wheel 287 ms |
+| Fit, then a one-way wheel zoom in | 84.8 | 24 ms | 46 ms | 663 ms, 142 ms | 84.1 fps, 23 ms; wheel 666 ms, 118 ms |
+
+- **A first pan now behaves as a pan over seen ground:** sharp in 46 ms (223 before), no long frame.
+- **Zooms near playing zoom sharpen faster:** 266 to 331 ms (287 to 418 before). About 220 ms of each is the probe's own wait for the burst's rest (`gestureRest` and 20 ms), after which a zoom commits.
+- **The one-way zoom from Fit is unchanged** (663 ms, a 142 ms frame). Twenty steps in at 0.8 each zoom about 87 times, from level 3 straight to near zoom at level 0: the next finer level fetched ahead is level 2, and level 0 is not painted ahead, so its tiles are painted on request; and at near zoom the vector grid is shown again (decision N2), so the commit repaints it.
+
 ## 6. Risks
 
 | Risk | Answer |
