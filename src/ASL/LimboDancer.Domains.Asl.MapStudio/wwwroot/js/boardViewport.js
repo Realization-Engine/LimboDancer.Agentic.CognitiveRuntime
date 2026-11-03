@@ -859,9 +859,17 @@ function drawLabelCanvas(state, layer, index, wanted) {
         holder.setAttribute(name, String(value));
     }
 
-    const canvas = holder.firstChild;
-    canvas.width = width;
-    canvas.height = height;
+    // Painted off the page and handed over as a bitmap: setting the font of a canvas in the page makes the browser work out the page's style
+    // there and then (the user's run of 2026-11-03: forced style and layout rose from 38 to 120 ms in a deep zoom). Without OffscreenCanvas,
+    // the canvas in the page is painted as before.
+    const shown = holder.firstChild;
+    const offscreen = typeof OffscreenCanvas === "function" ? new OffscreenCanvas(width, height) : null;
+    const canvas = offscreen ?? shown;
+    if (!offscreen) {
+        canvas.width = width;
+        canvas.height = height;
+    }
+
     const context = canvas.getContext("2d");
     if (!context) {
         return;
@@ -884,6 +892,11 @@ function drawLabelCanvas(state, layer, index, wanted) {
         } else {
             context.fillText(index.names[i], index.x[i], index.y[i]);
         }
+    }
+
+    if (offscreen) {
+        // The bitmap renderer shows the painted bitmap without copying it; the canvas takes the bitmap's size.
+        (shown.getContext("bitmaprenderer") ?? null)?.transferFromImageBitmap(offscreen.transferToImageBitmap());
     }
 }
 

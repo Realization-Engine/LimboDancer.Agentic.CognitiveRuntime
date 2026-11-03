@@ -186,6 +186,8 @@ The user found on 2026-11-03 that the remaining lag of drag and zoom goes with t
 
 At the user's word ("Build it"), with `?present=bounded` the labels of the drawn box are painted at each commit into one canvas the size of that box on screen (`drawLabelCanvas`), inside the label group, so the layer switch and the six-pixel readable rule hold as before and a gesture moves its pixels with the map. The font, size, colour, and opacity are the texts'; on a turned map each label is painted upright, as site.css turned each text. The canvas is painted again only when the box, the scale, or the turn changes, and is at most 4,096 pixels a side. The side view keeps its texts. Checked on Goodwood in the Studio: 382 labels in one 1,442 by 2,138 canvas on a turned map, upright and in place, and in place unturned.
 
+The user's first run (2026-11-03, 912 by 734) measured labels only in the deep zoom: at five steps in a label is about 2 screen pixels, under the readable rule, so no canvas is drawn. In the deep zoom the forced style and layout rose from 38 to 120 ms: setting the font of a canvas in the page makes the browser work out style there and then. The labels are now painted on an `OffscreenCanvas` and handed to the canvas in the page as a bitmap (`bitmaprenderer`), with the canvas in the page as the fallback. At the smallest readable zoom on Goodwood the drawn box holds about 2,600 labels.
+
 ## 6. Risks
 
 | Risk | Answer |
