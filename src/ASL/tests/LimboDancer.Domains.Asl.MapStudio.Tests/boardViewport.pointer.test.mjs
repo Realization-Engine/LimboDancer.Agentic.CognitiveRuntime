@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
 const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
-    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel, hexCentre, fragmentBounds, pointsBounds, boxesMeet } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel, hexCentre, fragmentBounds, pointsBounds, boxesMeet, nearGridPath } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -135,6 +135,20 @@ test("counters and marks are placed for the view", () => {
     const view = { x: 0, y: 0, width: 500, height: 300 };
     assert.equal(boxesMeet(counter, view), true);
     assert.equal(boxesMeet({ x: 600, y: 0, width: 10, height: 10 }, view), false);
+});
+
+// Screen-Bounded Map Analysis, step 4: at near zoom the grid is drawn for the hexes around the box only, each hex a closed outline.
+test("the near grid outlines only the hexes about the box", () => {
+    // A 33 by 10 board: 1,800 by 645 cells.
+    const index = { width: 1800, height: 645, hexWidth: 56.25, hexHeight: 64.5, a1x: 0, a1y: 32.25 };
+    const small = nearGridPath(index, { x: 500, y: 200, width: 100, height: 100 });
+    const hexes = small.split("Z").filter(Boolean);
+    // Columns 7 to 12 (a column either side), rows of each about the box: far fewer than the board's 335 hexes.
+    assert.ok(hexes.length > 0 && hexes.length < 60, `${hexes.length} hexes`);
+    assert.match(hexes[0], /^M[\d.]+,[\d.]+H[\d.]+L/);
+    const whole = nearGridPath(index, { x: -100, y: -100, width: 2000, height: 900 }).split("Z").filter(Boolean);
+    assert.equal(whole.length, 33 * 10 + 16);
+    assert.equal(nearGridPath({}, { x: 0, y: 0, width: 1, height: 1 }), "");
 });
 
 // Screen-Bounded Map Analysis, section 3.5: the next finer level is fetched ahead for the same box, at twice the tiles each way.

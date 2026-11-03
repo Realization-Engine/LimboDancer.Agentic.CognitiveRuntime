@@ -147,6 +147,22 @@ Measured by the user in Chrome 156 (2026-11-03), as in 5.2, at 912 by 734, after
 - **Deviation from N3:** the marks are still built and sent by the server as markup, not as data; only their drawing is bounded by the view. The server's whole-string build per render (C4) stays as it was.
 - Out-of-view counters cannot take keyboard focus while hidden.
 
+Measured by the user in Chrome 156 (2026-11-03) at 912 by 558, twice in one page: the first run after the layer token's change, when every tile came from the server again, and a second run with the browser's cache warm.
+
+| Run | Step 5 (5.3) | 5.4, first run | 5.4, warm |
+|---|---|---|---|
+| Five steps in, drag one pane right | 80.1 fps, 35 ms | 65.5 fps, 82 ms | 81.7 fps, 35 ms |
+| Five steps in, drag one pane left | 81.5 fps, 35 ms | 80.4 fps, 24 ms | 81.6 fps, 24 ms |
+| Fit, then a one-way wheel zoom in: sharp after, longest frame | 663 ms, 142 ms | 1,114 ms, 142 ms | 635 ms, 134 ms |
+
+- Warm, the pans are as in 5.3; the first run's slowness was the emptied cache.
+- Level 0 painted ahead barely moved the deep zoom (663 to 635 ms). Of it, about 220 ms is the probe's wait for the burst's rest. Most of the rest: at the switch to near zoom the variant changed (`te+g` to `te`), and the viewport emptied the tile pool, so every tile in view was fetched and decoded again, the coarse tile under them included. The 134 ms frame is the commit at near zoom, where the whole-map vector grid and the labels were shown again.
+
+### 5.5 Tiles kept through a switch, and step 4 (built 2026-11-03, at the user's word "Proceed")
+
+- **A change of variant or lines keeps the old tiles** under the new ones until those have decoded, as a level change already did, so a switch to near zoom (or a layer switch) neither empties the map nor waits on every tile at once.
+- **Step 4, the near grid (decision N2).** With `?present=bounded` the whole-map vector grid is always hidden; at near zoom the viewport draws the outlines of the hexes in the drawn box as one path (`#near-grid`, the vector grid's stroke, colour, and opacity), rebuilt only when the box changes. On Goodwood, twelve steps in, it held 284 hexes, aligned with the terrain, the labels, and the counters. It draws no centre dots, which the whole-map grid does.
+
 ## 6. Risks
 
 | Risk | Answer |

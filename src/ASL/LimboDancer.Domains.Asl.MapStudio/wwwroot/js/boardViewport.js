@@ -544,6 +544,8 @@ function setTileVariant(state, visible) {
     tiles.variant = variant ?? tiles.variant;
     refreshTileLines(state);
     updateTiles(state);
+    // The grid switch governs the near grid too.
+    updateNearGrid(state);
 }
 
 // Screen-Bounded Map Analysis, section 3: with ?present=bounded the grid and the Formation boundaries are painted into the tiles. The grid
@@ -570,8 +572,10 @@ export function boundedInAddress(addresses = [globalThis.location?.href, globalT
     });
 }
 
-// The tiles' lines for the present view; a change empties the pool, since every tile place now shows other pixels, and the vector grid is
-// shown only where the tiles leave the grid out.
+// The tiles' lines for the present view. A change of variant or lines asks for other tiles; the old ones stay under them until those have
+// decoded, as at a level change (updateTiles drops them then), so the map never shows blank (Screen-Bounded Map Analysis, section 5.5).
+// With ?present=bounded the whole-map vector grid stands aside: the tiles carry the grid, and at near zoom the grid of the hexes in view is
+// drawn instead (updateNearGrid).
 function refreshTileLines(state) {
     const tiles = state.tiles;
     if (!tiles) {
@@ -582,16 +586,72 @@ function refreshTileLines(state) {
     const key = tiles.variant + lines;
     tiles.lines = lines;
     if (key !== tiles.key) {
-        tiles.pool.forEach(image => image.remove());
-        tiles.pool.clear();
         tiles.key = key;
         askAhead(state, tiles);
     }
 
     const grid = state.svg.querySelector("#layer-grid");
-    const tiled = String(lines.includes("g"));
+    const tiled = String(state.bounded);
     if (grid && grid.getAttribute("data-tiled") !== tiled) {
         grid.setAttribute("data-tiled", tiled);
+    }
+}
+
+// Step 4 (decision N2): at near zoom, the grid of the hexes in the drawn box as one path, in the vector grid's style (BoardRenderer.WriteGrid:
+// black outlines at 0.75 and opacity 0.45), built again only when the box changes.
+export function nearGridPath(index, box) {
+    if (!index?.hexWidth) {
+        return "";
+    }
+
+    const columns = Math.round(index.width / index.hexWidth) + 1;
+    const rows = Math.round(index.height / index.hexHeight);
+    const side = index.hexWidth * 2 / 3;
+    const half = index.hexHeight / 2;
+    const first = Math.max(0, Math.floor((box.x - index.a1x) / index.hexWidth) - 1);
+    const last = Math.min(columns - 1, Math.ceil((box.x + box.width - index.a1x) / index.hexWidth) + 1);
+    const parts = [];
+    const n = value => Math.round(value * 100) / 100;
+    for (let column = first; column <= last; column++) {
+        const offset = half * (column % 2);
+        const top = Math.max(0, Math.floor((box.y - index.a1y + offset) / index.hexHeight) - 1);
+        const bottom = Math.min(rows - 1 + (column % 2), Math.ceil((box.y + box.height - index.a1y + offset) / index.hexHeight) + 1);
+        const x = index.a1x + index.hexWidth * column;
+        for (let row = top; row <= bottom; row++) {
+            const y = index.a1y + index.hexHeight * row - offset;
+            parts.push(`M${n(x - side / 2)},${n(y - half)}H${n(x + side / 2)}L${n(x + side)},${n(y)}L${n(x + side / 2)},${n(y + half)}`
+                + `H${n(x - side / 2)}L${n(x - side)},${n(y)}Z`);
+        }
+    }
+
+    return parts.join("");
+}
+
+function updateNearGrid(state) {
+    const grid = state.svg.querySelector("#layer-grid");
+    let near = state.svg.querySelector("#near-grid");
+    const wanted = state.bounded && state.near && state.gridShown && state.tiles && grid;
+    if (!wanted) {
+        near?.remove();
+        return;
+    }
+
+    if (!near) {
+        near = document.createElementNS(svgNamespace, "path");
+        near.setAttribute("id", "near-grid");
+        for (const [name, value] of [["fill", "none"], ["stroke", "#000000"], ["stroke-width", "0.75"], ["stroke-opacity", "0.45"],
+            ["pointer-events", "none"]]) {
+            near.setAttribute(name, value);
+        }
+
+        grid.after(near);
+    }
+
+    const box = drawnBox(state);
+    const key = `${box.x} ${box.y} ${box.width} ${box.height}`;
+    if (near.getAttribute("data-box") !== key) {
+        near.setAttribute("data-box", key);
+        near.setAttribute("d", nearGridPath(state.tiles.index, box));
     }
 }
 
@@ -1632,6 +1692,7 @@ function flushBox(state) {
     updateLabelDetail(state);
     updateLabels(state);
     updateTiles(state);
+    updateNearGrid(state);
     cullToView(state);
 }
 
