@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -96,13 +97,19 @@ public static class RenderEndpoints
             : Results.NotFound();
     }
 
-    private static IResult Render(string board, string version, string view, string file, bool? trace,
-        HttpContext context, IBoardProvider provider, RenderCache cache, TileCache tiles)
+    private static IResult Render(string board, string version, string view, string file, bool? trace, string? game,
+        HttpContext context, IBoardProvider provider, RenderCache cache, TileCache tiles, BoundaryParentsCache owners)
     {
+        // Screen-Bounded Map Analysis, section 3.5: ahead-{variant}.json starts painting the pyramid of the variant the page shows.
+        if (view == "exact" && file.StartsWith("ahead-", StringComparison.Ordinal) && file.EndsWith(".json", StringComparison.Ordinal))
+        {
+            return Ahead(board, version, file, game, context, provider, tiles, owners);
+        }
+
         // Raster Tiles Plan, task 3: the Exact view's tiles and the pyramid's shape.
         if (view == "exact" && (file == TileCache.IndexFile || file.StartsWith("tile-", StringComparison.Ordinal)))
         {
-            return Tile(board, version, file, context, provider, tiles);
+            return Tile(board, version, file, game, context, provider, tiles, owners);
         }
 
         var labelIndex = file == RenderCache.LabelIndexFile;
@@ -143,7 +150,26 @@ public static class RenderEndpoints
         return Results.Bytes(rendered.Svg, contentType);
     }
 
-    private static IResult Tile(string board, string version, string file, HttpContext context, IBoardProvider provider, TileCache tiles)
+    // The variant's pyramid painted ahead in the background; the answer says how many tiles that looks at (0 when already under way).
+    private static IResult Ahead(string board, string version, string file, string? game, HttpContext context, IBoardProvider provider,
+        TileCache tiles, BoundaryParentsCache owners)
+    {
+        // "ahead-te+gb.json" reads as the tile "tile-te+gb-0-0-0.png" would: the same variant and lines.
+        var name = "tile-" + file["ahead-".Length..^".json".Length] + "-0-0-0.png";
+        if (!BoardRef.TryParse(board, out var boardRef) || provider.LoadVersion(boardRef, version) is not { } studioBoard
+            || !TileCache.TryReadFileName(name, out var variant, out var lines, out _, out _, out _))
+        {
+            return Results.NotFound();
+        }
+
+        var parents = lines.HasFlag(TileLines.Boundaries) && game is { Length: > 0 } ? owners.For(game, studioBoard) : null;
+        var queued = tiles.PaintAhead(studioBoard, variant, lines, parents);
+        context.Response.Headers.CacheControl = "no-store";
+        return Results.Text(string.Create(CultureInfo.InvariantCulture, $"{{\"queued\":{queued}}}"), "application/json", Encoding.UTF8);
+    }
+
+    private static IResult Tile(string board, string version, string file, string? game, HttpContext context, IBoardProvider provider,
+        TileCache tiles, BoundaryParentsCache owners)
     {
         if (!BoardRef.TryParse(board, out var boardRef) || provider.LoadVersion(boardRef, version) is not { } studioBoard)
         {
@@ -164,8 +190,11 @@ public static class RenderEndpoints
             contentType = "application/json; charset=utf-8";
             etag = "\"" + Convert.ToHexStringLower(SHA256.HashData(body)) + "\"";
         }
-        else if (TileCache.TryReadFileName(file, out var variant, out var level, out var column, out var row)
-            && tiles.Get(studioBoard, variant, level, column, row) is { } tile)
+        // Screen-Bounded Map Analysis, section 3.1: a tile may carry the grid and, for a Campaign game named by ?game=, its Formation boundaries.
+        else if (TileCache.TryReadFileName(file, out var variant, out var lines, out var level, out var column, out var row)
+            && tiles.Get(studioBoard, variant, lines,
+                lines.HasFlag(TileLines.Boundaries) && game is { Length: > 0 } ? owners.For(game, studioBoard) : null,
+                level, column, row) is { } tile)
         {
             body = tile.Png;
             contentType = "image/png";

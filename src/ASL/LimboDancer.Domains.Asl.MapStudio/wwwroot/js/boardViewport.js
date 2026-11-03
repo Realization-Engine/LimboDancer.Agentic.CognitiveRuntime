@@ -41,6 +41,8 @@ export function create(host, dotnet) {
         // Pan by Transform Plan: a gesture moves the painted drawing; the view box is committed when it rests. Off with ?transform=0.
         pan: typeof host.classList?.add === "function" && typeof host.getBoundingClientRect === "function" && !transformOffInAddress(),
         committed: null, gesturing: false,
+        // Screen-Bounded Map Analysis, decision N6: the new presentation behind ?present=bounded until it is measured the better.
+        bounded: boundedInAddress(), boundaryGame: null, near: false, gridShown: true,
     };
     state.panShown = state.pan;
     if (state.pan) {
@@ -263,6 +265,8 @@ export function create(host, dotnet) {
         setUnitFigures: markup => setUnitFigures(state, markup),
         setLos: markup => setLos(state, markup),
         setMarks: markup => setMarks(state, markup),
+        setBoundaries: game => setBoundaries(state, game),
+        isBounded: () => state.bounded,
         highlight: points => highlight(state, points),
         setTool: tool => setTool(state, tool),
         applyPatch: patch => applyPatch(state, patch),
@@ -366,6 +370,11 @@ function tileGroup() {
 export function tilesInView(index, box, devicePixelsPerCell) {
     const top = index.levels - 1;
     const level = Math.max(0, Math.min(top, Math.floor(Math.log2(1 / devicePixelsPerCell))));
+    return tilesAtLevel(index, box, level);
+}
+
+// The tiles of one level meeting the box widened by one tile, each with its place and size in cells.
+export function tilesAtLevel(index, box, level) {
     const span = index.tileSize * 2 ** level;
     const columns = Math.ceil(index.width / span);
     const rows = Math.ceil(index.height / span);
@@ -404,6 +413,13 @@ function updateTiles(state) {
     const scale = Math.min(size.width / state.box.width, size.height / state.box.height);
     const ratio = globalThis.devicePixelRatio || 1;
     const view = tilesInView(tiles.index, drawnBox(state), scale * ratio);
+    // Near zoom: level 0 magnified, where tile lines would thicken (decision N2).
+    const near = view.level === 0 && scale * ratio > 1;
+    if (state.near !== near) {
+        state.near = near;
+        refreshTileLines(state);
+    }
+
     // While a zoom is still moving, keep the level drawn: asking for every level the zoom passes through paints tiles nobody sees.
     const sinceZoom = performance.now() - (state.lastZoom ?? -Infinity);
     if (tiles.level !== null && view.level !== tiles.level && sinceZoom < tileSettleMs) {
@@ -419,7 +435,7 @@ function updateTiles(state) {
     const keep = new Set();
     let loading = false;
     for (const tile of wanted) {
-        const key = `${tiles.variant}-${tile.level}-${tile.column}-${tile.row}`;
+        const key = `${tiles.variant}${tiles.lines ?? ""}-${tile.level}-${tile.column}-${tile.row}`;
         keep.add(key);
         if (!tiles.pool.has(key)) {
             tiles.pool.set(key, tileImage(state, tiles, tile, key));
@@ -446,6 +462,40 @@ function updateTiles(state) {
     }
 
     tiles.level = view.level;
+    prefetchFiner(state, tiles, view.level, size);
+}
+
+// Screen-Bounded Map Analysis, section 3.5: once the level in view is drawn, the next finer level's tiles for the part of the board on screen
+// are fetched at low priority, so a zoom in finds them in the browser's cache. At most a few dozen a time, each once.
+const prefetchBound = 48;
+
+function prefetchFiner(state, tiles, level, size) {
+    if (!state.bounded || level === 0 || typeof globalThis.Image !== "function"
+        || [...tiles.pool.values()].some(image => !image.hasAttribute("href"))) {
+        return;
+    }
+
+    tiles.prefetched ??= new Set();
+    let started = 0;
+    for (const tile of tilesAtLevel(tiles.index, visibleBox(state.box, size), level - 1).tiles) {
+        const url = tileUrl(state, tiles, tile);
+        if (started >= prefetchBound || tiles.prefetched.has(url)) {
+            continue;
+        }
+
+        tiles.prefetched.add(url);
+        started++;
+        const image = new Image();
+        image.fetchPriority = "low";
+        image.src = url;
+    }
+}
+
+function tileUrl(state, tiles, tile) {
+    const lines = tiles.lines ?? "";
+    const game = lines.includes("b") && state.boundaryGame
+        ? `${tiles.query ? "&" : "?"}game=${encodeURIComponent(state.boundaryGame)}` : "";
+    return `${tiles.baseUrl}/tile-${tiles.variant}${lines}-${tile.level}-${tile.column}-${tile.row}.png${tiles.query}${game}`;
 }
 
 // An image for one tile, placed in cells. Its file is fetched and decoded off-screen first, so a frame never waits on a decode.
@@ -455,7 +505,7 @@ function tileImage(state, tiles, tile, key) {
         image.setAttribute(name, String(value));
     }
 
-    const url = `${tiles.baseUrl}/tile-${tiles.variant}-${tile.level}-${tile.column}-${tile.row}.png${tiles.query}`;
+    const url = tileUrl(state, tiles, tile);
     const show = () => {
         if (tiles.pool.get(key) === image) {
             image.setAttribute("href", url);
@@ -483,6 +533,7 @@ function tileImage(state, tiles, tile, key) {
 }
 
 function setTileVariant(state, visible) {
+    state.gridShown = visible.includes("grid");
     const tiles = state.tiles;
     if (!tiles) {
         return;
@@ -490,12 +541,220 @@ function setTileVariant(state, visible) {
 
     const variant = tileVariant(visible) ?? (visible.includes("exact-tiles") ? tiles.variant ?? "te" : null);
     tiles.group.setAttribute("data-layer-hidden", String(variant === null));
-    if (variant && variant !== tiles.variant) {
-        tiles.pool.forEach(image => image.remove());
-        tiles.pool.clear();
+    tiles.variant = variant ?? tiles.variant;
+    refreshTileLines(state);
+    updateTiles(state);
+    // The grid switch governs the near grid too.
+    updateNearGrid(state);
+}
+
+// Screen-Bounded Map Analysis, section 3: with ?present=bounded the grid and the Formation boundaries are painted into the tiles. The grid
+// goes into them except at near zoom, where a tile line would be magnified and the vector grid of the hexes in view is drawn instead
+// (decision N2); the boundaries go into them once the page names its game (setBoundaries).
+export function tileLines(bounded, variant, gridShown, near, boundaryGame) {
+    if (!bounded || !variant || variant === "e") {
+        return "";
     }
 
-    tiles.variant = variant ?? tiles.variant;
+    const grid = gridShown && !near;
+    const boundaries = Boolean(boundaryGame);
+    return grid && boundaries ? "+gb" : grid ? "+g" : boundaries ? "+b" : "";
+}
+
+// ?present=bounded in the address, or in the address the page was opened with, as ?tiles=0.
+export function boundedInAddress(addresses = [globalThis.location?.href, globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.name]) {
+    return addresses.some(address => {
+        try {
+            return address ? new URL(address).searchParams.get("present") === "bounded" : false;
+        } catch {
+            return false;
+        }
+    });
+}
+
+// The tiles' lines for the present view. A change of variant or lines asks for other tiles; the old ones stay under them until those have
+// decoded, as at a level change (updateTiles drops them then), so the map never shows blank (Screen-Bounded Map Analysis, section 5.5).
+// With ?present=bounded the whole-map vector grid stands aside: the tiles carry the grid, and at near zoom the grid of the hexes in view is
+// drawn instead (updateNearGrid).
+function refreshTileLines(state) {
+    const tiles = state.tiles;
+    if (!tiles) {
+        return;
+    }
+
+    const lines = tileLines(state.bounded, tiles.variant, state.gridShown, state.near, state.boundaryGame);
+    const key = tiles.variant + lines;
+    tiles.lines = lines;
+    if (key !== tiles.key) {
+        tiles.key = key;
+        askAhead(state, tiles);
+    }
+
+    const grid = state.svg.querySelector("#layer-grid");
+    const tiled = String(state.bounded);
+    if (grid && grid.getAttribute("data-tiled") !== tiled) {
+        grid.setAttribute("data-tiled", tiled);
+    }
+}
+
+// Step 4 (decision N2): at near zoom, the grid of the hexes in the drawn box as one path, in the vector grid's style (BoardRenderer.WriteGrid:
+// black outlines at 0.75 and opacity 0.45), built again only when the box changes.
+export function nearGridPath(index, box) {
+    if (!index?.hexWidth) {
+        return "";
+    }
+
+    const columns = Math.round(index.width / index.hexWidth) + 1;
+    const rows = Math.round(index.height / index.hexHeight);
+    const side = index.hexWidth * 2 / 3;
+    const half = index.hexHeight / 2;
+    const first = Math.max(0, Math.floor((box.x - index.a1x) / index.hexWidth) - 1);
+    const last = Math.min(columns - 1, Math.ceil((box.x + box.width - index.a1x) / index.hexWidth) + 1);
+    const parts = [];
+    const n = value => Math.round(value * 100) / 100;
+    for (let column = first; column <= last; column++) {
+        const offset = half * (column % 2);
+        const top = Math.max(0, Math.floor((box.y - index.a1y + offset) / index.hexHeight) - 1);
+        const bottom = Math.min(rows - 1 + (column % 2), Math.ceil((box.y + box.height - index.a1y + offset) / index.hexHeight) + 1);
+        const x = index.a1x + index.hexWidth * column;
+        for (let row = top; row <= bottom; row++) {
+            const y = index.a1y + index.hexHeight * row - offset;
+            parts.push(`M${n(x - side / 2)},${n(y - half)}H${n(x + side / 2)}L${n(x + side)},${n(y)}L${n(x + side / 2)},${n(y + half)}`
+                + `H${n(x - side / 2)}L${n(x - side)},${n(y)}Z`);
+        }
+    }
+
+    return parts.join("");
+}
+
+function updateNearGrid(state) {
+    const grid = state.svg.querySelector("#layer-grid");
+    let near = state.svg.querySelector("#near-grid");
+    const wanted = state.bounded && state.near && state.gridShown && state.tiles && grid;
+    if (!wanted) {
+        near?.remove();
+        return;
+    }
+
+    if (!near) {
+        near = document.createElementNS(svgNamespace, "path");
+        near.setAttribute("id", "near-grid");
+        for (const [name, value] of [["fill", "none"], ["stroke", "#000000"], ["stroke-width", "0.75"], ["stroke-opacity", "0.45"],
+            ["pointer-events", "none"]]) {
+            near.setAttribute(name, value);
+        }
+
+        grid.after(near);
+    }
+
+    const box = drawnBox(state);
+    const key = `${box.x} ${box.y} ${box.width} ${box.height}`;
+    if (near.getAttribute("data-box") !== key) {
+        near.setAttribute("data-box", key);
+        near.setAttribute("d", nearGridPath(state.tiles.index, box));
+    }
+}
+
+// Screen-Bounded Map Analysis, section 3.5: the server paints the shown variant's pyramid ahead, once per variant and visit (bounded only).
+function askAhead(state, tiles) {
+    if (!state.bounded || typeof globalThis.fetch !== "function") {
+        return;
+    }
+
+    tiles.aheadAsked ??= new Set();
+    const name = `${tiles.variant}${tiles.lines ?? ""}`;
+    if (tiles.aheadAsked.has(name)) {
+        return;
+    }
+
+    tiles.aheadAsked.add(name);
+    const game = (tiles.lines ?? "").includes("b") && state.boundaryGame
+        ? `${tiles.query ? "&" : "?"}game=${encodeURIComponent(state.boundaryGame)}` : "";
+    globalThis.fetch(`${tiles.baseUrl}/ahead-${name}.json${tiles.query}${game}`).catch(() => { /* Painting ahead is an aid; a page works without it. */ });
+}
+
+// Screen-Bounded Map Analysis, sections 3.3 and 3.4: with ?present=bounded, counter fragments and setup marks outside the part of the board
+// drawn (the committed box) are hidden by a data attribute and a site.css rule, so a commit lays out and paints only those in view. They stay
+// in the page, so patches and the marks' replacement work as before; only their display changes, and only when it changes.
+export function hexCentre(index, column, row) {
+    return {
+        x: index.a1x + index.hexWidth * column,
+        y: index.a1y + index.hexHeight * row - index.hexHeight / 2 * (column % 2),
+    };
+}
+
+// A counter fragment's box: its hex (data-hex "column,row") widened by a hex each way, room for a stack's offsets.
+export function fragmentBounds(index, dataHex) {
+    const [column, row] = (dataHex ?? "").split(",").map(Number);
+    if (!Number.isFinite(column) || !Number.isFinite(row)) {
+        return null;
+    }
+
+    const centre = hexCentre(index, column, row);
+    return { x: centre.x - 1.5 * index.hexWidth, y: centre.y - 1.5 * index.hexHeight, width: 3 * index.hexWidth, height: 3 * index.hexHeight };
+}
+
+// A mark's box from the numbers of its first polygon's points (GameMaps.HexMark), or null when it has none: a mark of another shape is
+// always shown.
+export function pointsBounds(points) {
+    const numbers = (points ?? "").split(/[\s,]+/).filter(Boolean).map(Number);
+    if (numbers.length < 4 || numbers.some(value => !Number.isFinite(value))) {
+        return null;
+    }
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (let i = 0; i + 1 < numbers.length; i += 2) {
+        minX = Math.min(minX, numbers[i]);
+        maxX = Math.max(maxX, numbers[i]);
+        minY = Math.min(minY, numbers[i + 1]);
+        maxY = Math.max(maxY, numbers[i + 1]);
+    }
+
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+export function boxesMeet(a, b) {
+    return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+const cullBounds = new WeakMap();
+
+function cullToView(state) {
+    const index = state.tiles?.index;
+    if (!state.bounded || !index?.hexWidth || !state.box) {
+        return;
+    }
+
+    const box = drawnBox(state);
+    const units = state.svg.querySelector("#layer-units");
+    for (const fragment of units?.children ?? []) {
+        if (!cullBounds.has(fragment)) {
+            cullBounds.set(fragment, fragmentBounds(index, fragment.getAttribute("data-hex")));
+        }
+
+        markOut(fragment, cullBounds.get(fragment), box);
+    }
+
+    const marks = state.svg.querySelector("#layer-marks");
+    for (const mark of marks?.children ?? []) {
+        if (!cullBounds.has(mark)) {
+            cullBounds.set(mark, pointsBounds(mark.querySelector("polygon")?.getAttribute("points")));
+        }
+
+        markOut(mark, cullBounds.get(mark), box);
+    }
+}
+
+function markOut(element, bounds, box) {
+    const out = String(bounds !== null && !boxesMeet(bounds, box));
+    if ((element.getAttribute("data-out") ?? "false") !== out) {
+        element.setAttribute("data-out", out);
+    }
+}
+
+function setBoundaries(state, game) {
+    state.boundaryGame = state.bounded && game ? game : null;
+    refreshTileLines(state);
     updateTiles(state);
 }
 
@@ -996,6 +1255,7 @@ function setMarks(state, markup) {
         throw new Error("Invalid marks layer");
     }
     state.svg.appendChild(document.importNode(group, true));
+    cullToView(state);
 }
 
 function setUnits(state, markup, version) {
@@ -1023,6 +1283,7 @@ function setUnits(state, markup, version) {
     }
 
     updateUnitTier(state);
+    cullToView(state);
     reportMeasuredScene(state);
 }
 
@@ -1079,6 +1340,7 @@ function applyUnitPatch(state, patch) {
     }
 
     updateUnitTier(state);
+    cullToView(state);
     return true;
 }
 
@@ -1138,6 +1400,37 @@ function probeTarget() {
 
     if (!best) throw new Error("No map is on the page.");
     return best;
+}
+
+// The time from `since` until every tile the map keeps in view shows its own image, checked each frame; null when the map draws no tiles,
+// -1 when it is not sharp within the wait (ten seconds by default).
+async function untilSharp(state, since, waitMs = 10000) {
+    if (!state.tiles) {
+        return null;
+    }
+
+    const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
+    for (;;) {
+        const now = await frame();
+        if (tilesSharp(state.tiles)) {
+            return Math.round(now - since);
+        }
+
+        if (now - since > waitMs) {
+            return -1;
+        }
+    }
+}
+
+// Whether every tile image in the pool has its file: a tile still loading has no href (tileImage).
+export function tilesSharp(tiles) {
+    for (const image of tiles.pool.values()) {
+        if (!image.hasAttribute("href")) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 export function summarizeFrames(times) {
@@ -1206,12 +1499,15 @@ async function runProbe(state, options = {}) {
             forcedStyleAndLayoutMs: Math.round(forced) };
     };
 
-    // A drag of a fixed screen distance over about a second: one move per animation frame.
-    const dragMs = options.dragMs ?? 1000;
-    const distance = Math.min(rect.width, rect.height) / 4;
+    // A drag of a fixed screen distance: by default a quarter of the pane's short side over a second, inside the painted margin; with
+    // `dragPanes` that many pane widths (negative to the left), so the drag commits on the way, as a user's long pan does (Screen-Bounded
+    // Map Analysis, section 5). A long drag needs a zoom at which the map is wider than the pane, or it drags past the map's edge.
+    const dragMs = options.dragMs ?? (options.dragPanes ? 1000 * Math.max(1, Math.abs(options.dragPanes)) : 1000);
+    const distance = options.dragPanes ? rect.width * options.dragPanes : Math.min(rect.width, rect.height) / 4;
     await frame();
     const dragStart = performance.now();
     const dragTimes = [dragStart];
+    const commitsBeforeDrag = state.commits ?? 0;
     pointer("pointerdown", cx, cy);
     for (let elapsed = 0; elapsed < dragMs; elapsed = performance.now() - dragStart) {
         pointer("pointermove", cx + distance * elapsed / dragMs, cy);
@@ -1222,21 +1518,31 @@ async function runProbe(state, options = {}) {
     const upAt = performance.now();
     dragTimes.push(await frame());
     const settledAt = await frame();
+    const dragCommits = (state.commits ?? 0) - commitsBeforeDrag;
+    const dragSharpMs = await untilSharp(state, upAt, options.sharpWaitMs);
     await new Promise(resolve => setTimeout(resolve, 50));
-    const drag = { ...summarizeFrames(dragTimes), settleMs: Math.round(settledAt - upAt), ...loafSince(dragStart) };
+    const drag = { ...summarizeFrames(dragTimes), settleMs: Math.round(settledAt - upAt), commits: dragCommits, sharpMs: dragSharpMs, ...loafSince(dragStart) };
 
-    // A burst of wheel events in one task, as a trackpad sends them, then the frames until the map settles.
+    // A burst of wheel events in one task, as a trackpad sends them, then the frames until the map settles. By default it alternates in
+    // and out; `wheel: "in"` or `"out"` zooms one way, so it passes the painted scale and commits as a real zoom does.
     setBox(state, saved.box, saved.fitted);
     await frame();
     const wheelStart = performance.now();
+    const commitsBeforeWheel = state.commits ?? 0;
     for (let index = 0; index < (options.wheelEvents ?? 20); index++) {
-        state.svg.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY: index % 2 ? 100 : -100, clientX: cx, clientY: cy }));
+        const deltaY = options.wheel === "in" ? -100 : options.wheel === "out" ? 100 : index % 2 ? 100 : -100;
+        state.svg.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY, clientX: cx, clientY: cy }));
     }
     const wheelTimes = [wheelStart, await frame(), await frame()];
+    // The burst rests after `gestureRest`; the commit and the tiles follow it.
+    await new Promise(resolve => setTimeout(resolve, gestureRest + 20));
+    await frame();
+    const wheelSharpMs = await untilSharp(state, wheelStart, options.sharpWaitMs);
     // Long Animation Frame entries are delivered after their frame: one more frame and a short wait before they are read.
     await frame();
     await new Promise(resolve => setTimeout(resolve, 50));
-    const wheel = { settleMs: Math.round(wheelTimes[2] - wheelStart), ...loafSince(wheelStart) };
+    const wheel = { settleMs: Math.round(wheelTimes[2] - wheelStart), commits: (state.commits ?? 0) - commitsBeforeWheel, sharpMs: wheelSharpMs,
+        ...loafSince(wheelStart) };
 
     // The label layer switch: off and on again, as the page's layer choice does it.
     setBox(state, saved.box, saved.fitted);
@@ -1371,6 +1677,9 @@ function flushBox(state) {
         state.committed = null;
     }
 
+    // The probe counts the repaints a gesture causes (Screen-Bounded Map Analysis, section 5, step 1).
+    state.commits = (state.commits ?? 0) + 1;
+
     // The one exception to site.css's rule of no style attributes (as the first trial's, Large Campaign Map Plan task 6): the gesture's
     // transform, cleared at every commit, which hands the drawing back to site.css's rule.
     state.svg.style?.removeProperty?.("transform");
@@ -1383,6 +1692,8 @@ function flushBox(state) {
     updateLabelDetail(state);
     updateLabels(state);
     updateTiles(state);
+    updateNearGrid(state);
+    cullToView(state);
 }
 
 // A gesture starts: the drawing gets its own compositor layer for the gesture's length (site.css, .board-host.gesturing).

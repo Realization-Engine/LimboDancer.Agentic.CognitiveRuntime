@@ -1314,7 +1314,7 @@ else if (state is not null)
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
         {
-            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
+            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" TileBoundaries="@TileBoundaries(mapBoard)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
                             Panel="@InspectorPanel" PanelChanged="SelectInspectorTab" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)" InspectorHeader="@(bannerNow is not null ? inspectorTurn : null)" InspectorPlanner="@PlannerBlock" InspectorAttacker="@state?.PhasingSide"
@@ -4020,7 +4020,7 @@ else if (state is not null)
             setup = setup is { Length: > 4 } && setup.EndsWith("</g>", StringComparison.Ordinal) ? $"{setup[..^4]}{route}</g>" : $"<g id=\"layer-marks\">{route}</g>";
         }
 
-        if (!showParentBoundaries || handOver is not null || OwnershipFor(board) is not { } ownership)
+        if (!showParentBoundaries || BoundedMap || handOver is not null || OwnershipFor(board) is not { } ownership)
         {
             return setup;
         }
@@ -7409,6 +7409,16 @@ else if (state is not null)
     /// <summary>A card to start a new game from, such as a minigame's from the Minigames page; read only when no game is named.</summary>
     [SupplyParameterFromQuery(Name = "card")]
     public string? CardQuery { get; set; }
+
+    /// <summary>?present=bounded: the screen-bounded map (Screen-Bounded Map Analysis, decision N6), compared with the present one.</summary>
+    [SupplyParameterFromQuery(Name = "present")]
+    public string? PresentQuery { get; set; }
+
+    private bool BoundedMap => PresentQuery == "bounded";
+
+    // Under ?present=bounded the tiles carry the Formation boundaries; the page names the game to them instead of drawing a path.
+    private string? TileBoundaries(StudioBoard board) =>
+        BoundedMap && showParentBoundaries && handOver is null && OwnershipFor(board) is not null ? gameId : null;
 
     /// <summary>A hex to pick when the page opens, such as the one picked on the board viewer before "Back to Play".</summary>
     [SupplyParameterFromQuery(Name = "hex")]

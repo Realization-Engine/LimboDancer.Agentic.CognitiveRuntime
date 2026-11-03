@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
 const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
-    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel, hexCentre, fragmentBounds, pointsBounds, boxesMeet, nearGridPath } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -98,6 +98,72 @@ test("the pan probe summarizes frames from their times", () => {
     assert.deepEqual(summarizeFrames([0, 16, 32, 132, 148]),
         { frames: 4, spanMs: 148, framesPerSecond: 27, longestFrameMs: 100, medianFrameMs: 16 });
     assert.deepEqual(summarizeFrames([5]), { frames: 0, spanMs: 0, framesPerSecond: 0, longestFrameMs: 0, medianFrameMs: 0 });
+});
+
+// Screen-Bounded Map Analysis, section 5, step 1: the probe waits until every tile kept in view shows its own image.
+test("the map is sharp when every pooled tile has its file", () => {
+    const tile = href => ({ hasAttribute: name => name === "href" && href !== null });
+    const loaded = tile("tile-te-0-0-0.png");
+    const loading = tile(null);
+    assert.equal(tilesSharp({ pool: new Map([["a", loaded]]) }), true);
+    assert.equal(tilesSharp({ pool: new Map([["a", loaded], ["b", loading]]) }), false);
+    assert.equal(tilesSharp({ pool: new Map() }), true);
+});
+
+// Screen-Bounded Map Analysis, section 3: the tiles' lines under ?present=bounded, the grid left to the vectors at near zoom (decision N2).
+test("bounded tiles ask for the grid and the boundaries the view shows", () => {
+    assert.equal(tileLines(false, "te", true, false, "campaign-1"), "");
+    assert.equal(tileLines(true, "te", true, false, null), "+g");
+    assert.equal(tileLines(true, "te", true, false, "campaign-1"), "+gb");
+    assert.equal(tileLines(true, "te", true, true, "campaign-1"), "+b");
+    assert.equal(tileLines(true, "t", false, false, null), "");
+    assert.equal(tileLines(true, "e", true, false, "campaign-1"), "");
+    assert.equal(boundedInAddress(["http://localhost/games/play?game=g&present=bounded"]), true);
+    assert.equal(boundedInAddress(["http://localhost/games/play?game=g", undefined]), false);
+});
+
+// Screen-Bounded Map Analysis, sections 3.3 and 3.4: counters and marks are placed from their hex or their polygon, and hidden outside the box.
+test("counters and marks are placed for the view", () => {
+    const index = { hexWidth: 56.25, hexHeight: 64.5, a1x: 0, a1y: 32.25 };
+    assert.deepEqual(hexCentre(index, 0, 0), { x: 0, y: 32.25 });
+    assert.deepEqual(hexCentre(index, 1, 0), { x: 56.25, y: 0 });
+    const counter = fragmentBounds(index, "10,4");
+    assert.deepEqual(counter, { x: 562.5 - 84.375, y: 290.25 - 96.75, width: 168.75, height: 193.5 });
+    assert.equal(fragmentBounds(index, null), null);
+    assert.deepEqual(pointsBounds("10,20 30,5 25,40"), { x: 10, y: 5, width: 20, height: 35 });
+    assert.equal(pointsBounds(undefined), null);
+    const view = { x: 0, y: 0, width: 500, height: 300 };
+    assert.equal(boxesMeet(counter, view), true);
+    assert.equal(boxesMeet({ x: 600, y: 0, width: 10, height: 10 }, view), false);
+});
+
+// Screen-Bounded Map Analysis, step 4: at near zoom the grid is drawn for the hexes around the box only, each hex a closed outline.
+test("the near grid outlines only the hexes about the box", () => {
+    // A 33 by 10 board: 1,800 by 645 cells.
+    const index = { width: 1800, height: 645, hexWidth: 56.25, hexHeight: 64.5, a1x: 0, a1y: 32.25 };
+    const small = nearGridPath(index, { x: 500, y: 200, width: 100, height: 100 });
+    const hexes = small.split("Z").filter(Boolean);
+    // Columns 7 to 12 (a column either side), rows of each about the box: far fewer than the board's 335 hexes.
+    assert.ok(hexes.length > 0 && hexes.length < 60, `${hexes.length} hexes`);
+    assert.match(hexes[0], /^M[\d.]+,[\d.]+H[\d.]+L/);
+    const whole = nearGridPath(index, { x: -100, y: -100, width: 2000, height: 900 }).split("Z").filter(Boolean);
+    assert.equal(whole.length, 33 * 10 + 16);
+    assert.equal(nearGridPath({}, { x: 0, y: 0, width: 1, height: 1 }), "");
+});
+
+// Screen-Bounded Map Analysis, section 3.5: the next finer level is fetched ahead for the same box, at twice the tiles each way.
+test("the tiles of a set level cover the box widened by a tile", () => {
+    const index = { width: 4096, height: 2048, tileSize: 512, levels: 4 };
+    const box = { x: 1024, y: 0, width: 1024, height: 512 };
+    const coarse = tilesAtLevel(index, box, 1);
+    const fine = tilesAtLevel(index, box, 0);
+    assert.equal(coarse.level, 1);
+    assert.equal(fine.level, 0);
+    // Level 1 tiles are 1,024 cells: the box widened by one, 0 to 3,072 by -1,024 to 1,536, meets columns 0 to 3 and rows 0 to 1; level 0
+    // tiles are 512: 512 to 2,560 by -512 to 1,024 meets columns 1 to 5 and rows 0 to 2.
+    assert.deepEqual(coarse.tiles.map(tile => `${tile.column},${tile.row}`), ["0,0", "0,1", "1,0", "1,1", "2,0", "2,1", "3,0", "3,1"]);
+    assert.equal(fine.tiles.length, 5 * 3);
+    assert.deepEqual(tilesInView(index, box, 0.5), coarse);
 });
 
 // Large Campaign Map Plan, A2: a pointer is read from the drawing's rectangle and observed size, not the screen matrix. A 200 by 100 drawing

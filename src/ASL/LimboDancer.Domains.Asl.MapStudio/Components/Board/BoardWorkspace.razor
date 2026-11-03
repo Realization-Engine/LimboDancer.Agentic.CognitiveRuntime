@@ -43,6 +43,14 @@
     private string? loadProblem;
     private string? loadedKey;
     private (string? Los, string? Marks, string? Highlight, string? Visible, string? Comparison) sent;
+    private string? sentBoundaries;
+
+    /// <summary>
+    /// The Campaign game whose Formation boundaries the map's tiles carry under ?present=bounded, or null (Screen-Bounded Map Analysis,
+    /// section 3.1). Without that switch the page draws the boundaries in its marks, as before.
+    /// </summary>
+    [Parameter]
+    public string? TileBoundaries { get; set; }
     private BoardInspector? inspectorPane;
     private HexFacts? hovered;
     private PlacedUnit? selectedUnit;
@@ -297,7 +305,7 @@
 
         if (LoadKey != shown)
         {
-            (shown, loading, sent, loadProblem) = (LoadKey, true, default, null);
+            (shown, loading, sent, loadProblem, sentBoundaries) = (LoadKey, true, default, null, null);
             try
             {
                 var input = Board.InputFor(View) ?? Board.Render;
@@ -354,6 +362,12 @@
         {
             sent.Visible = visible;
             await viewport.SetVisible([.. Visible ?? AllLayers]);
+        }
+
+        if (TileBoundaries != sentBoundaries)
+        {
+            sentBoundaries = TileBoundaries;
+            await viewport.SetBoundaries(TileBoundaries);
         }
 
         var comparison = View == BoardView.Comparison ? $"{ComparisonMode}/{ComparisonValue}" : "none";
