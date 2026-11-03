@@ -209,6 +209,49 @@ Candidates once the cause is known. None is proposed yet.
 - **The browser's next-level fetch.** It is Goodwood's only, it does no harm, and it stays.
 - **The label canvas.** Both maps run the same function.
 
+### 5.6 Measured on Goodwood in the user's Chrome (2026-11-03)
+
+The user ran `mapProbeSuite()` twice on the Goodwood reference (game `campaign-21f5abd45868a5100c5b8475`, the Allied view, Turn 1 Allied Prep Fire Phase, 548 counters), on this branch in my Studio at 6670: first on the bounded page as it stands (`?present=bounded`), then with `&near=tiles`. The two single runs that followed were at 912 by 734, the window of the analysis's earlier Goodwood runs; the display runs at about 85 Hz (a median frame of 12 ms). Drag frames per second, first run / second run:
+
+| Run | All counters drawn | Out of view hidden | No counters |
+|---|---|---|---|
+| Fit | 85.6 / 84.7 | 84.5 / 82.6 | 85 / 85.2 |
+| Five steps in | 83.5 / 84.2 | 84.1 / 84.2 | 85.8 / 85.2 |
+| Labels readable, a pane-long drag | 31.6 / 52.6 (longest 142 / 83 ms) | 63.6 / 68.1 (71 / 71 ms) | 70.1 / 68.6 (59 / 71 ms) |
+| Near zoom, a pane-long drag, near grid | 44.4 / 53.4 | 59 / 62.7 | 63.2 / 62.9 |
+| Near zoom, a pane-long drag, one tile set | 49.3 / 54.2 | 59.9 / 63.6 | 60.8 / 62.1 |
+| Deep wheel zoom from Fit, sharp after | 623 to 654 ms | 430 to 858 ms | 370 to 941 ms |
+| Its longest frame | 95 to 119 ms | 104 to 164 ms | 96 to 114 ms |
+
+What they show:
+
+- **Hiding counters out of view is what keeps Goodwood's counters cheap.** Where labels are readable it lifts the drag from 32 to 53 frames per second to 64 to 68, and at near zoom from 44 to 54 to 59 to 64. With them hidden, the 548 counters cost about as much as none (68.1 against 68.6 in the second run). The bounded map hides them by default; the "all" column is how the old presentation draws them.
+- **One tile set at every zoom (G1) gains no speed.** The near-zoom drags on the near grid and on one tile set agree within the runs' spread. G1 is decided by its look and by disk (one pyramid of about 99 MB less), not by speed. Proposed: the near grid stays the default; `?near=tiles` stays as an experiment.
+- **The deep zoom does not depend on counters or the grid.** Its long frame (95 to 164 ms) is there in every mode.
+
+**The deep zoom's long frame, broken down.** The probe's record of the six deep-zoom runs of each suite: one long frame, twice two, of 95 to 164 ms, of which 96 to 148 ms is rendering and 0 to 30 ms script (the viewport's frame callback). Two single runs after the suites, at 912 by 734: sharp after 666 ms with one frame of 129 ms (near grid) and 699 ms with two, the longest 152 ms (one tile set), where section 5.6 of the Screen-Bounded Map Analysis had about 700 ms and two of 143 ms: moving the labels off the page did not change the deep zoom.
+
+**A Chrome performance trace of one deep zoom** (the user's, saved outside the repository at `asl-gate-work/traces/deep-zoom.json`; tracing slows Chrome, so its times run about twice the probe's):
+
+| When | Probe step | Main-thread task | Style recalculation | Layout | Commit |
+|---|---|---|---|---|---|
+| 1,551 ms | Reset to Fit | 353 ms | 90 ms, 8,373 elements | 12 ms, 8,843 of 10,231 objects | 231 ms |
+| 3,054 to 3,256 ms | The drag at Fit | none long | | | 31 ms |
+| 3,384 ms | The deep zoom lands | 414 ms | 76 ms, 14,336 elements | 33 ms, 16,738 of 18,111 objects | 289 ms |
+| 4,098 and 4,281 ms | The gesture rests; tiles arrive | 104 and 122 ms | 73 and 64 ms, up to 14,338 elements | 29 ms | |
+| 4,601 ms | The new tiles are shown | 295 ms | | | 295 ms, with nothing else in it |
+
+- **Our scripts are not the cost:** 1 to 13 ms a task.
+- **Restyle and layout of the counter layer.** On the game map (behind "I am the Allied side: show my view") the drawing held 4,636 elements, 4,548 of them in the counter layer, with 1,746 references to the shared counter art; at Fit all 530 fragments show, 3,270 elements and 1,644 references (one a tier, three a counter). Each reference makes Chrome clone the art it names, which brings the layer to the roughly 14,000 elements restyled. A deep zoom from Fit takes most counters out of view in one commit, and a return to Fit brings them all back: each time the whole layer is restyled and laid out. A drag hides or shows a few at a time, which is why drags stay fast. The page also holds 6,361 elements outside the map (the side panel); the trace's layouts were of the whole document.
+- **Long commits when tiles change.** The commit to the compositor took 231 to 295 ms at the reset, the landing, and when the new level-0 tiles were shown, the last with no other work in its task. No other thread in the trace was busy for that time, so the main thread waited rather than worked; a batch of new 512-pixel tile images reaching the GPU at once is the likely cause, not proven by this trace.
+
+**The default (N6).** Against the old presentation (the Screen-Bounded Map Analysis, section 5.1): a few wheel steps near playing zoom sharpen in 243 to 301 ms on the bounded page (five steps in, first suite), against 253 to 288; the deep zoom in 666 to 699 ms, against 653; a first pan over new ground runs at 82.4 frames per second, against 41.5. Zooms are now at least as good within the runs' spread, which was N6's condition; the backlog asks for three runs, and two suites have been made.
+
+**Candidates for what remains** (not built; each would get its own plan):
+
+- Counters drawn more cheaply at far and middle zoom, for example painted into a canvas as the labels are, so that a zoom does not restyle thousands of cloned elements. Attaching only the counters in view (N4 as first proposed) would pay the same cost each time they come back.
+- New tiles shown a few a frame rather than all together, and the destination level's tiles fetched during a wheel gesture, to shorten the long commits and the wait for sharp tiles.
+
 ## 6. Proposed order
 
 | Step | Work | Measured by | Done when |
