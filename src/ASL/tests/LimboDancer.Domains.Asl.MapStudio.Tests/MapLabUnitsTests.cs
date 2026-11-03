@@ -72,6 +72,18 @@ public sealed class MapLabUnitsTests
     }
 
     [Fact]
+    public void TheTileIndexCarriesTheHexLatticeTheViewportPlacesCountersBy()
+    {
+        using var index = System.Text.Json.JsonDocument.Parse(LabMapRenderer.TileIndex(Map));
+        var root = index.RootElement;
+        Assert.Equal(Map.Geometry.HexWidth, root.GetProperty("hexWidth").GetDouble());
+        Assert.Equal(Map.Geometry.HexHeight, root.GetProperty("hexHeight").GetDouble());
+        Assert.Equal(Map.Geometry.A1CenterX, root.GetProperty("a1x").GetDouble());
+        Assert.Equal(Map.Geometry.A1CenterY, root.GetProperty("a1y").GetDouble());
+        Assert.Equal(Map.Geometry.GridWidth, root.GetProperty("width").GetInt32());
+    }
+
+    [Fact]
     public void StopsAtTheLimitOfASide()
     {
         var pool = LabUnits.Pool(Library.CatalogChoices, LabUnits.German);

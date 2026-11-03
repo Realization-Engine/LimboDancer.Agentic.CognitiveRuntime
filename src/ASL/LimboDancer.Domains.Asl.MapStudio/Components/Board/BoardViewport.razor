@@ -128,7 +128,8 @@
     // Raised when a layer's drawing changes but the renderer version must not (Large Campaign Map Plan, task 5: raising RendererVersion would
     // make every board's fidelity report stale): the browser keeps layers as immutable, so a new token makes it fetch them again.
     // 3: tiles.json carries the hex lattice (Screen-Bounded Map Analysis, section 3.4).
-    private const int LayersVersion = 3;
+    // 4: the Map Lab's tiles.json carries it too (the Goodwood Lab Techniques Analysis, item 2).
+    private const int LayersVersion = 4;
 
     public ValueTask SetVisible(IReadOnlyList<string> visible) => Send("setVisible", visible);
 
@@ -178,6 +179,12 @@
     /// takes it only with ?present=bounded; see <see cref="IsBounded"/>.
     /// </summary>
     public ValueTask SetBoundaries(string? game) => Send("setBoundaries", game);
+
+    /// <summary>
+    /// Whether counters and marks out of view are hidden, as ?present=bounded hides them (the Goodwood Lab Techniques Analysis, item 2); null
+    /// follows the address again. The Map Lab sets it; the map needs a tile index with the hex lattice to place them.
+    /// </summary>
+    public ValueTask SetCulling(bool? on) => Send("setCulling", on);
 
     /// <summary>Whether the map draws the screen-bounded presentation (?present=bounded); false before the viewport exists.</summary>
     public async ValueTask<bool> IsBounded() => viewport is not null && await viewport.InvokeAsync<bool>("isBounded");

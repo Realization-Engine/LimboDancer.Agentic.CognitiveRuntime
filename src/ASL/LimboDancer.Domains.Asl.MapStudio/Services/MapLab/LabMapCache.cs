@@ -7,8 +7,8 @@ using System.Text;
 namespace LimboDancer.Domains.Asl.MapStudio.Services.MapLab;
 
 /// <summary>One measure of pan and zoom, as the page shows it: the map, the zoom, and the probe's figures.</summary>
-public sealed record LabRun(string Map, string Zoom, string Elements, string Counters, string FramesPerSecond, string MedianMs, string LongestMs, string SettleMs,
-    string WheelMs, string Pane);
+public sealed record LabRun(string Map, string Zoom, string Elements, string Counters, string Drawn, string FramesPerSecond, string MedianMs, string LongestMs,
+    string RenderMs, string ScriptMs, string SettleMs, string WheelMs, string WheelSharpMs, string Pane);
 
 /// <summary>
 /// Holds the one Map Lab map last asked for, with its drawn files (Map Lab Plan, section 7: the map belongs to the Lab and is dropped when another

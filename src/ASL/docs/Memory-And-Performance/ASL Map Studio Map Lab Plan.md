@@ -175,6 +175,21 @@ The user asked on 2026-11-03 to test counters on the Lab's map (the [Goodwood La
 - Checked in my Studio at 6670 on the 10,000-hex `tileslines` map: 1,000 counters in 952 hexes, the layer built in 732 ms and shown in 253 ms; counters drawn as in Play, stacks included. The page then held about 10,200 elements (60 to 139 without counters). A Measure in my pane dragged at 4 to 8 frames per second, a pointer only (section 3.5); speed waits on the user's Chrome.
 - Left out (backlog section 97): the units are not in the address, so a reload or a new map drops them; the Lab draws every counter, since it runs without `?present=bounded`; a click on a counter does nothing.
 - **F8. The user's finding (2026-11-03, merged as PR 113):** "Performance is good with 1000 counters on the maps. At 2000 counters there is a slight lag." Judged by the user's own drags in Chrome, not by the probe; the counters are infantry only (squads, half-squads, leaders, machine guns), all drawn, none hidden out of view. No Measure figures were taken at either count.
+- **F9. Counters measured on a map of Goodwood's size** (the user's Chrome, 2026-11-03): 40,392 hexes, `tileslines`, formations of 36, seed 7, every counter drawn, at 2,506 by 735 on a display of about 85 Hz (a median frame of 12 ms), one run each.
+
+| Run | No counters | 600 counters | 1,000 counters |
+|---|---|---|---|
+| Fit: drag fps, longest frame | 85, 12 ms | 67.4, 82 ms | 45.2, 130 ms |
+| Five steps in | 70.8, 35 ms | 50.6, 188 ms | 35.7, 212 ms |
+| Labels readable, a pane-long drag | 58.8, 188 ms | 6.8, 282 ms (median frame 153 ms) | 3.1, 518 ms (median 377 ms) |
+| Elements in the page (Fit) | 53 | 7,447 | 10,239 |
+
+What F9 shows:
+
+- Without counters the Lab's techniques hold on a map of Goodwood's size, even at this width.
+- Counters cost little at Fit and a great deal where the labels are readable: 600 cut that drag nearly nine times, and most of its frames were slow, not only its commits.
+- The Lab drew every counter; Goodwood under `?present=bounded` hides those out of view, and held 66 to 67 frames per second at readable zoom with about 530 (at 912 pixels wide). The next build gives the Lab the same hiding (Goodwood Lab Techniques Analysis, section 6), and the Measure button measures each way.
+- In my browser pane the same map gave 77 to 85 frames per second without counters and 5 to 6 with 600 (a pointer only, section 3.5).
 
 ## 9. Answers to the guidelines' checklist
 

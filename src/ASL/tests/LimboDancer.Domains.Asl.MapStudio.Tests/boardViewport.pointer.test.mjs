@@ -4,7 +4,8 @@ import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
 const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
-    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel, hexCentre, fragmentBounds, pointsBounds, boxesMeet, nearGridPath } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel, hexCentre, fragmentBounds, pointsBounds, boxesMeet, nearGridPath,
+    nearTilesInAddress, cullOn, probePlan, frameBreakdown, withGridInTiles } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -120,6 +121,64 @@ test("bounded tiles ask for the grid and the boundaries the view shows", () => {
     assert.equal(tileLines(true, "e", true, false, "campaign-1"), "");
     assert.equal(boundedInAddress(["http://localhost/games/play?game=g&present=bounded"]), true);
     assert.equal(boundedInAddress(["http://localhost/games/play?game=g", undefined]), false);
+});
+
+// The Goodwood Lab Techniques Analysis, G1: with ?near=tiles the grid stays in the tiles at near zoom, as the Map Lab draws it.
+test("near tiles keep the grid in the tiles at near zoom", () => {
+    assert.equal(tileLines(true, "te", true, true, null, true), "+g");
+    assert.equal(tileLines(true, "te", true, true, "campaign-1", true), "+gb");
+    assert.equal(tileLines(true, "te", false, true, null, true), "");
+    assert.equal(tileLines(false, "te", true, true, null, true), "");
+    assert.equal(nearTilesInAddress(["http://localhost/games/play?game=g&present=bounded&near=tiles"]), true);
+    assert.equal(nearTilesInAddress(["http://localhost/games/play?present=bounded"]), false);
+});
+
+// Item 4: with no whole-map grid in the page, the layers the probe puts back keep the grid the switch shows.
+test("the grid carried by the tiles stays among the shown layers", () => {
+    assert.deepEqual(withGridInTiles(["exact-tiles", "labels"], true, false), ["exact-tiles", "labels", "grid"]);
+    assert.deepEqual(withGridInTiles(["exact-tiles", "labels"], false, false), ["exact-tiles", "labels"]);
+    assert.deepEqual(withGridInTiles(["exact-tiles", "labels"], true, true), ["exact-tiles", "labels"]);
+    assert.deepEqual(withGridInTiles(["grid", "labels"], true, false), ["grid", "labels"]);
+});
+
+// Item 2: counters out of view are hidden where a page asks for it, else with ?present=bounded.
+test("culling follows the page's choice, else the bounded map", () => {
+    assert.equal(cullOn(null, true), true);
+    assert.equal(cullOn(null, false), false);
+    assert.equal(cullOn(true, false), true);
+    assert.equal(cullOn(false, true), false);
+});
+
+// The user, 2026-11-03: the Measure button tests every option; mapProbeSuite runs the same plan on Goodwood.
+test("the probe plan runs every zoom in each counter mode, and the near runs on both grids when bounded", () => {
+    const bare = probePlan(false, false);
+    assert.deepEqual(bare.map(run => run.name), ["Fit", "5 in", "labels, long drag", "near, long drag", "deep zoom from Fit"]);
+    assert.ok(bare.every(run => run.drawn === "none" && run.nearTiles === undefined && run.nearRun === undefined));
+
+    const lab = probePlan(true, false);
+    assert.equal(lab.length, 15);
+    assert.deepEqual(lab.slice(0, 3).map(run => [run.drawn, run.cull, run.units]), [["all", false, undefined], ["in view", true, undefined], ["none", undefined, false]]);
+
+    const goodwood = probePlan(true, true);
+    // Three zooms in three modes, and two near runs in three modes on both grids.
+    assert.equal(goodwood.length, 9 + 12);
+    const near = goodwood.filter(run => run.name === "near, long drag");
+    assert.deepEqual(near.map(run => `${run.drawn}/${run.nearTiles}`), ["all/false", "all/true", "in view/false", "in view/true", "none/false", "none/true"]);
+    assert.equal(near[0].zoom, "near");
+    assert.equal(goodwood.find(run => run.name === "deep zoom from Fit").wheel, "in");
+});
+
+// Item 5: a long frame's time split into scripts, by name, and rendering.
+test("the long frames' breakdown sums scripts by name and the rendering after them", () => {
+    const breakdown = frameBreakdown([
+        { startTime: 0, duration: 100, renderStart: 40, scripts: [{ sourceFunctionName: "flushBox", duration: 30 }, { invoker: "pointermove", duration: 5 }] },
+        { startTime: 200, duration: 60, renderStart: 210, scripts: [{ sourceFunctionName: "flushBox", duration: 8 }] },
+        { startTime: 300, duration: 55, renderStart: 0 },
+    ]);
+    assert.equal(breakdown.scriptMs, 43);
+    assert.equal(breakdown.renderMs, 60 + 50);
+    assert.deepEqual(breakdown.scripts, [{ name: "flushBox", ms: 38 }, { name: "pointermove", ms: 5 }]);
+    assert.deepEqual(frameBreakdown([]), { scriptMs: 0, renderMs: 0, scripts: [] });
 });
 
 // Screen-Bounded Map Analysis, sections 3.3 and 3.4: counters and marks are placed from their hex or their polygon, and hidden outside the box.

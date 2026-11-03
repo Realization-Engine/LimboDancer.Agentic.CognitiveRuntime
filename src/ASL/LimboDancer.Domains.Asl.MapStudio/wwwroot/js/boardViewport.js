@@ -43,6 +43,10 @@ export function create(host, dotnet) {
         committed: null, gesturing: false,
         // Screen-Bounded Map Analysis, decision N6: the new presentation behind ?present=bounded until it is measured the better.
         bounded: boundedInAddress(), boundaryGame: null, near: false, gridShown: true,
+        // Goodwood Lab Techniques Analysis, item 3 (G1): ?near=tiles keeps the grid in the tiles at near zoom, as the Map Lab does.
+        nearTiles: nearTilesInAddress(),
+        // Item 2: whether counters and marks out of view are hidden; null follows ?present=bounded (cullOn), a page or the probe sets it.
+        cull: null, culled: false,
     };
     state.panShown = state.pan;
     if (state.pan) {
@@ -266,6 +270,7 @@ export function create(host, dotnet) {
         setLos: markup => setLos(state, markup),
         setMarks: markup => setMarks(state, markup),
         setBoundaries: game => setBoundaries(state, game),
+        setCulling: on => setCulling(state, on),
         isBounded: () => state.bounded,
         highlight: points => highlight(state, points),
         setTool: tool => setTool(state, tool),
@@ -299,11 +304,13 @@ function labelsAsData(baseUrl, layer) {
     return layer === "labels" && baseUrl.endsWith("/exact");
 }
 
-async function fetchGroups(baseUrl, query, layers, tiled = false) {
+async function fetchGroups(baseUrl, query, layers, tiled = false, gridInTiles = false) {
     let labelIndex = null;
     let tileIndex = null;
     // Raster Tiles Plan, section 2.5: with tiles, one group stands where the two Exact terrain layers stood, and neither is fetched.
-    const wanted = tiled ? layers.filter(layer => !tileLayers.includes(layer) || layer === tileLayers[0]) : layers;
+    // Goodwood Lab Techniques Analysis, item 4: with ?present=bounded the tiles carry the grid, so the whole-map vector grid is not fetched.
+    const wanted = (tiled ? layers.filter(layer => !tileLayers.includes(layer) || layer === tileLayers[0]) : layers)
+        .filter(layer => !(gridInTiles && layer === "grid"));
     const texts = await Promise.all(wanted.map(async layer => {
         if (tiled && layer === tileLayers[0]) {
             const response = await fetch(`${baseUrl}/tiles.json${query}`);
@@ -551,25 +558,43 @@ function setTileVariant(state, visible) {
 // Screen-Bounded Map Analysis, section 3: with ?present=bounded the grid and the Formation boundaries are painted into the tiles. The grid
 // goes into them except at near zoom, where a tile line would be magnified and the vector grid of the hexes in view is drawn instead
 // (decision N2); the boundaries go into them once the page names its game (setBoundaries).
-export function tileLines(bounded, variant, gridShown, near, boundaryGame) {
+// With nearTiles (?near=tiles, the Map Lab's way, G1) the grid stays in the tiles at near zoom too, so one tile set serves every zoom.
+export function tileLines(bounded, variant, gridShown, near, boundaryGame, nearTiles = false) {
     if (!bounded || !variant || variant === "e") {
         return "";
     }
 
-    const grid = gridShown && !near;
+    const grid = gridShown && (!near || nearTiles);
     const boundaries = Boolean(boundaryGame);
     return grid && boundaries ? "+gb" : grid ? "+g" : boundaries ? "+b" : "";
 }
 
 // ?present=bounded in the address, or in the address the page was opened with, as ?tiles=0.
 export function boundedInAddress(addresses = [globalThis.location?.href, globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.name]) {
+    return addressSays(addresses, "present", "bounded");
+}
+
+// ?near=tiles in the address, or in the address the page was opened with, as ?tiles=0.
+export function nearTilesInAddress(addresses = [globalThis.location?.href, globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.name]) {
+    return addressSays(addresses, "near", "tiles");
+}
+
+function addressSays(addresses, name, value) {
     return addresses.some(address => {
         try {
-            return address ? new URL(address).searchParams.get("present") === "bounded" : false;
+            return address ? new URL(address).searchParams.get(name) === value : false;
         } catch {
             return false;
         }
     });
+}
+
+// The probe's switch for G1: the near grid or one tile set, for a run.
+function setNearTiles(state, on) {
+    state.nearTiles = Boolean(on);
+    refreshTileLines(state);
+    updateTiles(state);
+    updateNearGrid(state);
 }
 
 // The tiles' lines for the present view. A change of variant or lines asks for other tiles; the old ones stay under them until those have
@@ -582,7 +607,7 @@ function refreshTileLines(state) {
         return;
     }
 
-    const lines = tileLines(state.bounded, tiles.variant, state.gridShown, state.near, state.boundaryGame);
+    const lines = tileLines(state.bounded, tiles.variant, state.gridShown, state.near, state.boundaryGame, state.nearTiles);
     const key = tiles.variant + lines;
     tiles.lines = lines;
     if (key !== tiles.key) {
@@ -628,9 +653,10 @@ export function nearGridPath(index, box) {
 }
 
 function updateNearGrid(state) {
-    const grid = state.svg.querySelector("#layer-grid");
+    // Above the tiles: after the whole-map grid where the page holds one, else after the tiles (item 4: under ?present=bounded it is not fetched).
+    const anchor = state.svg.querySelector("#layer-grid") ?? state.tiles?.group;
     let near = state.svg.querySelector("#near-grid");
-    const wanted = state.bounded && state.near && state.gridShown && state.tiles && grid;
+    const wanted = state.bounded && state.near && !state.nearTiles && state.gridShown && state.tiles && anchor?.isConnected;
     if (!wanted) {
         near?.remove();
         return;
@@ -644,7 +670,7 @@ function updateNearGrid(state) {
             near.setAttribute(name, value);
         }
 
-        grid.after(near);
+        anchor.after(near);
     }
 
     const box = drawnBox(state);
@@ -719,30 +745,45 @@ export function boxesMeet(a, b) {
 
 const cullBounds = new WeakMap();
 
+// Whether counters and marks out of view are hidden: as a page or the probe set it (setCulling), else with ?present=bounded.
+export function cullOn(cull, bounded) {
+    return cull ?? bounded;
+}
+
+// Goodwood Lab Techniques Analysis, item 2: the Map Lab hides counters out of view as Goodwood does, and the probe measures each way. Turned
+// off, every fragment hidden before is shown again.
+function setCulling(state, on) {
+    state.cull = on === null || on === undefined ? null : Boolean(on);
+    cullToView(state);
+}
+
 function cullToView(state) {
     const index = state.tiles?.index;
-    if (!state.bounded || !index?.hexWidth || !state.box) {
+    const on = cullOn(state.cull, state.bounded);
+    if (!index?.hexWidth || !state.box || (!on && !state.culled)) {
         return;
     }
 
     const box = drawnBox(state);
     const units = state.svg.querySelector("#layer-units");
     for (const fragment of units?.children ?? []) {
-        if (!cullBounds.has(fragment)) {
+        if (on && !cullBounds.has(fragment)) {
             cullBounds.set(fragment, fragmentBounds(index, fragment.getAttribute("data-hex")));
         }
 
-        markOut(fragment, cullBounds.get(fragment), box);
+        markOut(fragment, on ? cullBounds.get(fragment) : null, box);
     }
 
     const marks = state.svg.querySelector("#layer-marks");
     for (const mark of marks?.children ?? []) {
-        if (!cullBounds.has(mark)) {
+        if (on && !cullBounds.has(mark)) {
             cullBounds.set(mark, pointsBounds(mark.querySelector("polygon")?.getAttribute("points")));
         }
 
-        markOut(mark, cullBounds.get(mark), box);
+        markOut(mark, on ? cullBounds.get(mark) : null, box);
     }
+
+    state.culled = on;
 }
 
 function markOut(element, bounds, box) {
@@ -1006,7 +1047,7 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
         ? { generation, started: performance.now(), reported: false } : null;
     if (state.loadMetrics) state.host.dataset.mapMetricStatus = "loading";
     const tiled = tilesWanted(state, baseUrl, layers);
-    const { groups, labelIndex, tileIndex } = await fetchGroups(baseUrl, query, layers, tiled);
+    const { groups, labelIndex, tileIndex } = await fetchGroups(baseUrl, query, layers, tiled, tiled && state.bounded);
     if (generation !== state.generation) {
         return;
     }
@@ -1019,6 +1060,8 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
     if (state.loadMetrics) {
         probeStates.add(state);
         globalThis.mapProbe = options => runProbe(probeTarget(), options);
+        globalThis.mapProbePlan = () => planFor(probeTarget());
+        globalThis.mapProbeSuite = () => runSuite();
     }
     const [x, y, width, height] = viewBox.split(" ").map(Number);
     const home = { x, y, width, height };
@@ -1049,7 +1092,8 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
 async function reloadLayers(state, baseUrl, query, layers) {
     const generation = state.generation;
     // The tiles follow the board version in their URL; a reload of the vector terrain layers they replace has nothing to replace.
-    const { groups, labelIndex } = await fetchGroups(baseUrl, query, state.tiles ? layers.filter(layer => !tileLayers.includes(layer)) : layers);
+    const { groups, labelIndex } = await fetchGroups(baseUrl, query, state.tiles ? layers.filter(layer => !tileLayers.includes(layer)) : layers, false,
+        Boolean(state.tiles) && state.bounded);
     if (generation !== state.generation) {
         return;
     }
@@ -1526,6 +1570,75 @@ export function tilesSharp(tiles) {
     return true;
 }
 
+// The runs a Measure makes (the user, 2026-11-03: the Measure button tests every option of the Goodwood Lab Techniques Analysis's items 2 to 5).
+// Each zoom is run with every counter drawn, with those out of view hidden, and with none, when the map has counters; on the bounded map the
+// near-zoom runs are made on the near grid and on one tile set (G1). The Map Lab's Measure button and mapProbeSuite() both run this plan.
+export function probePlan(counters, bounded) {
+    const zooms = [
+        { name: "Fit", zoom: 0 },
+        { name: "5 in", zoom: 5 },
+        { name: "labels, long drag", zoom: "labels", dragPanes: 1 },
+        { name: "near, long drag", zoom: "near", dragPanes: 1, nearRun: true },
+        { name: "deep zoom from Fit", zoom: 0, wheel: "in", nearRun: true },
+    ];
+    const drawn = counters
+        ? [{ drawn: "all", cull: false }, { drawn: "in view", cull: true }, { drawn: "none", units: false }]
+        : [{ drawn: "none" }];
+    const runs = [];
+    for (const { nearRun, ...zoom } of zooms) {
+        for (const counter of drawn) {
+            for (const grid of bounded && nearRun ? [{ nearTiles: false }, { nearTiles: true }] : [{}]) {
+                runs.push({ ...zoom, ...counter, ...grid });
+            }
+        }
+    }
+
+    return runs;
+}
+
+function planFor(state) {
+    return probePlan(state.svg.querySelectorAll("#layer-units [data-unit-id]").length > 0, state.bounded);
+}
+
+// The whole plan from the console (Goodwood has no Measure button): one run after another, then a table of the figures.
+async function runSuite() {
+    const records = [];
+    for (const options of planFor(probeTarget())) {
+        records.push(await runProbe(probeTarget(), options));
+    }
+
+    console.table(records.map(record => ({
+        run: record.name, drawn: record.drawn, nearTiles: record.nearTiles, fps: record.drag.framesPerSecond, median: record.drag.medianFrameMs,
+        longest: record.drag.longestFrameMs, renderMs: record.drag.renderMs, scriptMs: record.drag.scriptMs, wheelSharp: record.wheel.sharpMs,
+        wheelLongest: record.wheel.longestAnimationFrameMs,
+    })));
+    return records;
+}
+
+// The scripts of a set of Long Animation Frames, summed by name, the five longest first; and the time the frames spent rendering (from
+// renderStart to their end) against running scripts, so a slow frame says whether it was our code or the drawing.
+export function frameBreakdown(entries) {
+    const byName = new Map();
+    let scriptMs = 0;
+    let renderMs = 0;
+    for (const entry of entries) {
+        for (const script of entry.scripts ?? []) {
+            const name = script.sourceFunctionName || script.invoker || "(anonymous)";
+            byName.set(name, (byName.get(name) ?? 0) + (script.duration ?? 0));
+            scriptMs += script.duration ?? 0;
+        }
+
+        if (entry.renderStart > 0) {
+            renderMs += Math.max(0, entry.startTime + entry.duration - entry.renderStart);
+        }
+    }
+
+    return {
+        scriptMs: Math.round(scriptMs), renderMs: Math.round(renderMs),
+        scripts: [...byName].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, ms]) => ({ name, ms: Math.round(ms) })),
+    };
+}
+
 export function summarizeFrames(times) {
     const gaps = times.slice(1).map((time, index) => time - times[index]);
     const span = times.length > 1 ? times[times.length - 1] - times[0] : 0;
@@ -1544,8 +1657,15 @@ export function layersAfterHide(shown, hide) {
 }
 
 function shownLayers(state) {
-    return [...state.svg.children].filter(group => group.id.startsWith("layer-") && group.getAttribute("data-layer-hidden") === "false")
+    const inPage = [...state.svg.children].filter(group => group.id.startsWith("layer-") && group.getAttribute("data-layer-hidden") === "false")
         .map(group => group.id.substring(6));
+    return withGridInTiles(inPage, state.gridShown, Boolean(state.svg.querySelector("#layer-grid")));
+}
+
+// Under ?present=bounded the grid has no layer in the page (the tiles carry it), so the layers read from the page leave it out; it is shown
+// when the switch says so, or a probe's layer switch would turn it off (found in the Studio, 2026-11-03).
+export function withGridInTiles(layers, gridShown, gridInPage) {
+    return gridShown && !gridInPage && !layers.includes("grid") ? [...layers, "grid"] : layers;
 }
 
 async function runProbe(state, options = {}) {
@@ -1559,15 +1679,37 @@ async function runProbe(state, options = {}) {
         await frame();
     }
 
+    // The Goodwood Lab Techniques Analysis's options, for this run only: counters out of view hidden or not (cull), no counters drawn
+    // (units: false), and on the bounded map the near grid or one tile set (nearTiles). What the map had is put back at the end.
+    const unitsLayer = state.svg.querySelector("#layer-units");
+    const optionsBefore = { cull: state.cull, nearTiles: state.nearTiles, unitsHidden: unitsLayer?.getAttribute("data-layer-hidden") ?? null };
+    if (options.cull !== undefined) {
+        setCulling(state, options.cull);
+    }
+
+    if (options.nearTiles !== undefined && state.bounded) {
+        setNearTiles(state, options.nearTiles);
+    }
+
+    if (options.units === false) {
+        unitsLayer?.setAttribute("data-layer-hidden", "true");
+    }
+
     // Pan by Transform Plan, task 1: a run at a set zoom (steps of the + key from Fit), so runs at Fit and at playing zoom repeat exactly.
     const viewBefore = { box: { ...state.box }, fitted: state.fitted };
     if (options.zoom !== undefined) {
         reset(state);
-        // zoom: "labels" steps in from Fit until the hex labels are readable (the six-pixel rule), on a map of any size.
+        // zoom: "labels" steps in from Fit until the hex labels are readable (the six-pixel rule), on a map of any size; "near" until a cell is
+        // larger than a device pixel, where the bounded map draws its near grid (decision N2).
         const font = Number(state.svg.querySelector("#layer-labels")?.firstElementChild?.getAttribute("font-size")) || 9;
-        const steps = options.zoom === "labels" ? 40 : options.zoom;
+        const steps = typeof options.zoom === "number" ? options.zoom : 40;
         for (let step = 0; step < steps; step++) {
             if (options.zoom === "labels" && font * paneSize(state).width / state.box.width >= 6) {
+                break;
+            }
+
+            const size = paneSize(state);
+            if (options.zoom === "near" && Math.min(size.width / state.box.width, size.height / state.box.height) * (globalThis.devicePixelRatio || 1) > 1) {
                 break;
             }
 
@@ -1596,7 +1738,7 @@ async function runProbe(state, options = {}) {
         const entries = animationFrames.filter(entry => entry.startTime >= start);
         const forced = entries.reduce((sum, entry) => sum + (entry.scripts ?? []).reduce((s, script) => s + (script.forcedStyleAndLayoutDuration ?? 0), 0), 0);
         return { longAnimationFrames: entries.length, longestAnimationFrameMs: Math.round(Math.max(0, ...entries.map(entry => entry.duration))),
-            forcedStyleAndLayoutMs: Math.round(forced) };
+            forcedStyleAndLayoutMs: Math.round(forced), ...frameBreakdown(entries) };
     };
 
     // A drag of a fixed screen distance: by default a quarter of the pane's short side over a second, inside the painted margin; with
@@ -1659,9 +1801,29 @@ async function runProbe(state, options = {}) {
     }
 
     observer?.disconnect();
+    // What the run measured, read before the map's own choices are put back.
+    const counted = state.svg.querySelectorAll("#layer-units [data-unit-id]").length;
+    const drawn = counted === 0 || options.units === false ? "none" : cullOn(state.cull, state.bounded) ? "in view" : "all";
+    const measured = { name: options.name ?? null, drawn, nearTiles: state.bounded ? state.nearTiles : null, near: state.near, elements: state.svg.getElementsByTagName("*").length };
     setBox(state, saved.box, saved.fitted);
     if (hide.length) {
         setVisible(state, shownBefore);
+    }
+
+    if (options.units === false) {
+        if (optionsBefore.unitsHidden === null) {
+            unitsLayer?.removeAttribute("data-layer-hidden");
+        } else {
+            unitsLayer?.setAttribute("data-layer-hidden", optionsBefore.unitsHidden);
+        }
+    }
+
+    if (options.nearTiles !== undefined && state.bounded) {
+        setNearTiles(state, optionsBefore.nearTiles);
+    }
+
+    if (options.cull !== undefined) {
+        setCulling(state, optionsBefore.cull);
     }
 
     if (options.zoom !== undefined) {
@@ -1669,9 +1831,9 @@ async function runProbe(state, options = {}) {
     }
 
     const record = {
-        when: new Date().toISOString(), board: state.baseUrl, zoom: options.zoom ?? null, hidden: hide, elements: state.svg.getElementsByTagName("*").length,
+        when: new Date().toISOString(), board: state.baseUrl, ...measured, zoom: options.zoom ?? null, wheelMode: options.wheel ?? "alternate", hidden: hide,
         tiles: state.tiles ? { level: state.tiles.level, shown: state.tiles.pool.size } : null,
-        counters: state.svg.querySelectorAll("#layer-units [data-unit-id]").length, viewport: [Math.round(rect.width), Math.round(rect.height)],
+        counters: counted, viewport: [Math.round(rect.width), Math.round(rect.height)],
         boxWidth: Math.round(saved.box.width), drag, wheel, labelSwitchMs, userAgent: globalThis.navigator?.userAgent,
     };
     state.host.dataset.mapProbe = JSON.stringify(record);
