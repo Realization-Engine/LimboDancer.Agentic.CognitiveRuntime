@@ -106,6 +106,22 @@ Measured by the user in Chrome 156 with the new probe options, Goodwood referenc
 
 These are the figures step 2 to 5 are compared against, at the same window size.
 
+### 5.2 Step 2: lines in the tiles (2026-11-03)
+
+Measured by the user in Chrome 156 with `?present=bounded`, the same game (now at Turn 1, Allied Prep Fire Phase), at 912 by 734 (taller than 5.1's 558), one run each.
+
+| Run | Drag fps | Longest frame | Long animation frames | Sharp after | Wheel: sharp after, longest frame | Baseline (5.1): fps, longest frame |
+|---|---|---|---|---|---|---|
+| Five steps in, drag one pane right, first run | 73.8 | 47 ms | 0 | 223 ms | 418 ms, none long | 41.5, 200 ms (three long) |
+| Five steps in, drag one pane left | 81.9 | 35 ms | 0 | 47 ms | 287 ms, none long | 79.2, 35 ms |
+| Fit, then a one-way wheel zoom in | 84.1 | 23 ms | 0 | 46 ms | 666 ms, 118 ms | 83.4, 35 ms; zoom 653 ms, 116 ms |
+| Five steps in, drag one pane right, Formation boundaries on | 75.8 | 71 ms | 0 | 46 ms | 249 ms, none long | 69.5, 82 ms (two long) |
+
+- **The first pan over new ground no longer stalls:** its longest frame fell from 200 to 47 ms and its long animation frames from three to none. With the boundaries on, none either (two before).
+- **Panning over painted ground is unchanged** (about 82 frames per second), as expected.
+- **A first pan waits longer to sharpen** (47 to 223 ms): the lined tiles were painted for the first time.
+- **A zoom in is unchanged** (653 to 666 ms to sharpen, one frame of about 118 ms): it waits on tiles painted on request, which step 5 addresses.
+
 ## 6. Risks
 
 | Risk | Answer |
