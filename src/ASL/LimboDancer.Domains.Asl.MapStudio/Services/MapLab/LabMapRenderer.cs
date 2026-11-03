@@ -117,13 +117,16 @@ public static class LabMapRenderer
         return "{\"fontSize\":9,\"names\":[" + names + "],\"x\":[" + xs + "],\"y\":[" + ys + "]}";
     }
 
-    /// <summary>The tile pyramid's shape, as the viewport reads it.</summary>
+    /// <summary>
+    /// The tile pyramid's shape, as the viewport reads it, with the hex lattice a board's index carries (<see cref="TileCache.Index"/>), so the
+    /// viewport can place counters by hex and hide those out of view (the Goodwood Lab Techniques Analysis, item 2).
+    /// </summary>
     public static string TileIndex(LabMap map)
     {
         ArgumentNullException.ThrowIfNull(map);
         var geometry = map.Geometry;
         return string.Create(CultureInfo.InvariantCulture,
-            $"{{\"width\":{geometry.GridWidth},\"height\":{geometry.GridHeight},\"tileSize\":{TilePyramid.TileSize},\"levels\":{TilePyramid.LevelCount(geometry.GridWidth, geometry.GridHeight)}}}");
+            $"{{\"width\":{geometry.GridWidth},\"height\":{geometry.GridHeight},\"tileSize\":{TilePyramid.TileSize},\"levels\":{TilePyramid.LevelCount(geometry.GridWidth, geometry.GridHeight)},\"hexWidth\":{geometry.HexWidth},\"hexHeight\":{geometry.HexHeight},\"a1x\":{geometry.A1CenterX},\"a1y\":{geometry.A1CenterY}}}");
     }
 
     /// <summary>Whether the tile lies in the map's pyramid.</summary>

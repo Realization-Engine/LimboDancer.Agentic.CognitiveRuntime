@@ -77,6 +77,7 @@
                 </div>
             }
             <div class="toolbar">
+                <label><input type="checkbox" id="map-lab-cull-units" checked="@cullUnits" @onchange="@(args => SetCulling(args.Value is true))" /> Hide counters out of view, as Goodwood does</label>
                 <button type="button" id="map-lab-clear-units" disabled="@(addingUnits || units.Count == 0)" @onclick="ClearUnits">Clear units</button>
                 <span class="toolbar-note" id="map-lab-units-note">@(unitNote ?? $"German units go on the west half of the map, Russian on the east; at most {Count(LabUnits.MaxPerSide)} a side.")</span>
             </div>
@@ -92,7 +93,7 @@
     <h2 id="map-lab-measure-heading">Measure</h2>
     <div class="toolbar">
         <button type="button" id="map-lab-measure" disabled="@(map is null || measuring)" @onclick="Measure">@(measuring ? "Measuring..." : "Measure at Fit and zoomed in")</button>
-        <span class="toolbar-note">Each measure drags the map for a second and sends 20 wheel events, at Fit and five zoom steps in, then drags a whole pane where the hex labels are readable. Judge speed in an ordinary Chrome window; the figures below are for this browser.</span>
+        <span class="toolbar-note">Each measure drags the map and sends 20 wheel events at Fit, five zoom steps in, where the hex labels are readable (a whole pane), and at near zoom (a whole pane), then zooms in from Fit in one burst. With counters on the map, every run is made with all counters drawn, with those out of view hidden, and with none. About ten seconds a run. Judge speed in an ordinary Chrome window; the figures below are for this browser.</span>
     </div>
     @if (timings.Count > 0)
     {
@@ -113,16 +114,17 @@
             <caption>Browser: pan and zoom, newest first, every map measured since the Studio started</caption>
             <thead>
                 <tr>
-                    <th scope="col">Map</th><th scope="col">Zoom</th><th scope="col">Elements</th><th scope="col">Counters</th><th scope="col">Drag fps</th><th scope="col">Median frame</th>
-                    <th scope="col">Longest frame</th><th scope="col">Settle after drag</th><th scope="col">20 wheel events</th><th scope="col">Pane</th>
+                    <th scope="col">Map</th><th scope="col">Run</th><th scope="col">Elements</th><th scope="col">Counters</th><th scope="col">Drawn</th><th scope="col">Drag fps</th>
+                    <th scope="col">Median frame</th><th scope="col">Longest frame</th><th scope="col">Rendering in long frames</th><th scope="col">Scripts in long frames</th>
+                    <th scope="col">Settle after drag</th><th scope="col">20 wheel events</th><th scope="col">Sharp after wheel</th><th scope="col">Pane</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var run in runs)
                 {
                     <tr>
-                        <td>@run.Map</td><td>@run.Zoom</td><td>@run.Elements</td><td>@run.Counters</td><td>@run.FramesPerSecond</td><td>@run.MedianMs ms</td>
-                        <td>@run.LongestMs ms</td><td>@run.SettleMs ms</td><td>@run.WheelMs ms</td><td>@run.Pane</td>
+                        <td>@run.Map</td><td>@run.Zoom</td><td>@run.Elements</td><td>@run.Counters</td><td>@run.Drawn</td><td>@run.FramesPerSecond</td><td>@run.MedianMs ms</td>
+                        <td>@run.LongestMs ms</td><td>@run.RenderMs ms</td><td>@run.ScriptMs ms</td><td>@run.SettleMs ms</td><td>@run.WheelMs ms</td><td>@run.WheelSharpMs ms</td><td>@run.Pane</td>
                     </tr>
                 }
             </tbody>
@@ -211,6 +213,7 @@
             LabMapEndpoints.PaintAhead(drawing, built, Tiles);
             visible = [.. LabMapRenderer.Layers(drawing)];
             await viewport.Load(LabMapEndpoints.BaseUrl(drawing), string.Empty, LabMapRenderer.ViewBox(built), LabMapRenderer.Layers(drawing), visible);
+            await viewport.SetCulling(cullUnits);
             shown = drawing.Key;
             timings = Maps.Timings(drawing);
         }
@@ -256,17 +259,15 @@
         error = null;
         try
         {
-            // Fit and five steps in, as before; then the drag the user found sluggish (2026-11-03): a pane long, with the labels readable.
-            (string Name, object Options)[] runs =
-            [
-                ("Fit", new { zoom = 0 }),
-                ("5 in", new { zoom = 5 }),
-                ("labels, long drag", new { zoom = "labels", dragPanes = 1 }),
-            ];
-            foreach (var (name, options) in runs)
+            // The viewport's run plan (probePlan in boardViewport.js), so this button and mapProbeSuite() on Goodwood measure alike: Fit, five
+            // steps in, a pane-long drag where the labels are readable, one at near zoom, and a deep wheel zoom from Fit; with counters on the
+            // map, each with every counter drawn, with those out of view hidden, and with none (the user, 2026-11-03). One call a run, so no
+            // call outlasts the circuit's interop timeout.
+            var plan = await JS.InvokeAsync<JsonElement>("mapProbePlan", closing.Token);
+            foreach (var options in plan.EnumerateArray())
             {
                 var record = await JS.InvokeAsync<JsonElement>("mapProbe", closing.Token, options);
-                Maps.Record(Read(record, name));
+                Maps.Record(Read(record, options.GetProperty("name").GetString() ?? "-"));
                 StateHasChanged();
             }
 
@@ -293,8 +294,9 @@
         var pane = record.GetProperty("viewport");
         string Of(JsonElement element, string name) => element.TryGetProperty(name, out var value) ? value.ToString() : "-";
         return new LabRun($"{Count(map!.HexCount)} {map.Spec.Technique.ToString().ToLowerInvariant()}", zoom,
-            Count(record.GetProperty("elements").GetInt32()), Of(record, "counters"), Of(drag, "framesPerSecond"), Of(drag, "medianFrameMs"), Of(drag, "longestFrameMs"),
-            Of(drag, "settleMs"), Of(wheel, "settleMs"), $"{pane[0]} by {pane[1]}");
+            Count(record.GetProperty("elements").GetInt32()), Of(record, "counters"), Of(record, "drawn"), Of(drag, "framesPerSecond"), Of(drag, "medianFrameMs"),
+            Of(drag, "longestFrameMs"), Of(drag, "renderMs"), Of(drag, "scriptMs"), Of(drag, "settleMs"), Of(wheel, "settleMs"), Of(wheel, "sharpMs"),
+            $"{pane[0]} by {pane[1]}");
     }
 
     private string Address(LabMapSpec next) => Navigation.GetUriWithQueryParameters("lab/maps", new Dictionary<string, object?>
@@ -315,6 +317,18 @@
     private readonly Dictionary<string, IReadOnlyList<UnitDocument>> pools = new(StringComparer.Ordinal);
     private bool addingUnits;
     private string? unitNote;
+
+    // Counters out of view are hidden, as Goodwood's ?present=bounded hides them (the Goodwood Lab Techniques Analysis, item 2); off draws them all.
+    private bool cullUnits = true;
+
+    private async Task SetCulling(bool on)
+    {
+        cullUnits = on;
+        if (viewport is { IsReady: true })
+        {
+            await viewport.SetCulling(on);
+        }
+    }
 
     private int CountOf(string side) => units.Count(unit => unit.Side == side);
 

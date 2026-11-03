@@ -158,6 +158,25 @@ The figure for the deep zoom is also out of date. The 700 ms and the two frames 
   - What it costs: hidden elements are neither laid out nor painted. But every commit walks all 530, and a change of tier (`data-active-tier` on `#layer-units`) restyles every fragment. Patches would go to the held fragments, attached or not, as section 3.4 of the analysis set out.
   - Proposed: measure first (section 6, step 1). Build attachment by view only if the measure points at the counters.
   - **Since measured on the Lab (2026-11-03; Map Lab Plan, section 8.3, F8):** the Lab now places catalog counters, and the user found its drags good with 1,000 counters and slightly laggy at 2,000, every counter drawn. Goodwood holds about 530 fragments and hides those out of view, so counters alone are unlikely to explain its 58 ms frames at level 0. This points at what else differs: the map's size (the 10,000-hex Lab map is about a quarter of Goodwood's 40,442 hexes, so a level-0 commit there meets fewer tiles) and the 85 Hz display. Two caveats: the finding is the user's feel, not the probe's figures, and the Lab's counters are infantry only, where Goodwood's may include vehicles with more figure art. The next run (section 6, steps 1 and 4, and G3 in one): a Lab map of Goodwood's size, `tileslines`, labels shown, about 530 counters, measured with the Measure button.
+  - **That run, in the user's Chrome (2026-11-03; Map Lab Plan, F9):** on 40,392 hexes at 2,506 by 735, the pane-long drag where labels are readable ran at 58.8 frames per second without counters, 6.8 with 600, and 3.1 with 1,000, every counter drawn; at Fit, 85, 67.4, and 45.2. So counters in the drawing do cost, where the labels are readable most. The Lab drew them all; Goodwood hides those out of view and held 66 to 67 at readable zoom with about 530, at a narrower pane. Hiding them is likely what keeps Goodwood's counters cheap, and the Lab now tests it (the user's approval of 2026-11-03 below).
+
+**Approved by the user on 2026-11-03** ("Yes, I approve the 5 items, but make sure the Measure button also test for all those options"):
+
+1. Record these runs.
+2. The Lab hides counters out of view, as Goodwood does.
+3. Goodwood: one set of tiles at every zoom (G1), behind `?near=tiles`.
+4. Goodwood: the hidden whole-map grid is not fetched under `?present=bounded`.
+5. The probe: counters drawn all, in view, or none for a run; the near grid or one tile set for a run; the scripts of the long frames.
+
+The Lab's Measure button runs every one of these options, and `mapProbeSuite()` runs the same plan on Goodwood from the console.
+
+**As built (2026-11-03, branch `claude/goodwood-lab-techniques`):**
+
+- **Item 2.** `BoardViewport.SetCulling` and the viewport's `setCulling` hide counters and marks out of view on any map, not only under `?present=bounded`; turned off, every one hidden before is shown again. The Lab's tile index carries the hex lattice, and its Units row gains "Hide counters out of view, as Goodwood does", on by default. Checked in my Studio: on a 10,000-hex map with 200 counters, zoomed in, 169 hidden; 0 with the box cleared.
+- **Item 3.** `?near=tiles` within `?present=bounded` keeps the grid in the tiles at near zoom (`te+g` at level 0) and draws no near grid. Checked on Goodwood in my Studio: at near zoom every tile is `te+g` and there is no vector grid; without the switch, `te` and the near grid, as before. The tile lines are thicker and step along the slanted hex sides, as section 5.1 said; the user judges the look.
+- **Item 4.** Under `?present=bounded` the Exact view does not fetch `grid.svg`; the near grid is placed above the tiles. Checked: no `grid.svg` request on Goodwood. Found in the check and fixed: the probe put back the layers it read from the page, which no longer held the grid, so a probe run turned the grid off (`withGridInTiles`).
+- **Item 5 and the Measure button.** `probePlan` makes the runs: Fit, five steps in, a pane-long drag where labels are readable, a pane-long drag at near zoom, and a deep wheel zoom from Fit; with counters on the map, each with every counter drawn, with those out of view hidden, and with none; on the bounded map the two near runs also on the near grid and on one tile set (15 runs on a Lab map with counters, 21 on Goodwood). `mapProbe` takes `cull`, `units: false`, `nearTiles`, and `zoom: "near"`, puts the map's own choices back after the run, and records each long frame's scripts by name and its rendering time. The Lab's Measure button runs the plan one call a run (each under the circuit's interop timeout) and its table gains Drawn, Rendering and Scripts in long frames, and Sharp after wheel; `mapProbeSuite()` runs it on Goodwood and prints a table. Checked: the Lab's Measure ran all 15 runs and restored the map.
+- Browsers fetch every map's layers again once (the layers token goes to 4), for the Lab's new tile index.
 - **The whole-map vector grid.** Under `?present=bounded` the Exact view still fetches it and keeps it hidden. It costs little per frame, but the page holds work that grows with the map.
   - Proposed: under the switch, the Exact view does not fetch it. The Comparison view, whose side view clones `#layer-grid`, keeps it.
 - **Setup marks.** These are markup, 707,155 characters during setup, hidden out of view. They matter only while a side sets up, and the Lab says nothing about them. They stay in the backlog (N3), waiting on a measured cost.
@@ -189,6 +208,49 @@ Candidates once the cause is known. None is proposed yet.
 - **Tiles ahead in memory or on disk.** One Goodwood variant (about 99 MB) is larger than the 64 MB memory bound, so disk is the right place for it. Reading a tile from disk is a file read and a hash, small beside a paint of 0.3 to 0.4 s. A warm start after a restart is still not measured (backlog 96).
 - **The browser's next-level fetch.** It is Goodwood's only, it does no harm, and it stays.
 - **The label canvas.** Both maps run the same function.
+
+### 5.6 Measured on Goodwood in the user's Chrome (2026-11-03)
+
+The user ran `mapProbeSuite()` twice on the Goodwood reference (game `campaign-21f5abd45868a5100c5b8475`, the Allied view, Turn 1 Allied Prep Fire Phase, 548 counters), on this branch in my Studio at 6670: first on the bounded page as it stands (`?present=bounded`), then with `&near=tiles`. The two single runs that followed were at 912 by 734, the window of the analysis's earlier Goodwood runs; the display runs at about 85 Hz (a median frame of 12 ms). Drag frames per second, first run / second run:
+
+| Run | All counters drawn | Out of view hidden | No counters |
+|---|---|---|---|
+| Fit | 85.6 / 84.7 | 84.5 / 82.6 | 85 / 85.2 |
+| Five steps in | 83.5 / 84.2 | 84.1 / 84.2 | 85.8 / 85.2 |
+| Labels readable, a pane-long drag | 31.6 / 52.6 (longest 142 / 83 ms) | 63.6 / 68.1 (71 / 71 ms) | 70.1 / 68.6 (59 / 71 ms) |
+| Near zoom, a pane-long drag, near grid | 44.4 / 53.4 | 59 / 62.7 | 63.2 / 62.9 |
+| Near zoom, a pane-long drag, one tile set | 49.3 / 54.2 | 59.9 / 63.6 | 60.8 / 62.1 |
+| Deep wheel zoom from Fit, sharp after | 623 to 654 ms | 430 to 858 ms | 370 to 941 ms |
+| Its longest frame | 95 to 119 ms | 104 to 164 ms | 96 to 114 ms |
+
+What they show:
+
+- **Hiding counters out of view is what keeps Goodwood's counters cheap.** Where labels are readable it lifts the drag from 32 to 53 frames per second to 64 to 68, and at near zoom from 44 to 54 to 59 to 64. With them hidden, the 548 counters cost about as much as none (68.1 against 68.6 in the second run). The bounded map hides them by default; the "all" column is how the old presentation draws them.
+- **One tile set at every zoom (G1) gains no speed.** The near-zoom drags on the near grid and on one tile set agree within the runs' spread. G1 is decided by its look and by disk (one pyramid of about 99 MB less), not by speed. Proposed: the near grid stays the default; `?near=tiles` stays as an experiment.
+- **The deep zoom does not depend on counters or the grid.** Its long frame (95 to 164 ms) is there in every mode.
+
+**The deep zoom's long frame, broken down.** The probe's record of the six deep-zoom runs of each suite: one long frame, twice two, of 95 to 164 ms, of which 96 to 148 ms is rendering and 0 to 30 ms script (the viewport's frame callback). Two single runs after the suites, at 912 by 734: sharp after 666 ms with one frame of 129 ms (near grid) and 699 ms with two, the longest 152 ms (one tile set), where section 5.6 of the Screen-Bounded Map Analysis had about 700 ms and two of 143 ms: moving the labels off the page did not change the deep zoom.
+
+**A Chrome performance trace of one deep zoom** (the user's, saved outside the repository at `asl-gate-work/traces/deep-zoom.json`; tracing slows Chrome, so its times run about twice the probe's):
+
+| When | Probe step | Main-thread task | Style recalculation | Layout | Commit |
+|---|---|---|---|---|---|
+| 1,551 ms | Reset to Fit | 353 ms | 90 ms, 8,373 elements | 12 ms, 8,843 of 10,231 objects | 231 ms |
+| 3,054 to 3,256 ms | The drag at Fit | none long | | | 31 ms |
+| 3,384 ms | The deep zoom lands | 414 ms | 76 ms, 14,336 elements | 33 ms, 16,738 of 18,111 objects | 289 ms |
+| 4,098 and 4,281 ms | The gesture rests; tiles arrive | 104 and 122 ms | 73 and 64 ms, up to 14,338 elements | 29 ms | |
+| 4,601 ms | The new tiles are shown | 295 ms | | | 295 ms, with nothing else in it |
+
+- **Our scripts are not the cost:** 1 to 13 ms a task.
+- **Restyle and layout of the counter layer.** On the game map (behind "I am the Allied side: show my view") the drawing held 4,636 elements, 4,548 of them in the counter layer, with 1,746 references to the shared counter art; at Fit all 530 fragments show, 3,270 elements and 1,644 references (one a tier, three a counter). Each reference makes Chrome clone the art it names, which brings the layer to the roughly 14,000 elements restyled. A deep zoom from Fit takes most counters out of view in one commit, and a return to Fit brings them all back: each time the whole layer is restyled and laid out. A drag hides or shows a few at a time, which is why drags stay fast. The page also holds 6,361 elements outside the map (the side panel); the trace's layouts were of the whole document.
+- **Long commits when tiles change.** The commit to the compositor took 231 to 295 ms at the reset, the landing, and when the new level-0 tiles were shown, the last with no other work in its task. No other thread in the trace was busy for that time, so the main thread waited rather than worked; a batch of new 512-pixel tile images reaching the GPU at once is the likely cause, not proven by this trace.
+
+**The default (N6).** Against the old presentation (the Screen-Bounded Map Analysis, section 5.1): a few wheel steps near playing zoom sharpen in 243 to 301 ms on the bounded page (five steps in, first suite), against 253 to 288; the deep zoom in 666 to 699 ms, against 653; a first pan over new ground runs at 82.4 frames per second, against 41.5. Zooms are now at least as good within the runs' spread, which was N6's condition; the backlog asks for three runs, and two suites have been made.
+
+**Candidates for what remains** (not built; each would get its own plan):
+
+- Counters drawn more cheaply at far and middle zoom, for example painted into a canvas as the labels are, so that a zoom does not restyle thousands of cloned elements. Attaching only the counters in view (N4 as first proposed) would pay the same cost each time they come back.
+- New tiles shown a few a frame rather than all together, and the destination level's tiles fetched during a wheel gesture, to shorten the long commits and the wait for sharp tiles.
 
 ## 6. Proposed order
 
