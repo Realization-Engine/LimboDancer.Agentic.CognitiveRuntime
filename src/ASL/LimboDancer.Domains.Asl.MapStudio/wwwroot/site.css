@@ -1852,6 +1852,13 @@ textarea.placements-text {
     display: none;
 }
 
+/* The hex labels as one canvas under ?present=bounded (boardViewport.js, drawLabelCanvas): it fills the drawn box it was painted for. */
+#label-canvas > canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
 /* Pan by Transform Plan: the drawing is painted half a pane beyond the pane on every side (panMargin in boardViewport.js). During a gesture
    the script writes the drawing's transform, the one style property it writes, and clears it at every commit, which hands the drawing back
    to these rules; gestureCss in boardViewport.js repeats the turned rule's transform before the move. */

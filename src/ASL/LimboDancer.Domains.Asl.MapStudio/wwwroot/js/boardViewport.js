@@ -801,9 +801,102 @@ function updateLabels(state) {
     const wanted = shown ? labelsInView(index, drawnBox(state)) : [];
     for (const svg of [state.svg, state.side]) {
         const texts = svg?.querySelector("#layer-labels")?.firstElementChild;
-        if (texts) {
-            fillLabels(texts, index, wanted);
+        if (!texts) {
+            continue;
         }
+
+        // With ?present=bounded the main map's labels are pixels in one canvas (drawLabelCanvas); the side view keeps its texts.
+        if (svg === state.svg && state.bounded && typeof document.createElement === "function") {
+            fillLabels(texts, index, []);
+            drawLabelCanvas(state, layer, index, wanted);
+            continue;
+        }
+
+        fillLabels(texts, index, wanted);
+    }
+}
+
+// The hex labels as one canvas (the user's finding of 2026-11-03: with labels shown, about a thousand SVG texts were laid out and painted at
+// every commit). At each commit the labels of the drawn box are painted into a canvas the size of that box on screen, inside the label group,
+// so the layer switch and the readable rule hold as before, and a gesture moves its pixels with the rest of the map. On a turned map each
+// label is painted upright, as site.css turns the texts. Painted again only when the box, the scale, or the turn changes.
+const labelCanvasLimit = 4096;
+
+function drawLabelCanvas(state, layer, index, wanted) {
+    let holder = layer.querySelector(":scope > #label-canvas");
+    if (wanted.length === 0) {
+        holder?.remove();
+        return;
+    }
+
+    const size = paneSize(state);
+    if (!size.width || !size.height) {
+        return;
+    }
+
+    const box = drawnBox(state);
+    const ratio = globalThis.devicePixelRatio || 1;
+    const scale = Math.min(size.width / state.box.width, size.height / state.box.height) * ratio;
+    const fit = Math.min(1, labelCanvasLimit / (box.width * scale), labelCanvasLimit / (box.height * scale));
+    const pixels = scale * fit;
+    const width = Math.max(1, Math.round(box.width * pixels));
+    const height = Math.max(1, Math.round(box.height * pixels));
+    const key = `${box.x} ${box.y} ${box.width} ${box.height} ${width} ${height} ${state.rotated} ${wanted.length}`;
+    if (!holder) {
+        holder = document.createElementNS(svgNamespace, "foreignObject");
+        holder.setAttribute("id", "label-canvas");
+        holder.setAttribute("pointer-events", "none");
+        holder.appendChild(document.createElement("canvas"));
+        layer.appendChild(holder);
+    }
+
+    if (holder.getAttribute("data-key") === key) {
+        return;
+    }
+
+    holder.setAttribute("data-key", key);
+    for (const [name, value] of [["x", box.x], ["y", box.y], ["width", box.width], ["height", box.height]]) {
+        holder.setAttribute(name, String(value));
+    }
+
+    // Painted off the page and handed over as a bitmap: setting the font of a canvas in the page makes the browser work out the page's style
+    // there and then (the user's run of 2026-11-03: forced style and layout rose from 38 to 120 ms in a deep zoom). Without OffscreenCanvas,
+    // the canvas in the page is painted as before.
+    const shown = holder.firstChild;
+    const offscreen = typeof OffscreenCanvas === "function" ? new OffscreenCanvas(width, height) : null;
+    const canvas = offscreen ?? shown;
+    if (!offscreen) {
+        canvas.width = width;
+        canvas.height = height;
+    }
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+        return;
+    }
+
+    const font = index.fontSize ?? 9;
+    context.setTransform(pixels, 0, 0, pixels, -box.x * pixels, -box.y * pixels);
+    context.font = `${font}px Arial, sans-serif`;
+    context.fillStyle = "rgba(0, 0, 0, 0.75)";
+    context.textAlign = "center";
+    for (const i of wanted) {
+        if (state.rotated) {
+            // Upright on a turned map: about the label's centre, a quarter turn back, as site.css turns each text.
+            const centreY = index.y[i] - font * 0.35;
+            context.save();
+            context.translate(index.x[i], centreY);
+            context.rotate(-Math.PI / 2);
+            context.fillText(index.names[i], 0, font * 0.35);
+            context.restore();
+        } else {
+            context.fillText(index.names[i], index.x[i], index.y[i]);
+        }
+    }
+
+    if (offscreen) {
+        // The bitmap renderer shows the painted bitmap without copying it; the canvas takes the bitmap's size.
+        (shown.getContext("bitmaprenderer") ?? null)?.transferFromImageBitmap(offscreen.transferToImageBitmap());
     }
 }
 
