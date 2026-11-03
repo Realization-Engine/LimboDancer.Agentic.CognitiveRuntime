@@ -806,7 +806,7 @@ function updateLabels(state) {
         }
 
         // With ?present=bounded the main map's labels are pixels in one canvas (drawLabelCanvas); the side view keeps its texts.
-        if (svg === state.svg && state.bounded && typeof document.createElement === "function") {
+        if (svg === state.svg && (state.bounded || state.host.dataset?.labels === "canvas") && typeof document.createElement === "function") {
             fillLabels(texts, index, []);
             drawLabelCanvas(state, layer, index, wanted);
             continue;
@@ -1563,7 +1563,14 @@ async function runProbe(state, options = {}) {
     const viewBefore = { box: { ...state.box }, fitted: state.fitted };
     if (options.zoom !== undefined) {
         reset(state);
-        for (let step = 0; step < options.zoom; step++) {
+        // zoom: "labels" steps in from Fit until the hex labels are readable (the six-pixel rule), on a map of any size.
+        const font = Number(state.svg.querySelector("#layer-labels")?.firstElementChild?.getAttribute("font-size")) || 9;
+        const steps = options.zoom === "labels" ? 40 : options.zoom;
+        for (let step = 0; step < steps; step++) {
+            if (options.zoom === "labels" && font * paneSize(state).width / state.box.width >= 6) {
+                break;
+            }
+
             zoomCenter(state, 0.8);
         }
 

@@ -147,6 +147,24 @@ Measured by the user in Chrome, as in section 8 (1,323 by 735, formations of 36,
 
 These findings stay in the Lab (decision of 2026-11-02): no other map is changed by them.
 
+### 8.2 Dragging with labels (2026-11-03)
+
+The user found a 10,000-hex Lab map zoomed well with labels on, but dragged with many pauses. Two causes, both met on Goodwood first (the Screen-Bounded Map Analysis, sections 3.5 and 5.7), and the Lab had neither answer:
+
+- **Labels as texts.** The Lab's viewport drew one SVG text per label; the label canvas of PR 110 was only on with `?present=bounded`. `BoardViewport` gains `CanvasLabels`, which the Lab turns on, so its labels are one canvas painted off the page. At the readable zoom the Lab's map holds 60 elements.
+- **Tiles painted on request.** A drag over new ground waited 0.1 to 0.4 s for each level 0 tile. When the Lab page builds a tiled map it now paints the map's tiles in the background, coarsest first, on half the cores, up to 320 tiles (`LabMapEndpoints.PaintAhead`): all 207 of a 10,000-hex map. Checked: level 0 tiles the view never touched came back in 3 to 14 ms, against 87 to 436 ms before.
+- The Measure button adds a run that drags a whole pane at the zoom where the labels become readable (`mapProbe({ zoom: "labels", dragPanes: 1 })`).
+
+Measured by the user in Chrome (2026-11-03) on the 10,000-hex `tileslines` map, at 1,290 by 534, on a display of 60 frames per second (a 17 ms frame is its rate):
+
+| Run | Elements | Drag fps | Median, longest frame | Settle after drag | 20 wheel events |
+|---|---|---|---|---|---|
+| Fit | 44 | 60.1 | 17, 17 ms | 32 ms | 28 ms |
+| Five steps in | 139 | 50.8 | 17, 183 ms | 33 ms | 29 ms |
+| Labels readable, a pane-long drag | 97 | 59.6 | 17, 33 ms | 33 ms | 6 ms |
+
+The user's own drags: "good now. No pauses." The one long frame, five steps in, is open.
+
 ## 9. Answers to the guidelines' checklist
 
 - **Work per hex or step:** none in play; the Lab builds a map record once per form change and paints tiles on request.

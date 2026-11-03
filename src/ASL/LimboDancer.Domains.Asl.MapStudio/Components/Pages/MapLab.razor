@@ -4,6 +4,7 @@
 @using LimboDancer.Domains.Asl.MapStudio.Services.MapLab
 @implements IDisposable
 @inject LabMapCache Maps
+@inject TileCache Tiles
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
@@ -61,14 +62,14 @@
 </section>
 
 <div class="map-lab-map">
-    <BoardViewport @ref="viewport" Label="The Map Lab's map" Tiles="@spec.Tiled" OnReady="Ready" />
+    <BoardViewport @ref="viewport" Label="The Map Lab's map" Tiles="@spec.Tiled" CanvasLabels="true" OnReady="Ready" />
 </div>
 
 <section class="map-lab-figures" aria-labelledby="map-lab-measure-heading">
     <h2 id="map-lab-measure-heading">Measure</h2>
     <div class="toolbar">
         <button type="button" id="map-lab-measure" disabled="@(map is null || measuring)" @onclick="Measure">@(measuring ? "Measuring..." : "Measure at Fit and zoomed in")</button>
-        <span class="toolbar-note">Each measure drags the map for a second and sends 20 wheel events, at Fit and five zoom steps in. Judge speed in an ordinary Chrome window; the figures below are for this browser.</span>
+        <span class="toolbar-note">Each measure drags the map for a second and sends 20 wheel events, at Fit and five zoom steps in, then drags a whole pane where the hex labels are readable. Judge speed in an ordinary Chrome window; the figures below are for this browser.</span>
     </div>
     @if (timings.Count > 0)
     {
@@ -183,6 +184,8 @@
             }
 
             map = built;
+            // A tiled map's tiles are painted in the background now, so a drag over new ground finds them (the user, 2026-11-03).
+            LabMapEndpoints.PaintAhead(drawing, built, Tiles);
             visible = [.. LabMapRenderer.Layers(drawing)];
             await viewport.Load(LabMapEndpoints.BaseUrl(drawing), string.Empty, LabMapRenderer.ViewBox(built), LabMapRenderer.Layers(drawing), visible);
             shown = drawing.Key;
@@ -230,10 +233,17 @@
         error = null;
         try
         {
-            foreach (var zoom in new[] { 0, 5 })
+            // Fit and five steps in, as before; then the drag the user found sluggish (2026-11-03): a pane long, with the labels readable.
+            (string Name, object Options)[] runs =
+            [
+                ("Fit", new { zoom = 0 }),
+                ("5 in", new { zoom = 5 }),
+                ("labels, long drag", new { zoom = "labels", dragPanes = 1 }),
+            ];
+            foreach (var (name, options) in runs)
             {
-                var record = await JS.InvokeAsync<JsonElement>("mapProbe", closing.Token, new { zoom });
-                Maps.Record(Read(record, zoom));
+                var record = await JS.InvokeAsync<JsonElement>("mapProbe", closing.Token, options);
+                Maps.Record(Read(record, name));
                 StateHasChanged();
             }
 
@@ -253,13 +263,13 @@
         }
     }
 
-    private LabRun Read(JsonElement record, int zoom)
+    private LabRun Read(JsonElement record, string zoom)
     {
         var drag = record.GetProperty("drag");
         var wheel = record.GetProperty("wheel");
         var pane = record.GetProperty("viewport");
         string Of(JsonElement element, string name) => element.TryGetProperty(name, out var value) ? value.ToString() : "-";
-        return new LabRun($"{Count(map!.HexCount)} {map.Spec.Technique.ToString().ToLowerInvariant()}", zoom == 0 ? "Fit" : $"{zoom} in",
+        return new LabRun($"{Count(map!.HexCount)} {map.Spec.Technique.ToString().ToLowerInvariant()}", zoom,
             Count(record.GetProperty("elements").GetInt32()), Of(drag, "framesPerSecond"), Of(drag, "medianFrameMs"), Of(drag, "longestFrameMs"),
             Of(drag, "settleMs"), Of(wheel, "settleMs"), $"{pane[0]} by {pane[1]}");
     }
