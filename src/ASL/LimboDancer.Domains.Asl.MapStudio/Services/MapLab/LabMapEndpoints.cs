@@ -1,3 +1,4 @@
+using LimboDancer.Domains.Asl.Maps.Rendering;
 using Microsoft.Net.Http.Headers;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services.MapLab;
@@ -66,6 +67,59 @@ public static class LabMapEndpoints
             }
 
             return Results.Bytes(rendered.Svg, contentType);
+        });
+    }
+
+    /// <summary>The most tiles a Lab map paints ahead: its coarse levels whole, as far down as this allows (all of a 10,000-hex map's 207).</summary>
+    public const int AheadBudget = 320;
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> Ahead = new(StringComparer.Ordinal);
+
+    // The user's finding of 2026-11-03: a drag over new ground of a Lab map paused while its tiles were painted on request. When the Lab page
+    // builds a tiled map, its tiles are painted in the background, coarsest first, on half the cores, up to the budget, into the shared tile
+    // cache (the Screen-Bounded Map Analysis's section 3.5, for the Lab). The page starts it, since the browser may hold the map's tiles.json
+    // and never ask for it; one painting per map at a time, and a tile already held costs nothing.
+    public static void PaintAhead(LabMapSpec spec, LabMap map, TileCache tiles)
+    {
+        ArgumentNullException.ThrowIfNull(spec);
+        ArgumentNullException.ThrowIfNull(map);
+        ArgumentNullException.ThrowIfNull(tiles);
+        if (!spec.Tiled || !Ahead.TryAdd(spec.Key, 0))
+        {
+            return;
+        }
+
+        var geometry = map.Geometry;
+        var jobs = new List<(int Level, int Column, int Row)>();
+        for (var level = TilePyramid.LevelCount(geometry.GridWidth, geometry.GridHeight) - 1; level >= 0; level--)
+        {
+            var count = TilePyramid.Columns(geometry.GridWidth, level) * TilePyramid.Rows(geometry.GridHeight, level);
+            if (jobs.Count + count > AheadBudget)
+            {
+                break;
+            }
+
+            for (var column = 0; column < TilePyramid.Columns(geometry.GridWidth, level); column++)
+            {
+                for (var row = 0; row < TilePyramid.Rows(geometry.GridHeight, level); row++)
+                {
+                    jobs.Add((level, column, row));
+                }
+            }
+        }
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                Parallel.ForEach(jobs, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2) },
+                    job => tiles.Get(TileSource, spec.Key, TileVariant.Terrain, job.Level, job.Column, job.Row,
+                        () => LabMapRenderer.TilePng(map, job.Level, job.Column, job.Row)));
+            }
+            finally
+            {
+                Ahead.TryRemove(spec.Key, out _);
+            }
         });
     }
 

@@ -3,7 +3,7 @@
 
 @* B06 (plan sections 15.5 and 16.6): the board's drawing surface. It owns the host element, the JavaScript module and viewport, the .NET
    reference the script calls back, and their disposal, so no page installs listeners of its own; pages draw through its commands. *@
-<div class="board-host" @ref="host" role="@(Label is null ? null : "group")" aria-roledescription="@(Label is null ? null : "map")" aria-label="@Label" data-view-key="@ViewKey" data-tiles="@(Tiles ? null : "off")"></div>
+<div class="board-host" @ref="host" role="@(Label is null ? null : "group")" aria-roledescription="@(Label is null ? null : "map")" aria-label="@Label" data-view-key="@ViewKey" data-tiles="@(Tiles ? null : "off")" data-labels="@(CanvasLabels ? "canvas" : null)"></div>
 
 @code {
     private ElementReference host;
@@ -30,6 +30,13 @@
     /// </summary>
     [Parameter]
     public bool Tiles { get; set; } = true;
+
+    /// <summary>
+    /// Whether the hex labels are painted into one canvas rather than one SVG text each (Screen-Bounded Map Analysis, section 5.7), whatever
+    /// the address says; the Map Lab turns it on. Off by default: elsewhere only ?present=bounded does.
+    /// </summary>
+    [Parameter]
+    public bool CanvasLabels { get; set; }
 
     /// <summary>Raised once the script's viewport exists, so the page can load the board into it.</summary>
     [Parameter]
