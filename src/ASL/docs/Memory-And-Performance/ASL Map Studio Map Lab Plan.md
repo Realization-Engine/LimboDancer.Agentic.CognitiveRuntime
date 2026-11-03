@@ -174,6 +174,7 @@ The user asked on 2026-11-03 to test counters on the Lab's map (the [Goodwood La
 - **The runs table gains a Counters column**, the counters in the page when the run was made.
 - Checked in my Studio at 6670 on the 10,000-hex `tileslines` map: 1,000 counters in 952 hexes, the layer built in 732 ms and shown in 253 ms; counters drawn as in Play, stacks included. The page then held about 10,200 elements (60 to 139 without counters). A Measure in my pane dragged at 4 to 8 frames per second, a pointer only (section 3.5); speed waits on the user's Chrome.
 - Left out (backlog section 97): the units are not in the address, so a reload or a new map drops them; the Lab draws every counter, since it runs without `?present=bounded`; a click on a counter does nothing.
+- **F8. The user's finding (2026-11-03, merged as PR 113):** "Performance is good with 1000 counters on the maps. At 2000 counters there is a slight lag." Judged by the user's own drags in Chrome, not by the probe; the counters are infantry only (squads, half-squads, leaders, machine guns), all drawn, none hidden out of view. No Measure figures were taken at either count.
 
 ## 9. Answers to the guidelines' checklist
 
