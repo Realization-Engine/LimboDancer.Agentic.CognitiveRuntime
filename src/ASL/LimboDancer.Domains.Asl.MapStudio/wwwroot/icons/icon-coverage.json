@@ -1386,6 +1386,21 @@
         },
         {
           "kind": "button",
+          "label": "\u002B@Count(step)",
+          "dynamic": true,
+          "status": "needed",
+          "strip": "MapLab toolbar"
+        },
+        {
+          "kind": "button",
+          "label": "Clear units",
+          "dynamic": false,
+          "id": "map-lab-clear-units",
+          "status": "needed",
+          "strip": "MapLab toolbar"
+        },
+        {
+          "kind": "button",
           "label": "@(measuring ? \u0022Measuring...\u0022 : \u0022Measure at Fit and zoomed in\u0022)",
           "dynamic": true,
           "id": "map-lab-measure",
