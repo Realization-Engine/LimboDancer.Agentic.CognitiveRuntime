@@ -613,6 +613,85 @@ function askAhead(state, tiles) {
     globalThis.fetch(`${tiles.baseUrl}/ahead-${name}.json${tiles.query}${game}`).catch(() => { /* Painting ahead is an aid; a page works without it. */ });
 }
 
+// Screen-Bounded Map Analysis, sections 3.3 and 3.4: with ?present=bounded, counter fragments and setup marks outside the part of the board
+// drawn (the committed box) are hidden by a data attribute and a site.css rule, so a commit lays out and paints only those in view. They stay
+// in the page, so patches and the marks' replacement work as before; only their display changes, and only when it changes.
+export function hexCentre(index, column, row) {
+    return {
+        x: index.a1x + index.hexWidth * column,
+        y: index.a1y + index.hexHeight * row - index.hexHeight / 2 * (column % 2),
+    };
+}
+
+// A counter fragment's box: its hex (data-hex "column,row") widened by a hex each way, room for a stack's offsets.
+export function fragmentBounds(index, dataHex) {
+    const [column, row] = (dataHex ?? "").split(",").map(Number);
+    if (!Number.isFinite(column) || !Number.isFinite(row)) {
+        return null;
+    }
+
+    const centre = hexCentre(index, column, row);
+    return { x: centre.x - 1.5 * index.hexWidth, y: centre.y - 1.5 * index.hexHeight, width: 3 * index.hexWidth, height: 3 * index.hexHeight };
+}
+
+// A mark's box from the numbers of its first polygon's points (GameMaps.HexMark), or null when it has none: a mark of another shape is
+// always shown.
+export function pointsBounds(points) {
+    const numbers = (points ?? "").split(/[\s,]+/).filter(Boolean).map(Number);
+    if (numbers.length < 4 || numbers.some(value => !Number.isFinite(value))) {
+        return null;
+    }
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (let i = 0; i + 1 < numbers.length; i += 2) {
+        minX = Math.min(minX, numbers[i]);
+        maxX = Math.max(maxX, numbers[i]);
+        minY = Math.min(minY, numbers[i + 1]);
+        maxY = Math.max(maxY, numbers[i + 1]);
+    }
+
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+export function boxesMeet(a, b) {
+    return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+const cullBounds = new WeakMap();
+
+function cullToView(state) {
+    const index = state.tiles?.index;
+    if (!state.bounded || !index?.hexWidth || !state.box) {
+        return;
+    }
+
+    const box = drawnBox(state);
+    const units = state.svg.querySelector("#layer-units");
+    for (const fragment of units?.children ?? []) {
+        if (!cullBounds.has(fragment)) {
+            cullBounds.set(fragment, fragmentBounds(index, fragment.getAttribute("data-hex")));
+        }
+
+        markOut(fragment, cullBounds.get(fragment), box);
+    }
+
+    const marks = state.svg.querySelector("#layer-marks");
+    for (const mark of marks?.children ?? []) {
+        if (!cullBounds.has(mark)) {
+            cullBounds.set(mark, pointsBounds(mark.querySelector("polygon")?.getAttribute("points")));
+        }
+
+        markOut(mark, cullBounds.get(mark), box);
+    }
+}
+
+function markOut(element, bounds, box) {
+    const out = String(bounds !== null && !boxesMeet(bounds, box));
+    if ((element.getAttribute("data-out") ?? "false") !== out) {
+        element.setAttribute("data-out", out);
+    }
+}
+
 function setBoundaries(state, game) {
     state.boundaryGame = state.bounded && game ? game : null;
     refreshTileLines(state);
@@ -1116,6 +1195,7 @@ function setMarks(state, markup) {
         throw new Error("Invalid marks layer");
     }
     state.svg.appendChild(document.importNode(group, true));
+    cullToView(state);
 }
 
 function setUnits(state, markup, version) {
@@ -1143,6 +1223,7 @@ function setUnits(state, markup, version) {
     }
 
     updateUnitTier(state);
+    cullToView(state);
     reportMeasuredScene(state);
 }
 
@@ -1199,6 +1280,7 @@ function applyUnitPatch(state, patch) {
     }
 
     updateUnitTier(state);
+    cullToView(state);
     return true;
 }
 
@@ -1550,6 +1632,7 @@ function flushBox(state) {
     updateLabelDetail(state);
     updateLabels(state);
     updateTiles(state);
+    cullToView(state);
 }
 
 // A gesture starts: the drawing gets its own compositor layer for the gesture's length (site.css, .board-host.gesturing).

@@ -140,6 +140,13 @@ Measured by the user in Chrome 156 (2026-11-03), as in 5.2, at 912 by 734, after
 - **Zooms near playing zoom sharpen faster:** 266 to 331 ms (287 to 418 before). About 220 ms of each is the probe's own wait for the burst's rest (`gestureRest` and 20 ms), after which a zoom commits.
 - **The one-way zoom from Fit is unchanged** (663 ms, a 142 ms frame). Twenty steps in at 0.8 each zoom about 87 times, from level 3 straight to near zoom at level 0: the next finer level fetched ahead is level 2, and level 0 is not painted ahead, so its tiles are painted on request; and at near zoom the vector grid is shown again (decision N2), so the commit repaints it.
 
+### 5.4 Level 0 ahead, and step 3 (built 2026-11-03, at the user's word "Yes, both")
+
+- **Level 0 is painted ahead too.** The background painting now covers every level, coarsest first. On Goodwood the variant shown at most zooms (`te+g`) and the one shown at near zoom, where the vector grid stands in for the tiles' (`te`), were each painted whole: 790 tiles each, 198 MB on disk for both.
+- **Counters and setup marks only in view** (decisions N3 and N4, built in the browser). After each commit, and whenever the counters or marks change, a counter fragment whose hex (its `data-hex`, widened by a hex each way) lies outside the drawn box, and a mark whose polygon does, gets `data-out="true"`, which a site.css rule hides. They stay in the page, so the counter patches and the marks' replacement work as before. `tiles.json` gains the hex lattice for this (`hexWidth`, `hexHeight`, `a1x`, `a1y`), and the layer token goes to 3 so browsers fetch it again. On Goodwood, five steps beyond playing zoom, all 530 counter fragments were hidden with none in view; at Fit all 530 were shown.
+- **Deviation from N3:** the marks are still built and sent by the server as markup, not as data; only their drawing is bounded by the view. The server's whole-string build per render (C4) stays as it was.
+- Out-of-view counters cannot take keyboard focus while hidden.
+
 ## 6. Risks
 
 | Risk | Answer |

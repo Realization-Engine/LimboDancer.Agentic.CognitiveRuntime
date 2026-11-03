@@ -121,8 +121,9 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
         }
 
         var geometry = input.Grid.Geometry;
+        // The hex lattice too (Screen-Bounded Map Analysis, section 3.4): the viewport places a counter fragment by its hex from it.
         return string.Create(CultureInfo.InvariantCulture,
-            $"{{\"width\":{geometry.GridWidth},\"height\":{geometry.GridHeight},\"tileSize\":{TilePyramid.TileSize},\"levels\":{TilePyramid.LevelCount(geometry.GridWidth, geometry.GridHeight)}}}");
+            $"{{\"width\":{geometry.GridWidth},\"height\":{geometry.GridHeight},\"tileSize\":{TilePyramid.TileSize},\"levels\":{TilePyramid.LevelCount(geometry.GridWidth, geometry.GridHeight)},\"hexWidth\":{geometry.HexWidth},\"hexHeight\":{geometry.HexHeight},\"a1x\":{geometry.A1CenterX},\"a1y\":{geometry.A1CenterY}}}");
     }
 
     /// <summary>The tile, painted if it is not held; null when the board has no Exact view or no such tile.</summary>
@@ -180,7 +181,7 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
     }
 
     /// <summary>
-    /// Paints, in the background, every tile of the board's pyramid above level 0 in the given variant and lines that the disk does not hold
+    /// Paints, in the background, every tile of the board's pyramid in the given variant and lines that the disk does not hold
     /// yet, coarsest first (Screen-Bounded Map Analysis, section 3.5), so a zoom finds its tiles painted. The tiles go to the disk only, never
     /// into the in-memory bound, so the painting does not push out the tiles in view. Once per board version, variant, lines, and ownership;
     /// nothing without a disk. Returns the number of tiles it will look at, 0 when it has already run or cannot.
@@ -201,7 +202,9 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
         var geometry = input.Grid.Geometry;
         var levels = TilePyramid.LevelCount(geometry.GridWidth, geometry.GridHeight);
         var tiles = new List<TileKey>();
-        for (var level = levels - 1; level >= 1; level--)
+        // Every level, coarsest first: a deep zoom goes straight to level 0, which the browser's next-level fetch does not reach
+        // (Screen-Bounded Map Analysis, section 5.3).
+        for (var level = levels - 1; level >= 0; level--)
         {
             for (var column = 0; column < TilePyramid.Columns(geometry.GridWidth, level); column++)
             {

@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
 const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
-    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel, hexCentre, fragmentBounds, pointsBounds, boxesMeet } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -120,6 +120,21 @@ test("bounded tiles ask for the grid and the boundaries the view shows", () => {
     assert.equal(tileLines(true, "e", true, false, "campaign-1"), "");
     assert.equal(boundedInAddress(["http://localhost/games/play?game=g&present=bounded"]), true);
     assert.equal(boundedInAddress(["http://localhost/games/play?game=g", undefined]), false);
+});
+
+// Screen-Bounded Map Analysis, sections 3.3 and 3.4: counters and marks are placed from their hex or their polygon, and hidden outside the box.
+test("counters and marks are placed for the view", () => {
+    const index = { hexWidth: 56.25, hexHeight: 64.5, a1x: 0, a1y: 32.25 };
+    assert.deepEqual(hexCentre(index, 0, 0), { x: 0, y: 32.25 });
+    assert.deepEqual(hexCentre(index, 1, 0), { x: 56.25, y: 0 });
+    const counter = fragmentBounds(index, "10,4");
+    assert.deepEqual(counter, { x: 562.5 - 84.375, y: 290.25 - 96.75, width: 168.75, height: 193.5 });
+    assert.equal(fragmentBounds(index, null), null);
+    assert.deepEqual(pointsBounds("10,20 30,5 25,40"), { x: 10, y: 5, width: 20, height: 35 });
+    assert.equal(pointsBounds(undefined), null);
+    const view = { x: 0, y: 0, width: 500, height: 300 };
+    assert.equal(boxesMeet(counter, view), true);
+    assert.equal(boxesMeet({ x: 600, y: 0, width: 10, height: 10 }, view), false);
 });
 
 // Screen-Bounded Map Analysis, section 3.5: the next finer level is fetched ahead for the same box, at twice the tiles each way.

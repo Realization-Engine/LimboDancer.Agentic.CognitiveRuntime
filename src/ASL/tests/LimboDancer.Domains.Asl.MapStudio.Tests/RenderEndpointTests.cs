@@ -201,7 +201,9 @@ public sealed class RenderEndpointTests(StudioFactory factory) : IClassFixture<S
 
         using var index = await client.GetAsync(new Uri($"{Base}/exact/tiles.json", UriKind.Relative));
         Assert.Equal("application/json", index.Content.Headers.ContentType!.MediaType);
-        Assert.Equal("{\"width\":113,\"height\":129,\"tileSize\":512,\"levels\":1}", await index.Content.ReadAsStringAsync());
+        // With the hex lattice the viewport places counters by (Screen-Bounded Map Analysis, section 3.4).
+        Assert.Equal("{\"width\":113,\"height\":129,\"tileSize\":512,\"levels\":1,\"hexWidth\":56.25,\"hexHeight\":64.5,\"a1x\":0,\"a1y\":32.25}",
+            await index.Content.ReadAsStringAsync());
     }
 
     [Fact]
