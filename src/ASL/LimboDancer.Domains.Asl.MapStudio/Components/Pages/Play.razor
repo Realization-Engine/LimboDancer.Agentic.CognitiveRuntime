@@ -1334,14 +1334,13 @@ else if (state is not null)
                         <button type="button" id="play-map-zoom-out" class="icon-button" title="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))"><IconLabel Icon="zoom-out" Label="Zoom out" /></button>
                         <button type="button" id="play-map-fit" class="icon-button" title="Fit" @onclick="@(() => workspace!.Fit())"><IconLabel Icon="fit" Label="Fit" /></button>
                         <button type="button" id="map-rotate" class="icon-button" title="Rotate map" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())"><IconLabel Icon="rotate" Label="Rotate map" /></button>
-                        <MapStylePicker Id="play-map-style" Board="@mapBoard" Value="@mapView" ValueChanged="@(view => mapView = view)" Asked="@StyleQuery" />
                         @if (OwnershipFor(mapBoard) is not null)
                         {
-                            <button type="button" id="map-parent-boundaries" aria-pressed="@(showParentBoundaries ? "true" : "false")"
+                            <button type="button" id="map-parent-boundaries" class="icon-button" aria-pressed="@(showParentBoundaries ? "true" : "false")"
                                     title="Show formation parent boundaries and the campaign map perimeter"
-                                    @onclick="@(() => showParentBoundaries = !showParentBoundaries)">Formation boundaries</button>
+                                    @onclick="@(() => showParentBoundaries = !showParentBoundaries)"><IconLabel Icon="formation-boundaries" Label="Formation boundaries" /></button>
                         }
-                        <span class="muted" id="play-map-keys">Drag to pan. With the map focused, + and - zoom and 0 fits. Click a hex or a counter to inspect it.</span>
+                        <MapStylePicker Id="play-map-style" Board="@mapBoard" Value="@mapView" ValueChanged="@(view => mapView = view)" Asked="@StyleQuery" />
                         @* The user, 2026-10-21: the view in force, where the eye already is; the "View as" list alone was too easy to miss when the
                            DEFENDER takes the screen in the MPh. *@
                         <span class="play-view-label" id="play-view-label" aria-live="polite">View: @(Viewer.IsAdjudicator ? "the adjudicator" : DisplayText.Side(viewAs))</span>
