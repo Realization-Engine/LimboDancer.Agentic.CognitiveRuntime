@@ -2,7 +2,7 @@
 
 **Written:** 2026-11-04, at the user's word: "After that we need to bring the same refactors to the Styled and Hex facts views for Large Maps." And, while it was written: "The actual Game Maps don't have a way to choose the Map Style. This should be a chose in the Play and Replay pages that launches the games" (step 1b).
 **Revised:** the same day, at the user's two corrections. On Hex facts: "the Hex Facts hexes are rendered as a single solid color. Think about that." On Styled: "The 'Styled' view will definitely need a raster like the 'Exact' view needed. Why do you think you need to do measurement to figure that out? All our work from yesterday should be informing your choices."
-**Status:** for the user's approval; nothing is built.
+**Status:** approved by the user on 2026-11-04 ("Approve as proposed"), with decisions V1 to V6 as section 7 proposes them.
 **Sources:** `BoardRenderer` (`Layers`, `WriteHexFacts`, `WriteHexMarks`) and `StyledLayers.cs` in `Maps.Rendering`; `TilePainter` and `TileLinePainter`; `boardViewport.js`, `RenderEndpoints.cs`, and `TileCache.cs` in the Studio; `LabMapRenderer.TilePng`; on `main` with PR 117 (the centre dots). The [Screen-Bounded Map Analysis](<ASL Map Studio Screen-Bounded Map Analysis.md>), the [Map Lab Plan](<ASL Map Studio Map Lab Plan.md>) (findings F2 to F9), the [Goodwood Lab Techniques Analysis](<ASL Map Studio Goodwood Lab Techniques Analysis.md>), the [Raster Tiles Plan](<ASL Map Studio Raster Tiles Plan.md>), the [Tile Pacing Plan](<ASL Map Studio Tile Pacing Plan.md>), and the [Counter Drawing Plan](<ASL Map Studio Counter Drawing Plan.md>).
 
 ## 1. What decides it
