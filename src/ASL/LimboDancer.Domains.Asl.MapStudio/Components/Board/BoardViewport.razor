@@ -188,8 +188,8 @@
     public ValueTask SetBoundaries(string? game) => Send("setBoundaries", game);
 
     /// <summary>
-    /// Whether counters and marks out of view are hidden, as ?present=bounded hides them (the Goodwood Lab Techniques Analysis, item 2); null
-    /// follows the address again. The Map Lab sets it; the map needs a tile index with the hex lattice to place them.
+    /// Whether counters and marks out of view are hidden, as the screen-bounded map (the default) hides them (the Goodwood Lab Techniques
+    /// Analysis, item 2); null follows the presentation again. The Map Lab sets it; the map needs a tile index with the hex lattice to place them.
     /// </summary>
     public ValueTask SetCulling(bool? on) => Send("setCulling", on);
 

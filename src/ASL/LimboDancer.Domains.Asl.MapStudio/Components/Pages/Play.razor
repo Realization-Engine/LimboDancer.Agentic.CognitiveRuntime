@@ -7419,7 +7419,8 @@ else if (state is not null)
 
     private bool BoundedMap => PresentQuery != "classic";
 
-    // Under ?present=bounded the tiles carry the Formation boundaries; the page names the game to them instead of drawing a path.
+    // On the screen-bounded map (the default; not with ?present=classic) the tiles carry the Formation boundaries; the page names the game to
+    // them instead of drawing a path.
     private string? TileBoundaries(StudioBoard board) =>
         BoundedMap && showParentBoundaries && handOver is null && OwnershipFor(board) is not null ? gameId : null;
 
