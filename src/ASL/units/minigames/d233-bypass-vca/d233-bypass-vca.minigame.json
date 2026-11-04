@@ -1,0 +1,277 @@
+{
+  "id": "d233-bypass-vca",
+  "title": "Bypass VCA and retained defensive position",
+  "card": "d233-bypass-vca",
+  "rules": [
+    "D2.33"
+  ],
+  "contracts": [
+    "d2.33-bypass-turn",
+    "d2.33-bypass-continuation",
+    "d2.33-bypass-defensive-position"
+  ],
+  "units": {
+    "tank": "german",
+    "observer": "british"
+  },
+  "checks": [
+    {
+      "name": "Public local turn costs 1 MP, continuation required",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "d2.33-bypass-turn",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "pendingTurn": false,
+        "edgeOneQ": 0,
+        "edgeOneR": 0,
+        "edgeTwoQ": 1,
+        "edgeTwoR": 0,
+        "purpose": "ContinueMovement"
+      },
+      "expect": {
+        "outcome": "evaluated"
+      }
+    },
+    {
+      "name": "VCA cannot pivot only to fire",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.33-bypass-turn",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "pendingTurn": false,
+        "edgeOneQ": 0,
+        "edgeOneR": 0,
+        "edgeTwoQ": 1,
+        "edgeTwoR": 0,
+        "purpose": "FireOnly"
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Second pending turn refused",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.33-bypass-turn",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "pendingTurn": true,
+        "edgeOneQ": 0,
+        "edgeOneR": 0,
+        "edgeTwoQ": 1,
+        "edgeTwoR": 0,
+        "purpose": "ContinueMovement"
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Reverse through old CAFP enters across-lane hex",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.33-bypass-continuation",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "pendingTurn": true,
+        "edgeOneQ": 0,
+        "edgeOneR": 0,
+        "edgeTwoQ": 1,
+        "edgeTwoR": 0,
+        "action": "Entry",
+        "reverse": true,
+        "positionKind": "Ordinary",
+        "ordinaryQ": 0,
+        "ordinaryR": 1,
+        "ordinaryFacing": 5
+      },
+      "expect": {
+        "outcome": "evaluated"
+      }
+    },
+    {
+      "name": "Cannot enter bypassed obstacle",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.33-bypass-continuation",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "pendingTurn": true,
+        "edgeOneQ": 0,
+        "edgeOneR": 0,
+        "edgeTwoQ": 1,
+        "edgeTwoR": 0,
+        "action": "Entry",
+        "reverse": true,
+        "positionKind": "Ordinary",
+        "ordinaryQ": 0,
+        "ordinaryR": 0,
+        "ordinaryFacing": 5
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "No destination needed to refuse voluntary end",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.33-bypass-continuation",
+      "facts": {
+        "inBypass": true,
+        "action": "EndMovement",
+        "pendingTurn": true,
+        "endCause": "Voluntary"
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "Known immobilization forces end",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.33-bypass-continuation",
+      "facts": {
+        "inBypass": true,
+        "action": "EndMovement",
+        "pendingTurn": true,
+        "endCause": "Immobilized",
+        "immobilized": true
+      },
+      "expect": {
+        "outcome": "forced-end"
+      }
+    },
+    {
+      "name": "Other forced halts stay unsupported",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.33-bypass-continuation",
+      "facts": {
+        "inBypass": true,
+        "action": "EndMovement",
+        "endCause": "OtherForcedHalt"
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Public pending-turn shot uses old front frame",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "d2.33-bypass-defensive-position",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "stage": "TurnPending",
+        "originKind": "HexCenter",
+        "originQ": 1,
+        "originR": 0
+      },
+      "expect": {
+        "outcome": "evaluated"
+      }
+    },
+    {
+      "name": "Immobilized while pending keeps old frame",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.33-bypass-defensive-position",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "stage": "TurnPending",
+        "originKind": "HexCenter",
+        "originQ": 1,
+        "originR": 0,
+        "immobilized": true
+      },
+      "expect": {
+        "outcome": "evaluated"
+      }
+    },
+    {
+      "name": "Incoming CAFP origin is unsupported",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.33-bypass-defensive-position",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "stage": "TurnPending",
+        "originKind": "Cafp",
+        "originQ": 1,
+        "originR": 0
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Completed ordinary exit needs no old frame",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.33-bypass-defensive-position",
+      "facts": {
+        "stage": "EntryCompleted",
+        "positionKind": "Ordinary",
+        "ordinaryQ": 0,
+        "ordinaryR": 1,
+        "ordinaryFacing": 5
+      },
+      "expect": {
+        "outcome": "not-applicable"
+      }
+    }
+  ]
+}

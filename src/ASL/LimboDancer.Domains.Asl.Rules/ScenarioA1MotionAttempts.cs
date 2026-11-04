@@ -224,6 +224,7 @@ public static class ScenarioA1MotionAttempts
     /// Why the change of CA named with an attempt is refused (D2.401, D3.12; ruling R55.13), or null: "allowed to freely change its VCA/TCA", so
     /// any hexspine, and a TCA only for a vehicle with a turret; in Bypass a CA has its own positions (D2.32, D2.33), which is not built.
     /// </summary>
+    /// <remarks>Legacy Bypass refusal retained. ScenarioA1BypassTurretCalculator supplies local turret components, not Motion-attempt integration.</remarks>
     public static string? ChangeBar(string id, bool facingNamed, bool facingRead, bool turretNamed, bool turretRead, bool turreted, bool bypass) =>
         (facingNamed && !facingRead) || (turretNamed && !turretRead) ? "play.motion-attempt: name the hexspine the VCA or the TCA turns to, such as north-east or west (D2.401)"
         : turretNamed && !turreted ? $"play.motion-attempt: {id} has no turret to turn (D3.12); name a VCA alone"

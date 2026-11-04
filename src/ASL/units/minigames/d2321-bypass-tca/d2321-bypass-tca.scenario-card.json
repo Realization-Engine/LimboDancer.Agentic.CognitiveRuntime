@@ -1,0 +1,70 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "d2321-bypass-tca",
+  "title": "Bypass turret positions and Case A",
+  "catalog": "asl-scenario-a1@1.19.0",
+  "source": {
+    "basis": "Manufactured under R0.3 for approved Rules-only Vehicle Bypass Batch 4.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "Board 23 anchors [BB3] and [AA4]. Counters are at hex centers, not in a played Bypass state.",
+      "All axial Bypass positions, turret profiles and pending-turn stages are labelled hypothetical Workbench facts. No clearance, LOS or live firing/movement acceptance is claimed."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 1944
+  },
+  "introduction": "Inspect board 23 and the catalog anchors. Use the hand-entered canonical axial frame for the four turret positions and retained CAFP; it is not a live game transition.",
+  "boards": [
+    {
+      "board": "bd23",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "left",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "british",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "right",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 2
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A setup-only Rules fixture with no victory condition or played acceptance. The German anchor is concealed for opponent-disclosure checks.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "d2321-bypass-tca"
+}
