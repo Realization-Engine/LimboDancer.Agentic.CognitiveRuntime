@@ -204,6 +204,16 @@ public sealed class RenderEndpointTests(StudioFactory factory) : IClassFixture<S
         // With the hex lattice the viewport places counters by (Screen-Bounded Map Analysis, section 3.4).
         Assert.Equal("{\"width\":113,\"height\":129,\"tileSize\":512,\"levels\":1,\"hexWidth\":56.25,\"hexHeight\":64.5,\"a1x\":0,\"a1y\":32.25}",
             await index.Content.ReadAsStringAsync());
+
+        // Styled and Hex Facts Views Plan, step 1: those views take the same index for the board's lattice, and still no tiles.
+        foreach (var view in new[] { "styled", "hexfacts" })
+        {
+            using var lattice = await client.GetAsync(new Uri($"{Base}/{view}/tiles.json", UriKind.Relative));
+            Assert.Equal(HttpStatusCode.OK, lattice.StatusCode);
+            Assert.Equal(await index.Content.ReadAsStringAsync(), await lattice.Content.ReadAsStringAsync());
+            using var tile = await client.GetAsync(new Uri($"{Base}/{view}/{TileCache.FileName(TileVariant.TerrainAndElevation, 0, 0, 0)}", UriKind.Relative));
+            Assert.NotEqual(HttpStatusCode.OK, tile.StatusCode);
+        }
     }
 
     [Fact]

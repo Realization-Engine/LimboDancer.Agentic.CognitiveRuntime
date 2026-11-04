@@ -1,0 +1,105 @@
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+@* Styled and Hex Facts Views Plan, step 1b (decision V5): the map style of a game, in Play and Replay. It offers the views a game is played on
+   (the board viewer's picker, without the Comparison view), draws a VASL board's Styled input before that view is shown, keeps the choice in
+   the browser for the next game, and carries it in the page's address. Only the board's drawing changes: the counters, marks, lines, and
+   every rule and record are the same in every view. *@
+<BoardViewPicker Id="@Id" Views="@ViewsFor(Board)" Value="@Value" ValueChanged="@Choose" />
+@if (preparing)
+{
+    <span class="muted" role="status">Drawing the board for the Styled view...</span>
+}
+
+@code {
+    /// <summary>The browser's key for the style a viewer last chose.</summary>
+    public const string StorageKey = "studio.map.style";
+
+    /// <summary>The query parameter that names the style in a page's address.</summary>
+    public const string QueryName = "style";
+
+    private bool preparing;
+
+    [Parameter, EditorRequired]
+    public StudioBoard Board { get; set; } = null!;
+
+    [Parameter]
+    public BoardView Value { get; set; }
+
+    [Parameter]
+    public EventCallback<BoardView> ValueChanged { get; set; }
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    /// <summary>The style the page's address names (<c>?style=</c>), which wins over the one the browser keeps.</summary>
+    [Parameter]
+    public string? Asked { get; set; }
+
+    /// <summary>The views a game can be drawn in: Exact, Styled when the board has a Styled input, and Hex facts.</summary>
+    public static IReadOnlyList<BoardView> ViewsFor(StudioBoard board)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        return board.HasStyled ? [BoardView.Exact, BoardView.Styled, BoardView.HexFacts] : [BoardView.Exact, BoardView.HexFacts];
+    }
+
+    /// <summary>The style a text names, when the board offers it; null otherwise.</summary>
+    public static BoardView? Offered(StudioBoard board, string? text) =>
+        BoardRenderer.TryParseView(text, out var view) && ViewsFor(board).Contains(view) ? view : null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var kept = Asked;
+        if (kept is null)
+        {
+            try
+            {
+                kept = await JS.InvokeAsync<string?>("localStorage.getItem", StorageKey);
+            }
+            catch (Exception error) when (error is JSException or JSDisconnectedException or TaskCanceledException)
+            {
+                // Storage blocked or the circuit gone: the page keeps the Exact view.
+            }
+        }
+
+        if (Offered(Board, kept) is { } view && view != Value)
+        {
+            await Show(view);
+        }
+    }
+
+    private async Task Choose(BoardView view)
+    {
+        await Show(view);
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", StorageKey, BoardRenderer.ViewName(view));
+            // The address names the style, so a link opens the same view; the Exact view needs no word.
+            var address = Navigation.GetUriWithQueryParameter(QueryName, view == BoardView.Exact ? null : BoardRenderer.ViewName(view));
+            await JS.InvokeVoidAsync("history.replaceState", null, string.Empty, address);
+        }
+        catch (Exception error) when (error is JSException or JSDisconnectedException or TaskCanceledException)
+        {
+            // The choice holds for this page.
+        }
+    }
+
+    // A VASL board's Styled input is its vectorization, made once on first use, before the view that needs it is shown (as the board viewer does).
+    private async Task Show(BoardView view)
+    {
+        if (view is BoardView.Styled && Board.Render.Styled is null && Board.StyledRender is { IsValueCreated: false } styled)
+        {
+            preparing = true;
+            StateHasChanged();
+            await Task.Run(() => styled.Value);
+            preparing = false;
+        }
+
+        await ValueChanged.InvokeAsync(view);
+    }
+}

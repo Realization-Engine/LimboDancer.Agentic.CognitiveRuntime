@@ -154,7 +154,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         }
         @if (layers.Board is { } mapBoard)
         {
-            <BoardWorkspace @key="@($"{gameId}/{viewAs}")" @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary" OnLoaded="@RevealOnMap"
+            <BoardWorkspace @key="@($"{gameId}/{viewAs}")" @ref="workspace" Board="@mapBoard" View="@mapView" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary" OnLoaded="@RevealOnMap"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => highlight = facts is null ? null : GameMaps.LocationOf(mapBoard, facts.Index))"
                             @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("step", "Step", Icon: "step"), stepBlock), new BoardInspector.ExtraTab(new("units", "Units", Icon: "units"), unitsBlock, Last: true), new BoardInspector.ExtraTab(new("standing", "Standing", Icon: "standing"), standingBlock, Last: true)])"
@@ -171,6 +171,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                         <button type="button" id="replay-map-zoom-out" class="icon-button" title="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))"><IconLabel Icon="zoom-out" Label="Zoom out" /></button>
                         <button type="button" id="replay-map-fit" class="icon-button" title="Fit" @onclick="@(() => workspace!.Fit())"><IconLabel Icon="fit" Label="Fit" /></button>
                         <button type="button" id="replay-map-rotate" class="icon-button" title="Rotate map" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())"><IconLabel Icon="rotate" Label="Rotate map" /></button>
+                        <MapStylePicker Id="replay-map-style" Board="@mapBoard" Value="@mapView" ValueChanged="@(view => mapView = view)" Asked="@StyleQuery" />
                         <span class="muted" id="replay-map-legend">This step: a blue arrow is a move, a red dashed arrow is fire, an amber outline is another change.</span>
                     </div>
                 </Toolbar>
@@ -223,6 +224,13 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
 
     [SupplyParameterFromQuery(Name = "view")]
     public string? ViewQuery { get; set; }
+
+    /// <summary>?style=styled or hexfacts: the map's style (Styled and Hex Facts Views Plan, decision V5); without it, the one the browser keeps.</summary>
+    [SupplyParameterFromQuery(Name = MapStylePicker.QueryName)]
+    public string? StyleQuery { get; set; }
+
+    // The view the game's map is drawn in (step 1b); only the board's drawing changes with it.
+    private BoardView mapView = BoardView.Exact;
 
     /// <summary>An event whose step is to be shown, as Play's "Replay from here" names it; the step's number is the view's own, so the page finds it.</summary>
     [SupplyParameterFromQuery(Name = "at")]

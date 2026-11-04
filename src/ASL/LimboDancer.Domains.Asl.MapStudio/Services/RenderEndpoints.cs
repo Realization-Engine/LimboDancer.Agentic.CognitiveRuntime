@@ -106,8 +106,10 @@ public static class RenderEndpoints
             return Ahead(board, version, file, game, context, provider, tiles, owners);
         }
 
-        // Raster Tiles Plan, task 3: the Exact view's tiles and the pyramid's shape.
-        if (view == "exact" && (file == TileCache.IndexFile || file.StartsWith("tile-", StringComparison.Ordinal)))
+        // Raster Tiles Plan, task 3: the Exact view's tiles and the pyramid's shape. The Styled and Hex facts views take the index too, for the
+        // board's hex lattice (Styled and Hex Facts Views Plan, step 1): it is the same board in every view.
+        if ((view == "exact" && (file == TileCache.IndexFile || file.StartsWith("tile-", StringComparison.Ordinal)))
+            || (view is "styled" or "hexfacts" && file == TileCache.IndexFile))
         {
             return Tile(board, version, file, game, context, provider, tiles, owners);
         }
