@@ -1,7 +1,7 @@
 # ASL Map Studio Tile Pacing Plan
 
 **Written:** 2026-11-03, at the user's word ("OK, we can pursue this") on the two candidates of the [Goodwood Lab Techniques Analysis](<ASL Map Studio Goodwood Lab Techniques Analysis.md>), section 5.6. This plan is the second: new tiles shown a few a frame, and the tiles a zoom heads for fetched while it is still under way. The first is the [Counter Drawing Plan](<ASL Map Studio Counter Drawing Plan.md>).
-**Status:** for the user's approval; nothing is built.
+**Status:** approved by the user on 2026-11-03 ("I've reviewed both plans and I approve all proposal in both plans"), with decisions T1 to T3 as section 6 proposes them; then "Execute and work independently until all the code is implemented and I can see a demo and perform tests". Built on branch `claude/speed-plans` (section 8).
 **Sources:** the analysis's section 5.6 (the Goodwood suites, the deep-zoom breakdown, and the trace); `updateTiles`, `tileImage`, `prefetchFiner`, and `zoomAt` in `boardViewport.js` on `main`.
 
 ## 1. The problem
@@ -70,6 +70,15 @@ This adds to `prefetchFiner`, which stays as it is for zooms of one level.
 - **Tests:** Node tests in the existing viewport test file; no new test project.
 - **Benefit against noise:** three runs, the first dropped, the same window and display; a trace for the commit.
 - **Results, backlog, outside outputs:** results in a section of this plan and the analysis; the backlog's rows "New tiles shown a few a frame" and "The deep zoom of the screen-bounded map" updated; my Studio's build in `asl-gate-work/studio-6670`, cleaned as usual.
+
+## 8. As built (2026-11-03)
+
+Both steps built on branch `claude/speed-plans`, in `boardViewport.js`, at the user's word to work through to a demo; the step-by-step measures in the user's Chrome wait for that demo.
+
+- **Step 1.** A decoded tile is queued (`queueTile`); each animation frame shows at most `tilesPerFrame` (4) of the queue, those nearest the middle of the board on screen first (`pacedBatch`), and all of it when no larger. A tile dropped from the pool while it waited is not shown. `?pace=0` shows each tile as it decodes, as before, for comparison. The probe records per drag and per wheel burst the frames that showed new tiles and the most in one (`tilesShown`); `mapProbeSuite()` prints them.
+- **Step 2.** During a wheel gesture, once the box has passed the next finer level than the one drawn, the destination level's tiles for the part of the board on screen are fetched and decoded at low priority, at most 48, each once (`destinationTiles`, `prefetchDestination`), in the variant the landing will draw (at near zoom the near grid's, unless `?near=tiles`). `tileImage` takes a tile so fetched instead of fetching it again; what the rest leaves is let go. Only on the screen-bounded map, as `prefetchFiner`.
+- **Checked in my Studio at 6670** on the Goodwood game map (behind "show my view"), one deep wheel zoom from Fit, my browser pane (a pointer only, Map Lab Plan, section 3.5): the 20 level-0 tiles were each fetched once, in the near variant, and shown over six frames, at most four in one. Sharp after 342 ms with a longest frame of 58 ms, against 411 to 446 ms and 133 to 152 ms in the same pane with `?pace=0&counters=three`.
+- **Tests:** Node viewport tests for the batch's order and bound, a small batch at once, and the destination's level, tiles, and bound.
 
 ## Related documents
 

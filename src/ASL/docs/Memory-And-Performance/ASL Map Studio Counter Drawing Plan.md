@@ -1,7 +1,7 @@
 # ASL Map Studio Counter Drawing Plan
 
 **Written:** 2026-11-03, at the user's word ("OK, we can pursue this") on the two candidates of the [Goodwood Lab Techniques Analysis](<ASL Map Studio Goodwood Lab Techniques Analysis.md>), section 5.6. This plan is the first: counters drawn more cheaply when a zoom changes many of them at once. The second is the [Tile Pacing Plan](<ASL Map Studio Tile Pacing Plan.md>).
-**Status:** for the user's approval; nothing is built.
+**Status:** approved by the user on 2026-11-03 ("I've reviewed both plans and I approve all proposal in both plans"), with decisions P1 to P4 as section 6 proposes them; then "Execute and work independently until all the code is implemented and I can see a demo and perform tests". Built on branch `claude/speed-plans` (section 8).
 **Sources:** the analysis's section 5.6 (the Goodwood suites, the deep-zoom breakdown, the trace); the [Map Lab Plan](<ASL Map Studio Map Lab Plan.md>), finding F9; the [Counter Layer Design](<ASL Map Studio Counter Layer Design.md>), sections 6, 8, and 10; `UnitRenderer.WriteUnit`, `UnitOverlayBuilder.WriteHex`, and `boardViewport.js` on `main`.
 
 ## 1. The problem
@@ -95,6 +95,14 @@ If steps 1 and 2 do not reach the expected figures, counters at the far and midd
 - **Tests:** Node tests in the existing viewport test file; no new test project.
 - **Benefit against noise:** three runs, the first dropped, the same window and display; the trace for the element counts.
 - **Results, backlog, outside outputs:** results in a section of this plan and the analysis; the backlog's rows "Counters drawn cheaply at far and middle zoom" and "The deep zoom of the screen-bounded map" updated; my Studio's build in `asl-gate-work/studio-6670`, cleaned as usual.
+
+## 8. As built (2026-11-03)
+
+Step 1 built on branch `claude/speed-plans`, in `boardViewport.js`, at the user's word to work through to a demo. Step 2 is not built: decision P2 makes it wait on step 1's figures in the user's Chrome. Step 3 waits on P3.
+
+- **Step 1.** As the counter layer arrives (`setUnits`) and as a patch's fragments arrive (`applyUnitPatch`), each counter's three tier references become one, before the node joins the page (`oneReference`): the kept reference loses its `data-tier`, carries the three faces' addresses (`data-far`, `data-mid`, `data-near`), and points at the active tier. A change of tier (`updateUnitTier`) points the counters in view once the commit has culled (`pointTier`); a counter coming back into view is pointed as `cullToView` shows it. No CSS rule changed: the kept reference has no `data-tier`, so the three-tier rule passes it by. `?counters=three` keeps the server's three, for comparison.
+- **Checked in my Studio at 6670** on the Goodwood game map (behind "show my view"): all 548 counters one reference each, with their role, tab stop, name, and title; the layer from 4,548 elements to 3,452 and from 1,746 references to 650. At Fit, near zoom, and back, every counter in view pointed at the active tier (530, 9, and 127 in view), and the near faces drawn. A click selected the counter's hex; a counter took keyboard focus with its name. In Replay, three steps back and to the last patched the layer (versions 2 to 4), and every counter stayed one reference, rightly pointed. On the Lab's 40,392-hex map, 600 counters one reference each.
+- **Tests:** Node viewport tests for the rewrite, the kept faces, the pointing, and a counter written in place left alone.
 
 ## Related documents
 
