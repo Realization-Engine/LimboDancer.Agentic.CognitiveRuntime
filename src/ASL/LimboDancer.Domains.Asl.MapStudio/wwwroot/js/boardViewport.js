@@ -305,8 +305,25 @@ export function create(host, dotnet) {
 
 // Large Campaign Map Plan, task 4: the Exact view's hex labels come as data (labels.json) and are drawn only for the hexes in view, so a large
 // map no longer holds one element per hex. Other views keep their SVG label layer.
-function labelsAsData(baseUrl, layer) {
-    return layer === "labels" && baseUrl.endsWith("/exact");
+// Styled and Hex Facts Views Plan, step 1: the Styled and Hex facts views of a board take their labels as data too (the server serves
+// labels.json for every view); the Comparison view keeps its texts, since its side view clones them.
+export function labelsAsData(baseUrl, layer) {
+    return layer === "labels" && /\/(exact|styled|hexfacts)$/.test(baseUrl);
+}
+
+// Step 1: a view drawn without tiles still takes the board's hex lattice (tiles.json), so counters and marks out of view are hidden in it.
+export function latticeWanted(baseUrl, tiled, bounded) {
+    return bounded && !tiled && /\/(styled|hexfacts)$/.test(baseUrl);
+}
+
+async function fetchLattice(baseUrl, query) {
+    try {
+        const response = await fetch(`${baseUrl}/tiles.json${query}`);
+        return response.ok ? await response.json() : null;
+    } catch {
+        // The lattice only hides what is out of view; a page works without it.
+        return null;
+    }
 }
 
 async function fetchGroups(baseUrl, query, layers, tiled = false, gridInTiles = false) {
@@ -911,7 +928,8 @@ function setCulling(state, on) {
 }
 
 function cullToView(state) {
-    const index = state.tiles?.index;
+    // The tiles' index, or in a view without tiles the board's lattice (Styled and Hex Facts Views Plan, step 1).
+    const index = state.tiles?.index ?? state.lattice;
     const on = cullOn(state.cull, state.bounded);
     if (!index?.hexWidth || !state.box || (!on && !state.culled)) {
         return;
@@ -1288,10 +1306,15 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
         ? { generation, started: performance.now(), reported: false } : null;
     if (state.loadMetrics) state.host.dataset.mapMetricStatus = "loading";
     const tiled = tilesWanted(state, baseUrl, layers);
-    const { groups, labelIndex, tileIndex } = await fetchGroups(baseUrl, query, layers, tiled, tiled && state.bounded);
+    const [{ groups, labelIndex, tileIndex }, lattice] = await Promise.all([
+        fetchGroups(baseUrl, query, layers, tiled, tiled && state.bounded),
+        latticeWanted(baseUrl, tiled, state.bounded) && typeof globalThis.fetch === "function" ? fetchLattice(baseUrl, query) : null,
+    ]);
     if (generation !== state.generation) {
         return;
     }
+
+    state.lattice = lattice;
 
     state.labelIndex = labelIndex;
     const tileLayer = groups.find(group => group.id === "layer-exact-tiles");

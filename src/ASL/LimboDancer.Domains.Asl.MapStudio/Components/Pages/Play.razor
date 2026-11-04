@@ -1314,7 +1314,7 @@ else if (state is not null)
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
         {
-            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" TileBoundaries="@TileBoundaries(mapBoard)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
+            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" View="@mapView" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@MapMarks(mapBoard, layers.Marks)" TileBoundaries="@TileBoundaries(mapBoard)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
                             Panel="@InspectorPanel" PanelChanged="SelectInspectorTab" Extras="@InspectorExtras(actionsBlock, proposalBlock, recordsBlock, unitsBlock, diceBlock)" InspectorHeader="@(bannerNow is not null ? inspectorTurn : null)" InspectorPlanner="@PlannerBlock" InspectorAttacker="@state?.PhasingSide"
@@ -1334,6 +1334,7 @@ else if (state is not null)
                         <button type="button" id="play-map-zoom-out" class="icon-button" title="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))"><IconLabel Icon="zoom-out" Label="Zoom out" /></button>
                         <button type="button" id="play-map-fit" class="icon-button" title="Fit" @onclick="@(() => workspace!.Fit())"><IconLabel Icon="fit" Label="Fit" /></button>
                         <button type="button" id="map-rotate" class="icon-button" title="Rotate map" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())"><IconLabel Icon="rotate" Label="Rotate map" /></button>
+                        <MapStylePicker Id="play-map-style" Board="@mapBoard" Value="@mapView" ValueChanged="@(view => mapView = view)" Asked="@StyleQuery" />
                         @if (OwnershipFor(mapBoard) is not null)
                         {
                             <button type="button" id="map-parent-boundaries" aria-pressed="@(showParentBoundaries ? "true" : "false")"
@@ -4020,7 +4021,7 @@ else if (state is not null)
             setup = setup is { Length: > 4 } && setup.EndsWith("</g>", StringComparison.Ordinal) ? $"{setup[..^4]}{route}</g>" : $"<g id=\"layer-marks\">{route}</g>";
         }
 
-        if (!showParentBoundaries || BoundedMap || handOver is not null || OwnershipFor(board) is not { } ownership)
+        if (!showParentBoundaries || BoundariesInTiles || handOver is not null || OwnershipFor(board) is not { } ownership)
         {
             return setup;
         }
@@ -7419,10 +7420,20 @@ else if (state is not null)
 
     private bool BoundedMap => PresentQuery != "classic";
 
+    /// <summary>?style=styled or hexfacts: the map's style (Styled and Hex Facts Views Plan, decision V5); without it, the one the browser keeps.</summary>
+    [SupplyParameterFromQuery(Name = MapStylePicker.QueryName)]
+    public string? StyleQuery { get; set; }
+
+    // The view the game's map is drawn in (step 1b); only the board's drawing changes with it.
+    private BoardView mapView = BoardView.Exact;
+
+    // Only the Exact view's tiles carry the Formation boundaries; in the other views, until they have tiles, the page draws them as a path.
+    private bool BoundariesInTiles => BoundedMap && mapView == BoardView.Exact;
+
     // On the screen-bounded map (the default; not with ?present=classic) the tiles carry the Formation boundaries; the page names the game to
     // them instead of drawing a path.
     private string? TileBoundaries(StudioBoard board) =>
-        BoundedMap && showParentBoundaries && handOver is null && OwnershipFor(board) is not null ? gameId : null;
+        BoundariesInTiles && showParentBoundaries && handOver is null && OwnershipFor(board) is not null ? gameId : null;
 
     /// <summary>A hex to pick when the page opens, such as the one picked on the board viewer before "Back to Play".</summary>
     [SupplyParameterFromQuery(Name = "hex")]
