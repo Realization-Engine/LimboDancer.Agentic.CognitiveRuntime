@@ -109,6 +109,69 @@ public static class TileLinePainter
                 }
             }
         }
+
+        if (grid && geometry.HexWidth / block >= DotMinimumPixels)
+        {
+            PaintDots(geometry, originX, originY, block, pixels, width, height);
+        }
+    }
+
+    /// <summary>The fewest tile pixels across a hex at which its centre dot is painted with the grid: levels 0 and 1 of a standard board.</summary>
+    public const double DotMinimumPixels = 24;
+
+    // The vector grid's centre dot (BoardRenderer.AddHex): a square two cells on a side at the hex's centre dot, black at fill opacity 0.6.
+    private const double DotHalf = 1;
+    private const double DotOpacity = 0.6;
+
+    // Goodwood Lab Techniques Analysis, decision G2: the centre dots the vector grid drew, painted into the tile with the grid, so the
+    // screen-bounded map shows them where players judge line of sight from them. A pixel the dot covers in part is darkened in proportion,
+    // as the terrain is averaged at levels above 0.
+    private static void PaintDots(BoardGeometry geometry, int originX, int originY, int block, Span<byte> pixels, int width, int height)
+    {
+        var right = originX + (width * block);
+        var bottom = originY + (height * block);
+        var firstColumn = Math.Max(0, (int)Math.Floor((originX - geometry.A1CenterX) / geometry.HexWidth) - 1);
+        var lastColumn = Math.Min(geometry.WidthInHexes - 1, (int)Math.Ceiling((right - geometry.A1CenterX) / geometry.HexWidth) + 1);
+        for (var column = firstColumn; column <= lastColumn; column++)
+        {
+            var offset = geometry.HexHeight / 2 * (column % 2);
+            var firstRow = Math.Max(0, (int)Math.Floor((originY - geometry.A1CenterY + offset) / geometry.HexHeight) - 1);
+            var lastRow = Math.Min(geometry.RowCount(column) - 1, (int)Math.Ceiling((bottom - geometry.A1CenterY + offset) / geometry.HexHeight) + 1);
+            for (var row = firstRow; row <= lastRow; row++)
+            {
+                var centre = geometry.CenterDot(new HexIndex(column, row));
+                PaintSquare(centre.X - DotHalf, centre.Y - DotHalf, centre.X + DotHalf, centre.Y + DotHalf, originX, originY, block, pixels, width, height);
+            }
+        }
+    }
+
+    private static void PaintSquare(double left, double top, double right, double bottom, int originX, int originY, int block, Span<byte> pixels,
+        int width, int height)
+    {
+        var firstX = Math.Max(0, (int)Math.Floor((left - originX) / block));
+        var lastX = Math.Min(width - 1, (int)Math.Floor((right - originX) / block));
+        var firstY = Math.Max(0, (int)Math.Floor((top - originY) / block));
+        var lastY = Math.Min(height - 1, (int)Math.Floor((bottom - originY) / block));
+        for (var py = firstY; py <= lastY; py++)
+        {
+            var cellTop = originY + (py * block);
+            var overlapY = Math.Min(bottom, cellTop + block) - Math.Max(top, cellTop);
+            for (var px = firstX; px <= lastX; px++)
+            {
+                var cellLeft = originX + (px * block);
+                var overlapX = Math.Min(right, cellLeft + block) - Math.Max(left, cellLeft);
+                if (overlapX <= 0 || overlapY <= 0)
+                {
+                    continue;
+                }
+
+                var keep = 1 - (DotOpacity * overlapX * overlapY / ((double)block * block));
+                var at = ((py * width) + px) * 3;
+                pixels[at] = (byte)Math.Round(pixels[at] * keep);
+                pixels[at + 1] = (byte)Math.Round(pixels[at + 1] * keep);
+                pixels[at + 2] = (byte)Math.Round(pixels[at + 2] * keep);
+            }
+        }
     }
 
     /// <summary>The ordinal of the hex whose centre dot is nearest the point, clamped to the board: the lattice arithmetic of

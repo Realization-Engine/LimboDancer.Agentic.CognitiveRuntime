@@ -301,7 +301,7 @@ Steps 0 and 1 change only the probe, and they come first: they decide whether st
 | Id | Question | Proposal |
 |---|---|---|
 | G1 | The grid at near zoom | One set of tiles at every zoom, the Lab's way, behind `?near=tiles` until the user has judged the look at the closest zoom; N2's vector grid over the `te+g` tiles as the fallback (5.1) |
-| G2 | Centre dots | Painted into the tiles at levels 0 and 1, so the bounded map shows them where the vector grid did (5.1) |
+| G2 | Centre dots | Painted into the tiles at levels 0 and 1, so the bounded map shows them where the vector grid did (5.1). **Built 2026-11-04** at the user's word ("Let's Implement G2: Center Dots now"): `TileLinePainter` paints the vector grid's square, two cells on a side at 0.6, with the grid where a hex is 24 tile pixels or more, a pixel the dot covers in part darkened in proportion; `TilePainter.Version` 2 keys the tile cache and its disk folder (`TileCache.HeldVersion`), so tiles of the old painting are removed as an old board version's are, and the layers token 5 makes browsers ask again; the near grid draws the dots too (`#near-dots`). Checked in my Studio: on bd01 at near zoom, the dots at every hex centre from the near grid, and from the tiles with `?near=tiles`; on Goodwood's game map, a level-0 grid tile's centre pixels darkened by 0.6 (47 to 19); the tile caches moved to their `~p2` folders |
 | G3 | A Lab map of Goodwood's size as a bench for the zoom question | Yes: 40,442 hexes, `tileslines`, labels shown, a one-way wheel zoom timed until sharp (5.4) |
 | G4 | The order | Measure first (steps 0 and 1), then build only what the measures point at (section 6) |
 

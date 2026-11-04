@@ -70,6 +70,12 @@ public static class TilePyramid
 /// </summary>
 public static class TilePainter
 {
+    /// <summary>
+    /// How tiles are painted, raised when a painted tile's pixels change for the same board and variant, so caches keyed by it hold the new
+    /// painting apart from the old. 2: the grid's centre dots (Goodwood Lab Techniques Analysis, decision G2).
+    /// </summary>
+    public const int Version = 2;
+
     private static readonly TerrainColor Unknown = new(0xff, 0x00, 0xff);
     private static readonly TerrainColor Below = new(0x1f, 0x4e, 0x79);
 

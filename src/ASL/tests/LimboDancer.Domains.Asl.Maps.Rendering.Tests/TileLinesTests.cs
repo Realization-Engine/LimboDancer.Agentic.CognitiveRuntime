@@ -65,6 +65,43 @@ public sealed class TileLinesTests
         }
     }
 
+    // Decision G2: the vector grid's centre dots (a square two cells on a side, black at 0.6) are painted with the grid where a hex is at
+    // least 24 tile pixels wide: levels 0 and 1 of a standard board, not level 2.
+    [Fact]
+    public void PaintsTheCentreDotsWithTheGridAtTheFinestLevels()
+    {
+        var width = Geometry.GridWidth;
+        var height = Geometry.GridHeight;
+        var levelZero = Enumerable.Repeat((byte)200, width * height * 3).ToArray();
+        TileLinePainter.Paint(Geometry, TileLines.Grid, [], 0, 0, 1, levelZero, width, height);
+        foreach (var hex in Geometry.Hexes())
+        {
+            // The pixel holding the dot's centre is darkened by the dot's whole opacity: 200 x 0.4.
+            var centre = Geometry.CenterDot(hex);
+            var at = (((int)Math.Floor(centre.Y) * width) + (int)Math.Floor(Math.Min(centre.X, width - 1))) * 3;
+            Assert.Equal(80, levelZero[at]);
+        }
+
+        // Each dot covers four cells, partly or wholly: no more than nine pixels a hex are touched.
+        var dotted = Count(levelZero, pixel => pixel.Item1 is < 200 and not 110);
+        Assert.InRange(dotted, Geometry.HexCount * 4, Geometry.HexCount * 9);
+
+        // Level 1 (a hex 28 pixels across) has the dots, blended over a pixel of two cells; level 2 (14) has none.
+        var (halfWidth, halfHeight) = ((width + 1) / 2, (height + 1) / 2);
+        var levelOne = Enumerable.Repeat((byte)200, halfWidth * halfHeight * 3).ToArray();
+        TileLinePainter.Paint(Geometry, TileLines.Grid, [], 0, 0, 2, levelOne, halfWidth, halfHeight);
+        Assert.True(Count(levelOne, pixel => pixel.Item1 is < 200 and not 110) >= Geometry.HexCount);
+        var (quarterWidth, quarterHeight) = ((width + 3) / 4, (height + 3) / 4);
+        var levelTwo = Enumerable.Repeat((byte)200, quarterWidth * quarterHeight * 3).ToArray();
+        TileLinePainter.Paint(Geometry, TileLines.Grid, [], 0, 0, 4, levelTwo, quarterWidth, quarterHeight);
+        Assert.Equal(0, Count(levelTwo, pixel => pixel.Item1 is < 200 and not 110));
+
+        // Without the grid, no dots.
+        var bare = Enumerable.Repeat((byte)200, width * height * 3).ToArray();
+        TileLinePainter.Paint(Geometry, TileLines.None, [], 0, 0, 1, bare, width, height);
+        Assert.Equal(0, Count(bare, pixel => pixel.Item1 < 200));
+    }
+
     private static int Count(byte[] pixels, Func<(byte, byte, byte), bool> match)
     {
         var count = 0;
