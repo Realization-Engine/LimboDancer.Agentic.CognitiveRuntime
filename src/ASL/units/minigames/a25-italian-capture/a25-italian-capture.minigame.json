@@ -1,0 +1,133 @@
+{
+  "id": "a25-italian-capture",
+  "title": "A25.63 Italian capture and escape",
+  "card": "a25-italian-capture",
+  "rules": [
+    "A25.63",
+    "A25.66",
+    "A11.19"
+  ],
+  "contracts": [
+    "a25.63-capture-modifier",
+    "a20.55-prisoner-escape"
+  ],
+  "checks": [
+    {
+      "name": "Experienced non-elite Italian capture term is zero",
+      "position": "setup",
+      "viewer": "italian",
+      "contract": "a25.63-capture-modifier",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "italian",
+        "elite": false,
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "zero"
+      }
+    },
+    {
+      "name": "Inexperience replaces the capture term with minus one",
+      "position": "setup",
+      "viewer": "italian",
+      "contract": "a25.63-capture-modifier",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "italian",
+        "elite": false,
+        "inexperienced": true
+      },
+      "expect": {
+        "outcome": "minus-one"
+      }
+    },
+    {
+      "name": "Elite Italian capture term remains plus one",
+      "position": "setup",
+      "viewer": "italian",
+      "contract": "a25.63-capture-modifier",
+      "facts": {
+        "subjectId": "elite",
+        "nationality": "italian",
+        "elite": true,
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "plus-one"
+      }
+    },
+    {
+      "name": "Attacker uses the publicly revealed defender facts at CC declaration",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a25.63-capture-modifier",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "italian",
+        "elite": false,
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "zero"
+      }
+    },
+    {
+      "name": "Unavailable defender class remains unknown",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a25.63-capture-modifier",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "italian",
+        "elite": null,
+        "inexperienced": null
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "italian in the single escape contract",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a20.55-prisoner-escape",
+      "facts": {
+        "prisonerId": "hs",
+        "nationality": "italian",
+        "captorNationality": "german",
+        "infantry": true,
+        "axisMinorAtHome": false,
+        "guardBroken": true,
+        "meleeInLocation": false
+      },
+      "expect": {
+        "outcome": "refused-nationality"
+      }
+    },
+    {
+      "name": "eritrean in the single escape contract",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a20.55-prisoner-escape",
+      "facts": {
+        "prisonerId": "hs",
+        "nationality": "eritrean",
+        "captorNationality": "german",
+        "infantry": true,
+        "axisMinorAtHome": false,
+        "guardBroken": true,
+        "meleeInLocation": false
+      },
+      "expect": {
+        "outcome": "refused-nationality"
+      }
+    }
+  ],
+  "units": {
+    "subject": "italian",
+    "hs": "italian",
+    "elite": "italian",
+    "enemy": "german"
+  }
+}

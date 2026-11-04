@@ -8,6 +8,7 @@ namespace LimboDancer.Domains.Asl.Rules;
 public static class ScenarioA1FireEligibility
 {
     /// <summary>A21.1 (ruling R13.7): a weapon of another nationality than its possessor's is captured; null when either nationality is not known.</summary>
+    // Legacy and physical/repair reading, including null for equal nationalities. Current use exceptions: ScenarioA1CapturedEquipmentUseCalculator.Evaluate.
     public static bool? CapturedBy(string? weaponNationality, string? firerNationality) =>
         weaponNationality is not null && firerNationality is not null && weaponNationality != firerNationality ? true : null;
 

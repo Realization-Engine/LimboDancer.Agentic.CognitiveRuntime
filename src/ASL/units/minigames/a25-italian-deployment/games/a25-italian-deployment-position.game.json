@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "tenant": "5a7d1f00-0000-4000-8000-0000000057d0",
+  "game": "a25-italian-deployment-position",
+  "label": "A25.61 Italian deployment: Rules-only position",
+  "synthetic": false,
+  "minigame": "a25-italian-deployment",
+  "events": [
+    {
+      "eventId": "a25-italian-deployment-position-0001",
+      "revision": 1,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "game-started",
+      "visibility": "all",
+      "payload": {
+        "sides": [
+          {
+            "id": "german",
+            "nationality": "german",
+            "elr": 3,
+            "friendlyEdge": "left"
+          },
+          {
+            "id": "italian",
+            "nationality": "italian",
+            "elr": 2,
+            "friendlyEdge": "right"
+          }
+        ],
+        "map": {
+          "reference": "bd01",
+          "version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317",
+          "boards": [
+            {
+              "board": "bd01",
+              "version": "8d77d26222b7bb21d8c1fdda6ba05b447f63c317"
+            }
+          ]
+        },
+        "catalog": "asl-scenario-a1@1.19.0",
+        "turn": 1,
+        "phase": "rph",
+        "phasingSide": "italian",
+        "synthetic": false,
+        "scenarioMonth": 7,
+        "scenarioYear": 1944
+      }
+    },
+    {
+      "eventId": "a25-italian-deployment-position-0002",
+      "revision": 2,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "subject",
+          "kind": "asl:squad",
+          "definition": "italian-squad",
+          "side": "italian",
+          "position": {
+            "at": "bd01:G4:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": true,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "a25-italian-deployment-position-0003",
+      "revision": 3,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "elite",
+          "kind": "asl:squad",
+          "definition": "italian-elite-squad",
+          "side": "italian",
+          "position": {
+            "at": "bd01:H4:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "a25-italian-deployment-position-0004",
+      "revision": 4,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "hs",
+          "kind": "asl:half-squad",
+          "definition": "italian-half-squad",
+          "side": "italian",
+          "position": {
+            "at": "bd01:H4:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "a25-italian-deployment-position-0005",
+      "revision": 5,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "enemy",
+          "kind": "asl:squad",
+          "definition": "attacker-squad",
+          "side": "german",
+          "position": {
+            "at": "bd01:G5:0"
+          },
+          "conditions": {
+            "asl:broken": false,
+            "asl:berserk": false,
+            "asl:captured": false,
+            "asl:melee": false,
+            "asl:ti": false,
+            "asl:disrupted": false,
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    }
+  ]
+}

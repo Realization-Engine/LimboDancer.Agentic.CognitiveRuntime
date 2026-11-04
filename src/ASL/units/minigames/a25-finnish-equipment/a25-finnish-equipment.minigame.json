@@ -1,0 +1,203 @@
+{
+  "id": "a25-finnish-equipment",
+  "title": "A25.75 Finnish equipment use",
+  "card": "a25-finnish-equipment",
+  "rules": [
+    "A25.75",
+    "A25.77"
+  ],
+  "contracts": [
+    "a25.75-equipment-use"
+  ],
+  "checks": [
+    {
+      "name": "Russian LMG in 1940 is exempt for Finnish Personnel",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a25.75-equipment-use",
+      "facts": {
+        "subjectId": "subject",
+        "userNationality": "finnish",
+        "personnel": true,
+        "printedClass": "elite",
+        "weaponNationality": "russian",
+        "weaponKind": "lmg",
+        "originMark": "not-applicable",
+        "scenarioDate": "1940-01",
+        "physicallyCaptured": true
+      },
+      "expect": {
+        "outcome": "exempt"
+      }
+    },
+    {
+      "name": "Russian LMG in 1939 still has Captured Use penalties",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a25.75-equipment-use",
+      "facts": {
+        "subjectId": "subject",
+        "userNationality": "finnish",
+        "personnel": true,
+        "printedClass": "elite",
+        "weaponNationality": "russian",
+        "weaponKind": "lmg",
+        "originMark": "not-applicable",
+        "scenarioDate": "1939-12",
+        "physicallyCaptured": true
+      },
+      "expect": {
+        "outcome": "captured-use"
+      }
+    },
+    {
+      "name": "Russian .50 HMG is never within the exemption",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a25.75-equipment-use",
+      "facts": {
+        "subjectId": "subject",
+        "userNationality": "finnish",
+        "personnel": true,
+        "printedClass": "elite",
+        "weaponNationality": "russian",
+        "weaponKind": "hmg50",
+        "originMark": "not-applicable",
+        "scenarioDate": "not-applicable",
+        "physicallyCaptured": true
+      },
+      "expect": {
+        "outcome": "captured-use"
+      }
+    },
+    {
+      "name": "Finnish PSK before July 1944 is refused",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a25.75-equipment-use",
+      "facts": {
+        "subjectId": "subject",
+        "userNationality": "finnish",
+        "personnel": true,
+        "printedClass": "elite",
+        "weaponNationality": "german",
+        "weaponKind": "psk",
+        "originMark": "not-applicable",
+        "scenarioDate": "1944-06",
+        "physicallyCaptured": true
+      },
+      "expect": {
+        "outcome": "refused-use"
+      }
+    },
+    {
+      "name": "Finnish PSK in July 1944 is exempt for elite Personnel",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a25.75-equipment-use",
+      "facts": {
+        "subjectId": "subject",
+        "userNationality": "finnish",
+        "personnel": true,
+        "printedClass": "elite",
+        "weaponNationality": "german",
+        "weaponKind": "psk",
+        "originMark": "not-applicable",
+        "scenarioDate": "1944-07",
+        "physicallyCaptured": true
+      },
+      "expect": {
+        "outcome": "exempt"
+      }
+    },
+    {
+      "name": "Finnish Conscript pays penalties even on Finnish-color PSK",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a25.75-equipment-use",
+      "facts": {
+        "subjectId": "subject",
+        "userNationality": "finnish",
+        "personnel": true,
+        "printedClass": "conscript",
+        "weaponNationality": "finnish",
+        "weaponKind": "psk",
+        "originMark": "not-applicable",
+        "scenarioDate": "1945-12",
+        "physicallyCaptured": true
+      },
+      "expect": {
+        "outcome": "captured-use"
+      }
+    },
+    {
+      "name": "Reciprocal Finnish r-mark MG exemption",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a25.75-equipment-use",
+      "facts": {
+        "subjectId": "subject",
+        "userNationality": "russian",
+        "personnel": true,
+        "printedClass": "elite",
+        "weaponNationality": "finnish",
+        "weaponKind": "lmg",
+        "originMark": "r",
+        "scenarioDate": "not-applicable",
+        "physicallyCaptured": true
+      },
+      "expect": {
+        "outcome": "exempt"
+      }
+    },
+    {
+      "name": "Relevant missing date cannot grant LMG exemption",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a25.75-equipment-use",
+      "facts": {
+        "subjectId": "subject",
+        "userNationality": "finnish",
+        "personnel": true,
+        "printedClass": "elite",
+        "weaponNationality": "russian",
+        "weaponKind": "lmg",
+        "originMark": "not-applicable",
+        "scenarioDate": "not-applicable",
+        "physicallyCaptured": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Opponent cannot inspect the concealed firer equipment",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a25.75-equipment-use",
+      "facts": {
+        "subjectId": null,
+        "userNationality": null,
+        "personnel": null,
+        "printedClass": null,
+        "weaponNationality": null,
+        "weaponKind": null,
+        "originMark": null,
+        "scenarioDate": "1940-01",
+        "physicallyCaptured": null
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "subjectId": "finnish"
+      }
+    }
+  ],
+  "units": {
+    "subject": "finnish",
+    "hs": "finnish",
+    "elite": "finnish",
+    "enemy": "german"
+  }
+}

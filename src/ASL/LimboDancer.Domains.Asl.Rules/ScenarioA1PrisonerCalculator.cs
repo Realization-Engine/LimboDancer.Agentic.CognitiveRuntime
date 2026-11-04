@@ -324,11 +324,19 @@ public static class ScenarioA1PrisonerCalculator
     /// A20.55, A25.63, A25.82, G1.621 (rulings RA20.6, RA20.7): may this prisoner attack its Guard to escape this CCPh, and must it pass a NTC first. The
     /// nationality bar comes first, then the Guard's state; the NTC is required whenever no Melee exists in the Location.
     /// </summary>
-    public static PrisonerEscapeVerdict Escape(PrisonerEscapeFacts facts)
+    public static PrisonerEscapeVerdict Escape(PrisonerEscapeFacts facts) => Escape(facts, ItalianEscapeContext.Legacy);
+
+    /// <summary>A25.63, A25.66 (p. 97): opt into Eritrean inheritance without changing the original overload or recorded facts.</summary>
+    public static PrisonerEscapeVerdict Escape(PrisonerEscapeFacts facts, ItalianEscapeContext context)
     {
         ArgumentNullException.ThrowIfNull(facts);
+        if (context is not (ItalianEscapeContext.Legacy or ItalianEscapeContext.WithEritreanInheritance))
+        {
+            throw new ArgumentOutOfRangeException(nameof(context));
+        }
+
         var required = EscapeNtcRequired(facts.MeleeInLocation);
-        if (EscapeNationalityBar(facts.PrisonerId, facts.Nationality, facts.CaptorNationality, facts.Infantry, facts.AxisMinorAtHome) is { } bar)
+        if (EscapeNationalityBar(facts.PrisonerId, facts.Nationality, facts.CaptorNationality, facts.Infantry, facts.AxisMinorAtHome, context) is { } bar)
         {
             // The Infantry bar is the nationality bar's first test.
             return new PrisonerEscapeVerdict(bar.Text, bar.Rule, required) { Bar = facts.Infantry ? PrisonerEscapeBar.Nationality : PrisonerEscapeBar.NotInfantry };
@@ -343,7 +351,8 @@ public static class ScenarioA1PrisonerCalculator
     public static string EscapeGuardText(string prisonerId) =>
         $"play.escape-guard: {prisonerId} may attack its Guard only when the Guard is broken or a Melee exists in the Location (A20.55)";
 
-    private static (string Text, string Rule)? EscapeNationalityBar(string prisonerId, string? nationality, string? captorNationality, bool infantry, bool? axisMinorAtHome)
+    private static (string Text, string Rule)? EscapeNationalityBar(string prisonerId, string? nationality, string? captorNationality, bool infantry, bool? axisMinorAtHome,
+        ItalianEscapeContext context = ItalianEscapeContext.Legacy)
     {
         if (!infantry)
         {
@@ -358,6 +367,11 @@ public static class ScenarioA1PrisonerCalculator
         if (nationality == "italian")
         {
             return ($"play.escape-nationality: {prisonerId} is Italian; once captured, no Italian unit attempts escape (A25.63, A20.55)", "A25.63");
+        }
+
+        if (context == ItalianEscapeContext.WithEritreanInheritance && ScenarioA1ItalianNationalityRules.UsesItalianDeploymentAndCapture(nationality))
+        {
+            return ($"play.escape-nationality: {prisonerId} has Italian escape treatment; once captured it does not attempt escape (A25.63, A25.66, A20.55)", "A25.66");
         }
 
         if (nationality == "japanese")

@@ -1,0 +1,117 @@
+{
+  "id": "a25-finnish-organization",
+  "title": "A25.71 Finnish organization",
+  "card": "a25-finnish-organization",
+  "rules": [
+    "A25.71"
+  ],
+  "contracts": [
+    "a25.71-organization"
+  ],
+  "checks": [
+    {
+      "name": "Finnish squad chooses a leaderless 1TC",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a25.71-organization",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "finnish",
+        "kind": "squad",
+        "action": "deploy",
+        "mode": "leaderless",
+        "guard": false,
+        "unarmed": false,
+        "broken": false
+      },
+      "expect": {
+        "outcome": "leaderless-1tc"
+      }
+    },
+    {
+      "name": "The same squad explicitly chooses directed NTC",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a25.71-organization",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "finnish",
+        "kind": "squad",
+        "action": "deploy",
+        "mode": "directed",
+        "guard": false,
+        "unarmed": false,
+        "broken": false
+      },
+      "expect": {
+        "outcome": "directed-ntc"
+      }
+    },
+    {
+      "name": "Unbroken Guard deploys automatically",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a25.71-organization",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "finnish",
+        "kind": "squad",
+        "action": "deploy",
+        "mode": "leaderless",
+        "guard": true,
+        "unarmed": false,
+        "broken": false
+      },
+      "expect": {
+        "outcome": "automatic"
+      }
+    },
+    {
+      "name": "Finnish HS need no leader to recombine",
+      "position": "setup",
+      "viewer": "finnish",
+      "contract": "a25.71-organization",
+      "facts": {
+        "subjectId": "hs",
+        "nationality": "finnish",
+        "kind": "half-squad",
+        "action": "recombine",
+        "mode": "not-applicable",
+        "guard": false,
+        "unarmed": false,
+        "broken": false
+      },
+      "expect": {
+        "outcome": "no-leader-required"
+      }
+    },
+    {
+      "name": "Opponent cannot evaluate the concealed Finnish squad",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a25.71-organization",
+      "facts": {
+        "subjectId": null,
+        "nationality": null,
+        "kind": null,
+        "action": "deploy",
+        "mode": "leaderless",
+        "guard": null,
+        "unarmed": null,
+        "broken": null
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "subjectId": "finnish"
+      }
+    }
+  ],
+  "units": {
+    "subject": "finnish",
+    "hs": "finnish",
+    "elite": "finnish",
+    "enemy": "german"
+  }
+}

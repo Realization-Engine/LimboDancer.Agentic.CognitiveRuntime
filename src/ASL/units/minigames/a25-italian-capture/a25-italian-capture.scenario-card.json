@@ -1,0 +1,69 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "a25-italian-capture",
+  "title": "A25.63 Italian capture and escape",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Manufactured under R0.3 for the approved Nationality Batch 1 design; Rules-only verdicts on imported bd01.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "Actual catalog counters at [G4], [H4] and [G5]. Missing Eritrean, crew and weapon variants are explicit hand-entered what-if facts, not catalog definitions. Live caller behavior waits for the separate wiring rows."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 1,
+    "month": 7,
+    "year": 1944
+  },
+  "introduction": "A25.63 Italian capture and escape. The owner knows its own counters; the opponent sees a sealed enemy stack. Contract examples vary facts explicitly, including prisoner status, printed class and date.",
+  "boards": [
+    {
+      "board": "bd01",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "italian",
+    "movesFirst": "italian"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "italian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "",
+        "basis": "none",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "a25-italian-capture"
+}

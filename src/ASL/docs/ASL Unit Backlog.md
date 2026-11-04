@@ -1802,3 +1802,16 @@ Written on 2026-11-02 for the [Map Lab Plan](<Memory-And-Performance/ASL Map Stu
 | The Lab's units in the address | Plan, section 8.3 | None | A measure that must be repeated across reloads | Units are held by the page; a reload or a new map drops them, and the same clicks place them again in the same hexes |
 | Counters hidden out of view on a Lab map | Plan, section 8.3: the Lab runs without `?present=bounded`, and its tile index has no hex lattice for `cullToView` | None | Built 2026-11-03 (Goodwood Lab Techniques Analysis, item 2) | On by default, with a box to draw them all; the Measure button measures all, in view, and none |
 | A click on a Lab counter | Plan, section 8.3 | None | A Lab measure that needs selection | The viewport reports the click; the Lab page does not handle it |
+
+## 98. Deferred by Nationality Batch 1
+
+The approved design is `Designs/ASL Nationality Batch 1 Rules Design.md`. The inventory remains the only claim board; these are boundaries, not duplicate assignments.
+
+| Item | Rules | Separate work | Current boundary |
+|---|---|---|---|
+| Downstream nationality behavior | A25.61, A25.63, A25.71, A25.75 | Inventory W-A25.61, W-A25.63, W-A25.71, W-A25.75; escape dependency W-A20.54 | Rules-only delivery; callers and recorded games keep their existing answers |
+| Remaining Eritrean distinctions | A25.66 | Nationality Rules and catalog claims | ELR, Battle Hardening, Lax and PAATC are not covered by the narrow Italian deployment/capture/escape inheritance helper |
+| Missing Eritrean and Italian crew counters; Finnish weapon variants/provenance | A25.61, A25.66, A25.75 | Catalog work | Real existing counters demonstrate the position; missing variants use labelled, hand-entered what-if facts |
+| Full deployment/recombination legality | A1.31, A1.32 | General organization Rules and phase wiring | Nationality verdicts do not validate a live leader, compatible HS, timing, terrain, Good Order or attempt budgets |
+| Temporary Crew exchange command | A21.22 | Existing pass 110/vehicle-crewing backlog | Italian nationality exemption only; vehicle/manning prerequisites and command are not added |
+| Automatic captured-MG night Sniper resolution | E1.76 | Existing night work | The nationality exemption is built; no Sniper resolution is added |

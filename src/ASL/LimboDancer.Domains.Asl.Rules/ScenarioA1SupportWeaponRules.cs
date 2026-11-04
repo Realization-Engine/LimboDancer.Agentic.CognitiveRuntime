@@ -31,6 +31,7 @@ public static class ScenarioA1SupportWeaponRules
     /// them "recombine after Dismounting" with no TC and no leader (<see cref="ScenarioA1CarrierRules.CarrierHalfSquad"/>). Finns and U.S.M.C. 7-6-8s are
     /// not in the catalog.
     /// </summary>
+    // Legacy exception-only answer. Finnish nationality requirements: ScenarioA1FinnishOrganizationCalculator.Evaluate.
     public static bool NeedsNoLeader(bool guard, bool unarmed, bool carrierHalfSquad = false) => guard || unarmed || carrierHalfSquad;
 
     /// <summary>
