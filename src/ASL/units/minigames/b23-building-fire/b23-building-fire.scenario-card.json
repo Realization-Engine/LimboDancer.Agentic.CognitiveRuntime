@@ -1,0 +1,70 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "b23-building-fire",
+  "title": "B23.31 building fire",
+  "catalog": "asl-scenario-a1@1.19.0",
+  "source": {
+    "basis": "Manufactured under R0.3 for the approved Terrain Fire Batch 2 design; Rules-only hand-entered verdicts.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "Actual stone building at [X3]/[X4], with no Factory SSR. Bypass, entry, wood, Factory and Deluxe variants are labelled hypothetical facts. Use the existing b23-factory card for a real Factory SSR position.",
+      "No live caller is wired by these examples."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 1944
+  },
+  "introduction": "B23.31 building fire. Actual stone building at [X3]/[X4], with no Factory SSR. Bypass, entry, wood, Factory and Deluxe variants are labelled hypothetical facts. Use the existing b23-factory card for a real Factory SSR position.",
+  "boards": [
+    {
+      "board": "bd01",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "left",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "right",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 2
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "b23-building-fire"
+}

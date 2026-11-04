@@ -53,7 +53,11 @@ public static class ScenarioA1FireMapRules
         return (null, terrain);
     }
 
-    /// <summary>A4.3, A4.34, B23.31 (ruling R10.7): a stack in Bypass is in the other terrain of the hexsides it moves along, not in the obstacle; whether the attack reads those hexsides.</summary>
+    /// <summary>
+    /// Legacy A4.3/A4.34/B23.31 lane reading (R10.7), including its original Residual answer. Current building TEM is independently decided by
+    /// <see cref="ScenarioA1BuildingFireCalculator.BuildingTem"/>: standard-ASL Residual, including Fire Lane FP, retains the building contribution.
+    /// W-B23.31 separates that contribution from lane terrain without changing old recordings.
+    /// </summary>
     public static bool UsesBypassLane(bool direct, string? fireKind, string? phase, bool movingStackBypassingAtTarget) =>
         (direct || fireKind == ScenarioA1FireCalculator.ResidualFire) && phase == "mph" && movingStackBypassingAtTarget;
 
@@ -62,6 +66,7 @@ public static class ScenarioA1FireMapRules
     /// when a hexside's terrain is not reviewed, for a Snap Shot at a Bypass step, and in a hex with a wall or hedge (the vertex LOS is not built). Pass 70
     /// (A12.151, p. 79; ruling R70.23): "The previously concealed DEFENDING unit(s) may use TPBF against any units in the same Location", the Bypassing
     /// stack taking no TEM of the obstacle and FFNAM and FFMO as the lane's terrain gives them ("unless the Bypass is through other than Open Ground").
+    /// This legacy lane answer is not the current building-TEM verdict; use <see cref="ScenarioA1BuildingFireCalculator.BuildingTem"/> separately.
     /// </summary>
     public static (string? Refusal, string? Terrain) BypassTerrain(IReadOnlyList<BypassHexsideFacts> hexsides, bool direct, bool snapShot, bool wallOrHedgeOnHex)
     {
