@@ -82,7 +82,7 @@ If steps 1 and 2 do not reach the expected figures, counters at the far and midd
 |---|---|---|
 | P1 | Where the three references become one | In the browser, as the layer arrives: no server markup, golden, or oracle changes, and the standalone counters keep their three tiers |
 | P2 | Step 2 | Only if step 1 leaves the deep zoom's landing frame more than 30 ms above "none" |
-| P3 | Step 3, a canvas for far and middle tiers | Not now; asked again with figures if steps 1 and 2 fall short, since it changes clicks and keyboard focus at those zooms |
+| P3 | Step 3, a canvas for far and middle tiers | Not now; asked again with figures if steps 1 and 2 fall short, since it changes clicks and keyboard focus at those zooms. **Ruled 2026-11-03: to the backlog** (section 9) |
 | P4 | The order | Step 0, then step 1, measured, then step 2 only as P2 says; one branch, one pull request per step |
 
 ## 7. Answers to the guidelines' checklist
@@ -111,6 +111,7 @@ The runs are the Tile Pacing Plan's section 9: one `mapProbeSuite()` on Goodwood
 - **Elements:** the Lab's page with 600 counters went from 7,447 to 6,247 elements at Fit; Goodwood's counter layer from 4,548 to 3,452.
 - **Step 2 is not needed (P2).** Its trigger was a deep zoom's landing frame more than 30 ms above the run with no counters. On Goodwood, with counters out of view hidden, both had no long frame; on the Lab both had 59 ms.
 - **A new finding: many detailed counters in view.** Five steps in on the Lab, where almost every counter is in view, a drag ran at 15.9 to 17.7 frames per second with them, and 78.7 to 81.9 without; all drawn, 8.2 to 9. Hiding those out of view cannot help when they are all in view, and step 1 changed it little. Goodwood's drag five steps in held 83 to 85 with all 548 drawn: many of its counters, as the Allied side sees them, are "?" counters, where the Lab's are full squad, leader, and machine-gun faces with their values and figure art. A game with hundreds of full faces on screen at middle zoom would meet the Lab's case; step 3, a canvas for far and middle tiers, is the answer this plan has for it, and it waits on the user's ruling (P3).
+- **P3 ruled (the user, 2026-11-03): to the backlog.** "When all counters are visible on this huge map, the counters are not legible anyway, nor is there a reason to drag a map that is already in full view. Plus, I found the drag performance at full view acceptable. We can put P3 in the backlog in case we need it in the future." The options weighed are kept there: faces as small bitmaps with the counters still in the page (P3a); faces in one canvas with transparent targets kept for clicks, keyboard, and names (P3b); a full canvas (P3c); and a Chrome trace of the Lab's drag first, to say which.
 
 ## Related documents
 
