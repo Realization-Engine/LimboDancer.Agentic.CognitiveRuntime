@@ -405,23 +405,40 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
         {
             var folder = Path.Combine(diskRoot, Safe(source));
             var keep = Safe(version);
+            var switched = DateTime.UtcNow;
             _ = Task.Run(() =>
             {
                 try
                 {
-                    if (Directory.Exists(folder))
-                    {
-                        foreach (var old in Directory.EnumerateDirectories(folder).Where(path => Path.GetFileName(path) != keep).ToList())
-                        {
-                            Directory.Delete(old, recursive: true);
-                        }
-                    }
+                    RemoveOlderVersions(folder, keep, switched);
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {
                     Warn(error, "removing old tiles", source);
                 }
             });
+        }
+    }
+
+    /// <summary>
+    /// Removes a board's version folders other than <paramref name="keep"/> that were made before <paramref name="switched"/>, the moment the
+    /// cache moved to the kept version. A folder made after it is left: another cache, or another process, has moved the board on since, and
+    /// a removal that ran late deleted its tiles (the backlog's row on <c>KeepsTilesOnDiskForTheCurrentVersion</c>, found in CI on 2026-11-03
+    /// and 2026-11-04).
+    /// </summary>
+    public static void RemoveOlderVersions(string boardFolder, string keep, DateTime switched)
+    {
+        ArgumentNullException.ThrowIfNull(boardFolder);
+        ArgumentNullException.ThrowIfNull(keep);
+        if (!Directory.Exists(boardFolder))
+        {
+            return;
+        }
+
+        foreach (var old in Directory.EnumerateDirectories(boardFolder)
+            .Where(path => Path.GetFileName(path) != keep && Directory.GetCreationTimeUtc(path) < switched).ToList())
+        {
+            Directory.Delete(old, recursive: true);
         }
     }
 
