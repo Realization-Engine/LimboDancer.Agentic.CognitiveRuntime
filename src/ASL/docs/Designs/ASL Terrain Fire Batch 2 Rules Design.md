@@ -1,6 +1,6 @@
 # Terrain Fire Batch 2 Rules Design
 
-**Status:** Approved by the user and implemented Rules-only, 2026-11-04. Independent read-only review approved after corrections. PR review and merge approval remain separate.
+**Status:** Merged Rules-only in PR #124 with user approval on 2026-11-04 at `1e2543e3817d879589751fd4bb43b3fc4f9e006b`, after Claude's review, completed corrections and green CI. Claim records are reviewed; downstream wiring remains open in inventory section 7.
 
 **Source baseline:** main at `defd4f1900eda4a4502dbf586a57a3ff0616d347`. The last batch gate proved `aa25111d`; zero subsequent Rules claims had merged when this batch started. Claim-only commit `f70bd817` reserved B23.31 and B16.31 on main. This branch delivers two claims, not one claim for the branch.
 
@@ -219,7 +219,7 @@ The six new Rules files implement the models, calculator and contract for each c
 
 The typed marsh calculator treats bridge presence as immaterial for a ground-Location effect or a unit known to be off the bridge. The contract still requires its declared public context and masks private position without a target anchor. Independent review found and corrected that unnecessary typed requirement, and aligned the new cards with their saved catalog version, ELR, phasing side and friendly edges. The reviewer approved the corrected code and tests with no remaining findings.
 
-The inventory records the supplemental sub-agent review in each claim's note. Claude remains the assigned reviewer and confirmed the rules in PR 124. Claim state stays built until merge to retain the required file holds; Claude will then mark the claims reviewed. User merge approval remains pending.
+The inventory records the supplemental sub-agent review in each claim's note. Claude remains the assigned reviewer and confirmed the rules in PR 124. The built state retained file holds until merge. After the user approved the merge and instructed the claim-record update, both claims and their supporting rows were recorded as reviewed on the strength of Claude's review and the completed corrections. Environmental coverage remains partial.
 
 Studio 6680 loaded the actual boards and these positions before the focused tests were authored:
 
@@ -242,3 +242,7 @@ Claude's review confirmed the rule decisions and compatibility. Main was merged 
 The disclosure concern for announced Bypass/entry facts is recorded in backlog section 100 for a separate coordinated review across building, Factory and support-weapon possession contracts. This PR preserves their existing disclosure model and the inventory's existing downstream wiring rows.
 
 `verify_review.ps1` passed the affected contract-validation method and all 12 building-bundle checks, with locked restore and warnings as errors. Claim scope, generated status/minigame summaries and inventory/coverage counts pass after the merge. Original test evidence was preserved as `terrain-fire-original-Rules.log/.trx` and `terrain-fire-original-Play.log/.trx`; the review results occupy `test-classes/Rules.log/.trx` and `test-classes/Play.log/.trx`. Temporary binaries were removed after the checks. The code cleanup changes no reachable Workbench outcome, so the existing Studio proof remains applicable.
+
+### Merge record
+
+PR #124 merged at `1e2543e3817d879589751fd4bb43b3fc4f9e006b` with the user's approval. CI run `41837399738` passed on the reviewed head `1e83098374945ace80edf3e589ac96e023c836e3`. Updated main records two merged claims since the last batch gate, B23.31 and B16.31, so the five-claim gate is not yet due. W-B23.31 and W-B16.31 remain open and unclaimed; no wiring or new numbered wiring prompt is included in this record update.
