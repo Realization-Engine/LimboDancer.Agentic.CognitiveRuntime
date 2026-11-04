@@ -782,36 +782,55 @@ export function nearGridPath(index, box) {
         return "";
     }
 
+    const side = index.hexWidth * 2 / 3;
+    const half = index.hexHeight / 2;
+    const n = value => Math.round(value * 100) / 100;
+    return nearHexCentres(index, box).map(({ x, y }) =>
+        `M${n(x - side / 2)},${n(y - half)}H${n(x + side / 2)}L${n(x + side)},${n(y)}L${n(x + side / 2)},${n(y + half)}`
+        + `H${n(x - side / 2)}L${n(x - side)},${n(y)}Z`).join("");
+}
+
+// Decision G2: the near grid's centre dots, as the vector grid drew them (BoardRenderer.AddHex: a square two cells on a side at each hex's
+// centre dot, black at fill opacity 0.6), for the same hexes as the outlines.
+export function nearDotsPath(index, box) {
+    if (!index?.hexWidth) {
+        return "";
+    }
+
+    const n = value => Math.round(value * 100) / 100;
+    return nearHexCentres(index, box).map(({ x, y }) => `M${n(x - 1)},${n(y - 1)}H${n(x + 1)}V${n(y + 1)}H${n(x - 1)}Z`).join("");
+}
+
+// The centres of the hexes about the box, a column and a row beyond it each way.
+function nearHexCentres(index, box) {
     const columns = Math.round(index.width / index.hexWidth) + 1;
     const rows = Math.round(index.height / index.hexHeight);
-    const side = index.hexWidth * 2 / 3;
     const half = index.hexHeight / 2;
     const first = Math.max(0, Math.floor((box.x - index.a1x) / index.hexWidth) - 1);
     const last = Math.min(columns - 1, Math.ceil((box.x + box.width - index.a1x) / index.hexWidth) + 1);
-    const parts = [];
-    const n = value => Math.round(value * 100) / 100;
+    const centres = [];
     for (let column = first; column <= last; column++) {
         const offset = half * (column % 2);
         const top = Math.max(0, Math.floor((box.y - index.a1y + offset) / index.hexHeight) - 1);
         const bottom = Math.min(rows - 1 + (column % 2), Math.ceil((box.y + box.height - index.a1y + offset) / index.hexHeight) + 1);
         const x = index.a1x + index.hexWidth * column;
         for (let row = top; row <= bottom; row++) {
-            const y = index.a1y + index.hexHeight * row - offset;
-            parts.push(`M${n(x - side / 2)},${n(y - half)}H${n(x + side / 2)}L${n(x + side)},${n(y)}L${n(x + side / 2)},${n(y + half)}`
-                + `H${n(x - side / 2)}L${n(x - side)},${n(y)}Z`);
+            centres.push({ x, y: index.a1y + index.hexHeight * row - offset });
         }
     }
 
-    return parts.join("");
+    return centres;
 }
 
 function updateNearGrid(state) {
     // Above the tiles: after the whole-map grid where the page holds one, else after the tiles (item 4: under ?present=bounded it is not fetched).
     const anchor = state.svg.querySelector("#layer-grid") ?? state.tiles?.group;
     let near = state.svg.querySelector("#near-grid");
+    let dots = state.svg.querySelector("#near-dots");
     const wanted = state.bounded && state.near && !state.nearTiles && state.gridShown && state.tiles && anchor?.isConnected;
     if (!wanted) {
         near?.remove();
+        dots?.remove();
         return;
     }
 
@@ -826,11 +845,27 @@ function updateNearGrid(state) {
         anchor.after(near);
     }
 
+    // Decision G2: the centre dots, above the outlines, as the vector grid drew them.
+    if (!dots) {
+        dots = document.createElementNS(svgNamespace, "path");
+        dots.setAttribute("id", "near-dots");
+        for (const [name, value] of [["fill", "#000000"], ["fill-opacity", "0.6"], ["pointer-events", "none"]]) {
+            dots.setAttribute(name, value);
+        }
+
+        near.after(dots);
+    }
+
     const box = drawnBox(state);
     const key = `${box.x} ${box.y} ${box.width} ${box.height}`;
     if (near.getAttribute("data-box") !== key) {
         near.setAttribute("data-box", key);
         near.setAttribute("d", nearGridPath(state.tiles.index, box));
+    }
+
+    if (dots.getAttribute("data-box") !== key) {
+        dots.setAttribute("data-box", key);
+        dots.setAttribute("d", nearDotsPath(state.tiles.index, box));
     }
 }
 
