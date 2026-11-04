@@ -1862,7 +1862,7 @@ Moved here by pass 72 (2026-10-27), with no task renumbered: a berserk Dash acro
 
 **Pass 74: Infantry VII: prisoners, Interrogation, and Control** (24 rows of the inventory). Counters: none. Needs first: 40; 70 (the capture of Passengers, and the concealment and HIP that Interrogation reveals). Interrogation (E2.1) is rolled on a capture or a surrender, so it is built with the prisoners.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 24 rows: 2 built with a deviation, 10 partly, 12 not built. Claims: 21 open, 3 built (owners: A20.54 (Claude)). A rule decided outside Rules on 1 row. Wiring: 0 of 24. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 24 rows: 2 built with a deviation, 10 partly, 12 not built. Claims: 21 open, 3 reviewed (owners: A20.54 (Claude)). A rule decided outside Rules on 1 row. Wiring: 0 of 24. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1894,7 +1894,7 @@ Turns tasks that reach this pass from another: D8.2 (pass 115) takes A23.72, Cle
 
 **Pass 80: Nationalities I: the catalog's counters** (new; 14 rows of the inventory). Counters: none. Needs first: 35.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 17 rows: 12 partly, 5 not built. Claims: 13 open, 4 wired (owners: A11.17 (Codex), A11.5 (Codex)). A rule decided outside Rules on 1 row. Wiring: 4 of 17. Minigames: 2.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 17 rows: 12 partly, 5 not built. Claims: 9 open, 4 claimed, 4 wired (owners: A11.17 (Codex), A11.5 (Codex), A25.61 (Codex), A25.63 (Codex), A25.71 (Codex), A25.75 (Codex)). A rule decided outside Rules on 1 row. Wiring: 4 of 17. Minigames: 2.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2362,7 +2362,7 @@ Turns tasks that reach this pass from another: D7.2 (pass 125) takes amphibious 
 
 **Pass 180: Nationalities II: new formations and nations** (new; 54 rows of the inventory). Counters: SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them. Needs first: 105 (Impulse Movement) for Human Wave; 115 (entrenching); 85 (WP); 110 (PF and PSK for other nations).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 56 rows: 3 partly, 53 not built. Claims: 55 open, 1 wired (owners: A11.5 (Codex)). Wiring: 1 of 56. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 56 rows: 3 partly, 53 not built. Claims: 53 open, 2 claimed, 1 wired (owners: A11.5 (Codex), A25.61 (Codex), A25.75 (Codex)). Wiring: 1 of 56. Minigames: 0.
 
 | Task | Rules | Estimate |
 |---|---|---|
