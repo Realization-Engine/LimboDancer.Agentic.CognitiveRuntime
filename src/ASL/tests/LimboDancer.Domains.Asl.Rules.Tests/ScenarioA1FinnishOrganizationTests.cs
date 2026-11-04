@@ -14,7 +14,7 @@ public sealed class ScenarioA1FinnishOrganizationTests
     [InlineData("deploy", "squad", "not-applicable", "not-evaluated", null, null)]
     public void ActionAndExplicitModeDetermineRequirementsOnly(string action, string kind, string mode, string outcome, bool? leader, int? drm)
     {
-        var result = ScenarioA1FinnishOrganizationCalculator.Evaluate(new("finnish", kind, action, mode, false, false, false, null));
+        var result = ScenarioA1FinnishOrganizationCalculator.Evaluate(new("finnish", kind, action, mode, false, false, false));
         Assert.Equal(outcome, result.Outcome);
         Assert.Equal(leader, result.LeaderRequired);
         Assert.Equal(drm, result.BaseTcDrm);
@@ -23,7 +23,7 @@ public sealed class ScenarioA1FinnishOrganizationTests
     [Fact]
     public void GuardPriorityAndConditionalUnknownsArePreserved()
     {
-        var squad = new FinnishOrganizationFacts("finnish", "squad", "deploy", "leaderless", true, null, false, null);
+        var squad = new FinnishOrganizationFacts("finnish", "squad", "deploy", "leaderless", true, null, false);
         Assert.Equal("automatic", ScenarioA1FinnishOrganizationCalculator.Evaluate(squad).Outcome);
         Assert.Equal("not-evaluated", ScenarioA1FinnishOrganizationCalculator.Evaluate(squad with
         {
@@ -74,7 +74,7 @@ public sealed class ScenarioA1FinnishOrganizationTests
     [InlineData("directed", -1, true, 0, 3, 4)]
     public void DeploymentRequirementComposesWithLeaderDrmAtThePassingBoundary(string mode, int? leadership, bool wounded, int expectedDrm, int first, int second)
     {
-        var requirement = ScenarioA1FinnishOrganizationCalculator.Evaluate(new("finnish", "squad", "deploy", mode, false, false, false, null));
+        var requirement = ScenarioA1FinnishOrganizationCalculator.Evaluate(new("finnish", "squad", "deploy", mode, false, false, false));
         var drm = requirement.BaseTcDrm!.Value + (requirement.LeaderRequired == true ? ScenarioA1SupportWeaponRules.LeaderDrm(leadership, wounded) : 0);
         Assert.Equal(expectedDrm, drm);
         Assert.True(ScenarioA1OrdnanceProjection.DeploymentPassed(first, second, drm, 7));

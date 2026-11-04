@@ -11,14 +11,14 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// </summary>
 internal static class ScenarioA1PrisonerContract
 {
-    private static readonly string[] Nationalities = ["german", "russian", "american", "british", "french", "finnish", "italian", "japanese", "chinese", "axis-minor",
+    private static readonly string[] Nationalities = ["german", "russian", "american", "british", "french", "finnish", "italian", "eritrean", "japanese", "chinese", "axis-minor",
         "romanian", "hungarian", "slovakian", "croatian", "bulgarian", "other"];
 
     private static readonly string[] CvpStatuses = ["held", "exited-under-guard", "eliminated-by-own-side", "eliminated-otherwise", "escaped"];
 
     [RuleContract]
     private static RuleContract Escape() => new("a20.55-prisoner-escape", "Prisoner escape",
-        [new("A20.55", 88), new("A25.63", 97), new("A25.82", 98), new("G1.621", 280)],
+        [new("A20.55", 88), new("A25.63", 97), new("A25.66", 97), new("A25.82", 98), new("G1.621", 280)],
         [
             new("prisonerId", ContractFactType.Unit, false, ContractDisclosure.All, "The prisoner that would attack its Guard"),
             new("nationality", ContractFactType.Choice, false, ContractDisclosure.All, "The prisoner's nationality") { Choices = Nationalities },
@@ -72,7 +72,7 @@ internal static class ScenarioA1PrisonerContract
     private static ContractVerdict EscapeVerdict(ContractFacts facts)
     {
         var verdict = ScenarioA1PrisonerCalculator.Escape(new PrisonerEscapeFacts(facts.Text("prisonerId")!, facts.Text("nationality"), facts.Text("captorNationality"),
-            facts.Flag("infantry")!.Value, facts.Flag("axisMinorAtHome"), facts.Flag("guardBroken")!.Value, facts.Flag("meleeInLocation")!.Value));
+            facts.Flag("infantry")!.Value, facts.Flag("axisMinorAtHome"), facts.Flag("guardBroken")!.Value, facts.Flag("meleeInLocation")!.Value), ItalianEscapeContext.WithEritreanInheritance);
         if (verdict.Refusal is { } refusal)
         {
             var rule = verdict.RefusalRule!;
@@ -136,7 +136,7 @@ internal static class ScenarioA1PrisonerContract
 
     private static int Page(string rule) => rule switch
     {
-        "A25.63" => 97,
+        "A25.63" or "A25.66" => 97,
         "A25.82" => 98,
         "G1.621" => 280,
         _ => 88,

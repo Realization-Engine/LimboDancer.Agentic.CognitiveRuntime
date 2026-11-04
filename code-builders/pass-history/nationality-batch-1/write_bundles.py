@@ -60,7 +60,7 @@ checks = [check('Italian non-elite squad nationality restriction', contract, bas
 bundle('a25-italian-deployment', 'A25.61 Italian deployment', ['A25.61', 'A25.66'], checks, 'italian')
 
 contract = 'a25.71-organization'
-base = dict(subjectId='subject', nationality='finnish', kind='squad', action='deploy', mode='leaderless', guard=False, unarmed=False, broken=False, carrierHalfSquad=False)
+base = dict(subjectId='subject', nationality='finnish', kind='squad', action='deploy', mode='leaderless', guard=False, unarmed=False, broken=False)
 checks = [check('Finnish squad chooses a leaderless 1TC', contract, base, 'leaderless-1tc', 'finnish'),
           check('The same squad explicitly chooses directed NTC', contract, dict(base, mode='directed'), 'directed-ntc', 'finnish'),
           check('Unbroken Guard deploys automatically', contract, dict(base, guard=True), 'automatic', 'adjudicator'),
@@ -73,12 +73,12 @@ base = dict(subjectId='subject', nationality='italian', elite=False, inexperienc
 checks = [check('Experienced non-elite Italian capture term is zero', contract, base, 'zero', 'italian'),
           check('Inexperience replaces the capture term with minus one', contract, dict(base, inexperienced=True), 'minus-one', 'italian'),
           check('Elite Italian capture term remains plus one', contract, dict(base, elite=True, subjectId='elite'), 'plus-one', 'italian'),
-          check('Opponent cannot read hidden defender class', contract, hidden(base), 'not-evaluated', 'german', {'subjectId':'italian'})]
+          check('Attacker uses the publicly revealed defender facts at CC declaration', contract, base, 'zero', 'german'),
+          check('Unavailable defender class remains unknown', contract, dict(base, elite=None, inexperienced=None), 'not-evaluated', 'german')]
 escape = dict(prisonerId='hs', nationality='italian', captorNationality='german', infantry=True, axisMinorAtHome=False, guardBroken=True, meleeInLocation=False)
-for national, old in [('italian', 'refused-nationality'), ('eritrean', 'not-evaluated')]:
-    checks.append(check(national + ' in unchanged legacy contract', 'a20.55-prisoner-escape', dict(escape, nationality=national), old, 'german'))
-    checks.append(check(national + ' in current inheritance contract', 'a25.63-prisoner-escape', dict(escape, nationality=national), 'refused-nationality', 'german'))
-bundle('a25-italian-capture', 'A25.63 Italian capture and escape', ['A25.63', 'A25.66'], checks, 'italian')
+for national in ['italian', 'eritrean']:
+    checks.append(check(national + ' in the single escape contract', 'a20.55-prisoner-escape', dict(escape, nationality=national), 'refused-nationality', 'german'))
+bundle('a25-italian-capture', 'A25.63 Italian capture and escape', ['A25.63', 'A25.66', 'A11.19'], checks, 'italian')
 
 contract = 'a25.75-equipment-use'
 base = dict(subjectId='subject', userNationality='finnish', personnel=True, printedClass='elite', weaponNationality='russian', weaponKind='lmg', originMark='not-applicable', scenarioDate='1940-01', physicallyCaptured=True)

@@ -108,12 +108,52 @@ public sealed class ScenarioA1CapturedEquipmentUseTests
             Assert.All(contract.Facts.Where(fact => fact.Disclosure == ContractDisclosure.Owner), fact => Assert.Equal("subjectId", fact.Concerns));
         }
 
-        foreach (var id in new[] { "a20.55-prisoner-escape", "a25.63-prisoner-escape" })
+        var escape = ScenarioA1RuleContracts.Find("a20.55-prisoner-escape")!;
+        Assert.Null(ScenarioA1RuleContracts.Find("a25.63-prisoner-escape"));
+        Assert.Single(ScenarioA1RuleContracts.All, contract => contract.Title == "Prisoner escape");
+        Assert.All(escape.Facts, fact => Assert.Equal(ContractDisclosure.All, fact.Disclosure));
+        var facts = JsonNode.Parse("""{"prisonerId":"p","nationality":"eritrean","captorNationality":"german","infantry":true,"guardBroken":true,"meleeInLocation":false} """)!.AsObject();
+        var verdict = ScenarioA1RuleContracts.Evaluate(escape, facts);
+        Assert.Equal("refused-nationality", verdict.Outcome);
+        Assert.Equal("A25.66", Assert.Single(verdict.Reasons).Rule);
+        Assert.Equal(97, Assert.Single(verdict.Reasons).Page);
+        Assert.DoesNotContain(ScenarioA1RuleContracts.Find("a25.71-organization")!.Facts, fact => fact.Name == "carrierHalfSquad");
+    }
+
+    [Fact]
+    public void CaptureFactsArePublicAtDeclarationAndMissingMaterialFactsStayUnknown()
+    {
+        var contract = ScenarioA1RuleContracts.Find("a25.63-capture-modifier")!;
+        Assert.All(contract.Facts, fact => Assert.Equal(ContractDisclosure.All, fact.Disclosure));
+        var facts = JsonNode.Parse("""{"subjectId":"defender","nationality":"italian","elite":false,"inexperienced":false}""")!.AsObject();
+        Assert.Equal("zero", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+        facts["elite"] = null;
+        Assert.Equal("not-evaluated", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
+    }
+
+    [Theory]
+    [InlineData("second-line", "german", "1944-07", "A25.77")]
+    [InlineData("green", "german", "1944-07", "A25.77")]
+    [InlineData("conscript", "german", "1944-07", "A25.77")]
+    [InlineData("second-line", "finnish", "1944-07", "A25.77")]
+    [InlineData("green", "finnish", "1944-07", "A25.77")]
+    [InlineData("conscript", "finnish", "1944-07", "A25.77")]
+    [InlineData("elite", "german", "1944-06", "A25.77")]
+    [InlineData("elite", "german", "1944-07", "A25.75")]
+    public void PskContractCitesTheRuleThatDecidedItsTreatment(string printed, string weapon, string date, string rule)
+    {
+        var facts = JsonSerializer.SerializeToNode(new
         {
-            var contract = ScenarioA1RuleContracts.Find(id)!;
-            Assert.All(contract.Facts, fact => Assert.Equal(ContractDisclosure.All, fact.Disclosure));
-            var facts = JsonNode.Parse("""{"prisonerId":"p","nationality":"eritrean","captorNationality":"german","infantry":true,"guardBroken":true,"meleeInLocation":false} """)!.AsObject();
-            Assert.Equal(id == "a20.55-prisoner-escape" ? "not-evaluated" : "refused-nationality", ScenarioA1RuleContracts.Evaluate(contract, facts).Outcome);
-        }
+            subjectId = "f",
+            userNationality = "finnish",
+            personnel = true,
+            printedClass = printed,
+            weaponNationality = weapon,
+            weaponKind = "psk",
+            scenarioDate = date
+        })!.AsObject();
+        var verdict = ScenarioA1RuleContracts.Evaluate(ScenarioA1RuleContracts.Find("a25.75-equipment-use")!, facts);
+        Assert.Equal(rule, Assert.Single(verdict.Reasons).Rule);
+        Assert.Equal(97, Assert.Single(verdict.Reasons).Page);
     }
 }

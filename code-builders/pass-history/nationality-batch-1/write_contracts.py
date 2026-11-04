@@ -51,18 +51,18 @@ write('ItalianDeployment', 'a25.61-italian-deployment', 'Italian deployment nati
 
 write('FinnishOrganization', 'a25.71-organization', 'Finnish organization requirements', [('A25.71', 97), ('A1.31', 45), ('A1.32', 45), ('A20.5', 88)],
       [subject, nationality, kind, field('action', 'Choice', ['deploy', 'recombine'], True, False),
-       field('mode', 'Choice', ['directed', 'leaderless', 'not-applicable'], True, False), field('guard'), field('unarmed'), field('broken'), field('carrierHalfSquad')],
+       field('mode', 'Choice', ['directed', 'leaderless', 'not-applicable'], True, False), field('guard'), field('unarmed'), field('broken')],
       ['directed-ntc', 'leaderless-ntc', 'leaderless-1tc', 'automatic', 'no-leader-required', 'not-applicable'],
       ('unit-organization', 'If other rules allow: deployment roll and deployment or recombination lineage'), 'RPh', '1.13B / 1.21A',
       '''        var verdict = ScenarioA1FinnishOrganizationCalculator.Evaluate(new FinnishOrganizationFacts(facts.Text("nationality"), facts.Text("kind"),
-            facts.Text("action")!, facts.Text("mode")!, facts.Flag("guard"), facts.Flag("unarmed"), facts.Flag("broken"), facts.Flag("carrierHalfSquad")));
+            facts.Text("action")!, facts.Text("mode")!, facts.Flag("guard"), facts.Flag("unarmed"), facts.Flag("broken")));
         IReadOnlyList<ContractRoll> rolls = verdict.BaseTcDrm is { } drm
             ? [new("tc", null, drm == 1 ? "1TC: add +1 to the deployment DR" : "NTC: add the directing leader's DRM only if directed")]
             : [];
         return new(verdict.Outcome, [new(verdict.Reason, "A25.71", 97)], rolls);''')
 
-write('ItalianCapture', 'a25.63-capture-modifier', 'Per-defender capture term', [('A25.63', 97), ('A25.66', 97), ('A19.35', 86), ('A20.22', 87)],
-      [subject, nationality, field('elite'), field('inexperienced')], ['minus-one', 'zero', 'plus-one'],
+write('ItalianCapture', 'a25.63-capture-modifier', 'Per-defender capture term', [('A25.63', 97), ('A25.66', 97), ('A19.35', 86), ('A20.22', 87), ('A11.19', 73)],
+      [field('subjectId', 'Unit', public=True, unknown=False, description='The defender selected for CC attack declaration; supply only facts public at that step'), field('nationality', 'Text', public=True), field('elite', public=True), field('inexperienced', public=True)], ['minus-one', 'zero', 'plus-one'],
       ('close-combat-resolved', 'This defender ordinary capture term, independently combined with Passenger, leadership and other modifiers'), 'CCPh', '8.21B',
       '''        var verdict = ScenarioA1ItalianCaptureCalculator.CaptureModifier(new ItalianCaptureFacts(facts.Text("nationality"), facts.Flag("elite"), facts.Flag("inexperienced")));
         var outcome = verdict.CaptureDrm switch { -1 => "minus-one", 0 => "zero", 1 => "plus-one", _ => ContractVerdict.NotEvaluated };
@@ -79,27 +79,6 @@ write('CapturedEquipmentUse', 'a25.75-equipment-use', 'Finnish captured equipmen
       ('weapon-use', 'Captured Use and night MG treatment; no change to ownership, repair, non-qualified use or ammunition'), 'Any', 'none',
       '''        var verdict = ScenarioA1CapturedEquipmentUseCalculator.Evaluate(new CapturedEquipmentUseFacts(facts.Text("userNationality"), facts.Flag("personnel"),
             facts.Text("printedClass"), facts.Text("weaponNationality"), facts.Text("weaponKind"), facts.Text("originMark"), facts.Text("scenarioDate")!, facts.Flag("physicallyCaptured")));
-        return new(verdict.Outcome, [new(verdict.Reason, verdict.UseRefusal is null ? "A25.75" : "A25.77", 97)], []);''')
+        return new(verdict.Outcome, [new(verdict.Reason, verdict.Rule, 97)], []);''')
 
-# Preserve the original public prisoner contract, including its choices and disclosure.
-path = root / 'ScenarioA1ItalianCaptureContract.cs'
-text = path.read_text(encoding='utf-8')
-existing = (root / 'ScenarioA1PrisonerContract.cs').read_text(encoding='utf-8')
-start = existing.index('    [RuleContract]')
-end = existing.index('    [RuleContract]', start + 1)
-factory = existing[start:end].replace('"a20.55-prisoner-escape"', '"a25.63-prisoner-escape"').replace('new("A25.63", 97)', 'new("A25.63", 97), new("A25.66", 97)')
-start = existing.index('    private static ContractVerdict EscapeVerdict')
-end = existing.index('    private static ContractVerdict KiaVerdict', start)
-evaluate = existing[start:end].replace('facts.Flag("meleeInLocation")!.Value));', 'facts.Flag("meleeInLocation")!.Value), ItalianEscapeContext.WithEritreanInheritance);')
-start = existing.index('    private static readonly string[] Nationalities')
-end = existing.index('    private static readonly string[] CvpStatuses', start)
-choices = existing[start:end].replace('"italian",', '"italian", "eritrean",')
-page = '''    private static int Page(string rule) => rule switch
-    {
-        "A25.63" or "A25.66" => 97,
-        "A25.82" => 98,
-        "G1.621" => 280,
-        _ => 88,
-    };
-'''
-path.write_text(text.rstrip()[:-1] + '\n' + choices + factory + evaluate + page + '}\n', encoding='utf-8', newline='\n')
+# Escape is maintained once, in ScenarioA1PrisonerContract.cs.

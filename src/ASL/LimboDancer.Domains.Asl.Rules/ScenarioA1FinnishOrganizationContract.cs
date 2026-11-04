@@ -15,7 +15,6 @@ internal static class ScenarioA1FinnishOrganizationContract
             new("guard", ContractFactType.Flag, true, ContractDisclosure.Owner, "guard") { Concerns = "subjectId" },
             new("unarmed", ContractFactType.Flag, true, ContractDisclosure.Owner, "unarmed") { Concerns = "subjectId" },
             new("broken", ContractFactType.Flag, true, ContractDisclosure.Owner, "broken") { Concerns = "subjectId" },
-            new("carrierHalfSquad", ContractFactType.Flag, true, ContractDisclosure.Owner, "carrierHalfSquad") { Concerns = "subjectId" },
         ],
         ["directed-ntc", "leaderless-ntc", "leaderless-1tc", "automatic", "no-leader-required", "not-applicable", "not-evaluated"],
         [new("unit-organization", "If other rules allow: deployment roll and deployment or recombination lineage")], new("RPh", "1.13B / 1.21A"))
@@ -26,7 +25,7 @@ internal static class ScenarioA1FinnishOrganizationContract
     private static ContractVerdict Evaluate(ContractFacts facts)
     {
         var verdict = ScenarioA1FinnishOrganizationCalculator.Evaluate(new FinnishOrganizationFacts(facts.Text("nationality"), facts.Text("kind"),
-            facts.Text("action")!, facts.Text("mode")!, facts.Flag("guard"), facts.Flag("unarmed"), facts.Flag("broken"), facts.Flag("carrierHalfSquad")));
+            facts.Text("action")!, facts.Text("mode")!, facts.Flag("guard"), facts.Flag("unarmed"), facts.Flag("broken")));
         IReadOnlyList<ContractRoll> rolls = verdict.BaseTcDrm is { } drm
             ? [new("tc", null, drm == 1 ? "1TC: add +1 to the deployment DR" : "NTC: add the directing leader's DRM only if directed")]
             : [];

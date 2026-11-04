@@ -65,7 +65,6 @@ public static class ScenarioA1ItalianDeploymentCalculator
 
         return facts.Elite switch
         {
-            true => Unrestricted("Elite Italian-treatment squads pass the nationality restriction (A25.61, A25.66)."),
             false => new("restricted", "Only elite Italian-treatment squads may Deploy outside the stated exceptions (A25.61, A25.66)."),
             _ => Unknown(),
         };

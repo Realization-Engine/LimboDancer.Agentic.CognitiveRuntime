@@ -58,7 +58,7 @@ public static class ScenarioA1CapturedEquipmentUseCalculator
             if (date < new DateOnly(1944, 7, 1) || date > new DateOnly(1945, 12, 1))
             {
                 const string refusal = "Finnish Personnel may use PSK only in scenarios set in July 1944 through 1945 (A25.77).";
-                return new("refused-use", null, false, facts.PhysicallyCaptured, refusal, refusal);
+                return new("refused-use", null, false, facts.PhysicallyCaptured, refusal, refusal, "A25.77");
             }
 
             if (facts.WeaponNationality is not null && facts.WeaponNationality is not ("german" or "finnish"))
@@ -73,7 +73,7 @@ public static class ScenarioA1CapturedEquipmentUseCalculator
 
             if (facts.PrintedClass is "second-line" or "green" or "conscript")
             {
-                return Treatment(facts, true, "Finnish 2nd-Line/Green/Conscript Personnel use every PSK with Captured Use penalties (A25.77).");
+                return Treatment(facts, true, "Finnish 2nd-Line/Green/Conscript Personnel use every PSK with Captured Use penalties (A25.77).", "A25.77");
             }
 
             if (facts.PrintedClass is not ("elite" or "first-line" or "other"))
@@ -129,6 +129,6 @@ public static class ScenarioA1CapturedEquipmentUseCalculator
     private static CapturedEquipmentUseVerdict NotApplicable(CapturedEquipmentUseFacts facts) =>
         new("not-applicable", null, null, facts.PhysicallyCaptured, null, "No exception is decided here; ordinary captured use, qualification and repair rules remain separate (A25.75).");
 
-    private static CapturedEquipmentUseVerdict Treatment(CapturedEquipmentUseFacts facts, bool penalties, string reason) =>
-        new(penalties ? "captured-use" : "exempt", penalties, facts.WeaponKind != "psk" && penalties, facts.PhysicallyCaptured, null, reason);
+    private static CapturedEquipmentUseVerdict Treatment(CapturedEquipmentUseFacts facts, bool penalties, string reason, string rule = "A25.75") =>
+        new(penalties ? "captured-use" : "exempt", penalties, facts.WeaponKind != "psk" && penalties, facts.PhysicallyCaptured, null, reason, rule);
 }

@@ -22,8 +22,7 @@
         "mode": "leaderless",
         "guard": false,
         "unarmed": false,
-        "broken": false,
-        "carrierHalfSquad": false
+        "broken": false
       },
       "expect": {
         "outcome": "leaderless-1tc"
@@ -42,8 +41,7 @@
         "mode": "directed",
         "guard": false,
         "unarmed": false,
-        "broken": false,
-        "carrierHalfSquad": false
+        "broken": false
       },
       "expect": {
         "outcome": "directed-ntc"
@@ -62,8 +60,7 @@
         "mode": "leaderless",
         "guard": true,
         "unarmed": false,
-        "broken": false,
-        "carrierHalfSquad": false
+        "broken": false
       },
       "expect": {
         "outcome": "automatic"
@@ -82,8 +79,7 @@
         "mode": "not-applicable",
         "guard": false,
         "unarmed": false,
-        "broken": false,
-        "carrierHalfSquad": false
+        "broken": false
       },
       "expect": {
         "outcome": "no-leader-required"
@@ -102,8 +98,7 @@
         "mode": "leaderless",
         "guard": null,
         "unarmed": null,
-        "broken": null,
-        "carrierHalfSquad": null
+        "broken": null
       },
       "expect": {
         "outcome": "not-evaluated"

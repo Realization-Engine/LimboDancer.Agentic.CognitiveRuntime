@@ -27,6 +27,6 @@ internal static class ScenarioA1CapturedEquipmentUseContract
     {
         var verdict = ScenarioA1CapturedEquipmentUseCalculator.Evaluate(new CapturedEquipmentUseFacts(facts.Text("userNationality"), facts.Flag("personnel"),
             facts.Text("printedClass"), facts.Text("weaponNationality"), facts.Text("weaponKind"), facts.Text("originMark"), facts.Text("scenarioDate")!, facts.Flag("physicallyCaptured")));
-        return new(verdict.Outcome, [new(verdict.Reason, verdict.UseRefusal is null ? "A25.75" : "A25.77", 97)], []);
+        return new(verdict.Outcome, [new(verdict.Reason, verdict.Rule, 97)], []);
     }
 }

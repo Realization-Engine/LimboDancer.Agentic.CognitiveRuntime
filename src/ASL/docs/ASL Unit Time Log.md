@@ -10,6 +10,9 @@ Minute boundaries below are reconstructed from the branch log, tool clock and ar
 | Rules calculators, contracts, four bundles and isolated build | 04:22 | 04:36 | 0:14 | Codex worktree and Studio 6680; review corrections applied; strict build passed |
 | Rule Workbench demonstration | 04:36 | 04:44 | 0:08 | Four real positions, owner/opponent/adjudicator checks, private facts cleared on handover, nationality/date boundaries demonstrated |
 | Focused tests, final review fixes and delivery records | 04:44 | 04:57 | 0:13 | 85 initial Rules cases and 30 bundle cases passed; final two-method rerun passed 13 cases with warnings as errors, including one additional boundary; four open wiring rows and W-A20.54 dependency recorded |
+| PR 121 review reading and additional contract hold | 05:31 | 05:35 | 0:04 | Rulebook A11.19/A25.77, existing CC disclosure, ff43c0f0 reserves PrisonerContract on main |
+| Five review corrections and revised Workbench proof | 05:35 | 05:43 | 0:08 | One escape contract, public CC capture facts, unused input/dead branch removed, PSK citation; strict Studio build and scoped UI check |
+| Focused review verification and records | 05:43 | 05:47 | 0:04 | 59 Rules and 40 bundle cases passed with warnings as errors; initial test assertion style error corrected before successful run; logs named in design section 13.4 |
 
 Wall-clock durations per task and sub-task, taken with `date "+%Y-%m-%d %H:%M"` at each boundary. Estimates come from the [ASL Unit Deviations, Ordnance, and Vehicles Plan](<Plans/ASL Unit Deviations, Ordnance, and Vehicles Plan.md>) kickoff notes.
 

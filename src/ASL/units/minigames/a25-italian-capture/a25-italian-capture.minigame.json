@@ -4,12 +4,12 @@
   "card": "a25-italian-capture",
   "rules": [
     "A25.63",
-    "A25.66"
+    "A25.66",
+    "A11.19"
   ],
   "contracts": [
     "a25.63-capture-modifier",
-    "a20.55-prisoner-escape",
-    "a25.63-prisoner-escape"
+    "a20.55-prisoner-escape"
   ],
   "checks": [
     {
@@ -58,25 +58,37 @@
       }
     },
     {
-      "name": "Opponent cannot read hidden defender class",
+      "name": "Attacker uses the publicly revealed defender facts at CC declaration",
       "position": "setup",
       "viewer": "german",
       "contract": "a25.63-capture-modifier",
       "facts": {
-        "subjectId": null,
-        "nationality": null,
+        "subjectId": "subject",
+        "nationality": "italian",
+        "elite": false,
+        "inexperienced": false
+      },
+      "expect": {
+        "outcome": "zero"
+      }
+    },
+    {
+      "name": "Unavailable defender class remains unknown",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a25.63-capture-modifier",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "italian",
         "elite": null,
         "inexperienced": null
       },
       "expect": {
         "outcome": "not-evaluated"
-      },
-      "sealed": {
-        "subjectId": "italian"
       }
     },
     {
-      "name": "italian in unchanged legacy contract",
+      "name": "italian in the single escape contract",
       "position": "setup",
       "viewer": "german",
       "contract": "a20.55-prisoner-escape",
@@ -94,46 +106,10 @@
       }
     },
     {
-      "name": "italian in current inheritance contract",
-      "position": "setup",
-      "viewer": "german",
-      "contract": "a25.63-prisoner-escape",
-      "facts": {
-        "prisonerId": "hs",
-        "nationality": "italian",
-        "captorNationality": "german",
-        "infantry": true,
-        "axisMinorAtHome": false,
-        "guardBroken": true,
-        "meleeInLocation": false
-      },
-      "expect": {
-        "outcome": "refused-nationality"
-      }
-    },
-    {
-      "name": "eritrean in unchanged legacy contract",
+      "name": "eritrean in the single escape contract",
       "position": "setup",
       "viewer": "german",
       "contract": "a20.55-prisoner-escape",
-      "facts": {
-        "prisonerId": "hs",
-        "nationality": "eritrean",
-        "captorNationality": "german",
-        "infantry": true,
-        "axisMinorAtHome": false,
-        "guardBroken": true,
-        "meleeInLocation": false
-      },
-      "expect": {
-        "outcome": "not-evaluated"
-      }
-    },
-    {
-      "name": "eritrean in current inheritance contract",
-      "position": "setup",
-      "viewer": "german",
-      "contract": "a25.63-prisoner-escape",
       "facts": {
         "prisonerId": "hs",
         "nationality": "eritrean",

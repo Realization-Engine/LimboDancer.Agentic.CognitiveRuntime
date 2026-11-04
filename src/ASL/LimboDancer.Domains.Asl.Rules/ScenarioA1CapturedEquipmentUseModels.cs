@@ -6,4 +6,4 @@ public sealed record CapturedEquipmentUseFacts(string? UserNationality, bool? Pe
 
 /// <summary>Captured Use and E1.76 treatment only. Physical ownership, repair, qualification and ammunition remain separate.</summary>
 public sealed record CapturedEquipmentUseVerdict(string Outcome, bool? CapturedUsePenalties, bool? NightCapturedMgPenalty,
-    bool? PhysicallyCaptured, string? UseRefusal, string Reason);
+    bool? PhysicallyCaptured, string? UseRefusal, string Reason, string Rule = "A25.75");
