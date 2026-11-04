@@ -29,6 +29,17 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
     /// <summary>The pyramid's shape as JSON: the grid's size, the tile size, and the number of levels.</summary>
     public const string IndexFile = "tiles.json";
 
+    /// <summary>
+    /// The version a board's tiles are held under, in memory and on disk: the board's own version and the painter's
+    /// (<see cref="TilePainter.Version"/>). A change in how tiles are painted, such as the centre dots of decision G2, so holds them apart, and
+    /// the board's tiles of the old painting are removed as an old version's are.
+    /// </summary>
+    public static string HeldVersion(StudioBoard board)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        return board.Version + "~p" + TilePainter.Version.ToString(CultureInfo.InvariantCulture);
+    }
+
     private readonly Lock gate = new();
     private readonly Dictionary<TileKey, LinkedListNode<(TileKey Key, RenderedTile Tile)>> entries = [];
     private readonly LinkedList<(TileKey Key, RenderedTile Tile)> recent = new();
@@ -142,8 +153,8 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
         }
 
         Persisted(board);
-        DropOtherVersions(board.Ref.Value, board.Version);
-        return GetKeyed(new TileKey(board.Ref.Value, board.Version, variant, level, column, row), key => Kept(key, () => Paint(input, key)));
+        DropOtherVersions(board.Ref.Value, HeldVersion(board));
+        return GetKeyed(new TileKey(board.Ref.Value, HeldVersion(board), variant, level, column, row), key => Kept(key, () => Paint(input, key)));
     }
 
     /// <summary>
@@ -175,8 +186,8 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
         }
 
         Persisted(board);
-        DropOtherVersions(board.Ref.Value, board.Version);
-        var key = new TileKey(board.Ref.Value, board.Version, variant, level, column, row, lines, owners?.Token ?? string.Empty);
+        DropOtherVersions(board.Ref.Value, HeldVersion(board));
+        var key = new TileKey(board.Ref.Value, HeldVersion(board), variant, level, column, row, lines, owners?.Token ?? string.Empty);
         return GetKeyed(key, keyed => Kept(keyed, () => PaintLined(input, keyed, owners)));
     }
 
@@ -210,19 +221,19 @@ public sealed partial class TileCache(ILogger<TileCache>? logger = null, long bo
             {
                 for (var row = 0; row < TilePyramid.Rows(geometry.GridHeight, level); row++)
                 {
-                    tiles.Add(new TileKey(board.Ref.Value, board.Version, variant, level, column, row, lines, owners?.Token ?? string.Empty));
+                    tiles.Add(new TileKey(board.Ref.Value, HeldVersion(board), variant, level, column, row, lines, owners?.Token ?? string.Empty));
                 }
             }
         }
 
-        var job = $"{board.Ref.Value}/{board.Version}/{FileName(variant, lines, 0, 0, 0)}/{owners?.Token}";
+        var job = $"{board.Ref.Value}/{HeldVersion(board)}/{FileName(variant, lines, 0, 0, 0)}/{owners?.Token}";
         if (!ahead.TryAdd(job, 0))
         {
             return 0;
         }
 
         Persisted(board);
-        DropOtherVersions(board.Ref.Value, board.Version);
+        DropOtherVersions(board.Ref.Value, HeldVersion(board));
 
         _ = Task.Run(() =>
         {
