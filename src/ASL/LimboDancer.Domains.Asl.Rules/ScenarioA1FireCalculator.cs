@@ -3572,7 +3572,8 @@ public static class ScenarioA1FireCalculator
             {
                 // C.6: the Gun's HE FP column; C3.53, C.4: never halved for a concealed target; C3.71: doubled by a Critical Hit.
                 // C3.53, B16.31 (pp. 170, 130; pass 35, task 35.7): halved into a marsh, beside any halving of the Area Target Type.
-                known = vsConcealed = hit.Firepower!.Value * (hit.CriticalHit == true ? 2 : 1) / (attack.TargetTerrain == "marsh" ? 2m : 1m);
+                // Compatibility: keep this divisor and decimal operation order. New bridge/weather/DC behavior awaits W-B16.31.
+                known = vsConcealed = hit.Firepower!.Value * (hit.CriticalHit == true ? 2 : 1) / ScenarioA1MarshHeCalculator.LegacyOrdnanceDivisor(attack.TargetTerrain);
             }
             else if (attack.Overrun is { } overrun)
             {

@@ -1,0 +1,391 @@
+{
+  "id": "b16-marsh-he",
+  "title": "B16.31 marsh HE",
+  "card": "b16-marsh-he",
+  "rules": [
+    "B16.31",
+    "B16.6",
+    "B16.7",
+    "B16.8"
+  ],
+  "contracts": [
+    "b16.31-marsh-he"
+  ],
+  "checks": [
+    {
+      "name": "Ordinary HE into actual marsh",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "halved",
+        "reasons": [
+          "multiplier: 0.5"
+        ]
+      }
+    },
+    {
+      "name": "DC component into actual marsh",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "dc",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "halved",
+        "reasons": [
+          "multiplier: 0.5"
+        ]
+      }
+    },
+    {
+      "name": "HE equivalency is also halved",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he-equivalency",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "halved",
+        "reasons": [
+          "multiplier: 0.5"
+        ]
+      }
+    },
+    {
+      "name": "Residual from HE is not halved again",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "residual",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "unchanged",
+        "reasons": [
+          "multiplier: 1"
+        ]
+      }
+    },
+    {
+      "name": "Enemy bridge position is irrelevant where no bridge exists",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": null,
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "halved",
+        "reasons": [
+          "multiplier: 0.5"
+        ]
+      },
+      "sealed": {
+        "targetId": "russian"
+      }
+    },
+    {
+      "name": "Hypothetical bridge presence does not exempt an off-bridge unit",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": true,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": false
+      },
+      "expect": {
+        "outcome": "halved",
+        "reasons": [
+          "multiplier: 0.5"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical on-bridge unit is exempt",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": true,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": true
+      },
+      "expect": {
+        "outcome": "unchanged",
+        "reasons": [
+          "multiplier: 1"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical bridge with hidden enemy position is unevaluated",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": true,
+        "targetKind": "unit",
+        "targetId": null,
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "targetId": "russian"
+      }
+    },
+    {
+      "name": "Hypothetical bridge structure is exempt without a unit",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": true,
+        "targetKind": "bridge",
+        "targetId": null,
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "unchanged",
+        "reasons": [
+          "multiplier: 1"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical ground effect is separate from bridge units",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": true,
+        "targetKind": "ground-location",
+        "targetId": null,
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "halved",
+        "reasons": [
+          "multiplier: 0.5"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical mudflat inherits halving",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "mudflat",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "halved",
+        "reasons": [
+          "multiplier: 0.5"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical Snow removes marsh treatment",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "marsh",
+        "snowCover": "snow",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "unchanged",
+        "reasons": [
+          "multiplier: 1"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical flooded connection removes marsh treatment",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": true,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "unchanged",
+        "reasons": [
+          "multiplier: 1"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical swamp HE is explicitly unsupported",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "he",
+        "terrainKind": "swamp",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "not-evaluated",
+        "reasons": [
+          "Swamp"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical swamp Residual does not get HE reduction",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "residual",
+        "terrainKind": "swamp",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "unchanged",
+        "reasons": [
+          "multiplier: 1"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical VT FFE does not use ordinary halving",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b16.31-marsh-he",
+      "facts": {
+        "effectFamily": "unsupported-vt-ffe",
+        "terrainKind": "marsh",
+        "snowCover": "none",
+        "subZero": false,
+        "connectedToFloodedWater": false,
+        "bridgePresent": false,
+        "targetKind": "unit",
+        "targetId": "target",
+        "onBridge": null
+      },
+      "expect": {
+        "outcome": "not-evaluated",
+        "reasons": [
+          "VT FFE"
+        ]
+      }
+    }
+  ],
+  "units": {
+    "target": "russian",
+    "firer": "german"
+  }
+}

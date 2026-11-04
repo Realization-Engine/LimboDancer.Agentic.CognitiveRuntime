@@ -1,0 +1,70 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "b16-marsh-he",
+  "title": "B16.31 marsh HE",
+  "catalog": "asl-scenario-a1@1.19.0",
+  "source": {
+    "basis": "Manufactured under R0.3 for the approved Terrain Fire Batch 2 design; Rules-only hand-entered verdicts.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "Actual marsh at [P6] and an adjacent German DC carrier at [O6]. No bridge is printed at [P6]. Bridge, mudflat, cold, flood and special-profile checks are hypothetical facts, not alterations of this board.",
+      "No live caller is wired by these examples."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 1944
+  },
+  "introduction": "B16.31 marsh HE. Actual marsh at [P6] and an adjacent German DC carrier at [O6]. No bridge is printed at [P6]. Bridge, mudflat, cold, flood and special-profile checks are hypothetical facts, not alterations of this board.",
+  "boards": [
+    {
+      "board": "bd07",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "left",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "russian",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "right",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 2
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "b16-marsh-he"
+}

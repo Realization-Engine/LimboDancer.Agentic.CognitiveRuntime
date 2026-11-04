@@ -1963,7 +1963,7 @@ Moved here by the Rules-first plan (2026-10-28, question 9), with no task renumb
 
 **Pass 95: Weather II** (new; 25 rows of the inventory). Counters: Winter Camouflage as a unit property; a Drift marker. Needs first: 85 (wind); 90 (Random Location).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 26 rows: 10 partly, 5 refused, 11 not built. Claims: 25 open, 1 claimed (owners: B16.31 (Codex)). Wiring: 0 of 26. Minigames: 0.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 26 rows: 11 partly, 5 refused, 10 not built. Claims: 25 open, 1 built (owners: B16.31 (Codex)). Wiring: 0 of 26. Minigames: 1.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -2114,7 +2114,7 @@ Moved here by pass 72 (2026-10-27), with no task renumbered: Wire as 1 MF in a b
 
 **Pass 125: Terrain I: Depressions and water** (planned at 5:30 of build; 57 rows of the inventory). Counters: Crest, ford, and Current markers as states; a depth setting on a card. Needs first: 35, 40.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 60 rows: 11 partly, 15 refused, 34 not built. Claims: 57 open, 2 claimed, 1 wired (owners: A4.43 (Codex), B16.31 (Codex)). Wiring: 1 of 60. Minigames: 1.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 60 rows: 13 partly, 15 refused, 32 not built. Claims: 57 open, 2 built, 1 wired (owners: A4.43 (Codex), B16.31 (Codex)). Wiring: 1 of 60. Minigames: 2.
 
 | Task | Rules | Estimate |
 |---|---|---|

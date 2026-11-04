@@ -1,0 +1,277 @@
+{
+  "id": "b23-building-fire",
+  "title": "B23.31 building fire",
+  "card": "b23-building-fire",
+  "rules": [
+    "B23.31"
+  ],
+  "contracts": [
+    "b23.31-building-fire-tem"
+  ],
+  "checks": [
+    {
+      "name": "Ordinary stone building, no firer identity needed",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "direct",
+        "roofless": false,
+        "targetId": "target",
+        "bypassing": false
+      },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "contribution: 3"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical wooden material",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "wood",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "direct",
+        "roofless": false,
+        "targetId": "target",
+        "bypassing": false
+      },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "contribution: 2"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical non-Residual Bypass removes only building TEM",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "direct",
+        "roofless": false,
+        "targetId": "target",
+        "bypassing": true
+      },
+      "expect": {
+        "outcome": "no-building-tem",
+        "reasons": [
+          "contribution: 0"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical standard Residual retains building TEM",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "residual",
+        "roofless": false,
+        "targetId": "target",
+        "bypassing": true
+      },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "contribution: 3"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical Fire Lane uses the Residual classification",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "residual",
+        "roofless": false,
+        "targetId": "target",
+        "bypassing": true
+      },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "contribution: 3"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical Deluxe Bypass Residual remains unevaluated",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone",
+        "locationKind": "ordinary",
+        "profile": "deluxe",
+        "attackKind": "residual",
+        "roofless": false,
+        "targetId": "target",
+        "bypassing": true
+      },
+      "expect": {
+        "outcome": "not-evaluated",
+        "reasons": [
+          "J2.23"
+        ]
+      }
+    },
+    {
+      "name": "Enemy private Bypass cannot be supplied",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "direct",
+        "roofless": false,
+        "targetId": null,
+        "bypassing": null
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "targetId": "russian"
+      }
+    },
+    {
+      "name": "Residual answer does not reveal enemy Bypass",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "residual",
+        "roofless": false,
+        "targetId": null,
+        "bypassing": null
+      },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "contribution: 3"
+        ]
+      },
+      "sealed": {
+        "targetId": "russian"
+      }
+    },
+    {
+      "name": "Hypothetical Factory internal trace delegates plus one",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone-factory",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "direct",
+        "roofless": false,
+        "targetId": "target",
+        "bypassing": false,
+        "firerId": "firer",
+        "firerPlace": "inside",
+        "tracedWithinDepiction": true
+      },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "contribution: 1"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical Factory Residual across building hexside",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone-factory",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "residual",
+        "roofless": false,
+        "targetId": "target",
+        "bypassing": false,
+        "residualEntry": "building-hexside"
+      },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "contribution: 1"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical Factory Residual Bypass infers entry",
+      "position": "setup",
+      "viewer": "russian",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone-factory",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "residual",
+        "roofless": false,
+        "targetId": "target",
+        "bypassing": true
+      },
+      "expect": {
+        "outcome": "building-tem",
+        "reasons": [
+          "contribution: 3"
+        ]
+      }
+    },
+    {
+      "name": "Hypothetical contradictory Factory entry is rejected",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "b23.31-building-fire-tem",
+      "facts": {
+        "buildingKind": "stone-factory",
+        "locationKind": "ordinary",
+        "profile": "standard",
+        "attackKind": "residual",
+        "roofless": false,
+        "targetId": "target",
+        "bypassing": true,
+        "residualEntry": "building-hexside"
+      },
+      "expect": {
+        "outcome": "not-evaluated",
+        "reasons": [
+          "contradict"
+        ]
+      }
+    }
+  ],
+  "units": {
+    "target": "russian",
+    "firer": "german"
+  }
+}

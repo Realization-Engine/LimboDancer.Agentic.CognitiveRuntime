@@ -1823,3 +1823,18 @@ The user, 2026-11-04: Play's outcome line and the outcome card's headline say a 
 | Item | Why left out | What happens now |
 |---|---|---|
 | A short result for Sniper attacks and checks, SAN reductions, night events (wind, Starshells), Canister shots, Gun Duel declarations, Ambush, and a Rider's Bail Out | Rarer records; each needs its own wording | The line shows the record's full text, cut at 75 characters, as before |
+
+## 100. Deferred by Terrain Fire Batch 2
+
+The approved [Rules design](<Designs/ASL Terrain Fire Batch 2 Rules Design.md>) is built and independently reviewed. These are remaining boundaries, not another claim board. Inventory section 7 holds the open W-B23.31/W-B16.31 rows; design section 11 retains their handoff rationale.
+
+| Item | Rules and physical pages | Separate work | Current boundary |
+|---|---|---|---|
+| Production terrain-fire wiring and old-record compatibility | B23.31 p. 136; B16.31 p. 130 | Inventory W-B23.31 and W-B16.31, with W-B23.74 coordination | New calculator verdicts do not change current callers or replay |
+| Disclosure of announced Bypass and entry facts | B23.31 p. 136; B23.741 p. 139 | Separate coordinated disclosure review of building, Factory and support-weapon possession contracts, raised in PR 124 | Existing Owner disclosure retained here; review which announced facts the opposing side may supply consistently across these contracts |
+| Deluxe hexside Residual FP | J2.23 p. 602; B23.31 p. 136 | Deluxe placement, affected hexside and TEM review | Deluxe Bypass Residual is explicitly not-evaluated by the building contract |
+| Full marsh conversion, movement and scenario authoring | B16.6-B16.8 p. 130 | Existing water and weather work, passes 125 and 95 | Only HE applicability is built here; map conversion, movement, Bog, public authoring and production gathering remain separate |
+| Special explosive and terrain profiles | G7.2 p. 285; W.7B p. 656; W.8 p. 657 | Swamp, VT FFE and special ammunition claims | Do not feed these cases through the ordinary-marsh HE branch or infer weapon-use permission |
+| Other building forms and total DRM composition | B23.32 p. 136; B23.73 p. 139; B23.8-B23.9 pp. 140-141; O5.45; A23.71 p. 91 | Existing building/Factory and fire wiring work; Set DC remains in section 25 | Building component only; no new rooftop, marketplace, fortified or Roofless Indirect Fire ruling. The Set DC marsh-FP example does not implement Set DC or authorize adding TEM to its resolution |
+| To Kill and Specific Collateral application | D.8/D.8A pp. 192-193; D5.31 | Separate armor/PRC review before applying the generic FP component | No unreviewed automatic reduction of a TK number or collateral attack |
+| Real-board acceptance and hypothetical variants | B16.31 p. 130; B23.31 p. 136 | Implementation's isolated Studio Workbench checks | Board 7 [P6] was loaded and inspected in isolated Studio 6680 as marsh with no bridge; bridge/cold/material/Factory variants are labelled hand-entered facts. A card's SSR does not change by selecting another setup; use the existing Factory card for the real Factory demonstration |
