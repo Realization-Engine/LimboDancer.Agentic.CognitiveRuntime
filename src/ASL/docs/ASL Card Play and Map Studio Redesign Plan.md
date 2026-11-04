@@ -2026,7 +2026,7 @@ Turns tasks that reach this pass from another: D4.3 (pass 175) takes D3.71's cir
 
 **Pass 110: Guns and anti-tank weapons II** (new; 77 rows of the inventory). Counters: R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3). Needs first: 35; 60 (HE Equivalency for C13.4x).
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 3 built with a deviation, 72 partly, 2 refused, 46 not built. Claims: 111 open, 4 built, 8 wired (owners: A21.13 (Claude), A9.72 (Codex), A9.8 (Codex), C10.3 (Claude), C2.21 (Codex), C9 (Claude), C9.2 (Codex), C9.3 (Claude), D5.34 (Claude)). A rule decided outside Rules on 4 rows. Wiring: 8 of 123. Minigames: 7.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 123 rows: 3 built with a deviation, 72 partly, 2 refused, 46 not built. Claims: 111 open, 3 built, 1 reviewed, 8 wired (owners: A21.13 (Claude), A9.72 (Codex), A9.8 (Codex), C10.3 (Claude), C2.21 (Codex), C9 (Claude), C9.2 (Codex), C9.3 (Claude), D5.34 (Claude)). A rule decided outside Rules on 4 rows. Wiring: 8 of 123. Minigames: 7.
 
 | Task | Rules | Estimate |
 |---|---|---|

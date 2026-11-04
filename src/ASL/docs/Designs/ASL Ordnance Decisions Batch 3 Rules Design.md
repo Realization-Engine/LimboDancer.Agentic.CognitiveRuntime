@@ -1,6 +1,6 @@
 # Ordnance Decisions Batch 3 Rules Design
 
-**Status:** Approved and implemented Rules-only, 2026-11-04; pending PR review and user merge approval. Baseline: main `23920b0e`, following merged Batch 2 PR #124; claim lock `6e2b253e`. Section 8 records design-review corrections; section 9 records implementation evidence. Claim state is built, with assigned reviewer Claude retained.
+**Status:** Implemented Rules-only and reviewed by Claude; PR #125 merged with user approval on 2026-11-04 at `69603af78acc22459522735af2f442c80b4143f1`, after green CI on `de070381`. The requested inventory-reference correction was completed and accepted by the user. Claim state is reviewed. Baseline: main `23920b0e`, following merged Batch 2 PR #124; claim lock `6e2b253e`. Section 8 records design-review corrections; section 9 records implementation evidence.
 
 **Scope:** C2.21 ammunition defaults, following the user's latest scope statement. C6.57 concealed-target acquisition remains separate work. This design builds a Rules verdict and preserves existing callers' answers. The correction to live shots arrives through later wiring.
 
@@ -186,6 +186,6 @@ Evidence under `$ASL_GATE_WORK` (`E:/Archive/GitHub/dlandi/asl-gate-work-codex`)
 
 Initial checks caught enum/initializer formatting, a test call to an internal class rather than the existing public depletion API, and a regression fixture that mistook the non-vehicle Gun Duel reply for a vehicle target. These were corrected before the final green runs; production rule behavior was not changed to fit the fixtures. The verification script uses warnings as errors, checks nonzero passing TRX counts, and saves the final logs separately from transient test output.
 
-Overall C2.21 coverage remains partial, and W-C2.21 remains open/unclaimed. No batch gate is due for this unmerged claim; recount merged claims at merge. PR CI, assigned review and user authorization to merge remain distinct from these local results.
+Overall C2.21 coverage remains partial, and W-C2.21 remains open/unclaimed. All seven jobs in [PR CI run 41853811798](https://github.com/Realization-Engine/LimboDancer.Agentic.CognitiveRuntime/actions/runs/41853811798) passed on `de070381`. Claude's review, the inventory-reference correction and user merge authorization are complete. The post-merge claim check on main counted three claims since batch gate `aa25111d`; no new batch gate or wiring prompt is due.
 
 The first PR CI run exposed a shared test assumption that every contract has an unconditionally required fact. This contract correctly defers conditional missing-fact decisions to its calculator. The shared test now checks every required field for absence and every field for invalid types, including contracts with no unconditionally required fields. Both affected contract checks passed locally; independent review found no weakened assertion or production behavior change.
