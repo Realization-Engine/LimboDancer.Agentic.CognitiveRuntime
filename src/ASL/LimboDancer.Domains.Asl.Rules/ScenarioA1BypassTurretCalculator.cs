@@ -3,6 +3,16 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// <summary>D2.32/D2.321 (p. 197): bounded Bypass geometry and local turret-fire components.</summary>
 public static class ScenarioA1BypassTurretCalculator
 {
+    // Compatibility refusals until callers adopt the new Bypass position model. Keep their recorded text.
+    internal static string? LegacyTurretStepRefusal(string id, bool bypass) => bypass
+        ? $"play.move-vehicle-turret: {id} is in Bypass, where the TCA has its own four positions; that is not built (D2.32, D2.321)"
+        : null;
+
+    internal static string? LegacyMotionChangeRefusal(string id, bool bypass, bool facingNamed, bool turretNamed) =>
+        bypass && (facingNamed || turretNamed)
+            ? $"play.motion-attempt-bypass: {id} is in Bypass, where a CA has its own positions; that is not built (D2.32, D2.33). Attempt Motion without a change of VCA or TCA"
+            : null;
+
     public const int CoordinateLimit = 1000000;
     public static bool Valid(BypassHex hex) => Math.Abs((long)hex.Q) <= CoordinateLimit && Math.Abs((long)hex.R) <= CoordinateLimit;
     internal static bool Defined<T>(T? value) where T : struct, Enum => value is null || Enum.IsDefined(value.Value);

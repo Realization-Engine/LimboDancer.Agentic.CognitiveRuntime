@@ -5,6 +5,41 @@ namespace LimboDancer.Domains.Asl.Rules.Tests;
 
 public sealed class ScenarioA1BypassTurretTests
 {
+    [Fact]
+    public void LegacyTurretStepRefusalPreservesTextAndPriority()
+    {
+        Assert.Equal("play.move-vehicle-turret: v is in Bypass, where the TCA has its own four positions; that is not built (D2.32, D2.321)",
+            ScenarioA1VehicleMovementCalculator.TurretStepBar("v", "stop", true, true, true, true));
+        Assert.Equal("play.move-vehicle-turret:  is in Bypass, where the TCA has its own four positions; that is not built (D2.32, D2.321)",
+            ScenarioA1VehicleMovementCalculator.TurretStepBar(null!, "stop", true, true, false, true));
+        Assert.Equal("play.move-vehicle-turret: v has no turret to turn (D3.12)",
+            ScenarioA1VehicleMovementCalculator.TurretStepBar("v", "start", false, false, true, true));
+        Assert.Equal("play.move-vehicle-turret: name the hexspine the turret turns to, such as north-east or west (D3.12)",
+            ScenarioA1VehicleMovementCalculator.TurretStepBar("v", "start", true, false, true, true));
+        Assert.Equal("play.move-vehicle-turret: v's turret turns with a Delay MP, a stop, a VCA change, or an entry (D3.12)",
+            ScenarioA1VehicleMovementCalculator.TurretStepBar("v", null!, true, true, true, true));
+        Assert.Equal("play.move-vehicle-turret: v is in woods, a building, or rubble, where a TCA change doubles the MP expenditure; that is not built (D3.12, C5.11)",
+            ScenarioA1VehicleMovementCalculator.TurretStepBar("v", "stop", true, true, true, false));
+        Assert.Null(ScenarioA1VehicleMovementCalculator.TurretStepBar("v", "stop", true, true, false, false));
+    }
+
+    [Fact]
+    public void LegacyMotionChangeRefusalPreservesTextAndPriority()
+    {
+        const string expected = "play.motion-attempt-bypass: v is in Bypass, where a CA has its own positions; that is not built (D2.32, D2.33). Attempt Motion without a change of VCA or TCA";
+        Assert.Equal(expected, ScenarioA1MotionAttempts.ChangeBar("v", true, true, false, false, false, true));
+        Assert.Equal(expected, ScenarioA1MotionAttempts.ChangeBar("v", false, false, true, true, true, true));
+        Assert.Equal(expected, ScenarioA1MotionAttempts.ChangeBar("v", true, true, true, true, true, true));
+        Assert.Equal("play.motion-attempt: name the hexspine the VCA or the TCA turns to, such as north-east or west (D2.401)",
+            ScenarioA1MotionAttempts.ChangeBar("v", true, false, true, true, false, true));
+        Assert.Equal("play.motion-attempt: name the hexspine the VCA or the TCA turns to, such as north-east or west (D2.401)",
+            ScenarioA1MotionAttempts.ChangeBar("v", false, false, true, false, false, true));
+        Assert.Equal("play.motion-attempt: v has no turret to turn (D3.12); name a VCA alone",
+            ScenarioA1MotionAttempts.ChangeBar("v", true, true, true, true, false, true));
+        Assert.Null(ScenarioA1MotionAttempts.ChangeBar("v", false, false, false, false, false, true));
+        Assert.Null(ScenarioA1MotionAttempts.ChangeBar("v", true, true, true, true, true, false));
+    }
+
     private static readonly BypassFrameFacts Lane = new(new(0, 0), new(0, 1), new(1, 0));
     private static readonly BypassTurretFacts SideShot = new(true, Lane, new(0, 2), BypassTurretPosition.Front,
         BypassTurretPosition.Left, null, BypassTraverse.St, BypassWeaponKind.Ordnance, BypassFireMode.Ordinary,

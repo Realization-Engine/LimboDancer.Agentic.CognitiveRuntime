@@ -298,7 +298,7 @@ public static class ScenarioA1VehicleMovementCalculator
         !turreted ? $"play.move-vehicle-turret: {id} has no turret to turn (D3.12)"
         : !facingRead ? "play.move-vehicle-turret: name the hexspine the turret turns to, such as north-east or west (D3.12)"
         : !TurretTurnsWith(kind) ? $"play.move-vehicle-turret: {id}'s turret turns with a Delay MP, a stop, a VCA change, or an entry (D3.12)"
-        : bypass ? $"play.move-vehicle-turret: {id} is in Bypass, where the TCA has its own four positions; that is not built (D2.32, D2.321)"
+        : ScenarioA1BypassTurretCalculator.LegacyTurretStepRefusal(id, bypass) is { } bypassBar ? bypassBar
         : inObstacle ? $"play.move-vehicle-turret: {id} is in woods, a building, or rubble, where a TCA change doubles the MP expenditure; that is not built (D3.12, C5.11)"
         : null;
 

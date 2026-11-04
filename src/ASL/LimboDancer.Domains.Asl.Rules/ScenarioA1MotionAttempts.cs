@@ -228,8 +228,7 @@ public static class ScenarioA1MotionAttempts
     public static string? ChangeBar(string id, bool facingNamed, bool facingRead, bool turretNamed, bool turretRead, bool turreted, bool bypass) =>
         (facingNamed && !facingRead) || (turretNamed && !turretRead) ? "play.motion-attempt: name the hexspine the VCA or the TCA turns to, such as north-east or west (D2.401)"
         : turretNamed && !turreted ? $"play.motion-attempt: {id} has no turret to turn (D3.12); name a VCA alone"
-        : bypass && (facingNamed || turretNamed) ? $"play.motion-attempt-bypass: {id} is in Bypass, where a CA has its own positions; that is not built (D2.32, D2.33). Attempt Motion without a change of VCA or TCA"
-        : null;
+        : ScenarioA1BypassTurretCalculator.LegacyMotionChangeRefusal(id, bypass, facingNamed, turretNamed);
 
     /// <summary>
     /// The attempt's result (D2.401, D2.51; ruling R55.13): failed on the dr; else no Motion and no change of CA when the Mechanical Reliability DR
