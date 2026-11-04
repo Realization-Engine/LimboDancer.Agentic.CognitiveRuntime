@@ -1,0 +1,137 @@
+{
+  "id": "a25-italian-deployment",
+  "title": "A25.61 Italian deployment",
+  "card": "a25-italian-deployment",
+  "rules": [
+    "A25.61",
+    "A25.66"
+  ],
+  "contracts": [
+    "a25.61-italian-deployment"
+  ],
+  "checks": [
+    {
+      "name": "Italian non-elite squad nationality restriction",
+      "position": "setup",
+      "viewer": "italian",
+      "contract": "a25.61-italian-deployment",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "italian",
+        "kind": "squad",
+        "elite": false,
+        "context": "ordinary",
+        "guard": false,
+        "unarmed": false,
+        "broken": false
+      },
+      "expect": {
+        "outcome": "restricted"
+      }
+    },
+    {
+      "name": "Elite squad passes only the nationality restriction",
+      "position": "setup",
+      "viewer": "italian",
+      "contract": "a25.61-italian-deployment",
+      "facts": {
+        "subjectId": "elite",
+        "nationality": "italian",
+        "kind": "squad",
+        "elite": true,
+        "context": "ordinary",
+        "guard": false,
+        "unarmed": false,
+        "broken": false
+      },
+      "expect": {
+        "outcome": "unrestricted"
+      }
+    },
+    {
+      "name": "Unbroken non-elite Guard exception",
+      "position": "setup",
+      "viewer": "italian",
+      "contract": "a25.61-italian-deployment",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "italian",
+        "kind": "squad",
+        "elite": false,
+        "context": "guard",
+        "guard": true,
+        "unarmed": false,
+        "broken": false
+      },
+      "expect": {
+        "outcome": "unrestricted"
+      }
+    },
+    {
+      "name": "Temporary Crew exchange retains its separate prerequisites",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a25.61-italian-deployment",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "italian",
+        "kind": "squad",
+        "elite": false,
+        "context": "temporary-crew",
+        "guard": false,
+        "unarmed": false,
+        "broken": false
+      },
+      "expect": {
+        "outcome": "unrestricted"
+      }
+    },
+    {
+      "name": "Eritrean inheritance with explicit facts",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "a25.61-italian-deployment",
+      "facts": {
+        "subjectId": "subject",
+        "nationality": "eritrean",
+        "kind": "squad",
+        "elite": false,
+        "context": "ordinary",
+        "guard": false,
+        "unarmed": false,
+        "broken": false
+      },
+      "expect": {
+        "outcome": "restricted"
+      }
+    },
+    {
+      "name": "Opponent cannot learn a concealed squad class",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "a25.61-italian-deployment",
+      "facts": {
+        "subjectId": null,
+        "nationality": null,
+        "kind": null,
+        "elite": null,
+        "context": "ordinary",
+        "guard": null,
+        "unarmed": null,
+        "broken": null
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "subjectId": "italian"
+      }
+    }
+  ],
+  "units": {
+    "subject": "italian",
+    "hs": "italian",
+    "elite": "italian",
+    "enemy": "german"
+  }
+}

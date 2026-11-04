@@ -178,6 +178,7 @@ public static class ScenarioA1Definitions
     /// Whether a nationality's squads may Deploy (A25.2; ruling R31.4): every nationality the game has but the Russian. One list for play and for
     /// setup. A Guard of prisoners (A20.5) and a temporary crew (A21.22) are the rule's exceptions and are not built.
     /// </summary>
+    // Legacy nationality-only answer. Current Italian/Eritrean restrictions: ScenarioA1ItalianDeploymentCalculator.Evaluate.
     public static bool MayDeploy(string? nationality) => nationality != "russian";
 
     /// <summary>
