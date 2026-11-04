@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
 const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
-    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel, hexCentre, fragmentBounds, pointsBounds, boxesMeet, nearGridPath,
+    committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel, hexCentre, fragmentBounds, pointsBounds, boxesMeet, nearGridPath, nearDotsPath,
     nearTilesInAddress, cullOn, probePlan, frameBreakdown, withGridInTiles, pacedBatch, tilesPerFrame, destinationTiles, oneReference,
     pointAtTier } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
@@ -283,6 +283,13 @@ test("the near grid outlines only the hexes about the box", () => {
     const whole = nearGridPath(index, { x: -100, y: -100, width: 2000, height: 900 }).split("Z").filter(Boolean);
     assert.equal(whole.length, 33 * 10 + 16);
     assert.equal(nearGridPath({}, { x: 0, y: 0, width: 1, height: 1 }), "");
+
+    // Decision G2: a centre dot for each outlined hex, the vector grid's square two cells on a side.
+    const dots = nearDotsPath(index, { x: 500, y: 200, width: 100, height: 100 }).split("Z").filter(Boolean);
+    assert.equal(dots.length, hexes.length);
+    // A1's centre dot is at (0, 32.25): its square runs from -1 to 1 and 31.25 to 33.25.
+    assert.equal(nearDotsPath(index, { x: 0, y: 0, width: 10, height: 10 }).split("Z")[0], "M-1,31.25H1V33.25H-1");
+    assert.equal(nearDotsPath({}, { x: 0, y: 0, width: 1, height: 1 }), "");
 });
 
 // Screen-Bounded Map Analysis, section 3.5: the next finer level is fetched ahead for the same box, at twice the tiles each way.

@@ -109,7 +109,8 @@ public sealed class TileCacheTests
                 await Task.Delay(100);
             }
 
-            Assert.Equal(next.Version, Path.GetFileName(Assert.Single(Directory.GetDirectories(boardFolder))));
+            // The folder is the version the tiles are held under: the board's and the painter's (decision G2).
+            Assert.Equal(TileCache.HeldVersion(next), Path.GetFileName(Assert.Single(Directory.GetDirectories(boardFolder))));
             // Without a disk, nothing is painted ahead.
             Assert.Equal(0, new TileCache().PaintAhead(Board, TileVariant.TerrainAndElevation, TileLines.Grid, null));
         }
