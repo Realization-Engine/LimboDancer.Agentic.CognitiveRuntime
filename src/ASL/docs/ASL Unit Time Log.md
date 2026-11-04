@@ -7,6 +7,7 @@ Observed UTC boundaries; claim-lock preparation preceded this measured implement
 | Sub-task | Start UTC | End UTC | Duration | Notes |
 |---|---|---|---|---|
 | D2.321/D2.33 implementation, Workbench, review and focused verification | 21:04:05 | 21:34:19 | 0:30:14 | 24 focused Rules/contract and 27 bundle/legacy cases passed; strict isolated Studio build, owner/sealed-opponent and public defensive-frame checks. Read-only review corrections incorporated. Delivery records, PR and CI follow this measured interval. No wiring or merge. |
+| Five-claim batch gate on merged main, observed gate interval | 22:09:08 | 22:27:48 | 0:18:40 | PR #126 approved and merged before this interval. Baseline, strict build, zero-difference proofs and carry passed on 31991cb9; logs in asl-gate-work-codex/pr126-gate-*.log. Claim records and Wiring Prompt 008 follow this measured interval. No downstream wiring. |
 
 ## Ordnance Decisions Batch 3, 2026-11-04 (Codex)
 

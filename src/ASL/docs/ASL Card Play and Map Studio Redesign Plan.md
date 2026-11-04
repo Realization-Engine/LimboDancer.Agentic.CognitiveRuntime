@@ -1979,7 +1979,7 @@ Turns tasks that reach this pass from another: D2.3 (pass 85) and D7.3 (pass 90)
 
 **Pass 100: Position and cover** (new; 43 rows of the inventory). Counters: Wall Advantage and HD as kept states (no catalog counter). Needs first: 55 (levels for ordnance), 40.
 
-> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 55 rows: 8 built with a deviation, 30 partly, 5 refused, 12 not built. Claims: 53 open, 1 built, 1 wired (owners: A10.531 (Codex), D2.321 (Codex)). A rule decided outside Rules on 6 rows. Wiring: 1 of 55. Minigames: 2.
+> **Rules status** (written from the [rule inventory](<ASL Rule Inventory A to E.md>) by `code-builders/documents/pass_rules_status.py`): 55 rows: 8 built with a deviation, 30 partly, 5 refused, 12 not built. Claims: 53 open, 1 reviewed, 1 wired (owners: A10.531 (Codex), D2.321 (Codex)). A rule decided outside Rules on 6 rows. Wiring: 1 of 55. Minigames: 2.
 
 | Task | Rules | Estimate |
 |---|---|---|
