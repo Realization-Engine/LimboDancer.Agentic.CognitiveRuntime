@@ -219,6 +219,8 @@ The six new Rules files implement the models, calculator and contract for each c
 
 The typed marsh calculator treats bridge presence as immaterial for a ground-Location effect or a unit known to be off the bridge. The contract still requires its declared public context and masks private position without a target anchor. Independent review found and corrected that unnecessary typed requirement, and aligned the new cards with their saved catalog version, ELR, phasing side and friendly edges. The reviewer approved the corrected code and tests with no remaining findings.
 
+The inventory records that review in each claim's note and names the sub-agent reviewer. Claim state stays built until merge because `claim_check.py` treats reviewed claims as released holds, which would otherwise leave the unmerged implementation files unheld. User PR review remains pending.
+
 Studio 6680 loaded the actual boards and these positions before the focused tests were authored:
 
 | Position and revision | Observed evidence |

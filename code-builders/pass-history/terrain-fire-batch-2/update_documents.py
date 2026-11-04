@@ -25,7 +25,7 @@ for row in inventory_table.rows(lines):
     values = inventory_table.cells(lines[row['line']])
     updates = {
         'Status': 'built' if rule in ('B23.31', 'B16.31') else 'partly',
-        'Claim state': 'reviewed',
+        'Claim state': 'built',
         'Where': f'ScenarioA1{family}Calculator.cs; existing callers retain their legacy reading',
         'Rules calculator': f'ScenarioA1{family}Calculator.cs; ScenarioA1{family}Contract.cs',
         'Test': f'ScenarioA1{family}Tests; MinigameBundleTests (terrain-fire bundles)',
@@ -39,8 +39,8 @@ for index, line in enumerate(lines):
     if any(line.startswith('| ' + rule + ' | Codex |') for rule in ('B23.31', 'B16.31')):
         cells = inventory_table.cells(line)
         cells[2] = 'sub-agent'
-        cells[5] = 'reviewed'
-        cells[7] = 'Approved revised Terrain Fire Batch 2 built Rules-only. Independent read-only sub-agent review approved after bridge materiality and scenario-card fixes. B16.6/B16.7/B16.8 are partial HE applicability under B16.31; zero ASOP rows. W-B23.31/W-B16.31 remain open. User PR review and merge approval pending.'
+        cells[5] = 'built'
+        cells[7] = 'Approved revised Terrain Fire Batch 2 built Rules-only. Independent read-only sub-agent review approved after bridge materiality and scenario-card fixes. State remains built until merge to retain the file holds required by claim_check. B16.6/B16.7/B16.8 are partial HE applicability under B16.31; zero ASOP rows. W-B23.31/W-B16.31 remain open. User PR review and merge approval pending.'
         lines[index] = '| ' + ' | '.join(cells) + ' |'
     if line.startswith('| W-B23.74 |') and 'W-B23.31' not in line:
         cells = inventory_table.cells(line)
@@ -62,6 +62,7 @@ text = text.replace('HE into it not halved (16.31); depth, mudflats, and weather
 text = text.replace('**Cellars and rooftops refused; Rowhouses refused in movement and fire; Factories refused; Fortified Buildings not built in live play**', '**Cellars and rooftops refused; Rowhouses refused in movement and fire; Factory Rules are built with W-B23.74 open; Fortified Buildings not built in live play**')
 text = text.replace('- **B23.31** (p. 136): Residual FP', '- **B23.31** (p. 136), Rules repaired by Terrain Fire Batch 2; live behavior remains pending W-B23.31: Residual FP')
 text = text.replace('- **B16.31:** a DC into marsh', '- **B16.31**, Rules repaired by Terrain Fire Batch 2; live behavior remains pending W-B16.31: a DC into marsh')
+text = text.replace('- **To check, not a settled fault:** ruling R10.7', '- **Settled by Terrain Fire Batch 2, repaired in Rules; live behavior remains pending W-B23.31:** ruling R10.7')
 heading = '## Terrain Fire Batch 2, Rules-only delivery (2026-11-04)'
 if heading not in text:
     text += '\n' + heading + '\n\nB23.31 and B16.31 have dedicated calculators, contracts, focused tests and two minigames under the approved [design](<Designs/ASL Terrain Fire Batch 2 Rules Design.md>). Ordinary building TEM includes the Residual/Fire Lane Bypass distinction; Factory TEM delegates to the existing B23.741 implementation. Supported marsh HE/DC/HE-equivalency returns an exact factor, with bridge, cold, flooding and mudflat applicability. B16.6/B16.7/B16.8 remain partial because only this modifier is built. Deluxe Bypass Residual, special building Locations, swamp HE and VT FFE remain explicit exclusions. Existing DC, lane-terrain and ordnance answers and serialized arithmetic are unchanged. Inventory section 7 holds W-B23.31 and W-B16.31, coordinated with W-B23.74; no caller or event-schema change is included.\n'
