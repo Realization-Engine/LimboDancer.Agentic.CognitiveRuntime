@@ -180,9 +180,12 @@ Evidence under `$ASL_GATE_WORK` (`E:/Archive/GitHub/dlandi/asl-gate-work-codex`)
 |---|---|
 | Isolated Studio, locked restore, warnings as errors | `ordnance-batch3-build.log`: build succeeded, 0 warnings and 0 errors |
 | Named new Rules and legacy integration tests | `ordnance-batch3-Rules.log` and `.trx`: 14 passed, 0 failed |
+| Shared contract missing/mistyped facts and JSON round-trip | `ordnance-batch3-contract-regression-Rules.log` and `.trx`: 2 passed, 0 failed |
 | Bundle checks plus manifest/game-header integrity | `ordnance-batch3-Play.log` and `.trx`: 16 passed, 0 failed |
 | Independent read-only review | `batch3_rules_review` reviewed rulebook, selector, disclosure, legacy edges, tests and the saved logs; no remaining material finding. Two documentation corrections were applied |
 
 Initial checks caught enum/initializer formatting, a test call to an internal class rather than the existing public depletion API, and a regression fixture that mistook the non-vehicle Gun Duel reply for a vehicle target. These were corrected before the final green runs; production rule behavior was not changed to fit the fixtures. The verification script uses warnings as errors, checks nonzero passing TRX counts, and saves the final logs separately from transient test output.
 
 Overall C2.21 coverage remains partial, and W-C2.21 remains open/unclaimed. No batch gate is due for this unmerged claim; recount merged claims at merge. PR CI, assigned review and user authorization to merge remain distinct from these local results.
+
+The first PR CI run exposed a shared test assumption that every contract has an unconditionally required fact. This contract correctly defers conditional missing-fact decisions to its calculator. The shared test now checks every required field for absence and every field for invalid types, including contracts with no unconditionally required fields. Both affected contract checks passed locally; independent review found no weakened assertion or production behavior change.

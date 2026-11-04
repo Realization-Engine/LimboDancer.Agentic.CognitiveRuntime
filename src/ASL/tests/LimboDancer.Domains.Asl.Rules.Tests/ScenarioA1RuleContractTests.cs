@@ -93,16 +93,23 @@ public sealed class ScenarioA1RuleContractTests
     {
         foreach (var contract in ScenarioA1RuleContracts.All)
         {
-            var required = contract.Facts.First(fact => !fact.MayBeUnknown);
-            Assert.Equal(ContractVerdict.NotEvaluated, Outcome(ScenarioA1RuleContracts.Evaluate(contract.Id, Facts(contract, required.Name).ToJsonString())));
+            // Conditional contracts can defer all missing-fact decisions to their calculator.
+            // Each unconditionally required field must still be rejected when absent.
+            foreach (var required in contract.Facts.Where(fact => !fact.MayBeUnknown))
+            {
+                Assert.Equal(ContractVerdict.NotEvaluated, Outcome(ScenarioA1RuleContracts.Evaluate(contract.Id, Facts(contract, required.Name).ToJsonString())));
+            }
 
             var unknown = Facts(contract);
             unknown["no-such-fact"] = true;
             Assert.Equal(ContractVerdict.NotEvaluated, Outcome(ScenarioA1RuleContracts.Evaluate(contract.Id, unknown.ToJsonString())));
 
-            var mistyped = Facts(contract);
-            mistyped[required.Name] = required.Type == ContractFactType.Flag ? "yes" : true;
-            Assert.Equal(ContractVerdict.NotEvaluated, Outcome(ScenarioA1RuleContracts.Evaluate(contract.Id, mistyped.ToJsonString())));
+            foreach (var fact in contract.Facts)
+            {
+                var mistyped = Facts(contract);
+                mistyped[fact.Name] = fact.Type == ContractFactType.Flag ? "yes" : true;
+                Assert.Equal(ContractVerdict.NotEvaluated, Outcome(ScenarioA1RuleContracts.Evaluate(contract.Id, mistyped.ToJsonString())));
+            }
             Assert.Equal(ContractVerdict.NotEvaluated, Outcome(ScenarioA1RuleContracts.Evaluate(contract.Id, "[1, 2]")));
         }
     }
