@@ -35,6 +35,13 @@
       "reference": "Set One, final round, top row 2nd"
     },
     {
+      "key": "formation-boundaries",
+      "label": "Formation boundaries",
+      "brief": "a compact cluster of seven pale cream hexagons with thin slate-navy edges, the cluster's outline traced by a thin dashed rust-brown line, formation boundaries",
+      "meaning": "Shows or hides the Formation boundaries and the campaign map's perimeter. Drawn by hand (candidate D2 of 2026-11-04): a thin dashed outline, never a thick one, or it crowds the hexes at 24 px.",
+      "reference": "Drawn by hand, 2026-11-04"
+    },
+    {
       "key": "selection",
       "label": "Selection",
       "brief": "a single large olive hexagon with a classic slate-navy mouse pointer arrow touching its lower right edge, selection",
