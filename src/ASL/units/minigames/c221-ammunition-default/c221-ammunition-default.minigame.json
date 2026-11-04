@@ -1,0 +1,330 @@
+{
+  "id": "c221-ammunition-default",
+  "title": "C2.21 ammunition defaults",
+  "card": "c221-ammunition-default",
+  "rules": [
+    "C2.21"
+  ],
+  "contracts": [
+    "c2.21-ammunition-default"
+  ],
+  "units": {
+    "firer": "british",
+    "limited-firer": "british",
+    "truck": "german",
+    "tank": "german"
+  },
+  "checks": [
+    {
+      "name": "Ordinary HE at the visible truck",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "vehicle",
+        "targetProtection": "unarmored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": false,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "default-he"
+      }
+    },
+    {
+      "name": "Ordinary AP at the visible AFV",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "vehicle",
+        "targetProtection": "armored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": false,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "default-ap"
+      }
+    },
+    {
+      "name": "Hypothetical Infantry Target Type at the truck",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "infantry",
+        "targetProtection": "unarmored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": false,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "default-he"
+      }
+    },
+    {
+      "name": "Hypothetical mortar at an unarmored target",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "mortar",
+        "targetType": "area",
+        "targetProtection": "unarmored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": false,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "default-he"
+      }
+    },
+    {
+      "name": "Hypothetical armored Area target needs declaration",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "area",
+        "targetProtection": "armored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": false,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "declaration-required"
+      }
+    },
+    {
+      "name": "Hypothetical HE# never defaults",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "vehicle",
+        "targetProtection": "unarmored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": true,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "declaration-required"
+      }
+    },
+    {
+      "name": "Catalog 6-pounder HE# requires declaration",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "limited-firer",
+        "weaponKind": "gun",
+        "targetType": "vehicle",
+        "targetProtection": "unarmored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": true,
+        "heListedDepletion": true,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "declaration-required"
+      }
+    },
+    {
+      "name": "Hypothetical AP# never defaults",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "vehicle",
+        "targetProtection": "armored",
+        "apProhibited": false,
+        "apListedDepletion": true,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": false,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "declaration-required"
+      }
+    },
+    {
+      "name": "Hypothetical exhausted HE has no AP fallback",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "vehicle",
+        "targetProtection": "unarmored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": false,
+        "heExhausted": true
+      },
+      "expect": {
+        "outcome": "declaration-required"
+      }
+    },
+    {
+      "name": "Hypothetical no-HE counter has no AP fallback",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "vehicle",
+        "targetProtection": "unarmored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": true,
+        "heListedDepletion": false,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "declaration-required"
+      }
+    },
+    {
+      "name": "Explicit declaration bypasses selection",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": true,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "vehicle",
+        "targetProtection": "unarmored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": false,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "not-applicable"
+      }
+    },
+    {
+      "name": "Unknown target protection remains unknown",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "vehicle",
+        "targetProtection": null,
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": false,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Opponent cannot inspect stock",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": null,
+        "weaponKind": null,
+        "targetType": "vehicle",
+        "targetProtection": "unarmored",
+        "apProhibited": null,
+        "apListedDepletion": null,
+        "apExhausted": null,
+        "heProhibited": null,
+        "heListedDepletion": null,
+        "heExhausted": null
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "firerId": "british"
+      }
+    },
+    {
+      "name": "Adjudicator ordinary truck default",
+      "position": "setup",
+      "viewer": "adjudicator",
+      "contract": "c2.21-ammunition-default",
+      "facts": {
+        "declared": false,
+        "firerId": "firer",
+        "weaponKind": "gun",
+        "targetType": "vehicle",
+        "targetProtection": "unarmored",
+        "apProhibited": false,
+        "apListedDepletion": false,
+        "apExhausted": false,
+        "heProhibited": false,
+        "heListedDepletion": false,
+        "heExhausted": false
+      },
+      "expect": {
+        "outcome": "default-he"
+      }
+    }
+  ]
+}

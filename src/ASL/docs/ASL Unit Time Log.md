@@ -1,5 +1,13 @@
 # ASL Unit Time Log
 
+## Ordnance Decisions Batch 3, 2026-11-04 (Codex)
+
+Observed UTC boundaries; no estimate supplied. The claim lock preceded the first sampled boundary and is not included in this measured interval.
+
+| Sub-task | Start UTC | End UTC | Duration | Notes |
+|---|---|---|---|---|
+| C2.21 implementation, Workbench and focused verification | 14:04:33 | 14:21:04 | 0:16:31 | Three Rules files and three compatibility edges; 14 Rules cases and 16 bundle checks passed, strict Studio build clean, owner/opponent/adjudicator views checked. Read-only sub-agent review found no remaining material issue after corrections. Claim lock 6e2b253e; delivery records and PR preparation follow this interval. |
+
 ## Terrain Fire Batch 2, 2026-11-04 (Codex)
 
 Observed UTC clock boundaries, no estimate supplied. This interval covers the claim lock, calculators/contracts, bundles, Studio checks, focused tests and independent review; final delivery records and PR preparation follow it.

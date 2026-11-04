@@ -2337,6 +2337,29 @@ public sealed class ScenarioA1Pass55RulesTests
     }
 
     [Fact]
+    public void AmmunitionDefaultExtractionPreservesDuelRefusalOrderAndStrings()
+    {
+        foreach (var ammunition in new string?[] { null, string.Empty, "AP", "he" })
+        {
+            var answer = AnswerShot() with
+            {
+                Ammunition = ammunition
+            };
+            // AnswerShot targets the non-vehicle Gun, so null is its accepted legacy HE reading.
+            Assert.Equal(ammunition is null ? null : ScenarioA1GunDuels.SpecialAmmunition, Duel(answer: answer).Bar);
+            var atVehicle = answer with
+            {
+                VehicleTarget = DeclaredShot().VehicleTarget
+            };
+            Assert.Equal(ScenarioA1GunDuels.SpecialAmmunition, Duel(answer: atVehicle).Bar);
+            Assert.Equal(ScenarioA1GunDuels.CaChange, Duel(answer: answer with
+            {
+                HexspinesToTurn = 1
+            }).Bar);
+        }
+    }
+
+    [Fact]
     public void AGunDuelIsWordedAndItsRecordsAreHeldToTheChoice()
     {
         var verdict = Duel();
