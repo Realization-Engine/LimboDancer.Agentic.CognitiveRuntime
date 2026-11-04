@@ -317,7 +317,8 @@ public sealed class PlayPagePass28cTests : IDisposable
         // Pass 31c (design D17): the heading names the side whose phase it is, and the latest line says the firer by name, with its hex.
         Assert.Contains("Turn 1, German Prep Fire Phase", page.Find("#play-latest-panel .action-outcome-context").TextContent, StringComparison.Ordinal);
         var latest = page.Find("#play-latest-panel .action-outcome-toggle").TextContent.Trim();
-        Assert.Equal($"4-6-7 squad G1 in {DisplayText.Place(1, hexes.One)} fires at {DisplayText.Place(1, hexes.Two)}: no effect", latest);
+        // The user, 2026-11-04: the headline is the result alone; the firer is in the record under it.
+        Assert.Equal($"{DisplayText.Place(1, hexes.Two)}: no effect", latest);
     }
 
     // Plan section 11.1: under 1024px the map, the actions, and the activity are tabs; a pane not chosen is hidden, so it keeps its state.

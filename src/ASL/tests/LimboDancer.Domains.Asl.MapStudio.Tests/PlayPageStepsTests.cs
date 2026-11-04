@@ -133,6 +133,8 @@ public sealed class PlayPageStepsTests : IDisposable
         Assert.StartsWith($"8-0 leader R1 rallies 4-4-7 squad R1 in {DisplayText.Place(1, hexes.From)}: DR 1, 2 = 3", rallied, StringComparison.Ordinal);
         Assert.Contains("against", rallied, StringComparison.Ordinal);
         Assert.EndsWith(": rallied", rallied, StringComparison.Ordinal);
+        // The user, 2026-11-04: the outcome line says the result alone; the dice stay in the record.
+        Assert.Equal($"4-4-7 squad R1 in {DisplayText.Place(1, hexes.From)}: rallied", page.Find(".play-outcome-summary").TextContent);
 
         // U24 and U27 on the page: r2 fires with its LMG at the Dummy; the colored 1 keeps the LMG's ROF (A9.2), and an
         // effect removes the Dummy (A12.14).
@@ -150,6 +152,10 @@ public sealed class PlayPageStepsTests : IDisposable
         Assert.Empty(dice);
         var group = page.OutcomeRecord(".fire-record .fire-group").TextContent.Trim();
         Assert.Equal($"4-4-7 squad R2 with its LMG in {DisplayText.Place(1, hexes.From)} fires at {DisplayText.Place(1, hexes.Open)}", group);
+        // The fire's result alone: the target Location and what became of the units there, no firer and no IFT arithmetic.
+        var fireSummary = page.Find(".play-outcome-summary").TextContent;
+        Assert.StartsWith($"{DisplayText.Place(1, hexes.Open)}: ", fireSummary, StringComparison.Ordinal);
+        Assert.DoesNotContain("fires at", fireSummary, StringComparison.Ordinal);
         page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("eliminated", Row(page, "gd"), StringComparison.Ordinal);
         Assert.Contains("prep-fire", Row(page, "r2"), StringComparison.Ordinal);

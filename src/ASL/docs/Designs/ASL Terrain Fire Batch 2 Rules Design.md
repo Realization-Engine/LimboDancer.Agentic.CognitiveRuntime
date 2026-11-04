@@ -171,7 +171,7 @@ Both decisions are bounded scalar checks; no map/state traversal, service refere
 
 No new state/map scans or retained per-unit/per-hex data are added. The only live compatibility change replaces an existing terrain comparison with one bounded, allocation-free adapter call; its result and arithmetic representation remain unchanged. Later gathering must use the existing state map context and memo, complete Location/version/view keys and one immutable snapshot. Rendering fragments, patches, rout settlement and storage remain untouched. No timing gain is claimed; no dedicated performance run is needed for these bounded scalar decisions. Regression checks target rule boundaries and, for wiring, equal old-record replay plus documented new-reading differences.
 
-Tests reuse expensive immutable inputs; the existing Rules/Play CI shares already cover their projects. Register Studio/test build outputs in `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex`, stop Studio 6680 when finished and clean only owned temporary outputs. Preserve evidence. Deferred items are recorded in backlog section 99; downstream rows are in inventory section 7, with handoff rationale in section 11 below.
+Tests reuse expensive immutable inputs; the existing Rules/Play CI shares already cover their projects. Register Studio/test build outputs in `ASL_GATE_WORK=E:/Archive/GitHub/dlandi/asl-gate-work-codex`, stop Studio 6680 when finished and clean only owned temporary outputs. Preserve evidence. Deferred items are recorded in backlog section 100; downstream rows are in inventory section 7, with handoff rationale in section 11 below.
 
 ## 10. Design review and approval boundary
 

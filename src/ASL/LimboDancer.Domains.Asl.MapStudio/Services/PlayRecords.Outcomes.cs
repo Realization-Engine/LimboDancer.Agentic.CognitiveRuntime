@@ -166,7 +166,8 @@ public sealed partial class PlayRecords
                 displayed.UnionWith(attached.Select(roll => roll.Roll));
             }
             var context = (WhenOf(firstEntry.EventId) ?? "Before play") + (partial.Contains(group.Key) ? " · Part of this action in the selected interval" : "");
-            var summary = lead.Text ?? firstEntry.Text;
+            // The user, 2026-11-04: the headline is the result alone, "4-4-7 squad R2 in [X3]: not rallied"; the entries keep the arithmetic.
+            var summary = (lead.EventId is { } leadId ? BriefOf(leadId) ?? lead.Text : null) ?? BriefOf(firstEntry.EventId) ?? firstEntry.Text;
             var combats = entries.Select(entry => entry.Combat).OfType<CloseCombatTable>().ToArray();
             if (combats.Length > 0)
             {
