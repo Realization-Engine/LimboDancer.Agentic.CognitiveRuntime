@@ -13,6 +13,7 @@ Minute boundaries below are reconstructed from the branch log, tool clock and ar
 | PR 121 review reading and additional contract hold | 05:31 | 05:35 | 0:04 | Rulebook A11.19/A25.77, existing CC disclosure, ff43c0f0 reserves PrisonerContract on main |
 | Five review corrections and revised Workbench proof | 05:35 | 05:43 | 0:08 | One escape contract, public CC capture facts, unused input/dead branch removed, PSK citation; strict Studio build and scoped UI check |
 | Focused review verification and records | 05:43 | 05:47 | 0:04 | 59 Rules and 40 bundle cases passed with warnings as errors; initial test assertion style error corrected before successful run; logs named in design section 13.4 |
+| Five-claim batch gate and wiring handoff | 06:08 | 06:31 | 0:23 | User-approved PR 121 merge aa25111d; baseline, strict build, replay, sweep and carry passed; zero replay/sweep differences; one expected new text; Wiring Prompt 007 keeps downstream work separate |
 
 Wall-clock durations per task and sub-task, taken with `date "+%Y-%m-%d %H:%M"` at each boundary. Estimates come from the [ASL Unit Deviations, Ordnance, and Vehicles Plan](<Plans/ASL Unit Deviations, Ordnance, and Vehicles Plan.md>) kickoff notes.
 
