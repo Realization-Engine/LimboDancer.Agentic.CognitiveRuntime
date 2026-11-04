@@ -1695,7 +1695,8 @@
           "label": "Formation boundaries",
           "dynamic": false,
           "id": "map-parent-boundaries",
-          "status": "needed",
+          "icon": "formation-boundaries",
+          "status": "icon",
           "strip": "Play play-map-tools"
         },
         {
