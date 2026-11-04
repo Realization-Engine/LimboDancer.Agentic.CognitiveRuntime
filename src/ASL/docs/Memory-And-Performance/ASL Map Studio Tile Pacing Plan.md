@@ -80,6 +80,26 @@ Both steps built on branch `claude/speed-plans`, in `boardViewport.js`, at the u
 - **Checked in my Studio at 6670** on the Goodwood game map (behind "show my view"), one deep wheel zoom from Fit, my browser pane (a pointer only, Map Lab Plan, section 3.5): the 20 level-0 tiles were each fetched once, in the near variant, and shown over six frames, at most four in one. Sharp after 342 ms with a longest frame of 58 ms, against 411 to 446 ms and 133 to 152 ms in the same pane with `?pace=0&counters=three`.
 - **Tests:** Node viewport tests for the batch's order and bound, a small batch at once, and the destination's level, tiles, and bound.
 
+## 9. Results in the user's Chrome (2026-11-03)
+
+One `mapProbeSuite()` on Goodwood's game map (behind "show my view") with this plan and the Counter Drawing Plan's step 1 on, and one with both off (`?pace=0&counters=three`), at about 85 Hz; then the Map Lab's Measure on the 40,392-hex map with 600 counters, each way, at 1,295 by 735. One run each, so the figures are pointers to be repeated; the two plans' changes were on and off together.
+
+**The deep zoom from Fit** (the probe's longest frame counts frames over 50 ms; 0 is none):
+
+| Map, counters | On: sharp after, longest frame | Off: sharp after, longest frame |
+|---|---|---|
+| Goodwood, out of view hidden (the default) | 279 to 313 ms, none | 447 to 581 ms, 96 to 99 ms |
+| Goodwood, none drawn | 360 to 362 ms, none | 512 to 560 ms, 91 to 103 ms |
+| Goodwood, all drawn | 621 to 631 ms, 130 to 161 ms | 590 to 595 ms, 98 to 104 ms |
+| Lab, out of view hidden | 497 ms, 59 ms | 815 ms, 94 ms |
+| Lab, none drawn | 537 ms, 59 ms | 695 ms, 47 ms |
+| Lab, all drawn | 663 ms, 71 ms | 834 ms, 82 ms |
+
+- **Against section 2's thresholds:** on Goodwood, with no counters, the landing frame went from 96 to 114 ms (and 91 to 103 here) to none, under the 50 ms expected; the map sharpens in 360 ms, under the 450 ms expected. With counters out of view hidden, the same. The Lab, with its larger, detailed counters, sharpens 150 to 300 ms sooner.
+- **With every counter drawn on Goodwood** the landing frame was longer with the changes on (130 to 161 ms against 98 to 104), while on the Lab it was shorter (71 against 82). That mode is drawn only with `?present=classic`; it is left to a repeated run.
+- **Drags** at readable and near zoom are unchanged within the runs' spread on Goodwood (59 to 72 frames per second each way), and slightly better on the Lab (67.8 to 70.8 against 60.9 to 69.9, counters in view or none): section 2's drag threshold holds.
+- The Fit runs, the first of each Measure, swung from 1.8 to 80 frames per second both ways on the Lab, and are not read.
+
 ## Related documents
 
 - [ASL Map Studio Goodwood Lab Techniques Analysis](<ASL Map Studio Goodwood Lab Techniques Analysis.md>)

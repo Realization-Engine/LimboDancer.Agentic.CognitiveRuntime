@@ -104,6 +104,14 @@ Step 1 built on branch `claude/speed-plans`, in `boardViewport.js`, at the user'
 - **Checked in my Studio at 6670** on the Goodwood game map (behind "show my view"): all 548 counters one reference each, with their role, tab stop, name, and title; the layer from 4,548 elements to 3,452 and from 1,746 references to 650. At Fit, near zoom, and back, every counter in view pointed at the active tier (530, 9, and 127 in view), and the near faces drawn. A click selected the counter's hex; a counter took keyboard focus with its name. In Replay, three steps back and to the last patched the layer (versions 2 to 4), and every counter stayed one reference, rightly pointed. On the Lab's 40,392-hex map, 600 counters one reference each.
 - **Tests:** Node viewport tests for the rewrite, the kept faces, the pointing, and a counter written in place left alone.
 
+## 9. Results in the user's Chrome (2026-11-03)
+
+The runs are the Tile Pacing Plan's section 9: one `mapProbeSuite()` on Goodwood and one Measure on the Lab's 40,392-hex map with 600 counters, each with both plans' changes on and off (`?pace=0&counters=three`). The two plans' changes were on and off together, so the deep zoom's gain is theirs jointly.
+
+- **Elements:** the Lab's page with 600 counters went from 7,447 to 6,247 elements at Fit; Goodwood's counter layer from 4,548 to 3,452.
+- **Step 2 is not needed (P2).** Its trigger was a deep zoom's landing frame more than 30 ms above the run with no counters. On Goodwood, with counters out of view hidden, both had no long frame; on the Lab both had 59 ms.
+- **A new finding: many detailed counters in view.** Five steps in on the Lab, where almost every counter is in view, a drag ran at 15.9 to 17.7 frames per second with them, and 78.7 to 81.9 without; all drawn, 8.2 to 9. Hiding those out of view cannot help when they are all in view, and step 1 changed it little. Goodwood's drag five steps in held 83 to 85 with all 548 drawn: many of its counters, as the Allied side sees them, are "?" counters, where the Lab's are full squad, leader, and machine-gun faces with their values and figure art. A game with hundreds of full faces on screen at middle zoom would meet the Lab's case; step 3, a canvas for far and middle tiers, is the answer this plan has for it, and it waits on the user's ruling (P3).
+
 ## Related documents
 
 - [ASL Map Studio Goodwood Lab Techniques Analysis](<ASL Map Studio Goodwood Lab Techniques Analysis.md>)
