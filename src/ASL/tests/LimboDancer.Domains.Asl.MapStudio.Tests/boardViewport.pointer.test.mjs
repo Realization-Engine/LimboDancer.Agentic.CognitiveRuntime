@@ -5,7 +5,8 @@ import { test } from "node:test";
 const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/wwwroot/js/boardViewport.js", import.meta.url));
 const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
     committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel, hexCentre, fragmentBounds, pointsBounds, boxesMeet, nearGridPath,
-    nearTilesInAddress, cullOn, probePlan, frameBreakdown, withGridInTiles } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+    nearTilesInAddress, cullOn, probePlan, frameBreakdown, withGridInTiles, pacedBatch, tilesPerFrame, destinationTiles, oneReference,
+    pointAtTier } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -134,6 +135,77 @@ test("near tiles keep the grid in the tiles at near zoom", () => {
     assert.equal(tileLines(false, "te", true, true, null, true), "");
     assert.equal(nearTilesInAddress(["http://localhost/games/play?game=g&present=bounded&near=tiles"]), true);
     assert.equal(nearTilesInAddress(["http://localhost/games/play?present=bounded"]), false);
+});
+
+// Tile Pacing Plan, step 1: a few tiles a frame, nearest the middle first; a small batch at once.
+test("decoded tiles are shown a few a frame, those nearest the middle first", () => {
+    const entry = (name, x, y) => ({ name, tile: { x, y, width: 512, height: 512 } });
+    const centre = { x: 1024, y: 1024 };
+    const few = [entry("a", 0, 0), entry("b", 512, 512)];
+    assert.deepEqual(pacedBatch(few, centre, 4), { shown: few, rest: [] });
+
+    const many = [entry("far", 4096, 4096), entry("middle", 768, 768), entry("near", 512, 512), entry("corner", 0, 0), entry("edge", 2048, 0),
+        entry("next", 1024, 1024)];
+    const { shown, rest } = pacedBatch(many, centre, 4);
+    assert.deepEqual(shown.map(item => item.name), ["middle", "near", "next", "corner"]);
+    assert.deepEqual(rest.map(item => item.name).sort(), ["edge", "far"]);
+    assert.equal(tilesPerFrame, 4);
+});
+
+// Tile Pacing Plan, step 2: the destination's tiles once a zoom has passed the next finer level than the one drawn, at most 48.
+test("a zoom fetches its destination's tiles only once past the next finer level", () => {
+    // Goodwood's grid: 11,700 by 12,449 cells, six levels.
+    const index = { width: 11700, height: 12449, tileSize: 512, levels: 6 };
+    const visible = { x: 5000, y: 5000, width: 386, height: 311 };
+    // At 2.36 device pixels a cell the destination is level 0; from level 4 that is past level 3.
+    const deep = destinationTiles(index, visible, 2.36, 4);
+    assert.equal(deep.level, 0);
+    assert.ok(deep.tiles.length > 0 && deep.tiles.length <= 48);
+    assert.ok(deep.tiles.every(tile => tile.level === 0));
+    // One level down is prefetchFiner's, and an unknown drawn level asks for nothing.
+    assert.equal(destinationTiles(index, visible, 0.12, 4), null);
+    assert.equal(destinationTiles(index, visible, 2.36, null), null);
+    // A wide view at level 0 is cut to the bound.
+    assert.equal(destinationTiles(index, { x: 0, y: 0, width: 11700, height: 12449 }, 1.5, 5).tiles.length, 48);
+});
+
+// Counter Drawing Plan, step 1: one reference a counter, pointed at the active tier, with the three faces kept on it.
+function fakeUse(tier, href) {
+    const values = new Map([["data-tier", tier], ["href", href]]);
+    const use = {
+        localName: "use",
+        getAttribute(name) { return values.has(name) ? values.get(name) : null; },
+        setAttribute(name, value) { values.set(name, String(value)); },
+        removeAttribute(name) { values.delete(name); },
+        remove() { use.removed = true; },
+        removed: false,
+    };
+    return use;
+}
+
+test("a counter's three tier references become one, pointed at the active tier", () => {
+    const far = fakeUse("far", "#face-far");
+    const mid = fakeUse("mid", "#face-mid");
+    const near = fakeUse("near", "#face-near");
+    const title = { localName: "title", getAttribute() { return null; } };
+    const counter = { children: [title, far, mid, near] };
+    assert.equal(oneReference(counter, "near"), true);
+    assert.equal(far.removed, false);
+    assert.equal(mid.removed, true);
+    assert.equal(near.removed, true);
+    assert.equal(far.getAttribute("data-tier"), null);
+    assert.equal(far.getAttribute("data-tier-ref"), "");
+    assert.equal(far.getAttribute("href"), "#face-near");
+    assert.deepEqual(["far", "mid", "near"].map(tier => far.getAttribute(`data-${tier}`)), ["#face-far", "#face-mid", "#face-near"]);
+
+    // A change of tier points it again; pointing it where it already points changes nothing.
+    assert.equal(pointAtTier(far, "far"), true);
+    assert.equal(far.getAttribute("href"), "#face-far");
+    assert.equal(pointAtTier(far, "far"), false);
+    assert.equal(pointAtTier(far, "huge"), false);
+
+    // A counter written in place (one tier group each, not references) is left as it is.
+    assert.equal(oneReference({ children: [title] }, "mid"), false);
 });
 
 // Item 4: with no whole-map grid in the page, the layers the probe puts back keep the grid the switch shows.

@@ -46,8 +46,8 @@
     private string? sentBoundaries;
 
     /// <summary>
-    /// The Campaign game whose Formation boundaries the map's tiles carry under ?present=bounded, or null (Screen-Bounded Map Analysis,
-    /// section 3.1). Without that switch the page draws the boundaries in its marks, as before.
+    /// The Campaign game whose Formation boundaries the map's tiles carry on the screen-bounded map, the default, or null (Screen-Bounded Map
+    /// Analysis, section 3.1). With ?present=classic the page draws the boundaries in its marks, as before.
     /// </summary>
     [Parameter]
     public string? TileBoundaries { get; set; }

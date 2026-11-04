@@ -48,6 +48,10 @@ export function create(host, dotnet) {
         nearTiles: nearTilesInAddress(),
         // Item 2: whether counters and marks out of view are hidden; null follows ?present=bounded (cullOn), a page or the probe sets it.
         cull: null, culled: false,
+        // Tile Pacing Plan, step 1: decoded tiles shown a few a frame; ?pace=0 shows each as it decodes, as before.
+        pace: !addressSays(addressesNow(), "pace", "0"),
+        // Counter Drawing Plan, step 1 (decision P1): one reference a counter; ?counters=three keeps the server's three.
+        oneReference: !addressSays(addressesNow(), "counters", "three"),
     };
     state.panShown = state.pan;
     if (state.pan) {
@@ -470,6 +474,13 @@ function updateTiles(state) {
     }
 
     tiles.level = view.level;
+    // Tile Pacing Plan, step 2: once the gesture has rested and the tiles in view are asked for, what the destination fetched and they did
+    // not take is let go.
+    if (!state.gesturing && tiles.ahead?.size) {
+        tiles.ahead.clear();
+        tiles.aheadLevel = null;
+    }
+
     prefetchFiner(state, tiles, view.level, size);
 }
 
@@ -499,8 +510,8 @@ function prefetchFiner(state, tiles, level, size) {
     }
 }
 
-function tileUrl(state, tiles, tile) {
-    const lines = tiles.lines ?? "";
+function tileUrl(state, tiles, tile, tileLinesName = tiles.lines) {
+    const lines = tileLinesName ?? "";
     const game = lines.includes("b") && state.boundaryGame
         ? `${tiles.query ? "&" : "?"}game=${encodeURIComponent(state.boundaryGame)}` : "";
     return `${tiles.baseUrl}/tile-${tiles.variant}${lines}-${tile.level}-${tile.column}-${tile.row}.png${tiles.query}${game}`;
@@ -514,22 +525,17 @@ function tileImage(state, tiles, tile, key) {
     }
 
     const url = tileUrl(state, tiles, tile);
-    const show = () => {
-        if (tiles.pool.get(key) === image) {
-            image.setAttribute("href", url);
-            // Once the last new tile shows, the next pass drops the old ones kept under it.
-            if (!tiles.sweep) {
-                tiles.sweep = true;
-                requestAnimationFrame(() => {
-                    tiles.sweep = false;
-                    updateTiles(state);
-                });
-            }
-        }
-    };
-    const loader = new Image();
-    loader.src = url;
-    loader.decode().then(show, show);
+    const ready = () => queueTile(state, tiles, { image, url, key, tile });
+    // Tile Pacing Plan, step 2: a tile the zoom's destination fetched ahead is already decoding, or decoded; it is not fetched again.
+    const ahead = tiles.ahead?.get(url);
+    if (ahead) {
+        tiles.ahead.delete(url);
+        ahead.decoded.then(ready, ready);
+    } else {
+        const loader = new Image();
+        loader.src = url;
+        loader.decode().then(ready, ready);
+    }
     // The coarse tile first, then finer levels above it.
     if (tile.level === tiles.index.levels - 1) {
         tiles.group.insertBefore(image, tiles.group.firstChild);
@@ -538,6 +544,147 @@ function tileImage(state, tiles, tile, key) {
     }
 
     return image;
+}
+
+// Tile Pacing Plan, step 1 (decision T1): decoded tiles wait in a queue, and each animation frame shows at most this many, those nearest the
+// middle of the board on screen first; a batch no larger is shown at once, so a drag over painted ground is not slowed. After a big zoom some
+// 16 to 25 tiles were shown in one frame, and that frame's commit waited about 295 ms in the user's trace (Goodwood Lab Techniques Analysis,
+// section 5.6).
+export const tilesPerFrame = 4;
+
+// The tiles to show this frame and those left for the next: all of them when there are no more than the bound, else the bound's number
+// nearest the centre.
+export function pacedBatch(ready, centre, bound = tilesPerFrame) {
+    if (ready.length <= bound) {
+        return { shown: ready, rest: [] };
+    }
+
+    const distance = entry => {
+        const dx = entry.tile.x + entry.tile.width / 2 - centre.x;
+        const dy = entry.tile.y + entry.tile.height / 2 - centre.y;
+        return dx * dx + dy * dy;
+    };
+    const sorted = [...ready].sort((a, b) => distance(a) - distance(b));
+    return { shown: sorted.slice(0, bound), rest: sorted.slice(bound) };
+}
+
+function queueTile(state, tiles, entry) {
+    if (tiles.pool.get(entry.key) !== entry.image) {
+        return;
+    }
+
+    if (!state.pace) {
+        showTiles(state, tiles, [entry]);
+        return;
+    }
+
+    tiles.ready ??= [];
+    tiles.ready.push(entry);
+    if (!tiles.pumping) {
+        tiles.pumping = true;
+        requestAnimationFrame(() => pumpTiles(state, tiles));
+    }
+}
+
+function pumpTiles(state, tiles) {
+    tiles.pumping = false;
+    // A tile dropped from the pool, or replaced in it, while it waited is not shown.
+    const waiting = (tiles.ready ?? []).filter(entry => tiles.pool.get(entry.key) === entry.image);
+    const size = paneSize(state);
+    const visible = state.box ? visibleBox(state.box, size) : { x: 0, y: 0, width: 0, height: 0 };
+    const { shown, rest } = pacedBatch(waiting, { x: visible.x + visible.width / 2, y: visible.y + visible.height / 2 });
+    tiles.ready = rest;
+    showTiles(state, tiles, shown);
+    if (rest.length > 0) {
+        tiles.pumping = true;
+        requestAnimationFrame(() => pumpTiles(state, tiles));
+    }
+}
+
+function showTiles(state, tiles, entries) {
+    if (entries.length === 0) {
+        return;
+    }
+
+    for (const entry of entries) {
+        entry.image.setAttribute("href", entry.url);
+    }
+
+    // The probe's record of how the tiles came in (Tile Pacing Plan, section 3).
+    if (state.tileStats) {
+        state.tileStats.frames++;
+        state.tileStats.mostInAFrame = Math.max(state.tileStats.mostInAFrame, entries.length);
+    }
+
+    // Once the last new tile shows, the next pass drops the old ones kept under it.
+    if (!tiles.sweep) {
+        tiles.sweep = true;
+        requestAnimationFrame(() => {
+            tiles.sweep = false;
+            updateTiles(state);
+        });
+    }
+}
+
+// Tile Pacing Plan, step 2: during a wheel gesture whose box has passed the next finer level (which prefetchFiner fetches), the tiles of the
+// level the box calls for, for the part of the board on screen, are fetched and decoded at low priority, at most 48 for each level, each
+// once; tileImage takes them when the gesture rests. Those the rest does not use are let go then.
+const destinationBound = 48;
+
+// The destination's level and tiles, or null when the zoom has not passed the next finer level than the one drawn.
+export function destinationTiles(index, visible, devicePixelsPerCell, drawnLevel) {
+    if (drawnLevel === null || drawnLevel === undefined) {
+        return null;
+    }
+
+    const { level } = tilesInView(index, visible, devicePixelsPerCell);
+    if (level >= drawnLevel - 1) {
+        return null;
+    }
+
+    const tiles = tilesAtLevel(index, visible, level).tiles;
+    return { level, tiles: tiles.slice(0, destinationBound) };
+}
+
+function prefetchDestination(state) {
+    const tiles = state.tiles;
+    if (!state.bounded || !tiles || !state.gesturing || typeof globalThis.Image !== "function"
+        || performance.now() - (state.lastZoom ?? -Infinity) > gestureRest) {
+        return;
+    }
+
+    const size = paneSize(state);
+    if (!size.width || !size.height) {
+        return;
+    }
+
+    const scale = Math.min(size.width / state.box.width, size.height / state.box.height) * (globalThis.devicePixelRatio || 1);
+    const destination = destinationTiles(tiles.index, visibleBox(state.box, size), scale, tiles.level);
+    if (!destination) {
+        return;
+    }
+
+    tiles.ahead ??= new Map();
+    if (tiles.aheadLevel !== destination.level) {
+        // A deeper level replaces a shallower one: what it fetched is let go, so at most one level's tiles are held.
+        tiles.ahead.clear();
+        tiles.aheadLevel = destination.level;
+    }
+
+    // The lines the destination will draw: at near zoom the near grid's variant, unless one tile set serves every zoom (G1).
+    const lines = tileLines(state.bounded, tiles.variant, state.gridShown, destination.level === 0 && scale > 1, state.boundaryGame, state.nearTiles);
+    for (const tile of destination.tiles) {
+        const url = tileUrl(state, tiles, tile, lines);
+        if (tiles.ahead.has(url)) {
+            continue;
+        }
+
+        const image = new Image();
+        image.fetchPriority = "low";
+        image.src = url;
+        // A failed decode is no error here: tileImage shows the tile when it is asked for, and a failure then is handled as before.
+        tiles.ahead.set(url, { image, decoded: image.decode().catch(() => undefined) });
+    }
 }
 
 function setTileVariant(state, visible) {
@@ -578,6 +725,11 @@ export function boundedInAddress(addresses = [globalThis.location?.href, globalT
 // ?near=tiles in the address, or in the address the page was opened with, as ?tiles=0.
 export function nearTilesInAddress(addresses = [globalThis.location?.href, globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.name]) {
     return addressSays(addresses, "near", "tiles");
+}
+
+// The address now and the address the page was opened with (Replay rewrites its address before the map loads).
+function addressesNow() {
+    return [globalThis.location?.href, globalThis.performance?.getEntriesByType?.("navigation")?.[0]?.name];
 }
 
 function addressSays(addresses, name, value) {
@@ -767,12 +919,18 @@ function cullToView(state) {
 
     const box = drawnBox(state);
     const units = state.svg.querySelector("#layer-units");
+    const tier = units?.getAttribute("data-active-tier");
     for (const fragment of units?.children ?? []) {
         if (on && !cullBounds.has(fragment)) {
             cullBounds.set(fragment, fragmentBounds(index, fragment.getAttribute("data-hex")));
         }
 
+        const wasOut = fragment.getAttribute("data-out") === "true";
         markOut(fragment, on ? cullBounds.get(fragment) : null, box);
+        // Counter Drawing Plan, step 1: a counter coming back into view is pointed at the tier it missed while out of view.
+        if (wasOut && tier && fragment.getAttribute("data-out") !== "true") {
+            pointFragment(fragment, tier);
+        }
     }
 
     const marks = state.svg.querySelector("#layer-marks");
@@ -785,6 +943,88 @@ function cullToView(state) {
     }
 
     state.culled = on;
+}
+
+// Counter Drawing Plan, step 1 (decision P1): the server writes each counter with three references, one a tier, and CSS shows the active one.
+// Chrome copies what each reference points at, so 548 counters came to about 14,000 elements, all restyled when a zoom changed the tier or
+// moved most counters into or out of view (Goodwood Lab Techniques Analysis, section 5.6). Here, as the layer or a patch arrives, each
+// counter keeps one reference, pointed at the active tier's face, with the three faces' addresses on it; a change of tier points the counters
+// in view, and a counter coming into view is pointed then. The counter's group, its id, role, tab stop, name, and title are untouched.
+export function oneReference(counter, tier) {
+    const uses = [...(counter.children ?? [])].filter(child => child.localName === "use" && child.getAttribute("data-tier"));
+    if (uses.length < 2) {
+        return false;
+    }
+
+    const kept = uses[0];
+    for (const use of uses) {
+        kept.setAttribute(`data-${use.getAttribute("data-tier")}`, use.getAttribute("href"));
+    }
+
+    for (const use of uses.slice(1)) {
+        use.remove();
+    }
+
+    kept.removeAttribute("data-tier");
+    kept.setAttribute("data-tier-ref", "");
+    pointAtTier(kept, tier);
+    return true;
+}
+
+// Points a counter's one reference at a tier's face; false when it already points there or has no face for the tier.
+export function pointAtTier(use, tier) {
+    const href = use.getAttribute(`data-${tier}`);
+    if (!href || use.getAttribute("href") === href) {
+        return false;
+    }
+
+    use.setAttribute("href", href);
+    return true;
+}
+
+function oneReferenceIn(state, root, tier) {
+    if (!state.oneReference || typeof root?.querySelectorAll !== "function") {
+        return;
+    }
+
+    for (const counter of root.querySelectorAll("[data-unit-id]")) {
+        oneReference(counter, tier);
+    }
+}
+
+function pointFragment(fragment, tier) {
+    if (typeof fragment.querySelectorAll !== "function") {
+        return;
+    }
+
+    for (const use of fragment.querySelectorAll("use[data-tier-ref]")) {
+        pointAtTier(use, tier);
+    }
+}
+
+// The tier a counter layer shows at the present zoom, for a layer not yet in the page.
+function activeTier(state, layer) {
+    return state.box ? unitTier(Number(layer.getAttribute("data-face-size")) || 0, paneSize(state).width, state.box.width) : "mid";
+}
+
+// After a change of tier, the counters in view are pointed at it; those out of view are pointed as cullToView brings them back.
+function pointTier(state) {
+    if (!state.tierPending) {
+        return;
+    }
+
+    state.tierPending = false;
+    const layer = state.svg.querySelector("#layer-units");
+    const tier = layer?.getAttribute("data-active-tier");
+    if (!tier) {
+        return;
+    }
+
+    for (const fragment of layer.children ?? []) {
+        if (fragment.getAttribute("data-out") !== "true") {
+            pointFragment(fragment, tier);
+        }
+    }
 }
 
 function markOut(element, bounds, box) {
@@ -1415,13 +1655,17 @@ function setUnits(state, markup, version) {
     if (version !== undefined && version !== null) {
         group.setAttribute("data-units-version", String(version));
     }
-    state.svg.appendChild(document.importNode(group, true));
+    const imported = document.importNode(group, true);
+    // Counter Drawing Plan, step 1: rewritten before the layer joins the page, where the change costs nothing.
+    oneReferenceIn(state, imported, activeTier(state, imported));
+    state.svg.appendChild(imported);
     if (state.highlight?.isConnected) {
         state.svg.appendChild(state.highlight);
     }
 
     updateUnitTier(state);
     cullToView(state);
+    pointTier(state);
     reportMeasuredScene(state);
 }
 
@@ -1454,8 +1698,11 @@ function applyUnitPatch(state, patch) {
         layer.querySelector(`#${CSS.escape(removal)}`)?.remove();
     }
 
+    const patchTier = layer.getAttribute("data-active-tier") ?? activeTier(state, layer);
     patch.upserts.forEach((upsert, index) => {
         const node = globalThis.document.importNode(parsed[index], true);
+        // Counter Drawing Plan, step 1: a fragment the patch brings is rewritten before it is attached, as the whole layer is.
+        oneReferenceIn(state, node, patchTier);
         const existing = layer.querySelector(`:scope > #${CSS.escape(upsert.id)}`);
         if (existing) {
             existing.replaceWith(node);
@@ -1479,6 +1726,7 @@ function applyUnitPatch(state, patch) {
 
     updateUnitTier(state);
     cullToView(state);
+    pointTier(state);
     return true;
 }
 
@@ -1611,7 +1859,8 @@ async function runSuite() {
     console.table(records.map(record => ({
         run: record.name, drawn: record.drawn, nearTiles: record.nearTiles, fps: record.drag.framesPerSecond, median: record.drag.medianFrameMs,
         longest: record.drag.longestFrameMs, renderMs: record.drag.renderMs, scriptMs: record.drag.scriptMs, wheelSharp: record.wheel.sharpMs,
-        wheelLongest: record.wheel.longestAnimationFrameMs,
+        wheelLongest: record.wheel.longestAnimationFrameMs, wheelTileFrames: record.wheel.tilesShown?.frames,
+        wheelTilesMostInAFrame: record.wheel.tilesShown?.mostInAFrame,
     })));
     return records;
 }
@@ -1751,6 +2000,8 @@ async function runProbe(state, options = {}) {
     const dragStart = performance.now();
     const dragTimes = [dragStart];
     const commitsBeforeDrag = state.commits ?? 0;
+    // Tile Pacing Plan, section 3: the frames that showed new tiles, and the most shown in one.
+    state.tileStats = { frames: 0, mostInAFrame: 0 };
     pointer("pointerdown", cx, cy);
     for (let elapsed = 0; elapsed < dragMs; elapsed = performance.now() - dragStart) {
         pointer("pointermove", cx + distance * elapsed / dragMs, cy);
@@ -1764,7 +2015,8 @@ async function runProbe(state, options = {}) {
     const dragCommits = (state.commits ?? 0) - commitsBeforeDrag;
     const dragSharpMs = await untilSharp(state, upAt, options.sharpWaitMs);
     await new Promise(resolve => setTimeout(resolve, 50));
-    const drag = { ...summarizeFrames(dragTimes), settleMs: Math.round(settledAt - upAt), commits: dragCommits, sharpMs: dragSharpMs, ...loafSince(dragStart) };
+    const drag = { ...summarizeFrames(dragTimes), settleMs: Math.round(settledAt - upAt), commits: dragCommits, sharpMs: dragSharpMs, ...loafSince(dragStart),
+        tilesShown: { ...state.tileStats } };
 
     // A burst of wheel events in one task, as a trackpad sends them, then the frames until the map settles. By default it alternates in
     // and out; `wheel: "in"` or `"out"` zooms one way, so it passes the painted scale and commits as a real zoom does.
@@ -1772,6 +2024,7 @@ async function runProbe(state, options = {}) {
     await frame();
     const wheelStart = performance.now();
     const commitsBeforeWheel = state.commits ?? 0;
+    state.tileStats = { frames: 0, mostInAFrame: 0 };
     for (let index = 0; index < (options.wheelEvents ?? 20); index++) {
         const deltaY = options.wheel === "in" ? -100 : options.wheel === "out" ? 100 : index % 2 ? 100 : -100;
         state.svg.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY, clientX: cx, clientY: cy }));
@@ -1785,7 +2038,8 @@ async function runProbe(state, options = {}) {
     await frame();
     await new Promise(resolve => setTimeout(resolve, 50));
     const wheel = { settleMs: Math.round(wheelTimes[2] - wheelStart), commits: (state.commits ?? 0) - commitsBeforeWheel, sharpMs: wheelSharpMs,
-        ...loafSince(wheelStart) };
+        ...loafSince(wheelStart), tilesShown: { ...state.tileStats } };
+    state.tileStats = null;
 
     // The label layer switch: off and on again, as the page's layer choice does it.
     setBox(state, saved.box, saved.fitted);
@@ -1805,7 +2059,8 @@ async function runProbe(state, options = {}) {
     // What the run measured, read before the map's own choices are put back.
     const counted = state.svg.querySelectorAll("#layer-units [data-unit-id]").length;
     const drawn = counted === 0 || options.units === false ? "none" : cullOn(state.cull, state.bounded) ? "in view" : "all";
-    const measured = { name: options.name ?? null, drawn, nearTiles: state.bounded ? state.nearTiles : null, near: state.near, elements: state.svg.getElementsByTagName("*").length };
+    const measured = { name: options.name ?? null, drawn, nearTiles: state.bounded ? state.nearTiles : null, near: state.near, elements: state.svg.getElementsByTagName("*").length,
+        pace: state.pace, oneReference: state.oneReference };
     setBox(state, saved.box, saved.fitted);
     if (hide.length) {
         setVisible(state, shownBefore);
@@ -1858,6 +2113,8 @@ function updateUnitTier(state) {
     const tier = unitTier(Number(layer.getAttribute("data-face-size")) || 0, paneSize(state).width, state.box.width);
     if (layer.getAttribute("data-active-tier") !== tier) {
         layer.setAttribute("data-active-tier", tier);
+        // Counter Drawing Plan, step 1: the counters in view are pointed at the new tier once the commit knows which are in view (pointTier).
+        state.tierPending = true;
     }
 }
 
@@ -1917,6 +2174,11 @@ function flushBox(state) {
 
     // Taken before any write, while the layout of the last frame still holds, so reading it costs nothing (A2).
     takeRect(state);
+    // Tile Pacing Plan, step 2: a zoom under way fetches the tiles it heads for, once a frame at most.
+    if (state.gesturing) {
+        prefetchDestination(state);
+    }
+
     let shown = state.box;
     if (panOn(state)) {
         const size = paneSize(state);
@@ -1957,6 +2219,7 @@ function flushBox(state) {
     updateTiles(state);
     updateNearGrid(state);
     cullToView(state);
+    pointTier(state);
 }
 
 // A gesture starts: the drawing gets its own compositor layer for the gesture's length (site.css, .board-host.gesturing).
