@@ -1130,6 +1130,7 @@ public static class ScenarioA1CloseCombatCalculator
                 }
 
                 // A20.22, A19.35 (ruling R14.4): a capture attempt adds one, or subtracts one against an Inexperienced unit.
+                // Legacy resolver: W-A25.63 replaces this per defender with ScenarioA1ItalianCaptureCalculator.CaptureModifier.
                 if (attack.Capture == true)
                 {
                     own.Add(Inexperienced(defender.Facts, reference) ? new FireModifier("capture-vs-inexperienced", -1m, "A19.35") : new FireModifier("capture", 1m, "A20.22"));
