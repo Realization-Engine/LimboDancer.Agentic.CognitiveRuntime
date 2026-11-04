@@ -123,6 +123,36 @@ public sealed class TileCacheTests
         }
     }
 
+    // The removal of a board's old versions leaves a folder made after the switch: a removal that ran late deleted the folder of the version
+    // another cache had moved on to (KeepsTilesOnDiskForTheCurrentVersion failed so in CI on 2026-11-03 and 2026-11-04).
+    [Fact]
+    public async Task RemovesOnlyTheVersionsMadeBeforeTheSwitch()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "tile-versions-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(folder, "old"));
+            Directory.CreateDirectory(Path.Combine(folder, "kept"));
+            await Task.Delay(50);
+            var switched = DateTime.UtcNow;
+            await Task.Delay(50);
+            Directory.CreateDirectory(Path.Combine(folder, "newer"));
+
+            TileCache.RemoveOlderVersions(folder, "kept", switched);
+
+            Assert.Equal(["kept", "newer"], Directory.GetDirectories(folder).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+            // A board folder that is not there yet is no error.
+            TileCache.RemoveOlderVersions(Path.Combine(folder, "absent"), "kept", switched);
+        }
+        finally
+        {
+            if (Directory.Exists(folder))
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+    }
+
     // Screen-Bounded Map Analysis, section 3.1: tiles with lines name them, and keep apart from tiles without.
     [Fact]
     public void LinedFileNamesReadBackAndHoldTheirOwnTiles()

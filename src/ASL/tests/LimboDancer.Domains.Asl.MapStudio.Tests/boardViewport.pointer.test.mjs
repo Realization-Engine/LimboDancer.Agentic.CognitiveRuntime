@@ -6,7 +6,7 @@ const source = await readFile(new URL("../../LimboDancer.Domains.Asl.MapStudio/w
 const { create, unitTier, summarizeFrames, labelsInView, tilesInView, tileVariant, layersAfterHide, visibleBox, tilesOffInAddress,
     committedBox, gestureTransform, needsCommit, transformOffInAddress, gestureCss, tilesSharp, tileLines, boundedInAddress, tilesAtLevel, hexCentre, fragmentBounds, pointsBounds, boxesMeet, nearGridPath, nearDotsPath,
     nearTilesInAddress, cullOn, probePlan, frameBreakdown, withGridInTiles, pacedBatch, tilesPerFrame, destinationTiles, oneReference,
-    pointAtTier } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
+    pointAtTier, labelsAsData, latticeWanted } = await import(`data:text/javascript;base64,${source.toString("base64")}`);
 
 let currentSvg = null;
 
@@ -214,6 +214,20 @@ test("the grid carried by the tiles stays among the shown layers", () => {
     assert.deepEqual(withGridInTiles(["exact-tiles", "labels"], false, false), ["exact-tiles", "labels"]);
     assert.deepEqual(withGridInTiles(["exact-tiles", "labels"], true, true), ["exact-tiles", "labels"]);
     assert.deepEqual(withGridInTiles(["grid", "labels"], true, false), ["grid", "labels"]);
+});
+
+// Styled and Hex Facts Views Plan, step 1: labels as data in the Exact, Styled, and Hex facts views, and the lattice for a view without tiles.
+test("the Styled and Hex facts views take labels as data and the board's lattice", () => {
+    assert.equal(labelsAsData("render/bd01/v/exact", "labels"), true);
+    assert.equal(labelsAsData("render/bd01/v/styled", "labels"), true);
+    assert.equal(labelsAsData("render/bd01/v/hexfacts", "labels"), true);
+    assert.equal(labelsAsData("render/bd01/v/comparison", "labels"), false);
+    assert.equal(labelsAsData("render/bd01/v/styled", "grid"), false);
+    assert.equal(latticeWanted("render/bd01/v/styled", false, true), true);
+    assert.equal(latticeWanted("render/bd01/v/hexfacts", false, true), true);
+    assert.equal(latticeWanted("render/bd01/v/exact", true, true), false);
+    assert.equal(latticeWanted("render/bd01/v/styled", false, false), false);
+    assert.equal(latticeWanted("render/bd01/v/comparison", false, true), false);
 });
 
 // Item 2: counters out of view are hidden where a page asks for it, else with ?present=bounded.

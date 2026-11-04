@@ -130,6 +130,15 @@ Expected cost on the server: a level-0 tile walks only the features that meet it
 - **Benefit against noise:** three runs, the first dropped, the same window and display.
 - **Results, backlog, outside outputs:** results in a section of this plan; the backlog's row "Raster tiles for the Styled and Hex facts views" updated; my Studio's build in `asl-gate-work/studio-6670`, and the reference tool's headless browser profile in `asl-gate-work`, cleaned as usual.
 
+## 9. As built
+
+### Steps 1 and 1b (2026-11-04, PR 119)
+
+- **Step 1.** `labelsAsData` takes the Styled and Hex facts views' base addresses, so both fetch `labels.json` and paint one canvas; the Comparison view keeps its texts. The server answers `tiles.json` for the Styled and Hex facts views (and still no tiles for them), and the viewport takes it as the board's lattice (`latticeWanted`, `state.lattice`), from which `cullToView` hides counters and marks out of view.
+- **Step 1b.** `MapStylePicker` (beside the map's rotate button in Play and Replay) offers Exact, Styled when the board has a Styled input, and Hex facts; it makes a VASL board's Styled input before showing it, keeps the choice in the browser (`studio.map.style`), and writes it into the address (`?style=`), which wins over the kept one when a page opens. The hand-over map keeps the Exact view. Play draws the Formation boundaries as a path outside the Exact view, since only the Exact view's tiles carry them.
+- **Checked in my Studio at 6670** on the Goodwood game (behind "show my view"): in Hex facts and in Styled, all 548 counters, labels as data (no texts; one canvas once readable), the lattice fetched, 447 of 530 counter fragments hidden zoomed in, the boundaries as a path; the style kept across a reload (no `style` in the address) and in Replay; the hand-over map in the Exact view. The Hex facts view still holds about 92,700 elements, its vector layer, until step 2.
+- **Tests:** Node viewport tests for labels as data and the lattice by view; `MapStylePickerTests` (the views offered, a choice raised, kept, and written into the address, the address over the kept choice); `RenderEndpointTests` for the index of the Styled and Hex facts views; the Play and Replay page tests.
+
 ## Related documents
 
 - [ASL Map Studio Screen-Bounded Map Analysis](<ASL Map Studio Screen-Bounded Map Analysis.md>)
