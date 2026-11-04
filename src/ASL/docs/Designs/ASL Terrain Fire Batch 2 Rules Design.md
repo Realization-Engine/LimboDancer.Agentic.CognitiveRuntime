@@ -219,7 +219,7 @@ The six new Rules files implement the models, calculator and contract for each c
 
 The typed marsh calculator treats bridge presence as immaterial for a ground-Location effect or a unit known to be off the bridge. The contract still requires its declared public context and masks private position without a target anchor. Independent review found and corrected that unnecessary typed requirement, and aligned the new cards with their saved catalog version, ELR, phasing side and friendly edges. The reviewer approved the corrected code and tests with no remaining findings.
 
-The inventory records that review in each claim's note and names the sub-agent reviewer. Claim state stays built until merge because `claim_check.py` treats reviewed claims as released holds, which would otherwise leave the unmerged implementation files unheld. User PR review remains pending.
+The inventory records the supplemental sub-agent review in each claim's note. Claude remains the assigned reviewer and confirmed the rules in PR 124. Claim state stays built until merge to retain the required file holds; Claude will then mark the claims reviewed. User merge approval remains pending.
 
 Studio 6680 loaded the actual boards and these positions before the focused tests were authored:
 
@@ -234,3 +234,11 @@ The final strict Studio build passed with zero warnings/errors after the review 
 Focused validation covered 52 distinct Rules cases, including the existing marsh-ordnance case and contract-registry validation, plus 30 bundle checks (28 new verdict checks and two structural methods). The first Rules run passed 49 of 51; two test-data binding errors were corrected from integer `1` to nullable-double `1d`. The affected bridge method plus registry check then passed all 11 cases. There was no rule-result failure. `verify.ps1` records the complete named-method filter and checks the result files as well as process exit status.
 
 Evidence is retained under `E:/Archive/GitHub/dlandi/asl-gate-work-codex`: `terrain-fire-build.log`, `terrain-fire-rules-first.trx`, `test-classes/Rules.log`, `test-classes/Rules.trx`, `test-classes/Play.log`, `test-classes/Play.trx`, and `terrain-fire-rule-sites.txt`. Source reading is under `batch2-reading`. Inventory, coverage, backlog and generated status/minigame/count summaries record delivery. CI and PR status are recorded on the PR; this document does not claim merge approval or a new batch gate.
+
+### PR 124 review corrections
+
+Claude's review confirmed the rule decisions and compatibility. Main was merged with the prescribed document settlement tool: main retains backlog section 99 and this batch moves to section 100. The inventory and its delivery script restore Claude as Reviewer for both claims. The building contract now maps absent or unrecognized profile/location choices to null rather than a known exceptional profile; required-fact validation continues to reject them before calculation. The marsh contract already used nullable mappings and needs no change. This is a bounded conversion cleanup with no new scans, caches or production behavior.
+
+The disclosure concern for announced Bypass/entry facts is recorded in backlog section 100 for a separate coordinated review across building, Factory and support-weapon possession contracts. This PR preserves their existing disclosure model and the inventory's existing downstream wiring rows.
+
+`verify_review.ps1` passed the affected contract-validation method and all 12 building-bundle checks, with locked restore and warnings as errors. Claim scope, generated status/minigame summaries and inventory/coverage counts pass after the merge. Original test evidence was preserved as `terrain-fire-original-Rules.log/.trx` and `terrain-fire-original-Play.log/.trx`; the review results occupy `test-classes/Rules.log/.trx` and `test-classes/Play.log/.trx`. Temporary binaries were removed after the checks. The code cleanup changes no reachable Workbench outcome, so the existing Studio proof remains applicable.

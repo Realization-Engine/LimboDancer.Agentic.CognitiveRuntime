@@ -1831,6 +1831,7 @@ The approved [Rules design](<Designs/ASL Terrain Fire Batch 2 Rules Design.md>) 
 | Item | Rules and physical pages | Separate work | Current boundary |
 |---|---|---|---|
 | Production terrain-fire wiring and old-record compatibility | B23.31 p. 136; B16.31 p. 130 | Inventory W-B23.31 and W-B16.31, with W-B23.74 coordination | New calculator verdicts do not change current callers or replay |
+| Disclosure of announced Bypass and entry facts | B23.31 p. 136; B23.741 p. 139 | Separate coordinated disclosure review of building, Factory and support-weapon possession contracts, raised in PR 124 | Existing Owner disclosure retained here; review which announced facts the opposing side may supply consistently across these contracts |
 | Deluxe hexside Residual FP | J2.23 p. 602; B23.31 p. 136 | Deluxe placement, affected hexside and TEM review | Deluxe Bypass Residual is explicitly not-evaluated by the building contract |
 | Full marsh conversion, movement and scenario authoring | B16.6-B16.8 p. 130 | Existing water and weather work, passes 125 and 95 | Only HE applicability is built here; map conversion, movement, Bog, public authoring and production gathering remain separate |
 | Special explosive and terrain profiles | G7.2 p. 285; W.7B p. 656; W.8 p. 657 | Swamp, VT FFE and special ammunition claims | Do not feed these cases through the ordinary-marsh HE branch or infer weapon-use permission |

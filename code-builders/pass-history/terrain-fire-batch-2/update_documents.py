@@ -38,9 +38,9 @@ for row in inventory_table.rows(lines):
 for index, line in enumerate(lines):
     if any(line.startswith('| ' + rule + ' | Codex |') for rule in ('B23.31', 'B16.31')):
         cells = inventory_table.cells(line)
-        cells[2] = 'sub-agent'
+        cells[2] = 'Claude'
         cells[5] = 'built'
-        cells[7] = 'Approved revised Terrain Fire Batch 2 built Rules-only. Independent read-only sub-agent review approved after bridge materiality and scenario-card fixes. State remains built until merge to retain the file holds required by claim_check. B16.6/B16.7/B16.8 are partial HE applicability under B16.31; zero ASOP rows. W-B23.31/W-B16.31 remain open. User PR review and merge approval pending.'
+        cells[7] = 'Approved revised Terrain Fire Batch 2 built Rules-only. Independent sub-agent review completed; assigned reviewer Claude confirmed rule correctness in PR 124. Review corrections merge main and restore Claude as Reviewer. State remains built until merge, when Claude will mark reviewed. B16.6/B16.7/B16.8 are partial HE applicability under B16.31; zero ASOP rows. W-B23.31/W-B16.31 remain open. User merge approval pending.'
         lines[index] = '| ' + ' | '.join(cells) + ' |'
     if line.startswith('| W-B23.74 |') and 'W-B23.31' not in line:
         cells = inventory_table.cells(line)
@@ -70,7 +70,7 @@ path.write_text(text, encoding='utf-8', newline='\n')
 
 path = docs / 'ASL Unit Backlog.md'
 text = path.read_text(encoding='utf-8')
-text = text.replace('## 99. Boundaries proposed for Terrain Fire Batch 2', '## 99. Deferred by Terrain Fire Batch 2')
+text = text.replace('## 99. Boundaries proposed for Terrain Fire Batch 2', '## 100. Deferred by Terrain Fire Batch 2')
 text = text.replace('The [Rules design](<Designs/ASL Terrain Fire Batch 2 Rules Design.md>) awaits approval. These are scope boundaries, not claims or evidence of implementation. Its section 11 holds proposed downstream details separately from implementation scope; the inventory\'s section 7 remains the authoritative wiring record, populated when the Rules claims reach built.', 'The approved [Rules design](<Designs/ASL Terrain Fire Batch 2 Rules Design.md>) is built and independently reviewed. These are remaining boundaries, not another claim board. Inventory section 7 holds the open W-B23.31/W-B16.31 rows; design section 11 retains their handoff rationale.')
 text = text.replace('| Proposed boundary |', '| Current boundary |').replace('Proposed W-B23.31 and W-B16.31', 'Inventory W-B23.31 and W-B16.31')
 text = text.replace('by the proposed building contract', 'by the building contract').replace('Only HE applicability is proposed here;', 'Only HE applicability is built here;')

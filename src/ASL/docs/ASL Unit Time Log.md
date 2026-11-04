@@ -8,6 +8,7 @@ Observed UTC clock boundaries, no estimate supplied. This interval covers the cl
 |---|---|---|---|---|
 | Rules implementation and verification | 12:21:29 | 12:48:17 | 0:26:48 | Claim lock f70bd817; B23.31/B16.31 with partial environmental support. Strict Studio build clean, real positions and Factory SSR demonstrated; 52 distinct focused Rules cases and 30 bundle checks validated across initial/corrected runs. Independent review approved after bridge-materiality and card consistency fixes. |
 | Delivery records and PR preparation | 12:48:17 | 12:55:16 | 0:06:59 | Existing inventory wiring rows and Factory coordination, partial coverage, backlog and generated summaries updated. Stale historical audit wording corrected. Built state retains holds through review; independent approval recorded in notes. PR 124 opened against main; CI pending at this boundary. |
+| PR 124 corrections and focused verification, observed partial interval | 13:15:47 | 13:20:43 | 0:04:56 | Excludes initial review reading before the first clock sample. Merged main, moved Batch 2 backlog to 100, restored Claude as Reviewer, mapped unknown building choices to null, and recorded separate disclosure follow-up. Contract check and 12 bundle checks passed; scope and document summaries agree. |
 
 ## Nationality Batch 1, 2026-11-04 (Codex)
 

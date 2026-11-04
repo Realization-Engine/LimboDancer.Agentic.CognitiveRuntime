@@ -83,8 +83,18 @@ internal static class ScenarioA1BuildingFireContract
             _ => null,
         };
         var result = ScenarioA1BuildingFireCalculator.BuildingTem(new(building,
-            facts.Text("locationKind") == "ordinary" ? BuildingFireLocation.Ordinary : BuildingFireLocation.UnsupportedSpecial,
-            facts.Text("profile") == "standard" ? BuildingFireProfile.Standard : BuildingFireProfile.Deluxe, attack,
+            facts.Text("locationKind") switch
+            {
+                "ordinary" => BuildingFireLocation.Ordinary,
+                "unsupported-special" => BuildingFireLocation.UnsupportedSpecial,
+                _ => null,
+            },
+            facts.Text("profile") switch
+            {
+                "standard" => BuildingFireProfile.Standard,
+                "deluxe" => BuildingFireProfile.Deluxe,
+                _ => null,
+            }, attack,
             targetKnown ? facts.Flag("bypassing") : null, facts.Flag("roofless"), firerKnown ? firer : null,
             firerKnown ? facts.Flag("tracedWithinDepiction") : null, firerKnown ? facts.Flag("overAdjacentRubbleEnteringAcrossDepiction") : null,
             targetKnown ? entry : null));
