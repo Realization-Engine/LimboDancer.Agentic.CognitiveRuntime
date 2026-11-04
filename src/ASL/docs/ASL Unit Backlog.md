@@ -1851,3 +1851,20 @@ Rules-only C2.21 slice built, 2026-11-04. See [the C2.21 design](<Designs/ASL Or
 | Scenario-specific ammunition overrides and actual target-knowledge gathering | C2.21 p. 167; the applicable SSR/disclosure rules | Governing Rules must resolve overrides; wiring gathers only authorized facts and retains unknowns. The Workbench's public target-protection input is a labelled hypothetical/known-public example, not a hidden-counter lookup |
 | Declared ammunition legality and fixed-ammunition weapon behavior | C8.31 p. 178; C8.8-C8.92 p. 179; existing LATW rules | Reuse existing decisions; no new C8 depletion, LATW, MG or effects implementation |
 | Concealed-target acquisition | C6.57 p. 175 | Separate design/claim; not included in this C2.21 scope |
+
+## 102. Deferred by Vehicle Bypass Batch 4
+
+The approved [Rules-only design](<Designs/ASL Vehicle Bypass Batch 4 Rules Design.md>) is built, 2026-11-04. This section records remaining boundaries. Inventory section 7 holds open, unclaimed W-D2.321 and W-D2.33; design section 8 retains their rationale. Production callers and recorded games are unchanged.
+
+| Item | Boundary and separate work |
+|---|---|
+| Production turret positions, pending VCA state, menus and replay | Future W-D2.321 and W-D2.33 in the existing inventory at built. Existing live/game-record answers stay unchanged; no event-schema work in the Rules claims. |
+| Full D2.32 geometry/LOS and special same-hex or CAFP-origin fire | The batch supplies the frame/hex-sector arithmetic required by its two rules. Same-hex and all incoming CAFP-origin queries remain explicitly not evaluated pending the appropriate C.5B/C.5C Rules composition, rather than guessing which CAFP origins are safe. |
+| Special Bypass firing point in woods/building/rubble | Review C5.11 composition and its interaction with the D2.321 surcharge before supporting it; ordinary Bypass is not inside the obstacle merely because its occupied hex contains that obstacle. |
+| Narrow Street turret constraints | B31.121-B31.123 p. 152 remain separate eligibility and dr prerequisites. This batch does not authorize a turret change that they bar; the B31.11 exception confirms that a D2.33 VCA turn still costs 1 MP. |
+| Bounding First Fire after a paid-MP TCA change | C5.13 suppresses Case A, but the chart's separate D2.321 +1 (p. 189) needs its own history/applicability ruling. Known earlier change returns unsupported/not-evaluated; unknown history remains unknown. No implicit zero for both modifiers. |
+| Bypass maintained weapon history and IFT composition | D3.51 and non-ordnance composition require a Rules verdict that distinguishes the normal Case A component from the To Hit-only side surcharge. Do not feed four-position steps into the old hexspine history or wire these paths before that composition is settled. |
+| Forced movement ends other than immobilization | The batch distinguishes voluntary end from known immobilization. Other forced halts remain not-evaluated until their governing Rules supply a supported result; a lack of affordable continuation is not a forced-halt fact. |
+| Reverse into Bypass without a pending VCA turn | D2.22 p. 196 separately permits qualifying Reverse Bypass. This batch evaluates D2.33 post-turn continuation and outright exits; the general no-pending-turn Reverse-Bypass destination is not-evaluated, not a blanket prohibition. |
+| Motion-attempt CA changes and complete fire/movement permission | D2.401, C5/D3 weapon-history composition, terrain clearance, Bog, MP budgets and special movement remain their existing Rules work. No new permission is inferred from a local arc, cost or continuation verdict. |
+| Reproduce D2.33 target-facing fault in live play | Calculator tests prove the retained-frame rule; future wiring must add a live reproduction and versioned correction. Code inspection alone is not a played acceptance result. |

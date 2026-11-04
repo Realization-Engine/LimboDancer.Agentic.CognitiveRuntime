@@ -1,0 +1,351 @@
+{
+  "id": "d2321-bypass-tca",
+  "title": "Bypass turret positions and Case A",
+  "card": "d2321-bypass-tca",
+  "rules": [
+    "D2.321"
+  ],
+  "contracts": [
+    "d2.321-bypass-tca"
+  ],
+  "units": {
+    "tank": "german",
+    "observer": "british"
+  },
+  "checks": [
+    {
+      "name": "Hypothetical ST front-to-side: normal 2 and separate 1",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": 0,
+        "targetR": 2,
+        "current": "Front",
+        "proposed": "Left",
+        "traverse": "St",
+        "weapon": "Ordnance",
+        "mode": "Ordinary",
+        "specialTerrain": false
+      },
+      "expect": {
+        "outcome": "evaluated"
+      }
+    },
+    {
+      "name": "Unchanged side at new target: normal 2, separate 0",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": 0,
+        "targetR": 2,
+        "current": "Left",
+        "proposed": "Left",
+        "traverse": "St",
+        "weapon": "Ordnance",
+        "mode": "Ordinary",
+        "specialTerrain": false,
+        "applicableAcquisition": false
+      },
+      "expect": {
+        "outcome": "evaluated"
+      }
+    },
+    {
+      "name": "Unchanged side acquired target: zero",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": 0,
+        "targetR": 2,
+        "current": "Left",
+        "proposed": "Left",
+        "traverse": "St",
+        "weapon": "Ordnance",
+        "mode": "Ordinary",
+        "specialTerrain": false,
+        "applicableAcquisition": true
+      },
+      "expect": {
+        "outcome": "evaluated"
+      }
+    },
+    {
+      "name": "ST front-to-rear through side: normal 3 and separate 1",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": -1,
+        "targetR": 1,
+        "current": "Front",
+        "proposed": "Rear",
+        "traverse": "St",
+        "weapon": "Ordnance",
+        "mode": "Ordinary",
+        "specialTerrain": false,
+        "direction": "Clockwise"
+      },
+      "expect": {
+        "outcome": "evaluated"
+      }
+    },
+    {
+      "name": "Opposite position requires direction",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": -1,
+        "targetR": 1,
+        "current": "Front",
+        "proposed": "Rear",
+        "traverse": "St",
+        "weapon": "Ordnance",
+        "mode": "Ordinary",
+        "specialTerrain": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Unknown side acquisition stays unknown",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": 0,
+        "targetR": 2,
+        "current": "Left",
+        "proposed": "Left",
+        "traverse": "St",
+        "weapon": "Ordnance",
+        "mode": "Ordinary",
+        "specialTerrain": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "CMG same Known target in same facing",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": 0,
+        "targetR": 2,
+        "current": "Left",
+        "proposed": "Left",
+        "traverse": "St",
+        "weapon": "Cmg",
+        "mode": "Ordinary",
+        "specialTerrain": false,
+        "sameKnownTarget": true,
+        "sameTargetFacing": true
+      },
+      "expect": {
+        "outcome": "evaluated"
+      }
+    },
+    {
+      "name": "BFF cannot turn with shot",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": 0,
+        "targetR": 2,
+        "current": "Front",
+        "proposed": "Left",
+        "traverse": "St",
+        "weapon": "Ordnance",
+        "mode": "BoundingFirstFire",
+        "specialTerrain": false
+      },
+      "expect": {
+        "outcome": "refused"
+      }
+    },
+    {
+      "name": "BFF no earlier MP turret change",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": 0,
+        "targetR": 2,
+        "current": "Left",
+        "proposed": "Left",
+        "traverse": "St",
+        "weapon": "Ordnance",
+        "mode": "BoundingFirstFire",
+        "specialTerrain": false,
+        "earlierMpTcaChange": false
+      },
+      "expect": {
+        "outcome": "evaluated"
+      }
+    },
+    {
+      "name": "Earlier MP turret change requires separate composition",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": 0,
+        "targetR": 2,
+        "current": "Left",
+        "proposed": "Left",
+        "traverse": "St",
+        "weapon": "Ordnance",
+        "mode": "BoundingFirstFire",
+        "specialTerrain": false,
+        "earlierMpTcaChange": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Special firing-point terrain is unsupported",
+      "position": "setup",
+      "viewer": "german",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": "tank",
+        "targetQ": 0,
+        "targetR": 2,
+        "current": "Front",
+        "proposed": "Left",
+        "traverse": "St",
+        "weapon": "Ordnance",
+        "mode": "Ordinary",
+        "specialTerrain": true
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      }
+    },
+    {
+      "name": "Opponent cannot inspect turret profile",
+      "position": "setup",
+      "viewer": "british",
+      "contract": "d2.321-bypass-tca",
+      "facts": {
+        "frameObstacleQ": 0,
+        "frameObstacleR": 0,
+        "frameAcrossQ": 0,
+        "frameAcrossR": 1,
+        "frameFrontQ": 1,
+        "frameFrontR": 0,
+        "inBypass": true,
+        "vehicleId": null,
+        "targetQ": 0,
+        "targetR": 2,
+        "current": null,
+        "proposed": null,
+        "traverse": null,
+        "weapon": null,
+        "mode": "Ordinary",
+        "specialTerrain": false
+      },
+      "expect": {
+        "outcome": "not-evaluated"
+      },
+      "sealed": {
+        "vehicleId": "german"
+      }
+    }
+  ]
+}

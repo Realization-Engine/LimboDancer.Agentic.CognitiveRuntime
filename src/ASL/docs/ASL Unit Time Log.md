@@ -1,5 +1,13 @@
 # ASL Unit Time Log
 
+## Vehicle Bypass Batch 4, 2026-11-04 (Codex)
+
+Observed UTC boundaries; claim-lock preparation preceded this measured implementation interval. No estimate supplied.
+
+| Sub-task | Start UTC | End UTC | Duration | Notes |
+|---|---|---|---|---|
+| D2.321/D2.33 implementation, Workbench, review and focused verification | 21:04:05 | 21:34:19 | 0:30:14 | 24 focused Rules/contract and 27 bundle/legacy cases passed; strict isolated Studio build, owner/sealed-opponent and public defensive-frame checks. Read-only review corrections incorporated. Delivery records, PR and CI follow this measured interval. No wiring or merge. |
+
 ## Ordnance Decisions Batch 3, 2026-11-04 (Codex)
 
 Observed UTC boundaries; no estimate supplied. The claim lock preceded the first sampled boundary and is not included in this measured interval.

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "tenant": "5a7d1f00-0000-4000-8000-0000000057d0",
+  "game": "d233-bypass-vca-position",
+  "label": "Bypass VCA and retained defensive position: setup anchors, hypothetical Bypass facts",
+  "synthetic": false,
+  "minigame": "d233-bypass-vca",
+  "events": [
+    {
+      "eventId": "d233-bypass-vca-position-0001",
+      "revision": 1,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "game-started",
+      "visibility": "all",
+      "payload": {
+        "sides": [
+          {
+            "id": "german",
+            "nationality": "german",
+            "elr": 3,
+            "friendlyEdge": "left"
+          },
+          {
+            "id": "british",
+            "nationality": "british",
+            "elr": 2,
+            "friendlyEdge": "right"
+          }
+        ],
+        "map": {
+          "reference": "bd23",
+          "version": "af5f2f64494011e9256e16f0fef1afcf37d22b54",
+          "boards": [
+            {
+              "board": "bd23",
+              "version": "af5f2f64494011e9256e16f0fef1afcf37d22b54"
+            }
+          ]
+        },
+        "catalog": "asl-scenario-a1@1.19.0",
+        "turn": 1,
+        "phase": "rph",
+        "phasingSide": "german",
+        "synthetic": false,
+        "scenarioMonth": 7,
+        "scenarioYear": 1944
+      }
+    },
+    {
+      "eventId": "d233-bypass-vca-position-0002",
+      "revision": 2,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "tank",
+          "kind": "asl:vehicle",
+          "definition": "attacker-tank",
+          "side": "german",
+          "position": {
+            "at": "bd23:BB3:0",
+            "facing": "south-east"
+          },
+          "conditions": {
+            "asl:concealed": true,
+            "asl:hidden": false
+          }
+        }
+      }
+    },
+    {
+      "eventId": "d233-bypass-vca-position-0003",
+      "revision": 3,
+      "time": "2026-10-12T13:00:00.0000000Z",
+      "source": "map-studio",
+      "type": "instance-created",
+      "visibility": "all",
+      "payload": {
+        "instance": {
+          "id": "observer",
+          "kind": "asl:vehicle",
+          "definition": "campaign-british-sherman75",
+          "side": "british",
+          "position": {
+            "at": "bd23:AA4:0",
+            "facing": "north-east"
+          },
+          "conditions": {
+            "asl:concealed": false,
+            "asl:hidden": false
+          }
+        }
+      }
+    }
+  ]
+}

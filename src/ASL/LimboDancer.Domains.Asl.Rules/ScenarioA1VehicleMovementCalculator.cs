@@ -54,8 +54,7 @@ public static class ScenarioA1VehicleMovementCalculator
         ArgumentNullException.ThrowIfNull(turnedAtCafp);
         ArgumentNullException.ThrowIfNull(turnHalfMp);
         var left = allotment - spent;
-        return entries().Any(item => item.HalfMp is { } cost && !item.All && cost <= left)
-            || (!(straddling && turnedAtCafp()) && turnHalfMp() + 2 <= left);
+        return ScenarioA1BypassVcaCalculator.LegacyMayMoveOn(left, entries, straddling, turnedAtCafp, turnHalfMp);
     }
 
     /// <summary>D2.11: the half MP to enter an ADJACENT hex, ALL as the printed allotment, plus a VCA change's cost for each hexspine the VCA must turn.</summary>
@@ -165,6 +164,7 @@ public static class ScenarioA1VehicleMovementCalculator
     }
 
     /// <summary>
+    /// Legacy Bypass decisions delegate without changing answers; new callers use ScenarioA1BypassVcaCalculator.
     /// The steps a moving vehicle may try now (rulings R11.1, R11.2, R11.7): forward outright into a hex of its VCA, or from Bypass into the hex beyond
     /// its CAFP; forward in VBM along the hexside its VCA runs along (from its hex center, the hexside its VCA hexes share; after a VCA change at its
     /// CAFP, the hexside ahead); in Reverse outright into a rear hex, from Bypass the hex beyond its rear vertex; and in Reverse VBM from its hex center
@@ -189,31 +189,7 @@ public static class ScenarioA1VehicleMovementCalculator
         var direction = reverse ? (facing + 3) % 6 : facing;
         if (lane is { } straddling)
         {
-            if (turnedAtCafp())
-            {
-                // D2.33: after a VCA change at its CAFP the vehicle goes on in Bypass along the hexside it now faces along.
-                if (!reverse)
-                {
-                    foreach (var (one, two) in new[] { (here, straddling) }.SelectMany(pair => reader.SharedNeighbors(pair.Item1, pair.Item2)
-                        .SelectMany(third => new[] { (pair.Item1, third), (pair.Item2, third) })))
-                    {
-                        if (reader.LaneEnds(one, two, facing) is ({ } _, { } behind) && (behind == here || behind == straddling))
-                        {
-                            Lane(one, two);
-                        }
-                    }
-                }
-
-                return options;
-            }
-
-            var (front, rear) = reader.LaneEnds(here, straddling, facing);
-            if ((reverse ? rear : front) is { } beyond)
-            {
-                Outright(beyond, straddling);
-            }
-
-            return options;
+            return ScenarioA1BypassVcaCalculator.LegacyMoveOptions(reader, here, straddling, facing, reverse, turnedAtCafp);
         }
 
         foreach (var to in reader.VcaHexes(here, direction))
@@ -317,11 +293,12 @@ public static class ScenarioA1VehicleMovementCalculator
     /// a stop, a VCA change, or an entry; and it is not in a woods, building, or rubble obstacle, where "the MP expenditure required for a TCA
     /// change ... is doubled", which is not built.
     /// </summary>
+    /// <remarks>Legacy Bypass refusal retained. New Bypass turret components are in ScenarioA1BypassTurretCalculator; movement wiring remains separate.</remarks>
     public static string? TurretStepBar(string id, string kind, bool turreted, bool facingRead, bool inObstacle, bool bypass = false) =>
         !turreted ? $"play.move-vehicle-turret: {id} has no turret to turn (D3.12)"
         : !facingRead ? "play.move-vehicle-turret: name the hexspine the turret turns to, such as north-east or west (D3.12)"
         : !TurretTurnsWith(kind) ? $"play.move-vehicle-turret: {id}'s turret turns with a Delay MP, a stop, a VCA change, or an entry (D3.12)"
-        : bypass ? $"play.move-vehicle-turret: {id} is in Bypass, where the TCA has its own four positions; that is not built (D2.32, D2.321)"
+        : ScenarioA1BypassTurretCalculator.LegacyTurretStepRefusal(id, bypass) is { } bypassBar ? bypassBar
         : inObstacle ? $"play.move-vehicle-turret: {id} is in woods, a building, or rubble, where a TCA change doubles the MP expenditure; that is not built (D3.12, C5.11)"
         : null;
 
@@ -340,7 +317,7 @@ public static class ScenarioA1VehicleMovementCalculator
             return "play.move-vehicle: a VCA change turns one hexspine (D2.11)";
         }
 
-        return straddling && turnedAtCafp() ? $"play.move-vehicle-bypass: {id} changed its VCA at its CAFP and must now move on in Bypass (D2.33)" : null;
+        return ScenarioA1BypassVcaCalculator.LegacyTurnRefusal(id, straddling, turnedAtCafp);
     }
 
     /// <summary>
@@ -397,9 +374,7 @@ public static class ScenarioA1VehicleMovementCalculator
             return "play.move-vehicle-enemy-afv: " + blocked;
         }
 
-        return straddling && turnedAtCafp() && mayMoveOn()
-            ? $"play.move-vehicle-bypass: {id} changed its VCA at its CAFP and must now move on in Bypass (D2.33)"
-            : null;
+        return ScenarioA1BypassVcaCalculator.LegacyStopRefusal(id, straddling, turnedAtCafp, mayMoveOn);
     }
 
     /// <summary>
@@ -589,9 +564,9 @@ public static class ScenarioA1VehicleMovementCalculator
             return "play.end-move: " + blocked;
         }
 
-        if (!halted && straddling && turnedAtCafp() && mayMoveOn())
+        if (ScenarioA1BypassVcaCalculator.LegacyEndMoveRefusal(id, halted, straddling, turnedAtCafp, mayMoveOn) is { } bypassBar)
         {
-            return $"play.end-move: {id} changed its VCA at its CAFP and must move on in Bypass before its move ends (D2.33)";
+            return bypassBar;
         }
 
         return motionBar();
