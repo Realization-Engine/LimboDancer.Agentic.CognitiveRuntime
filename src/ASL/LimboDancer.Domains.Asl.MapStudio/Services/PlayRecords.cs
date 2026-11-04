@@ -195,6 +195,24 @@ public sealed partial class PlayRecords
         return names.InText(text, revisions.TryGetValue(eventId, out var revision) ? revision - 1 : Last);
     }
 
+    // The user, 2026-11-04: a record's result alone, "4-4-7 squad R2 in [X3]: not rallied", for the outcome line and the outcome card's headline; the
+    // dice and modifiers stay in the record's full text. Written by the record builders as they read each event: Said is false where the text still
+    // holds identifiers, true where the builder named them already (a fire's line).
+    private readonly Dictionary<string, (string Text, bool Said)> briefs = new(StringComparer.Ordinal);
+
+    private void Brief(string eventId, string text, bool said = false) => briefs[eventId] = (text, said);
+
+    /// <summary>
+    /// The result of a record alone, in the view's words: who, and what became of it, with none of the arithmetic. Null for a record whose full text is
+    /// already its result (a move, a rout, a DM marker), which the outcome line shows as it is.
+    /// </summary>
+    public string? BriefOf(string eventId)
+    {
+        _ = Lines;
+        // "[B1]: 4-6-7 squad in [B1]: pinned" says the hex once, as the Sniper lines do: "[B1]: 4-6-7 squad: pinned".
+        return briefs.TryGetValue(eventId, out var brief) ? HexFirstSaidAgain().Replace(brief.Said ? brief.Text : Say(eventId, brief.Text), "${at}: ${said}") : null;
+    }
+
     private string SayRoll(string roll, string text)
     {
         if (names is null)
@@ -372,6 +390,7 @@ public sealed partial class PlayRecords
         foreach (var fire in Fire)
         {
             Add(fire.EventId, FireLine(fire));
+            Brief(fire.EventId, FireBrief(fire), said: true);
         }
 
         // Pass 31d (design D5; ruling R31d.3): a Dummy stack's removal is said to both sides, who both see the counters leave the map (A12.11, A12.15,
@@ -565,6 +584,43 @@ public sealed partial class PlayRecords
     /// <summary>A fire in one line (play test P-15): who fired at what, the result, and what it did to each unit the view may read of.</summary>
     private static string FireLine(FireView fire)
     {
+        var changed = FireChanges(fire);
+
+        // The table player's review of pass 55: a Canister attack on a Location where the view knows of no unit.
+        if (fire.NoKnownTarget)
+        {
+            return $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {FireText.NoKnownTargetText(fire.Target)}";
+        }
+
+        // Pass 31d (design D7; A6.11, p. 53): a blocked LOS is said as what it was, and not as an attack that missed.
+        return fire.LosBlocked
+            ? $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11)"
+            : $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {ResultText(fire.Arithmetic.Result)}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
+    }
+
+    /// <summary>
+    /// A fire's result alone (the user, 2026-11-04): the Location and what the attack did to each unit there the view may read of, "[X3]: r2: broken",
+    /// or the IFT result where it changed no unit.
+    /// </summary>
+    private static string FireBrief(FireView fire)
+    {
+        if (fire.NoKnownTarget)
+        {
+            return $"{fire.Target}: no known target";
+        }
+
+        if (fire.LosBlocked)
+        {
+            return $"{fire.Target}: LOS blocked, no effect";
+        }
+
+        var changed = FireChanges(fire);
+        return $"{fire.Target}: {(changed.Length > 0 ? string.Join("; ", changed) : ResultText(fire.Arithmetic.Result))}";
+    }
+
+    /// <summary>What a fire did to each unit the view may read of, each in the view's words: the units it changed, or those that passed its checks.</summary>
+    private static string[] FireChanges(FireView fire)
+    {
         var changed = fire.Effects is null ? []
             : fire.Effects.Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
                 .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")).ToArray();
@@ -596,16 +652,7 @@ public sealed partial class PlayRecords
             changed = [.. changed, .. shortage.Select(line => fire.Say(line))];
         }
 
-        // The table player's review of pass 55: a Canister attack on a Location where the view knows of no unit.
-        if (fire.NoKnownTarget)
-        {
-            return $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {FireText.NoKnownTargetText(fire.Target)}";
-        }
-
-        // Pass 31d (design D7; A6.11, p. 53): a blocked LOS is said as what it was, and not as an attack that missed.
-        return fire.LosBlocked
-            ? $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11)"
-            : $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {ResultText(fire.Arithmetic.Result)}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
+        return changed;
     }
 
     /// <summary>A Bail Out NMC's result in words (D6.24, A10.31; pass 65, the table player): a Casualty Reduction is said with the break it brings.</summary>
@@ -644,6 +691,19 @@ public sealed partial class PlayRecords
         }
 
         return parts.Count == 0 ? null : $"{check.Location}: {string.Join("; ", parts)}";
+    }
+
+    /// <summary>A morale check's result alone (the user, 2026-11-04): "[X3]: r2: broken", each unit it checked with what became of it.</summary>
+    private static string? MoraleCheckBrief(MoraleCheckResolved check)
+    {
+        if (check.Resolution.Deserialize<FireResolution>(LiveFire.Json) is not { } resolution)
+        {
+            return null;
+        }
+
+        string[] parts = [.. resolution.Effects.Where(item => item.Checks.Count > 0 || item.HeatOfBattle is not null).Concat(resolution.CompanionEffects ?? [])
+            .Select(effect => $"{effect.UnitId}: {FireText.EffectText(effect)}")];
+        return parts.Length == 0 ? null : $"{check.Location}: {string.Join("; ", parts)}";
     }
 
     /// <summary>
@@ -806,6 +866,8 @@ public sealed partial class PlayRecords
                     // C13.31 (ruling R9.7): a PF Check that gave no shot.
                     records.Add((item.EventId, $"{checking.Crew}{In(history.At(item.Revision - 1), checking.Crew)} makes a PF Check: dr {failed.Dr}{ModifierText(failed.Drm)} = {failed.FinalDr}: "
                         + (failed.Outcome == OrdnancePanzerfaustCheck.NoShot ? "no shot (C13.31)" : $"no PF in position, and {failed.Outcome} (C13.31)")));
+                    Brief(item.EventId, $"{checking.Crew}{In(history.At(item.Revision - 1), checking.Crew)}: PF Check, "
+                        + (failed.Outcome == OrdnancePanzerfaustCheck.NoShot ? "no shot" : $"no PF in position, and {failed.Outcome}"));
                     continue;
                 }
 
@@ -880,6 +942,9 @@ public sealed partial class PlayRecords
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
                         + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
                 };
+
+                // The user, 2026-11-04: the shot's result alone, the gun and its target, hit or miss, and what each hit did, with none of the arithmetic.
+                var brief = new List<string> { $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)} at {shot?.VehicleTarget?.VehicleId ?? fired.Target.ToString()}: {outcome}" };
                 // A12.3, ruling R21.1 (pass 60, the table player): a hidden unit the shot attacked is never named nor counted to a view that may not
                 // know it; its own side and the adjudicator read it.
                 var before = history.At(item.Revision - 1);
@@ -933,6 +998,9 @@ public sealed partial class PlayRecords
                             : shot?.Hit?.GunTarget is { CrewUnitId: null, GunId: { } loneGun } ? $"the unattended Gun {loneGun}" : "the Location";
                         parts.Add($"{label} on {onWhat}: {arithmetic.ColumnFp} FP, IFT DR {string.Join(", ", arithmetic.Dice)} = {arithmetic.OriginalDr}"
                             + $"{ModifierText(arithmetic.Drm)} = {arithmetic.FinalDr}: {arithmetic.Result}");
+                        string[] effected = [.. attack.Effects.Where(effect => Shown(effect.UnitId)).Select(effect => (effect.UnitId, Text: FireText.EffectText(effect)))
+                            .Where(effect => effect.Text != "unaffected").Select(effect => $"{effect.UnitId}: {effect.Text}")];
+                        brief.AddRange(effected.Length > 0 ? effected : [$"{onWhat}: {arithmetic.Result}"]);
                         foreach (var vehicle in attack.VehicleEffects ?? [])
                         {
                             parts.Add($"{vehicle.VehicleId}: " + (vehicle.KillNumber is not null ? FireText.VehicleLineText(vehicle) : FireText.CrewText(vehicle)));
@@ -950,6 +1018,7 @@ public sealed partial class PlayRecords
                 if (resolution.GunTargetFate is { } gunFate && shot?.Hit?.GunTarget?.GunId is { } struckGun)
                 {
                     parts.Add($"{struckGun}: a Direct Hit, {(gunFate == ScenarioA1GunDestruction.Destroyed ? "destroyed" : "malfunctioned")} (C11.4)");
+                    brief.Add($"{struckGun}: {(gunFate == ScenarioA1GunDestruction.Destroyed ? "destroyed" : "malfunctioned")}");
                 }
 
                 // C8.9, C8.2 (pass 55): the number the shot was fired under, with the one an Elite force adds, as the record itself names it.
@@ -997,6 +1066,9 @@ public sealed partial class PlayRecords
                     // A9.61 (pass 60, the table player): a MG's To Kill attack is the MG's, on the AP To Kill Table, not a Gun's AP round.
                     var round = machineGun ? "the MG, on the AP To Kill Table" : kill.Ammunition.ToUpperInvariant();
                     parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {round}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
+                    brief.Add($"{shot?.VehicleTarget?.VehicleId ?? "the target"}: {fate}"
+                        + (kill.ShockCheck is { Passed: false } ? ", Shocked" : "") + (kill.CrewCheck is { Passed: false } ? ", Abandoned" : "")
+                        + (kill.CrewSurvival is { } survived ? survived.Survived ? ", the crew survives" : ", no survivors" : ""));
 
                     // D6.9 (pass 65): the Survival DR of each PRC of the vehicle.
                     if (shot?.VehicleTarget?.VehicleId is { } killedId)
@@ -1022,6 +1094,7 @@ public sealed partial class PlayRecords
                         OrdnanceKill.Shock => "Shocked",
                         _ => "no effect",
                     };
+                    brief.Add($"{afv.VehicleId}: {fate}" + (afv.CrewCheck is { Passed: false } ? ", Abandoned" : ""));
                     parts.Add($"{afv.VehicleId}: {(afv.Critical == true ? "a Critical Hit, " : "")}{afv.HitLocation} hit on the IFT (C1.55): {afv.Firepower} FP, DR "
                         + $"{string.Join(", ", afv.Dice)}{ModifierText(afv.Drm)} = {afv.FinalDr} against the K/# DR {afv.KillDr}: {fate}"
                         + (afv.CrewCheck is { } areaTc ? $"; crew TC DR {areaTc.FinalDr} against {FireText.MoraleWords(areaTc)}: {(areaTc.Passed ? "passed" : "Abandoned")} (D5.5)" : "")
@@ -1054,6 +1127,12 @@ public sealed partial class PlayRecords
                     : boundingShot ? "a Bounding Fire counter: no more fire this Player Turn (D3.3)" : "no more fire this phase")
                     + (gun.Acquisition < 0 ? $"; Acquisition {gun.Acquisition} on {gun.AcquiredLocationId} (C6.5)" : ""));
                 records.Add((item.EventId, string.Join("; ", parts)));
+                if (gun.Malfunctioned)
+                {
+                    brief.Add(machineGun ? "the MG malfunctions" : "the Gun malfunctions");
+                }
+
+                Brief(item.EventId, string.Join("; ", brief));
             }
 
             records.Reverse();
@@ -1249,7 +1328,9 @@ public sealed partial class PlayRecords
                 var start = starts[attempt] > 0 ? history.States.ElementAtOrDefault(starts[attempt] - 1) : null;
                 if (item.Payload is RallyAttempted rally && rally.Resolution.Deserialize<RallyResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic } resolution)
                 {
-                    records.Add((item.EventId, "rally", RallyText(rally, arithmetic, resolution.Effect, In(before, rally.Unit))));
+                    var (rallyText, rallyBrief) = RallyText(rally, arithmetic, resolution.Effect, In(before, rally.Unit));
+                    records.Add((item.EventId, "rally", rallyText));
+                    Brief(item.EventId, rallyBrief);
                 }
                 else if (item.Payload is RoutStepped { Attempted: { } repulsedFrom } repulsed)
                 {
@@ -1287,6 +1368,10 @@ public sealed partial class PlayRecords
                 {
                     // Pass 70 (rulings R70.3, R70.4; the fixes): a morale check made outside an attack, a LLMC among them, in the Records tab's list too.
                     records.Add((item.EventId, "morale-check", checkText));
+                    if (MoraleCheckBrief(moraleCheck) is { } checkBrief)
+                    {
+                        Brief(item.EventId, checkBrief);
+                    }
                 }
                 else if (item.Payload is VoluntaryBreak voluntary)
                 {
@@ -1314,8 +1399,10 @@ public sealed partial class PlayRecords
                         _ => null,
                     }).FirstOrDefault(id => id is not null);
                     // Pass 71's fixes (Round D): the man with his hex, as a record names the units that act.
-                    records.Add((item.EventId, "wound", ScenarioA1Wounds.SeverityText(severity.Values[0], man is null ? null : man + In(before, man),
-                        man is not null && before?.Unit(man) is { } hurt && GameState.Condition(hurt, Conditions.Wounded) == ConditionState.True)));
+                    var alreadyWounded = man is not null && before?.Unit(man) is { } hurt && GameState.Condition(hurt, Conditions.Wounded) == ConditionState.True;
+                    records.Add((item.EventId, "wound", ScenarioA1Wounds.SeverityText(severity.Values[0], man is null ? null : man + In(before, man), alreadyWounded)));
+                    Brief(item.EventId, $"{(man is null ? "Wound Severity" : man + In(before, man))}: "
+                        + (ScenarioA1Wounds.Mortal(severity.Values[0], alreadyWounded) ? "a mortal wound, eliminated" : "wounded, not mortally"));
                 }
                 else if (item.Payload is RoutInterdicted interdicted)
                 {
@@ -1328,6 +1415,7 @@ public sealed partial class PlayRecords
                         ? $"; {routedWith}, routing with it, is eliminated (A10.711)" : string.Empty;
                     records.Add((item.EventId, "interdiction",
                         $"Interdiction of {interdicted.Unit} entering {interdicted.At}{(interdicted.Interdictor is { } by ? $" by {by}" : "")}: NMC DR {dr}{led} against broken morale {interdicted.Morale}: {interdicted.Result} (A10.53){fate}"));
+                    Brief(item.EventId, $"{interdicted.Unit} entering {interdicted.At}: Interdicted, {interdicted.Result}{fate}");
                 }
                 else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage && lineage.Consumed.All(id => Open(before, id)))
                 {
@@ -1378,12 +1466,14 @@ public sealed partial class PlayRecords
                     var dr = rolls.TryGetValue(deployment.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
                     records.Add((item.EventId, "deployment", $"{deployment.Squad}{In(before, deployment.Squad)} tries to Deploy{(deployment.Leader is { } leader ? $" with {leader}" : "")}: NTC DR {dr} "
                         + $"{deployment.Drm:+0;-0;+0} against morale {deployment.Morale}: {(deployment.Passed ? "two HS" : "stays a squad")} (A1.31)"));
+                    Brief(item.EventId, $"{deployment.Squad}{In(before, deployment.Squad)}: {(deployment.Passed ? "deploys into two HS" : "does not deploy")}");
                 }
                 else if (item.Payload is RecoveryAttempted recovery && Open(before, recovery.Unit))
                 {
                     var dr = rolls.TryGetValue(recovery.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
                     records.Add((item.EventId, "recovery", $"{recovery.Unit}{In(before, recovery.Unit)} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0}, needing below 6: "
                         + $"{(recovery.Recovered ? "recovered" : "not recovered")} (A4.44)"));
+                    Brief(item.EventId, $"{recovery.Unit}{In(before, recovery.Unit)}: {recovery.Weapon} {(recovery.Recovered ? "recovered" : "not recovered")}");
                 }
                 else if (item.Payload is InfantryOverrunNtc ntc && Open(before, ntc.Taker))
                 {
@@ -1393,6 +1483,7 @@ public sealed partial class PlayRecords
                     records.Add((item.EventId, "overrun-ntc", $"{ntc.Taker}{In(before, ntc.Taker)} takes the NTC{(others.Length > 0 ? $" for {string.Join(", ", others)}" : "")} "
                         + $"for an Infantry OVR into {ntc.Target}: DR {dr} {ntc.Drm:+0;-0;+0} against morale {ntc.Morale}: "
                         + (ntc.Passed ? "passed" : others.Length > 0 ? "failed; none of them moves or acts again this MPh" : "failed; it makes no OVR there") + " (A4.15)"));
+                    Brief(item.EventId, $"{ntc.Taker}{In(before, ntc.Taker)}: OVR NTC {(ntc.Passed ? "passed" : "failed")}");
                 }
                 else if (item.Payload is RepairAttempted repair)
                 {
@@ -1412,11 +1503,14 @@ public sealed partial class PlayRecords
                                     ? ", and the vehicle is Recalled: buttoned up and treated as stunned until the Player Turn ends, then it must leave (D3.7, D5.341)" : "")
                                 : result)
                         : $"{repair.Unit}{In(before, repair.Unit)} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
+                    Brief(item.EventId, $"{repair.Unit}{In(before, repair.Unit)}: {(repair.Weapon is { } briefWeapon ? $"its {briefWeapon.ToUpperInvariant()}" : repair.Equipment)} "
+                        + (repair.Result == RepairAttempted.Repaired ? "repaired" : repair.Result == RepairAttempted.Eliminated ? repair.Weapon is null ? "eliminated" : "disabled" : "still malfunctioned"));
                 }
                 else if (item.Payload is ManhandlingRolled push)
                 {
                     var dr = rolls.TryGetValue(push.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
                     records.Add((item.EventId, "manhandling", $"Manhandling DR for {push.Gun}{In(before, push.Gun)}: {dr} {push.Drm:+0;-0;+0} against M{push.Manhandling}: {push.Result} (C10.3)"));
+                    Brief(item.EventId, $"{push.Gun}{In(before, push.Gun)}: Manhandling {push.Result}");
                 }
                 else if (item.Payload is GunTurned turned)
                 {
@@ -1436,6 +1530,7 @@ public sealed partial class PlayRecords
                         _ => "is wrecked",
                     };
                     records.Add((item.EventId, "shock", $"{shock.Vehicle}'s Shock or Unconfirmed Kill dr {dr}: it {result} (C7.42)"));
+                    Brief(item.EventId, $"{shock.Vehicle} {result}");
                 }
                 else if (item.Payload is MotionAttempted motion)
                 {
@@ -1450,6 +1545,8 @@ public sealed partial class PlayRecords
                             : $"{motion.Vehicle}{where} attempts Motion: {spent} spent in its LOS, dr {dr}: ")
                         + ScenarioA1MotionAttempts.ResultText(motion.Result, motion.Facing is { } vca ? UnitFacings.Name(vca) : null, motion.Turret is { } tca ? UnitFacings.Name(tca) : null)
                         + " (D2.401)"));
+                    Brief(item.EventId, $"{motion.Vehicle}{where}: "
+                        + ScenarioA1MotionAttempts.ResultText(motion.Result, motion.Facing is { } briefVca ? UnitFacings.Name(briefVca) : null, motion.Turret is { } briefTca ? UnitFacings.Name(briefTca) : null));
                 }
             }
 
@@ -1458,8 +1555,11 @@ public sealed partial class PlayRecords
         }
     }
 
-    /// <summary>A rally in words, for example "rl rallies r1: DR 5, 1 = 6 - 1 (terrain, A10.61) = Final DR 5 against 7: rallied".</summary>
-    private static string RallyText(RallyAttempted rally, RallyArithmetic arithmetic, RallyEffect? effect, string where)
+    /// <summary>
+    /// A rally in words, for example "rl rallies r1: DR 5, 1 = 6 - 1 (terrain, A10.61) = Final DR 5 against 7: rallied", and its result alone,
+    /// "r1: rallied" (the user, 2026-11-04).
+    /// </summary>
+    private static (string Text, string Brief) RallyText(RallyAttempted rally, RallyArithmetic arithmetic, RallyEffect? effect, string where)
     {
         var who = rally.Leader is { } leader ? $"{leader} rallies {rally.Unit}{where}" : $"{rally.Unit}{where} Self-Rallies";
         var drm = string.Concat(arithmetic.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
@@ -1488,19 +1588,30 @@ public sealed partial class PlayRecords
             results.Add(HeatOfBattleText(heat));
         }
 
+        // The result alone keeps what happened to each unit and drops the dice of the checks that followed.
+        List<string> brief = [.. results];
         foreach (var check in arithmetic.BerserkChecks ?? [])
         {
             results.Add($"{check.UnitId} Berserk TC {string.Join(", ", check.Dice)}{ModifierText(check.Drm)} = {check.FinalDr} against {check.MoraleLevel}: "
                 + $"{(check.Passed ? "goes berserk" : "no change")} (A15.41)");
+            if (check.Passed)
+            {
+                brief.Add($"{check.UnitId} goes berserk");
+            }
         }
 
         if (arithmetic.LeaderCreation is { } creation)
         {
             var created = creation.LeaderDefinitionId is { } leader2 ? $"creates {leader2}" : "creates no leader";
             results.Add($"Leader Creation dr {creation.Dr}{ModifierText(creation.Drm)} = Final dr {creation.FinalDr}: {created} (A18.2)");
+            if (creation.LeaderDefinitionId is not null)
+            {
+                brief.Add(created);
+            }
         }
 
-        return $"{who}: DR {string.Join(", ", arithmetic.Dice)} = {arithmetic.OriginalDr}{drm} = Final DR {arithmetic.FinalDr} against {arithmetic.MoraleLevel}: {string.Join(", ", results)}";
+        return ($"{who}: DR {string.Join(", ", arithmetic.Dice)} = {arithmetic.OriginalDr}{drm} = Final DR {arithmetic.FinalDr} against {arithmetic.MoraleLevel}: {string.Join(", ", results)}",
+            $"{rally.Unit}{where}: {string.Join(", ", brief)}");
     }
 
     /// <summary>

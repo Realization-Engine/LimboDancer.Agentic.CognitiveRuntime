@@ -1815,3 +1815,11 @@ The approved design is `Designs/ASL Nationality Batch 1 Rules Design.md`. The in
 | Full deployment/recombination legality | A1.31, A1.32 | General organization Rules and phase wiring | Nationality verdicts do not validate a live leader, compatible HS, timing, terrain, Good Order or attempt budgets |
 | Temporary Crew exchange command | A21.22 | Existing pass 110/vehicle-crewing backlog | Italian nationality exemption only; vehicle/manning prerequisites and command are not added |
 | Automatic captured-MG night Sniper resolution | E1.76 | Existing night work | The nationality exemption is built; no Sniper resolution is added |
+
+## 99. Deferred by the outcome-only line
+
+The user, 2026-11-04: Play's outcome line and the outcome card's headline say a record's result alone ("4-4-7 squad R2 in [X3]: not rallied"); the dice stay in the record. `PlayRecords.BriefOf` holds the short result for rallies, morale checks, fire, ordnance and PF Checks, Interdiction, Deployment, Recovery, the Infantry OVR NTC, repairs, Manhandling, Shock, Motion, and Wound Severity.
+
+| Item | Why left out | What happens now |
+|---|---|---|
+| A short result for Sniper attacks and checks, SAN reductions, night events (wind, Starshells), Canister shots, Gun Duel declarations, Ambush, and a Rider's Bail Out | Rarer records; each needs its own wording | The line shows the record's full text, cut at 75 characters, as before |
