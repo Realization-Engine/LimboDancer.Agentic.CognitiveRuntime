@@ -316,10 +316,11 @@ public static class ScenarioA1Definitions
 
     /// <summary>
     /// Whether a Gun or MA of this definition fires HE at Infantry with no ammunition named (C2.21; pass 60): it has HE with no Depletion Number, so
-    /// the shot leaves it unnamed, as every shot before pass 55 did.
+    /// the shot leaves it unnamed, as every shot before pass 55 did. Compatibility only: new default selection uses
+    /// ScenarioA1AmmunitionDefaultCalculator.SelectDefault with target protection, Target Type and exhaustion facts.
     /// </summary>
     public static bool HeAssumed(string definition) =>
-        OrdnanceReference.Value.Guns.TryGetValue(definition, out var gun) && !gun.NoHe && !ScenarioA1ArmorCalculator.Lists(gun, "he");
+        OrdnanceReference.Value.Guns.TryGetValue(definition, out var gun) && ScenarioA1AmmunitionDefaultCalculator.LegacyHeAssumed(gun);
 
     /// <summary>
     /// The start of the detail a refusal's code carries when the ammunition starts in a month of the game's year and the game gives no month

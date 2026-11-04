@@ -1,0 +1,70 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "c221-ammunition-default",
+  "title": "C2.21 ammunition defaults",
+  "catalog": "asl-scenario-a1@1.19.0",
+  "source": {
+    "basis": "Manufactured under R0.3 for approved C2.21 Rules-only Batch 3.",
+    "legacy": "None: a manufactured minigame (R0.3), adapting no legacy card",
+    "adaptation": [
+      "Actual catalog counters on board 3; checks are hand-entered facts, not played firing events.",
+      "Target protection is known-public or hypothetical. The 6-pounder HE# example uses its catalog profile; other AP#/HE#, exhaustion and alternative weapon variants are labelled hypothetical."
+    ]
+  },
+  "place": "A test position",
+  "date": {
+    "day": 0,
+    "month": 7,
+    "year": 1944
+  },
+  "introduction": "Inspect the catalog 25-pounder game-default profile at [D5], British 6-pounder with HE# at [D6], truck at [F5], and AFV at [F6]. No shot is played and no live default changes here.",
+  "boards": [
+    {
+      "board": "bd03",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "turns": {
+    "count": 2,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "german"
+  },
+  "sides": [
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "left",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 3
+    },
+    {
+      "side": "british",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "right",
+        "basis": "manufactured",
+        "note": null
+      },
+      "balance": "",
+      "groups": [],
+      "elr": 2
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "other",
+    "text": "A minigame has no victory: it proves its rules on the Rule Workbench and in play.",
+    "rules": []
+  },
+  "aftermath": null,
+  "minigame": "c221-ammunition-default"
+}

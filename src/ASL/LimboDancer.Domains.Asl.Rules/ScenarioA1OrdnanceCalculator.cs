@@ -490,7 +490,7 @@ public static class ScenarioA1OrdnanceCalculator
         // C8.31's HE Equivalency (pass 60), decided below.
         if (shot.VehicleTarget is null && !canister && !equivalency && ScenarioA1ArmorCalculator.Lists(gun, "he"))
         {
-            if (shot.Ammunition is null)
+            if (ScenarioA1AmmunitionDefaultCalculator.LegacyHeNeedsDeclaration(shot.Ammunition))
             {
                 outside.Add(Prefix + "he-not-named");
             }

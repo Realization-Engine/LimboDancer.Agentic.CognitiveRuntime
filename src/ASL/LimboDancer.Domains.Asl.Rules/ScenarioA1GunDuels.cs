@@ -225,7 +225,7 @@ public static class ScenarioA1GunDuels
         }
 
         // Ruling R55.20: the duel's shot is AP at a vehicle and HE otherwise (C2.21); Special Ammunition and Canister are not offered in it.
-        if (potential.Ammunition != (potential.VehicleTarget is null ? null : "ap"))
+        if (!ScenarioA1AmmunitionDefaultCalculator.LegacyDuelAmmunitionMatches(potential.VehicleTarget is not null, potential.Ammunition))
         {
             return No(SpecialAmmunition);
         }
