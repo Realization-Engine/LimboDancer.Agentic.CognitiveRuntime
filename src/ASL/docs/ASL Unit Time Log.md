@@ -1,5 +1,16 @@
 # ASL Unit Time Log
 
+## Nationality Batch 1, 2026-11-04 (Codex)
+
+Minute boundaries below are reconstructed from the branch log, tool clock and artifact timestamps, not a continuously sampled timer. No estimate was supplied.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Claim lock and A20.54 hold review | 04:18 | 04:22 | 0:04 | Refreshed main, independent read-only review, four claims, mixed ASOP steps left open; claim lock 25ecd2fd |
+| Rules calculators, contracts, four bundles and isolated build | 04:22 | 04:36 | 0:14 | Codex worktree and Studio 6680; review corrections applied; strict build passed |
+| Rule Workbench demonstration | 04:36 | 04:44 | 0:08 | Four real positions, owner/opponent/adjudicator checks, private facts cleared on handover, nationality/date boundaries demonstrated |
+| Focused tests, final review fixes and delivery records | 04:44 | 04:57 | 0:13 | 85 initial Rules cases and 30 bundle cases passed; final two-method rerun passed 13 cases with warnings as errors, including one additional boundary; four open wiring rows and W-A20.54 dependency recorded |
+
 Wall-clock durations per task and sub-task, taken with `date "+%Y-%m-%d %H:%M"` at each boundary. Estimates come from the [ASL Unit Deviations, Ordnance, and Vehicles Plan](<Plans/ASL Unit Deviations, Ordnance, and Vehicles Plan.md>) kickoff notes.
 
 Past actuals for reference: steps 19 to 23 about 8 h; the six Play page fixes about 1 h; pass 1 (steps 26 to 28) about 3 h; the Studio scripted dice about 0.5 h.
